@@ -1,5 +1,10 @@
-import { EvaluationExplorer } from "@/components/evaluation/explorer";
+import { Suspense } from "react";
+import { CourseExplorer } from "@/components/catalog/course-explorer";
 
 export default function HomePage() {
-  return <EvaluationExplorer />;
+  return (
+    <Suspense>
+      <CourseExplorer />
+    </Suspense>
+  );
 }

@@ -4,8 +4,6 @@ declare global {
   var osuEvaluationPool: Pool | undefined;
 }
 
-const connectionString = process.env.DATABASE_URL?.trim();
-
 export class DatabaseNotConfiguredError extends Error {
   constructor() {
     super("DATABASE_URL is not configured.");
@@ -14,28 +12,30 @@ export class DatabaseNotConfiguredError extends Error {
 }
 
 export function isDatabaseConfigured() {
-  return Boolean(connectionString);
+  return Boolean(process.env.DATABASE_URL?.trim());
 }
 
-/**
- * Creates one process-local pool lazily. API handlers import this module in
- * development frequently, so a global singleton prevents excess connections.
- */
+/** One pool per Node process, including across Next development reloads. */
 export function getDatabasePool() {
-  if (!connectionString) {
-    throw new DatabaseNotConfiguredError();
-  }
-
+  const connectionString = process.env.DATABASE_URL?.trim();
+  if (!connectionString) throw new DatabaseNotConfiguredError();
   if (!global.osuEvaluationPool) {
     global.osuEvaluationPool = new Pool({
       connectionString,
-      max: 10,
+      max: 6,
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
-      application_name: "osu-eval-web",
+      connectionTimeoutMillis: 4_000,
+      statement_timeout: 8_000,
+      application_name: "osu-course-explorer",
+    });
+    // An idle connection can fail after a server restart without a waiting query.
+    // Never log the connection string or database error details to the browser.
+    global.osuEvaluationPool.on("error", () => {
+      console.warn(
+        "PostgreSQL idle connection closed; the pool will reconnect.",
+      );
     });
   }
-
   return global.osuEvaluationPool;
 }
 

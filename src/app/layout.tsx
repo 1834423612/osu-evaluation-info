@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OSU Eval Explorer",
+  title: "Course Atlas · Ohio State courses",
   description:
-    "Official Ohio State instructor and course evaluation search and comparison workspace.",
+    "Explore current Ohio State classes, meeting times, and official teaching evaluations in one place.",
 };
 
 export default function RootLayout({
