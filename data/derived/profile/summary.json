@@ -1,0 +1,546 @@
+{
+  "generated_from": "osu_sei_ssle_all.jsonl",
+  "file_sha256": "e369886d944210f7e0d1f9938badc03561586566a61851530943a3cf9d180219",
+  "overall": {
+    "rows": 68729,
+    "subjects": 248,
+    "catalog_values": 4189,
+    "course_keys": 8738,
+    "class_titles": 8110,
+    "sections": 62484,
+    "instructors": 7108,
+    "terms": 13,
+    "colleges": 18,
+    "departments": 125,
+    "multi_instructor_sections": 4102,
+    "multi_instructor_section_pct": 6.564880609436016,
+    "max_instructors_on_section": 31,
+    "exact_duplicate_rows": 0,
+    "evaluation_natural_key_conflicts": 0,
+    "section_course_conflicts": 0,
+    "instructor_name_variant_ids": 181,
+    "same_display_name_multiple_namen": 46,
+    "course_multiple_titles": 271,
+    "course_multiple_departments": 796,
+    "class_numbers_unique_raw": 30392,
+    "class_numbers_reused_across_terms": 18482,
+    "catalog_NA_rows": 6,
+    "total_responses": 1124012,
+    "total_invited": 2490803,
+    "overall_response_rate_pct": 45.12649133632809
+  },
+  "field_profile": {
+    "Last Name": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 5202
+    },
+    "First Name": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 2792
+    },
+    "SUBJECT": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 248
+    },
+    "Catalog": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 6,
+      "unique": 4189
+    },
+    "Class": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 8110
+    },
+    "Class Number": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 30392
+    },
+    "Term": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 13
+    },
+    "COLLEGE": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 18
+    },
+    "DEPARTMENT": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 125
+    },
+    "MEDIUM": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 4
+    },
+    "CAMPUS": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 6
+    },
+    "Class Size Category": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 3
+    },
+    "N of Responses": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 344
+    },
+    "Instructor's Average Overall Rating": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 362
+    },
+    "Standard Deviation": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 19377,
+      "unique": 200
+    },
+    "InvitedCount": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 513
+    },
+    "ResponseRatio": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 4076
+    },
+    "Namen": {
+      "null": 0,
+      "empty": 0,
+      "N/A": 0,
+      "unique": 7108
+    }
+  },
+  "term_summary": [
+    {
+      "term": "SU 22",
+      "rows": 1141,
+      "sections": 1033,
+      "instructors": 801,
+      "instrument": "SEI",
+      "responses": 13254,
+      "invited": 33080,
+      "response_rate_pct": 40.07
+    },
+    {
+      "term": "AU 22",
+      "rows": 8019,
+      "sections": 7292,
+      "instructors": 3631,
+      "instrument": "SEI",
+      "responses": 168390,
+      "invited": 295203,
+      "response_rate_pct": 57.04
+    },
+    {
+      "term": "SP 23",
+      "rows": 7721,
+      "sections": 7081,
+      "instructors": 3543,
+      "instrument": "SEI",
+      "responses": 146575,
+      "invited": 269935,
+      "response_rate_pct": 54.3
+    },
+    {
+      "term": "SU 23",
+      "rows": 1175,
+      "sections": 1029,
+      "instructors": 817,
+      "instrument": "SEI",
+      "responses": 11845,
+      "invited": 32818,
+      "response_rate_pct": 36.09
+    },
+    {
+      "term": "AU 23",
+      "rows": 8360,
+      "sections": 7617,
+      "instructors": 3729,
+      "instrument": "SEI",
+      "responses": 150844,
+      "invited": 307870,
+      "response_rate_pct": 49.0
+    },
+    {
+      "term": "SP 24",
+      "rows": 8027,
+      "sections": 7354,
+      "instructors": 3608,
+      "instrument": "SEI",
+      "responses": 130229,
+      "invited": 280011,
+      "response_rate_pct": 46.51
+    },
+    {
+      "term": "SU 24",
+      "rows": 1179,
+      "sections": 1043,
+      "instructors": 821,
+      "instrument": "SEI",
+      "responses": 10208,
+      "invited": 33829,
+      "response_rate_pct": 30.18
+    },
+    {
+      "term": "AU 24",
+      "rows": 6179,
+      "sections": 5708,
+      "instructors": 3191,
+      "instrument": "SEI",
+      "responses": 124550,
+      "invited": 281323,
+      "response_rate_pct": 44.27
+    },
+    {
+      "term": "SP 25",
+      "rows": 7368,
+      "sections": 6700,
+      "instructors": 3425,
+      "instrument": "SEI",
+      "responses": 114172,
+      "invited": 266441,
+      "response_rate_pct": 42.85
+    },
+    {
+      "term": "SU 25",
+      "rows": 1196,
+      "sections": 1047,
+      "instructors": 823,
+      "instrument": "SEI",
+      "responses": 11053,
+      "invited": 35927,
+      "response_rate_pct": 30.77
+    },
+    {
+      "term": "AU 25",
+      "rows": 8563,
+      "sections": 7719,
+      "instructors": 3782,
+      "instrument": "SSLE",
+      "responses": 119347,
+      "invited": 310180,
+      "response_rate_pct": 38.48
+    },
+    {
+      "term": "SP 26",
+      "rows": 8491,
+      "sections": 7716,
+      "instructors": 3853,
+      "instrument": "SSLE",
+      "responses": 111493,
+      "invited": 302873,
+      "response_rate_pct": 36.81
+    },
+    {
+      "term": "SU 26",
+      "rows": 1310,
+      "sections": 1145,
+      "instructors": 881,
+      "instrument": "SSLE",
+      "responses": 12052,
+      "invited": 41313,
+      "response_rate_pct": 29.17
+    }
+  ],
+  "campus_summary": [
+    {
+      "campus": "COL",
+      "rows": 59634,
+      "sections": 53553,
+      "instructors": 6559,
+      "pct_rows": 86.77
+    },
+    {
+      "campus": "NWK",
+      "rows": 3451,
+      "sections": 3427,
+      "instructors": 348,
+      "pct_rows": 5.02
+    },
+    {
+      "campus": "MRN",
+      "rows": 1618,
+      "sections": 1583,
+      "instructors": 188,
+      "pct_rows": 2.35
+    },
+    {
+      "campus": "MNS",
+      "rows": 1495,
+      "sections": 1454,
+      "instructors": 203,
+      "pct_rows": 2.18
+    },
+    {
+      "campus": "LMA",
+      "rows": 1460,
+      "sections": 1416,
+      "instructors": 169,
+      "pct_rows": 2.12
+    },
+    {
+      "campus": "WST",
+      "rows": 1071,
+      "sections": 1051,
+      "instructors": 87,
+      "pct_rows": 1.56
+    }
+  ],
+  "medium_summary": [
+    {
+      "medium": "In Person",
+      "rows": 48081,
+      "pct_rows": 69.96
+    },
+    {
+      "medium": "Distance Learning",
+      "rows": 16525,
+      "pct_rows": 24.04
+    },
+    {
+      "medium": "Hybrid Delivery",
+      "rows": 3599,
+      "pct_rows": 5.24
+    },
+    {
+      "medium": "Distance Enhanced",
+      "rows": 524,
+      "pct_rows": 0.76
+    }
+  ],
+  "class_size_summary": [
+    {
+      "category": "M",
+      "rows": 30542,
+      "pct_rows": 44.44,
+      "invited_min": 5,
+      "invited_median": 29.0,
+      "invited_max": 60
+    },
+    {
+      "category": "S",
+      "rows": 28522,
+      "pct_rows": 41.5,
+      "invited_min": 5,
+      "invited_median": 13.0,
+      "invited_max": 21
+    },
+    {
+      "category": "L",
+      "rows": 9665,
+      "pct_rows": 14.06,
+      "invited_min": 5,
+      "invited_median": 96.0,
+      "invited_max": 1184
+    }
+  ],
+  "instrument_summary": {
+    "SEI": {
+      "rows": 50365,
+      "unique_instructors": 6245,
+      "unique_courses": 7865,
+      "unique_sections": 45904,
+      "mean_rating_unweighted": 4.469267745458155,
+      "median_rating": 4.61,
+      "total_responses": 881120,
+      "total_invited": 1836437,
+      "overall_response_rate_pct": 47.97986535884433
+    },
+    "SSLE": {
+      "rows": 18364,
+      "unique_instructors": 4825,
+      "unique_courses": 6291,
+      "unique_sections": 16580,
+      "mean_rating_unweighted": 4.534554563275974,
+      "median_rating": 4.64,
+      "total_responses": 242892,
+      "total_invited": 654366,
+      "overall_response_rate_pct": 37.118676703862974
+    }
+  },
+  "data_quality": {
+    "response_ratio_max_abs_error_pct_points": 0.005009980039915263,
+    "response_ratio_mismatches_over_0_01": 0,
+    "responses_gt_invited": 0,
+    "rating_out_of_1_5": 0,
+    "class_number_non_digit": 0,
+    "term_invalid": 0,
+    "stddev_na_total": 19377,
+    "stddev_na_ssle": 18364,
+    "stddev_na_sei": 1013,
+    "sei_stddev_na_response_counts": {
+      "1": 976,
+      "2": 33,
+      "3": 4
+    },
+    "catalog_na_rows": 6,
+    "catalog_na_sections": 3
+  },
+  "natural_keys": {
+    "course_subject_catalog_current_unique_count": 8738,
+    "section_term_class_number_unique_count": 62484,
+    "section_course_conflicts": 0,
+    "evaluation_term_class_number_namen_unique_count": 68729,
+    "evaluation_key_conflicts": 0,
+    "exact_duplicate_rows": 0
+  },
+  "relationship_findings": {
+    "multi_instructor_sections": 4102,
+    "multi_instructor_section_pct": 6.564880609436016,
+    "max_instructors_per_section": 31,
+    "rows_on_multi_instructor_sections": 10347,
+    "namen_with_multiple_display_names": 181,
+    "display_names_shared_by_multiple_namen": 46,
+    "course_keys_with_multiple_titles": 271,
+    "course_keys_with_multiple_departments": 796,
+    "class_numbers_reused_across_terms": 18482,
+    "sections_with_multiple_invited_counts_across_instructors": 1,
+    "sections_with_multiple_response_counts_across_instructors": 2448
+  },
+  "examples": {
+    "instructor_name_variants": [
+      {
+        "namen": "bellner.1",
+        "variants": ["Bruce W. Bellner", "Bruce Bellner", "Bruce W Bellner"]
+      },
+      {
+        "namen": "farris.94",
+        "variants": ["Clair FARRIS", "CLAIR FARRIS", "Clair Farris"]
+      },
+      {
+        "namen": "braun.43",
+        "variants": [
+          "Catherine (Katie) Braun",
+          "Katie Braun",
+          "Catherine Braun"
+        ]
+      },
+      {
+        "namen": "smith.17149",
+        "variants": ["Brianna Smith", "BRIANNA Smith", "Brianna SMITH"]
+      },
+      {
+        "namen": "mckinley.217",
+        "variants": [
+          "CATHERINE MCKINLEY",
+          "Catherine MCKINLEY",
+          "Catherine McKinley"
+        ]
+      },
+      {
+        "namen": "allen.515",
+        "variants": ["Ted Allen", "Theodore Allen"]
+      },
+      {
+        "namen": "anderson.4389",
+        "variants": ["Chris Anderson", "Christopher Anderson"]
+      },
+      {
+        "namen": "awai-jennings.1",
+        "variants": ["Clint Awai-Jennings", "Clinton Awai-Jennings"]
+      }
+    ],
+    "course_title_variants": [
+      {
+        "subject": "STAT",
+        "catalog": "7410",
+        "titles": [
+          "Linear Models",
+          "Theory of the Linear Models",
+          "Theory of the Linear Model"
+        ]
+      },
+      {
+        "subject": "MECHENG",
+        "catalog": "4906.01",
+        "titles": [
+          "ME Capstone Design I: Product Design Capstone",
+          "ME Capstone Design II: Special Projects",
+          "ME Capstone Design I: Product Design"
+        ]
+      },
+      {
+        "subject": "PHR",
+        "catalog": "5410",
+        "titles": [
+          "Communicating Vaccine Science",
+          "Vaccine Hesitancy: Towards Effective Communication",
+          "Understanding and Changing Vaccine Hesitancy Perspectives"
+        ]
+      },
+      {
+        "subject": "PUBAFRS",
+        "catalog": "2150",
+        "titles": [
+          "Nonprofit Organizing for Diversity and Justice",
+          "The Nonprofit Sector and Civil Society",
+          "Introduction to Nonprofit Organizations"
+        ]
+      },
+      {
+        "subject": "ACCTMIS",
+        "catalog": "3100H",
+        "titles": [
+          "Quantitative Analysis in Accounting",
+          "Honors Professional Research in Accounting",
+          "Honors Research in Accounting"
+        ]
+      },
+      {
+        "subject": "NRSPRCT",
+        "catalog": "8781",
+        "titles": [
+          "Methods & Measurement for Evaluation of Evidence-based Nursing Practice",
+          "Methods and Measurement in Clinical Practice Scholarship"
+        ]
+      },
+      {
+        "subject": "NRSPRCT",
+        "catalog": "8610",
+        "titles": [
+          "Health Informatics and Technology for the DNP",
+          "Informatics for Leadership in Health and Healthcare"
+        ]
+      },
+      {
+        "subject": "NRSPRCT",
+        "catalog": "8480",
+        "titles": [
+          "Evidenced Based Quality Improvement for the DNP",
+          "Quality Improvement for the Doctor of Nursing Practice"
+        ]
+      }
+    ]
+  },
+  "file_size_bytes": 33402704,
+  "file_size_mb": 31.86
+}

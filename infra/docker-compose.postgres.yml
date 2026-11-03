@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: osu-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-osu_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-osu_data}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - osu_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-osu_app} -d ${POSTGRES_DB:-osu_data}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  osu_postgres_data:

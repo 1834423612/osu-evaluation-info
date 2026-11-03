@@ -70,6 +70,17 @@ web_modules/
 .env.*
 !.env.example
 
+# Local source credentials and raw Blue request tokens
+postgres.env
+*.local
+scripts/__pycache__/
+AGENTS.md
+CLAUDE.md
+
+# Imported snapshots are intentionally kept out of application bundles.
+data/raw/**/*.csv
+data/raw/**/*.jsonl
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

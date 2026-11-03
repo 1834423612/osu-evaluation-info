@@ -1,0 +1,31 @@
+{
+  "source_url": "https://osu.bluera.com/osubpi/fbview.aspx?blockid=QZatFmFZM03Ru&userid=REDACTED&lng=en",
+  "blue_block_id": "730",
+  "blue_datasource_id": "1104300",
+  "dataset_name": "SEI and SSLE Results Summer 2022 - Summer 2026",
+  "block_title": "SEI and SSLE Scores by instructor & course",
+  "description": "The SSLE is the most widely used method of collecting student feedback about instruction at The Ohio State University.\nHow to interpret ratings: \nIn Autumn 2025, the SEI was retired and replaced with a new tool, the Survey of Student Learning Experience (SSLE). The Instructor's Average Overall Rating for the SEI (all terms prior to Autumn 2025) was based on an overall rating question, with scores that ranged from 1 (Poor) to 5 (Excellent). The SSLE (Autumn 2025 to present) does not have an overall rating question, so a mean score of all SSLE questions is provided instead. \nSmall differences in ratings are not meaningful, whether the difference is between courses, instructors, or reference groups. Look for consistency or trends when comparing courses or instructors, rather than focusing on a single average.\n*Instructors who are also students have evaluations as part of their educational records, which are protected by the Family Education Rights and Privacy Act (FERPA), and therefore are not available.",
+  "expected_rows": 68729,
+  "page_size": 100,
+  "pages": 688,
+  "columns": [
+    "Last Name",
+    "First Name",
+    "SUBJECT",
+    "Catalog",
+    "Class",
+    "Class Number",
+    "Term",
+    "COLLEGE",
+    "DEPARTMENT",
+    "MEDIUM",
+    "CAMPUS",
+    "Class Size Category",
+    "N of Responses",
+    "Instructor's Average Overall Rating",
+    "Standard Deviation",
+    "InvitedCount",
+    "ResponseRatio",
+    "Namen"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "osu-eval",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "db:validate": "python3 scripts/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --validate-only --expected-rows 68729",
+    "db:import": "python3 scripts/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --dsn \"$DATABASE_URL\" --init-schema --expected-rows 68729"
+  },
+  "dependencies": {
+    "@iconify/react": "^5.2.1",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.12",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "^16.1.0",
+    "pg": "^8.16.3",
+    "radix-ui": "^1.6.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.3.0",
+    "vaul": "^1.1.2",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^24.5.2",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9.35.0",
+    "eslint-config-next": "^16.1.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2"
+  }
+}
