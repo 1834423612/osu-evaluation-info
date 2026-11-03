@@ -4,7 +4,7 @@
   align-items: flex-start;
   gap: 5px;
   min-width: 0;
-  color: var(--ink, #1b2430);
+  color: var(--ink, #18243a);
 }
 .ratingLine {
   display: flex;
@@ -21,55 +21,55 @@
 }
 .scoreScale {
   font-size: 12px;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .instrument {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
   margin-left: 3px;
 }
 .responseLabel {
-  font-size: 11px;
-  color: var(--muted, #687385);
+  font-size: 12px;
+  color: var(--muted, #586980);
   line-height: 1.4;
 }
 .signal {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--muted, #687385);
-  font-size: 11px;
+  color: var(--muted, #586980);
+  font-size: 12px;
   font-weight: 550;
   line-height: 1.5;
 }
 .signal[data-signal="positive"] {
-  color: var(--positive, #4435b2);
+  color: var(--positive, #315bd6);
 }
 .signal[data-signal="caution"] {
-  color: #987235;
+  color: #b63f31;
 }
 .signal[data-signal="mixed"] {
-  color: #676b84;
+  color: #566980;
 }
 .ratingEmpty {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  font-size: 11px;
-  color: var(--muted, #687385);
+  font-size: 12px;
+  color: var(--muted, #586980);
 }
 .emptyScore {
   font-size: 22px;
   line-height: 1.1;
   font-weight: 500;
-  color: #98a2b3;
+  color: #687a94;
 }
 .panel {
   font-size: 13px;
-  color: var(--ink, #1b2430);
+  color: var(--ink, #18243a);
   min-width: 0;
 }
 .panelHeading {
@@ -88,17 +88,17 @@
 }
 .subtle {
   display: block;
-  color: var(--muted, #687385);
-  font-size: 11px;
+  color: var(--muted, #586980);
+  font-size: 12px;
   line-height: 1.6;
 }
 .panelHeading > .subtle {
   white-space: nowrap;
 }
 .instrumentNote {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
   margin: 0 0 18px;
   max-width: 620px;
 }
@@ -111,7 +111,7 @@
   min-width: 0;
 }
 .metricPanel + .metricPanel {
-  border-top: 1px solid var(--line, #e2e6ed);
+  border-top: 1px solid var(--line, #dbe5f3);
   padding-top: 20px;
 }
 .metricHeading {
@@ -128,8 +128,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
-  color: var(--muted, #687385);
+  font-size: 11px;
+  color: var(--muted, #586980);
   white-space: nowrap;
 }
 .metricOverview {
@@ -150,7 +150,7 @@
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .stats {
   display: grid;
@@ -160,8 +160,8 @@
   padding: 0 0 13px;
 }
 .stats dt {
-  font-size: 10px;
-  color: var(--muted, #687385);
+  font-size: 11px;
+  color: var(--muted, #586980);
   line-height: 1.5;
 }
 .stats dd {
@@ -181,31 +181,31 @@
   overflow: visible;
 }
 .chartGrid {
-  stroke: var(--line, #e2e6ed);
+  stroke: var(--line, #dbe5f3);
   stroke-width: 0.8;
   stroke-dasharray: 3 4;
 }
 .chartLabel {
-  fill: var(--muted, #687385);
+  fill: var(--muted, #586980);
   font-family: inherit;
   font-size: 11px;
 }
 .chartLine {
   fill: none;
-  stroke: var(--primary, #c72f4b);
+  stroke: var(--primary, #315bd6);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .chartPoint {
-  fill: var(--primary, #c72f4b);
+  fill: var(--primary, #315bd6);
   stroke: var(--surface, #fff);
   stroke-width: 1.5;
 }
 .chartDetails {
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 8px;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .disclosureTrigger {
   display: inline-flex;
@@ -213,15 +213,15 @@
   gap: 6px;
   width: fit-content;
   padding: 2px 0;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
   font-size: inherit;
   text-align: left;
 }
 .disclosureTrigger:hover {
-  color: var(--primary, #c72f4b);
+  color: var(--primary, #315bd6);
 }
 .disclosureTrigger:focus-visible {
-  outline: 2px solid var(--ring, #a79af4);
+  outline: 2px solid var(--ring, #7d9aee);
   outline-offset: 4px;
   border-radius: 2px;
 }
@@ -242,19 +242,19 @@
   width: 100%;
   text-align: left;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 12px;
 }
 .tableScroll td,
 .tableScroll th {
   padding: 6px 8px;
-  border-bottom: 1px solid var(--line, #e2e6ed);
+  border-bottom: 1px solid var(--line, #dbe5f3);
   font-variant-numeric: tabular-nums;
 }
 .tableScroll th {
   font-weight: 550;
 }
 .instructors {
-  border-top: 1px solid var(--line, #e2e6ed);
+  border-top: 1px solid var(--line, #dbe5f3);
   margin-top: 20px;
   padding-top: 18px;
 }
@@ -269,10 +269,10 @@
   padding: 10px 0;
 }
 .instructorRow + .instructorRow {
-  border-top: 1px solid var(--line, #e2e6ed);
+  border-top: 1px solid var(--line, #dbe5f3);
 }
 .instructorName {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
   display: block;
   margin-bottom: 2px;
@@ -287,30 +287,30 @@
   font-variant-numeric: tabular-nums;
 }
 .instructorScore small {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .methodology {
   margin-top: 17px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .methodology p {
   margin: 9px 0 0;
   max-width: 680px;
 }
 .source {
-  border-top: 1px solid var(--line, #e2e6ed);
+  border-top: 1px solid var(--line, #dbe5f3);
   padding-top: 12px;
   margin-top: 17px;
   display: flex;
   flex-wrap: wrap;
   gap: 3px 14px;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.7;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .source span,
 .source a {
@@ -324,30 +324,30 @@
   text-underline-offset: 2px;
 }
 .source a:hover {
-  color: var(--primary, #c72f4b);
+  color: var(--primary, #315bd6);
 }
 .emptyState {
   display: flex;
   align-items: flex-start;
   gap: 11px;
   padding: 16px 0;
-  color: var(--muted, #687385);
+  color: var(--muted, #586980);
 }
 .emptyState strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
-  color: var(--ink, #1b2430);
+  color: var(--ink, #18243a);
 }
 .emptyState p {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   margin: 5px 0 0;
   max-width: 500px;
 }
 @media (max-width: 480px) {
   .coverage {
-    font-size: 9px;
+    font-size: 10px;
   }
   .metricHeading {
     gap: 7px;
@@ -356,7 +356,7 @@
     gap: 8px;
   }
   .stats dt {
-    font-size: 9px;
+    font-size: 10px;
   }
   .stats dd {
     font-size: 14px;

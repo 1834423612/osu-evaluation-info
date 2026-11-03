@@ -408,7 +408,7 @@ export function CourseExplorer() {
                         )}
                       </SheetDescription>
                     </SheetHeader>
-                    {filters}
+                    <div className="mobile-filter-panel">{filters}</div>
                     <SheetClose asChild>
                       <Button className="mx-5 mb-5">
                         {text(locale, "Show results", "查看结果")}

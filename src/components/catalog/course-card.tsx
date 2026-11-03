@@ -1,20 +1,37 @@
 "use client";
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import {
   Bookmark,
+  ChevronRight,
   GraduationCap,
   MapPin,
   ArrowUpRight,
   History,
   UsersRound,
   LoaderCircle,
+  ListChecks,
+  X,
 } from "lucide-react";
 import type { CatalogCourse, CatalogSection } from "@/lib/catalog/types";
 import { localizedTerm, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { MeetingStrip } from "./meeting-strip";
 import { RatingSummary } from "./rating-summary";
 
@@ -25,6 +42,26 @@ const EvaluationPanel = dynamic(() => import("./evaluation-panel"), {
     </div>
   ),
 });
+
+const MOBILE_VIEWPORT = "(max-width: 800px)";
+
+function subscribeToViewport(onChange: () => void) {
+  const media = window.matchMedia(MOBILE_VIEWPORT);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+function isMobileViewport() {
+  return window.matchMedia(MOBILE_VIEWPORT).matches;
+}
+
+function useMobileViewport() {
+  return useSyncExternalStore(
+    subscribeToViewport,
+    isMobileViewport,
+    () => false,
+  );
+}
 
 function status(section: CatalogSection, locale: Locale) {
   const open = /open|^o$/i.test(section.enrollmentStatus);
@@ -195,6 +232,7 @@ export function CourseCard({
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const isMobile = useMobileViewport();
   const detailId = useId();
   const current = detail ?? course;
   const preview = course.sections[0];
@@ -204,6 +242,7 @@ export function CourseCard({
     course.creditsMin === course.creditsMax
       ? String(course.creditsMin)
       : `${course.creditsMin}–${course.creditsMax}`;
+
   async function openTab(next: "sections" | "ratings", keepOpen = false) {
     setTab(keepOpen || tab !== next ? next : null);
     if (next !== "sections" || detail || loading) return;
@@ -234,9 +273,118 @@ export function CourseCard({
       setLoading(false);
     }
   }
+
+  const detailContent = (
+    <div id={detailId} className="course-details">
+      <Tabs
+        value={tab ?? "sections"}
+        className="course-detail-tabs"
+        onValueChange={(value) => {
+          if (value === "sections") void openTab("sections", true);
+          if (value === "ratings") setTab("ratings");
+        }}
+      >
+        <div className="detail-tabs-row">
+          <TabsList
+            className="detail-tabs"
+            variant="line"
+            aria-label={text(locale, "Course details", "课程详情")}
+          >
+            <TabsTrigger value="sections">
+              {text(locale, "Class sections", "开课班次")}
+            </TabsTrigger>
+            <TabsTrigger value="ratings">
+              {text(locale, "Evaluations & trends", "教学评价与趋势")}
+            </TabsTrigger>
+          </TabsList>
+          <span className="detail-term">
+            {localizedTerm(course.term, locale)}
+          </span>
+        </div>
+        <TabsContent value="sections">
+          <div
+            role="region"
+            aria-label={text(locale, "Course detail", "课程详情")}
+          >
+            {detailSource?.mode === "mirror" ? (
+              <p className="detail-note snapshot-note">
+                {text(
+                  locale,
+                  `Backup snapshot from ${new Date(detailSource.snapshotAt ?? "").toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}; the official course service was unavailable.`,
+                  `官方课程服务暂不可用，以下为数据库备份（同步于 ${new Date(detailSource.snapshotAt ?? "").toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" })}）。`,
+                )}
+              </p>
+            ) : null}
+            <p className="full-description">{course.description}</p>
+            {course.attributes.length ? (
+              <div className="attribute-list">
+                {course.attributes.map((attribute) => (
+                  <Badge variant="outline" key={attribute}>
+                    {attribute}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
+            {loading ? (
+              <div className="inline-loading">
+                <LoaderCircle className="spin" size={17} />
+                {text(locale, "Fetching all sections…", "正在获取完整班次…")}
+              </div>
+            ) : null}
+            {error ? (
+              <div className="inline-error">
+                {text(
+                  locale,
+                  "Couldn't fetch complete sections. Showing loaded results.",
+                  "暂无法获取完整班次，当前显示已加载结果。",
+                )}{" "}
+                <button onClick={() => void openTab("sections", true)}>
+                  {text(locale, "Retry", "重试")}
+                </button>
+              </div>
+            ) : null}
+            <div className="section-list">
+              {current.sections.map((section) => (
+                <SectionRow
+                  key={section.id}
+                  section={section}
+                  locale={locale}
+                />
+              ))}
+            </div>
+            {current.sectionsPartial && !loading ? (
+              <p className="detail-note">
+                {text(
+                  locale,
+                  "Some sections may be outside this result window. Narrow your filters or check the official search.",
+                  "部分班次可能不在当前结果中，可细化筛选或查看官方搜索。",
+                )}
+              </p>
+            ) : null}
+          </div>
+        </TabsContent>
+        <TabsContent value="ratings">
+          <div
+            role="region"
+            aria-label={text(locale, "Course detail", "课程详情")}
+          >
+            <p className="detail-note">
+              {text(
+                locale,
+                `Historical evaluations · ${course.campus} campus · Separate from the currently listed instructor.`,
+                `历史评价 · ${course.campus} 校区 · 不代表当前班次教师的评分。`,
+              )}
+            </p>
+            <EvaluationPanel summary={current.evaluation} locale={locale} />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
   return (
     <article
-      className={tab ? "course-card expanded" : "course-card"}
+      className="course-card"
       aria-label={`${course.subject} ${course.catalogNumber}: ${course.title}`}
     >
       <div className="course-main">
@@ -262,8 +410,9 @@ export function CourseCard({
           <h2>
             <button
               onClick={() => void openTab("sections")}
-              aria-expanded={tab === "sections"}
-              aria-controls={detailId}
+              aria-haspopup="dialog"
+              aria-expanded={Boolean(tab)}
+              aria-controls={tab ? detailId : undefined}
             >
               {course.title || `${course.subject} ${course.catalogNumber}`}
             </button>
@@ -286,12 +435,25 @@ export function CourseCard({
               </Badge>
             ))}
           </div>
+          <Button
+            className="course-detail-action"
+            variant="outline"
+            size="sm"
+            onClick={() => void openTab("sections")}
+            aria-haspopup="dialog"
+            aria-expanded={Boolean(tab)}
+          >
+            <ListChecks data-icon="inline-start" />
+            {text(locale, "View class details", "查看课程详情")}
+            <ChevronRight data-icon="inline-end" />
+          </Button>
         </div>
         <button
           className="rating-trigger"
           onClick={() => void openTab("ratings")}
-          aria-expanded={tab === "ratings"}
-          aria-controls={detailId}
+          aria-expanded={Boolean(tab)}
+          aria-haspopup="dialog"
+          aria-controls={tab ? detailId : undefined}
           aria-label={text(
             locale,
             "Show historical course evaluations",
@@ -379,115 +541,93 @@ export function CourseCard({
           </span>
         </p>
       ) : null}
-      {tab ? (
-        <div id={detailId} className="course-details">
-          <Tabs
-            value={tab}
-            className="course-detail-tabs"
-            onValueChange={(value) => {
-              if (value === "sections") void openTab("sections", true);
-              if (value === "ratings") setTab("ratings");
-            }}
-          >
-            <div className="detail-tabs-row">
-              <TabsList
-                className="detail-tabs"
-                variant="line"
-                aria-label={text(locale, "Course details", "课程详情")}
-              >
-                <TabsTrigger value="sections">
-                  {text(locale, "Class sections", "开课班次")}
-                </TabsTrigger>
-                <TabsTrigger value="ratings">
-                  {text(locale, "Evaluations & trends", "教学评价与趋势")}
-                </TabsTrigger>
-              </TabsList>
-              <span className="detail-term">
-                {localizedTerm(course.term, locale)}
-              </span>
-            </div>
-            <TabsContent value="sections">
-              <div
-                role="region"
-                aria-label={text(locale, "Course detail", "课程详情")}
-              >
-                {detailSource?.mode === "mirror" ? (
-                  <p className="detail-note snapshot-note">
-                    {text(
-                      locale,
-                      `Backup snapshot from ${new Date(detailSource.snapshotAt ?? "").toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}; the official course service was unavailable.`,
-                      `官方课程服务暂不可用，以下为数据库备份（同步于 ${new Date(detailSource.snapshotAt ?? "").toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" })}）。`,
-                    )}
-                  </p>
-                ) : null}
-                <p className="full-description">{course.description}</p>
-                {course.attributes.length ? (
-                  <div className="attribute-list">
-                    {course.attributes.map((attribute) => (
-                      <Badge variant="outline" key={attribute}>
-                        {attribute}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : null}
-                {loading ? (
-                  <div className="inline-loading">
-                    <LoaderCircle className="spin" size={17} />
-                    {text(
-                      locale,
-                      "Fetching all sections…",
-                      "正在获取完整班次…",
-                    )}
-                  </div>
-                ) : null}
-                {error ? (
-                  <div className="inline-error">
-                    {text(
-                      locale,
-                      "Couldn't fetch complete sections. Showing loaded results.",
-                      "暂无法获取完整班次，当前显示已加载结果。",
-                    )}{" "}
-                    <button onClick={() => void openTab("sections", true)}>
-                      {text(locale, "Retry", "重试")}
-                    </button>
-                  </div>
-                ) : null}
-                {current.sections.map((section) => (
-                  <SectionRow
-                    key={section.id}
-                    section={section}
-                    locale={locale}
-                  />
-                ))}
-                {current.sectionsPartial && !loading ? (
-                  <p className="detail-note">
-                    {text(
-                      locale,
-                      "Some sections may be outside this result window. Narrow your filters or check the official search.",
-                      "部分班次可能不在当前结果中，可细化筛选或查看官方搜索。",
-                    )}
-                  </p>
-                ) : null}
-              </div>
-            </TabsContent>
-            <TabsContent value="ratings">
-              <div
-                role="region"
-                aria-label={text(locale, "Course detail", "课程详情")}
-              >
-                <p className="detail-note">
+      {isMobile ? (
+        <Drawer
+          open={Boolean(tab)}
+          onOpenChange={(open) => !open && setTab(null)}
+          shouldScaleBackground={false}
+        >
+          <DrawerContent className="course-detail-drawer">
+            <DrawerHeader className="course-detail-header">
+              <div>
+                <span className="course-detail-eyeline">
+                  {course.subject} {course.catalogNumber} ·{" "}
+                  {localizedTerm(course.term, locale)}
+                </span>
+                <DrawerTitle>
+                  {course.title || `${course.subject} ${course.catalogNumber}`}
+                </DrawerTitle>
+                <DrawerDescription>
                   {text(
                     locale,
-                    `Historical evaluations · ${course.campus} campus · Separate from the currently listed instructor.`,
-                    `历史评价 · ${course.campus} 校区 · 不代表当前班次教师的评分。`,
+                    "Section times, instructors, enrollment, and historical evaluations.",
+                    "查看班次时间、教师、选课人数与历史评价。",
                   )}
-                </p>
-                <EvaluationPanel summary={current.evaluation} locale={locale} />
+                </DrawerDescription>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={text(
+                  locale,
+                  "Close course details",
+                  "关闭课程详情",
+                )}
+                onClick={() => setTab(null)}
+              >
+                <X />
+              </Button>
+            </DrawerHeader>
+            {tab ? detailContent : null}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Sheet
+          open={Boolean(tab)}
+          onOpenChange={(open) => !open && setTab(null)}
+        >
+          <SheetContent
+            side="right"
+            className="course-detail-panel"
+            showCloseButton={false}
+            aria-describedby={`${detailId}-description`}
+          >
+            <SheetHeader className="course-detail-header">
+              <div>
+                <span className="course-detail-eyeline">
+                  {course.subject} {course.catalogNumber} ·{" "}
+                  {localizedTerm(course.term, locale)}
+                </span>
+                <SheetTitle>
+                  {course.title || `${course.subject} ${course.catalogNumber}`}
+                </SheetTitle>
+                <SheetDescription id={`${detailId}-description`}>
+                  {text(
+                    locale,
+                    "Section times, instructors, enrollment, and historical evaluations.",
+                    "查看班次时间、教师、选课人数与历史评价。",
+                  )}
+                </SheetDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={text(
+                  locale,
+                  "Close course details",
+                  "关闭课程详情",
+                )}
+                onClick={() => setTab(null)}
+              >
+                <X />
+              </Button>
+            </SheetHeader>
+            {tab ? detailContent : null}
+          </SheetContent>
+        </Sheet>
+      )}
     </article>
   );
 }
