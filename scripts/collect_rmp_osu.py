@@ -688,17 +688,17 @@ def prepare_review_refresh(conn, run_id: int, full_refresh: bool, refresh_days: 
                        ELSE rp.expected_count END,
                    refresh_mode = CASE
                        WHEN rp.expected_count = 0 AND counts.actual = 0 THEN 'unchanged'
-                       WHEN %s OR rp.source_changed OR counts.actual <> CASE
-                           WHEN jsonb_typeof(p.ratings_distribution->'total') = 'number'
-                           THEN (p.ratings_distribution->>'total')::integer ELSE rp.expected_count END
+                       WHEN %s OR rp.source_changed OR (
+                           jsonb_typeof(p.ratings_distribution->'total') = 'number'
+                           AND counts.actual <> (p.ratings_distribution->>'total')::integer)
                          OR p.last_full_refresh_at IS NULL
                          OR p.last_full_refresh_at < now() - (%s * interval '1 day')
                        THEN 'full' ELSE 'unchanged' END,
                    reviews_complete = CASE
                        WHEN rp.expected_count = 0 AND counts.actual = 0 THEN true
-                       WHEN %s OR rp.source_changed OR counts.actual <> CASE
-                           WHEN jsonb_typeof(p.ratings_distribution->'total') = 'number'
-                           THEN (p.ratings_distribution->>'total')::integer ELSE rp.expected_count END
+                       WHEN %s OR rp.source_changed OR (
+                           jsonb_typeof(p.ratings_distribution->'total') = 'number'
+                           AND counts.actual <> (p.ratings_distribution->>'total')::integer)
                          OR p.last_full_refresh_at IS NULL
                          OR p.last_full_refresh_at < now() - (%s * interval '1 day')
                        THEN false ELSE true END
@@ -782,6 +782,11 @@ def collect_reviews(conn, Jsonb, client: GraphQLClient, run_id: int) -> None:
                             f"RMP returned repeated review IDs for professor {professor_id}: "
                             f"loaded {loaded} rows but stored {stored} distinct reviews."
                         )
+                        if distribution_total is not None and stored != expected:
+                            raise CollectionError(
+                                f"RMP review completeness failed for professor {professor_id}: "
+                                f"distribution total {expected}, stored {stored} distinct reviews."
+                            )
                     if distribution_total is None and expected > 0 and stored == 0:
                         raise CollectionError(f"RMP returned no reviews for rated professor {professor_id}.")
                     conn.execute(
