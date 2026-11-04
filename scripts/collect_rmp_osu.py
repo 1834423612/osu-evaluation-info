@@ -389,7 +389,12 @@ def start_or_resume_run(
             row = None
         if row:
             saved_metadata = row[2] if isinstance(row[2], dict) else {}
-            full_refresh = full_refresh or bool(saved_metadata.get("full_refresh"))
+            if full_refresh and not saved_metadata.get("full_refresh"):
+                raise CollectionError(
+                    "Cannot upgrade a paused incremental run to a full refresh. "
+                    "Resume without --full-refresh, or use --new-run --full-refresh."
+                )
+            full_refresh = bool(saved_metadata.get("full_refresh"))
             conn.execute(
                 "UPDATE osu_rmp.collection_run SET status = 'running', last_error = NULL, updated_at = now() WHERE id = %s",
                 (row[0],),
