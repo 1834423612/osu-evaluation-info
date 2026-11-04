@@ -795,10 +795,10 @@ def collect_reviews(conn, Jsonb, client: GraphQLClient, run_id: int) -> None:
                             "WHERE professor_id = %s AND last_seen_run_id <> %s AND active",
                             (professor_id, run_id),
                         )
-                        conn.execute(
-                            "UPDATE osu_rmp.professor SET last_full_refresh_at = now() WHERE legacy_id = %s",
-                            (professor_id,),
-                        )
+                    conn.execute(
+                        "UPDATE osu_rmp.professor SET last_full_refresh_at = now() WHERE legacy_id = %s",
+                        (professor_id,),
+                    )
         print(
             f"[reviews] batch {len(batch)} professors; "
             f"{sum(int((data.get(f'p{i}') or {}).get('ratings', {}).get('edges') and len(data[f'p{i}']['ratings']['edges']) or 0) for i in range(len(batch)))} reviews; "
