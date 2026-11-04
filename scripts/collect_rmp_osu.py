@@ -606,7 +606,10 @@ def collect_search_pages(conn, Jsonb, client: GraphQLClient, run_id: int) -> Non
             connection = data.get("search", {}).get("teachers")
             if not isinstance(connection, dict):
                 raise CollectionError(f"Invalid teacher page for RMP campus {campus_name}.")
-            result_count = int(connection.get("resultCount") or 0)
+            raw_result_count = connection.get("resultCount")
+            if not isinstance(raw_result_count, int) or raw_result_count < 0:
+                raise CollectionError(f"Invalid teacher result count for RMP campus {campus_name}.")
+            result_count = raw_result_count
             edges = connection.get("edges") or []
             page_info = connection.get("pageInfo") or {}
             has_next = bool(page_info.get("hasNextPage"))
@@ -670,8 +673,14 @@ def collect_search_pages(conn, Jsonb, client: GraphQLClient, run_id: int) -> Non
             )
 
 
-def prepare_review_refresh(conn, run_id: int, full_refresh: bool, refresh_days: int) -> None:
-    """Plan from indexed local counts; stable profiles need no detail requests."""
+def prepare_review_refresh(conn, run_id: int, full_refresh: bool, refresh_days: int) -> int:
+    """Plan from indexed local counts; stable profiles need no detail requests.
+
+    Search result drift is recorded as a warning so a small upstream omission does
+    not block normal incremental refresh. Deletion reconciliation remains gated on
+    an exact search snapshot in ``main``.
+    """
+    search_differences = 0
     with conn.transaction():
         for school_id, _, _, campus_name in SCHOOLS:
             observed = conn.execute(
@@ -687,12 +696,19 @@ def prepare_review_refresh(conn, run_id: int, full_refresh: bool, refresh_days: 
                 "UPDATE osu_rmp.run_school SET stored_count = %s WHERE run_id = %s AND school_id = %s",
                 (observed, run_id, school_id),
             )
-            if expected is None or observed != expected:
+            if expected is None:
                 raise CollectionError(
-                    f"RMP search completeness check failed for {campus_name}: "
-                    f"expected {expected}, observed {observed} distinct professor(s). "
-                    "No missing-source deletion was applied. Start a new run to rescan."
+                    f"RMP omitted the result count for {campus_name}; "
+                    "review refresh and deletion checks were withheld."
                 )
+            difference = abs(int(expected) - int(observed))
+            if difference:
+                search_differences += difference
+        conn.execute(
+            "UPDATE osu_rmp.collection_run SET validation_status = CASE WHEN %s = 0 "
+            "THEN validation_status ELSE 'search_count_warning' END WHERE id = %s",
+            (search_differences, run_id),
+        )
         conn.execute(
             """UPDATE osu_rmp.run_professor rp
                SET stored_count = counts.actual,
@@ -725,9 +741,12 @@ def prepare_review_refresh(conn, run_id: int, full_refresh: bool, refresh_days: 
                  AND rp.refresh_mode = 'pending'""",
             (full_refresh, refresh_days, full_refresh, refresh_days, run_id),
         )
+    return search_differences
 
 
-def collect_reviews(conn, Jsonb, client: GraphQLClient, run_id: int) -> None:
+def collect_reviews(
+    conn, Jsonb, client: GraphQLClient, run_id: int, allow_deletion: bool = True
+) -> None:
     while not client.at_limit:
         rows = conn.execute(
             """SELECT rp.professor_id, p.graphql_id, rp.cursor, rp.previous_cursor
@@ -808,7 +827,7 @@ def collect_reviews(conn, Jsonb, client: GraphQLClient, run_id: int) -> None:
                         "WHERE run_id = %s AND professor_id = %s",
                         (expected, stored, run_id, professor_id),
                     )
-                    if stored == expected:
+                    if stored == expected and allow_deletion:
                         conn.execute(
                             "UPDATE osu_rmp.review SET active = false, updated_at = now() "
                             "WHERE professor_id = %s AND last_seen_run_id <> %s AND active",
@@ -893,14 +912,21 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"[run] {run_id}; resuming saved cursors; minimum interval {args.min_interval:g}s")
         try:
+            search_differences = 0
             collect_search_pages(conn, Jsonb, client, run_id)
             incomplete_schools = conn.execute(
                 "SELECT count(*) FROM osu_rmp.run_school WHERE run_id = %s AND complete = false",
                 (run_id,),
             ).fetchone()[0]
-            if not incomplete_schools and not client.at_limit:
-                prepare_review_refresh(conn, run_id, full_refresh, args.refresh_days)
-                collect_reviews(conn, Jsonb, client, run_id)
+            if not incomplete_schools:
+                search_differences = prepare_review_refresh(
+                    conn, run_id, full_refresh, args.refresh_days
+                )
+                if not client.at_limit:
+                    collect_reviews(
+                        conn, Jsonb, client, run_id,
+                        allow_deletion=search_differences == 0,
+                    )
             pending = conn.execute(
                 "SELECT count(*) FROM osu_rmp.run_professor WHERE run_id = %s AND reviews_complete = false",
                 (run_id,),
@@ -911,16 +937,18 @@ def main(argv: list[str] | None = None) -> int:
             ).fetchone()[0]
             counts = validate_run_counts(conn, run_id) if not incomplete_schools and not pending else None
             if not incomplete_schools and not pending and counts is not None:
-                mark_missing_professors(conn, run_id)
-                if full_refresh and counts["count_differences"] == 0:
+                exact_snapshot = search_differences == 0 and counts["count_differences"] == 0
+                if exact_snapshot:
+                    mark_missing_professors(conn, run_id)
+                if full_refresh and exact_snapshot:
                     mark_inactive_rows(conn, run_id)
                 conn.execute(
                     "UPDATE osu_rmp.collection_run SET expected_professors = %s, observed_professors = %s, "
                     "expected_reviews = %s, observed_reviews = %s, validation_status = %s, deletion_check_status = %s "
                     "WHERE id = %s",
                     (counts["expected_professors"], counts["professors"], counts["expected_reviews"], counts["stored_reviews"],
-                     "passed" if counts["count_differences"] == 0 else "passed_with_count_differences",
-                     "skipped_count_differences" if counts["count_differences"] else
+                     "passed" if exact_snapshot else "passed_with_count_differences",
+                     "skipped_count_differences" if not exact_snapshot else
                      ("passed" if full_refresh else "skipped_incremental"), run_id),
                 )
                 conn.execute(
