@@ -789,15 +789,16 @@ def collect_reviews(conn, Jsonb, client: GraphQLClient, run_id: int) -> None:
                         "WHERE run_id = %s AND professor_id = %s",
                         (expected, stored, run_id, professor_id),
                     )
-                    conn.execute(
-                        "UPDATE osu_rmp.review SET active = false, updated_at = now() "
-                        "WHERE professor_id = %s AND last_seen_run_id <> %s AND active",
-                        (professor_id, run_id),
-                    )
-                    conn.execute(
-                        "UPDATE osu_rmp.professor SET last_full_refresh_at = now() WHERE legacy_id = %s",
-                        (professor_id,),
-                    )
+                    if stored == expected:
+                        conn.execute(
+                            "UPDATE osu_rmp.review SET active = false, updated_at = now() "
+                            "WHERE professor_id = %s AND last_seen_run_id <> %s AND active",
+                            (professor_id, run_id),
+                        )
+                        conn.execute(
+                            "UPDATE osu_rmp.professor SET last_full_refresh_at = now() WHERE legacy_id = %s",
+                            (professor_id,),
+                        )
         print(
             f"[reviews] batch {len(batch)} professors; "
             f"{sum(int((data.get(f'p{i}') or {}).get('ratings', {}).get('edges') and len(data[f'p{i}']['ratings']['edges']) or 0) for i in range(len(batch)))} reviews; "
@@ -892,7 +893,7 @@ def main(argv: list[str] | None = None) -> int:
             counts = validate_run_counts(conn, run_id) if not incomplete_schools and not pending else None
             if not incomplete_schools and not pending and counts is not None:
                 mark_missing_professors(conn, run_id)
-                if full_refresh:
+                if full_refresh and counts["count_differences"] == 0:
                     mark_inactive_rows(conn, run_id)
                 conn.execute(
                     "UPDATE osu_rmp.collection_run SET expected_professors = %s, observed_professors = %s, "
@@ -900,7 +901,8 @@ def main(argv: list[str] | None = None) -> int:
                     "WHERE id = %s",
                     (counts["expected_professors"], counts["professors"], counts["expected_reviews"], counts["stored_reviews"],
                      "passed" if counts["count_differences"] == 0 else "passed_with_count_differences",
-                     "passed" if full_refresh else "skipped_incremental", run_id),
+                     "skipped_count_differences" if counts["count_differences"] else
+                     ("passed" if full_refresh else "skipped_incremental"), run_id),
                 )
                 conn.execute(
                     "UPDATE osu_rmp.collection_run SET status = 'completed', completed_at = now(), updated_at = now(), last_error = NULL WHERE id = %s",
