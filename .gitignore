@@ -154,3 +154,9 @@ vite.config.ts.timestamp-*
 .vite/
 
 db/osu_eval_export_SU26.sql
+
+# Local RMP datasets contain third-party review content and stay off Git.
+db/osu_rmp.sql
+db/osu_rmp.sqlite*
+osu_rmp.sqlite*
+osu_rmp_sync/
