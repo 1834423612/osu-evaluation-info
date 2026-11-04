@@ -376,7 +376,9 @@ def start_or_resume_run(
     if not new_run:
         row = conn.execute(
             "SELECT id, last_request_epoch, metadata FROM osu_rmp.collection_run "
-            "WHERE status IN ('running', 'paused') ORDER BY id DESC LIMIT 1"
+            "WHERE status IN ('running', 'paused') "
+            "AND COALESCE(metadata->>'superseded', 'false') <> 'true' "
+            "ORDER BY id DESC LIMIT 1"
         ).fetchone()
         if row and (not isinstance(row[2], dict) or row[2].get("collector_version") != 2):
             # Earlier runs did not retain cursor history or truthful actual counts.
@@ -401,6 +403,13 @@ def start_or_resume_run(
             )
             conn.commit()
             return int(row[0]), row[1], full_refresh
+    conn.execute(
+        """UPDATE osu_rmp.collection_run
+           SET metadata = metadata || '{"superseded":true}'::jsonb,
+               last_error = COALESCE(last_error, 'Superseded by a newer collection run.'),
+               updated_at = now()
+           WHERE status IN ('running', 'paused')"""
+    )
     metadata = {
         "source_url": SOURCE_PAGE,
         "provider": "Rate My Professors",
