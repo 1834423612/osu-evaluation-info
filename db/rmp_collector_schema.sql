@@ -17,6 +17,35 @@ ALTER TABLE osu_rmp.professor
 ALTER TABLE osu_rmp.review
     ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true;
 
+-- Keep one immutable row for each distinct upstream payload. Repeated identical
+-- runs deduplicate by entity and hash, so polling does not duplicate comments.
+CREATE TABLE IF NOT EXISTS osu_rmp.professor_observation (
+    professor_id        bigint NOT NULL REFERENCES osu_rmp.professor(legacy_id),
+    observation_kind    text NOT NULL CHECK (observation_kind IN ('search', 'review-profile')),
+    payload_sha256      text NOT NULL CHECK (payload_sha256 ~ '^[0-9a-f]{64}$'),
+    first_seen_run_id   bigint NOT NULL REFERENCES osu_rmp.collection_run(id),
+    payload             jsonb NOT NULL,
+    observed_at         timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (professor_id, observation_kind, payload_sha256)
+);
+
+CREATE TABLE IF NOT EXISTS osu_rmp.review_observation (
+    review_id           bigint NOT NULL REFERENCES osu_rmp.review(legacy_id),
+    payload_sha256      text NOT NULL CHECK (payload_sha256 ~ '^[0-9a-f]{64}$'),
+    first_seen_run_id   bigint NOT NULL REFERENCES osu_rmp.collection_run(id),
+    professor_id        bigint NOT NULL REFERENCES osu_rmp.professor(legacy_id),
+    payload             jsonb NOT NULL,
+    observed_at         timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (review_id, payload_sha256)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rmp_professor_observation_history
+    ON osu_rmp.professor_observation (professor_id, observation_kind, first_seen_run_id DESC);
+CREATE INDEX IF NOT EXISTS idx_rmp_review_observation_history
+    ON osu_rmp.review_observation (review_id, first_seen_run_id DESC);
+CREATE INDEX IF NOT EXISTS idx_rmp_review_observation_professor_history
+    ON osu_rmp.review_observation (professor_id, first_seen_run_id DESC);
+
 ALTER TABLE osu_rmp.run_school
     ADD COLUMN IF NOT EXISTS expected_count integer,
     ADD COLUMN IF NOT EXISTS loaded_count integer NOT NULL DEFAULT 0,
@@ -59,6 +88,6 @@ CREATE TABLE IF NOT EXISTS osu_rmp.collector_migration (
     applied_at timestamptz NOT NULL DEFAULT now()
 );
 INSERT INTO osu_rmp.collector_migration (version)
-VALUES ('rmp-collector-v1') ON CONFLICT DO NOTHING;
+VALUES ('rmp-collector-v1'), ('rmp-collector-v2') ON CONFLICT DO NOTHING;
 
 COMMIT;

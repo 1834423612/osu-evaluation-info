@@ -69,7 +69,7 @@ pnpm rmp:supplement
 
 The [SQLite supplement importer](rmp-supplement.md) preserves unmatched records with provenance and reconciles real source review IDs on subsequent runs. It never invents RMP IDs or double counts uncertain legacy comments in displayed ratings.
 
-The main tables are `osu_rmp.school`, `osu_rmp.professor`, `osu_rmp.professor_school`, and `osu_rmp.review`. `osu_rmp.collection_run`, `osu_rmp.run_school`, and `osu_rmp.run_professor` retain run state and cursors so interrupted runs can continue. Review rows keep the published comment, course, date text, individual scores, tags, vote totals, and any teacher response. Reviewer device identifiers are not requested or stored.
+The serving tables are `osu_rmp.school`, `osu_rmp.professor`, `osu_rmp.professor_school`, and `osu_rmp.review`. `osu_rmp.collection_run`, `osu_rmp.run_school`, and `osu_rmp.run_professor` retain run state and cursors so interrupted runs can continue. Collector schema v2 also stores hash-deduplicated source versions in `osu_rmp.professor_observation` and `osu_rmp.review_observation`; search summaries and detailed profile responses remain distinct, and changed upstream payloads are retained without duplicating unchanged comments on every run. Existing latest-state rows are not backfilled as historical versions, so this preserves changes collected after the migration rather than reconstructing overwritten history. Reviewer device identifiers are not requested or stored.
 
 Inspect progress with:
 

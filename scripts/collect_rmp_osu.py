@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
 import os
 import sys
@@ -21,7 +22,7 @@ GRAPHQL_URL = "https://www.ratemyprofessors.com/graphql"
 SOURCE_PAGE = "https://www.ratemyprofessors.com/school/724"
 SCHEMA_PATH = ROOT / "db" / "rmp_schema.sql"
 COLLECTOR_SCHEMA_PATH = ROOT / "db" / "rmp_collector_schema.sql"
-COLLECTOR_SCHEMA_VERSION = "rmp-collector-v1"
+COLLECTOR_SCHEMA_VERSION = "rmp-collector-v2"
 MIN_REQUEST_INTERVAL = 10.0
 MAX_PAGE_SIZE = 100
 SCHOOLS = (
@@ -499,6 +500,13 @@ def upsert_school_from_professor(conn, run_id: int, school: dict[str, Any], Json
     )
 
 
+def payload_sha256(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def upsert_professor(conn, run_id: int, teacher: dict[str, Any], Jsonb, profile: bool = False) -> int:
     legacy_id = teacher.get("legacyId")
     graphql_id = teacher.get("id")
@@ -544,6 +552,20 @@ def upsert_professor(conn, run_id: int, teacher: dict[str, Any], Jsonb, profile:
             int(teacher.get("numRatings") or 0), Jsonb(distribution), Jsonb(tags), Jsonb(course_codes),
             teacher.get("lockStatus"), Jsonb(raw_payload), run_id,
             profile, profile, profile, profile,
+        ),
+    )
+    observation_kind = "review-profile" if profile else "search"
+    conn.execute(
+        """INSERT INTO osu_rmp.professor_observation
+             (professor_id, observation_kind, payload_sha256, first_seen_run_id, payload)
+           VALUES (%s, %s, %s, %s, %s)
+           ON CONFLICT (professor_id, observation_kind, payload_sha256) DO NOTHING""",
+        (
+            int(legacy_id),
+            observation_kind,
+            payload_sha256(raw_payload),
+            run_id,
+            Jsonb(raw_payload),
         ),
     )
     school_id = school.get("legacyId")
@@ -609,6 +631,19 @@ def upsert_review(conn, run_id: int, professor_id: int, review: dict[str, Any], 
             int(review.get("thumbsUpTotal") or 0), int(review.get("thumbsDownTotal") or 0),
             Jsonb(teacher_note) if teacher_note is not None else None,
             Jsonb(review), run_id,
+        ),
+    )
+    conn.execute(
+        """INSERT INTO osu_rmp.review_observation
+             (review_id, payload_sha256, first_seen_run_id, professor_id, payload)
+           VALUES (%s, %s, %s, %s, %s)
+           ON CONFLICT (review_id, payload_sha256) DO NOTHING""",
+        (
+            int(review["legacyId"]),
+            payload_sha256(review),
+            run_id,
+            professor_id,
+            Jsonb(review),
         ),
     )
 

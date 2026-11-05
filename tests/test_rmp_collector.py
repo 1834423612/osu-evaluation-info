@@ -7,8 +7,11 @@ from scripts.collect_rmp_osu import (
     MIN_REQUEST_INTERVAL,
     build_review_batch_query,
     nullable_bool,
+    payload_sha256,
     parse_args,
     parse_retry_after,
+    upsert_professor,
+    upsert_review,
     validate_page_progress,
     CollectionError,
     collect_reviews,
@@ -19,6 +22,69 @@ from scripts.collect_rmp_osu import (
 
 
 class RmpCollectorTests(unittest.TestCase):
+    def test_payload_hash_is_order_stable_and_version_sensitive(self):
+        self.assertEqual(
+            payload_sha256({"name": "Ada", "rating": 4}),
+            payload_sha256({"rating": 4, "name": "Ada"}),
+        )
+        self.assertNotEqual(
+            payload_sha256({"name": "Ada", "rating": 4}),
+            payload_sha256({"name": "Ada", "rating": 5}),
+        )
+
+    def test_professor_observations_keep_distinct_shapes_and_dedupe_by_hash(self):
+        database = MagicMock()
+        teacher = {
+            "legacyId": 7,
+            "id": "teacher-7",
+            "firstName": "Ada",
+            "lastName": "Lovelace",
+            "ratings": {"edges": [{"node": {"legacyId": 70}}]},
+        }
+
+        upsert_professor(database, 11, teacher, lambda value: value)
+        upsert_professor(database, 12, teacher, lambda value: value)
+        upsert_professor(database, 12, teacher, lambda value: value, profile=True)
+
+        observations = [
+            call
+            for call in database.execute.call_args_list
+            if "INSERT INTO osu_rmp.professor_observation" in call.args[0]
+        ]
+        self.assertEqual(len(observations), 3)
+        search_first, search_replay, detailed = [call.args[1] for call in observations]
+        self.assertEqual(search_first[1], "search")
+        self.assertEqual(search_first[2], search_replay[2])
+        self.assertEqual(detailed[1], "review-profile")
+        self.assertEqual(search_first[4], detailed[4])
+        self.assertNotIn("ratings", search_first[4])
+        self.assertIn(
+            "ON CONFLICT (professor_id, observation_kind, payload_sha256) DO NOTHING",
+            observations[0].args[0],
+        )
+
+    def test_review_observation_keeps_raw_payload_and_deduplicates_versions(self):
+        database = MagicMock()
+        review = {
+            "legacyId": 70,
+            "id": "review-70",
+            "comment": "Clear explanations",
+        }
+
+        upsert_review(database, 12, 7, review, lambda value: value)
+
+        observation = next(
+            call
+            for call in database.execute.call_args_list
+            if "INSERT INTO osu_rmp.review_observation" in call.args[0]
+        )
+        self.assertEqual(observation.args[1][0], 70)
+        self.assertEqual(observation.args[1][2:], (12, 7, review))
+        self.assertIn(
+            "ON CONFLICT (review_id, payload_sha256) DO NOTHING",
+            observation.args[0],
+        )
+
     def test_installed_schema_skips_ddl_and_connection_has_timeout(self):
         driver = MagicMock()
         connection = driver.connect.return_value
