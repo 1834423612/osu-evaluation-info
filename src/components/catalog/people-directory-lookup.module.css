@@ -1,0 +1,130 @@
+.roles {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.role,
+.unknown {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid #dce2ed;
+  border-radius: 6px;
+  color: #63718b;
+  background: #f5f7fb;
+  font-size: 0.62rem;
+  font-weight: 650;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.role[data-role="professor"],
+.role[data-role="lecturer"],
+.role[data-role="faculty"] {
+  color: #285c42;
+  border-color: #bde3cc;
+  background: #eef9f1;
+}
+.role[data-role="teaching-assistant"] {
+  color: #85510e;
+  border-color: #edd29b;
+  background: #fff6df;
+}
+.role[data-role="student-assistant"],
+.role[data-role="student"] {
+  color: #60408d;
+  border-color: #d9c9ef;
+  background: #f5efff;
+}
+.unknown {
+  font-weight: 500;
+}
+.identity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.identityButton {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.identityButton:hover {
+  color: #335cad;
+}
+.identityButton:focus-visible {
+  outline: 3px solid #9bbcff;
+  outline-offset: 3px;
+}
+.identityName {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+.identityName > span:first-child {
+  overflow-wrap: anywhere;
+}
+.chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #74829b;
+  transition: transform 160ms ease;
+}
+.chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+.appointments {
+  display: grid;
+  gap: 7px;
+  margin-top: 9px;
+  padding: 11px;
+  border: 1px solid #dce5f4;
+  border-radius: 10px;
+  background: #f7faff;
+}
+.detailHeading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #38527c;
+  font-size: 0.74rem;
+}
+.appointments ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.appointments li {
+  display: grid;
+  gap: 2px;
+  color: #3d4c65;
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+.appointments li small {
+  color: #6e7e96;
+  font-size: 0.7rem;
+}
+.appointments p {
+  margin: 0;
+  color: #6d7b92;
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+.appointments p.note {
+  color: #8993a5;
+  font-size: 0.65rem;
+}
