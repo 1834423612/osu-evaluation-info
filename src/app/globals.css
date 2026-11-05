@@ -2574,6 +2574,11 @@ body {
   background: #fff;
 }
 
+/* Vaul's overscroll filler covers long content when this drawer scrolls. */
+.course-detail-drawer::after {
+  display: none;
+}
+
 .course-detail-drawer > [data-slot="drawer-header"] {
   margin: 0 -18px 13px;
   padding: 25px 18px 15px;
