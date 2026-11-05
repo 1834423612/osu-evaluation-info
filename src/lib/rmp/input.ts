@@ -8,7 +8,7 @@ export function normalizeRmpInput(input: CourseRmpInput): CourseRmpInput {
     !/^[A-Z][A-Z-]{0,19}$/.test(subject) ||
     !/^\d{3,5}(?:\.\d{1,3})?[A-Z]{0,2}$/.test(catalogNumber) ||
     !/^(COL|LMA|MNS|MRN|NWK|WST)$/.test(campus) ||
-    input.usernames.length > 40
+    input.usernames.length > 120
   )
     throw new RangeError("Invalid course or instructor selection.");
   const usernames = [

@@ -36,17 +36,30 @@ describe("RMP course selection", () => {
       );
   });
 
-  it("bounds selections and rejects unrecognized campuses and malformed course keys", () => {
+  it("bounds selections at 120 instructors and rejects unrecognized campuses and malformed course keys", () => {
     for (const invalid of [
       {
         ...selection,
-        usernames: Array.from({ length: 41 }, (_, index) => `example.${index}`),
+        usernames: Array.from(
+          { length: 121 },
+          (_, index) => `example.${index}`,
+        ),
       },
       { ...selection, campus: "ALL" },
       { ...selection, catalogNumber: "2221;SELECT" },
       { ...selection, subject: "CSE'" },
     ])
       assert.throws(() => normalizeRmpInput(invalid), RangeError);
+    assert.equal(
+      normalizeRmpInput({
+        ...selection,
+        usernames: Array.from(
+          { length: 120 },
+          (_, index) => `example.${index}`,
+        ),
+      }).usernames.length,
+      120,
+    );
   });
 
   it("allows missing official identities without guessing a match", () => {
