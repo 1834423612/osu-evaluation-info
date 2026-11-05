@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -17,9 +17,14 @@ import {
 } from "@/components/ui/collapsible";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { CourseRmpSummary } from "@/lib/rmp/types";
+import { REVIEW_PAGE_SIZE, reviewPagination } from "@/lib/rmp/pagination";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
 import { text, type Locale } from "@/lib/i18n";
 import { InstructorAvatar } from "./instructor-avatar";
+import {
+  InstructorDirectoryBadge,
+  InstructorDirectoryDetails,
+} from "./people-directory-lookup";
 import styles from "./rmp-panel.module.css";
 
 function score(value: number | null) {
@@ -171,7 +176,7 @@ export default function RmpPanel({
             .filter((instructor) => instructor.reviewCount > 0)
             .map((instructor) => (
               <InstructorReviews
-                key={instructor.professorId}
+                key={`${instructor.professorId}:${query}`}
                 instructor={instructor}
                 summary={summary}
                 locale={locale}
@@ -210,34 +215,34 @@ function InstructorReviews({
   locale: Locale;
   courseQuery: string;
 }) {
-  const [pages, setPages] = useState([
-    {
-      reviews: instructor.reviews,
-      offset: 0,
-      nextOffset:
-        instructor.reviews.length < instructor.reviewCount
-          ? instructor.reviews.length
-          : null,
-    },
-  ]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [pages, setPages] = useState<Record<number, typeof instructor.reviews>>(
+    {},
+  );
+  const [loadedPages, setLoadedPages] = useState<number[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
-  const { reviews, offset, nextOffset } = pages[pageIndex];
-  const [loadingMore, setLoadingMore] = useState(false);
+  const reviews = showAllReviews
+    ? (pages[pageIndex] ?? [])
+    : instructor.reviews;
+  const [loadingPage, setLoadingPage] = useState(false);
   const [pageError, setPageError] = useState(false);
+  const reviewViewportRef = useRef<HTMLDivElement>(null);
   const commonTags = instructor.topTags.slice(0, 5);
+  const { pageCount, reachableCount } = reviewPagination(
+    instructor.reviewCount,
+  );
 
-  async function loadMore() {
-    if (loadingMore || nextOffset === null) return;
-    if (pages[pageIndex + 1]) {
-      setPageIndex((current) => current + 1);
-      return;
-    }
-    setLoadingMore(true);
+  async function loadPage(targetPage: number) {
+    if (loadingPage || targetPage < 0 || targetPage >= pageCount) return;
+    setPageIndex(targetPage);
+    reviewViewportRef.current?.scrollTo({ top: 0 });
+    if (loadedPages.includes(targetPage)) return;
+    setLoadingPage(true);
     setPageError(false);
     try {
       const params = new URLSearchParams(courseQuery);
       params.set("professor", instructor.professorId);
-      params.set("offset", String(nextOffset));
+      params.set("offset", String(targetPage * REVIEW_PAGE_SIZE));
       const response = await fetch(`/api/rmp/course/reviews?${params}`, {
         signal: AbortSignal.timeout(15_000),
       });
@@ -247,24 +252,30 @@ function InstructorReviews({
         total: number;
         nextOffset: number | null;
       } = await response.json();
-      setPages((current) => [
-        ...current,
-        {
-          reviews: page.reviews,
-          offset: nextOffset,
-          nextOffset:
-            page.nextOffset !== null && page.nextOffset <= 5_000
-              ? page.nextOffset
-              : null,
-        },
-      ]);
-      setPageIndex((current) => current + 1);
+      setPages((current) => ({ ...current, [targetPage]: page.reviews }));
+      setLoadedPages((current) => [...current, targetPage]);
     } catch {
       setPageError(true);
     } finally {
-      setLoadingMore(false);
+      setLoadingPage(false);
     }
   }
+  const visiblePages = new Set(
+    [0, pageCount - 1, pageIndex - 1, pageIndex, pageIndex + 1].filter(
+      (page) => page >= 0 && page < pageCount,
+    ),
+  );
+  const pageSlots = [...visiblePages]
+    .toSorted((a, b) => a - b)
+    .flatMap((page, index, ordered) => {
+      const previous = ordered[index - 1];
+      return [
+        ...(previous !== undefined && page - previous > 1
+          ? [{ type: "ellipsis" as const, key: `ellipsis-${page}` }]
+          : []),
+        { type: "page" as const, page, key: `page-${page}` },
+      ];
+    });
   return (
     <Collapsible className={styles.instructor}>
       <div className={styles.instructorHeading}>
@@ -276,7 +287,11 @@ function InstructorReviews({
             />
             <div>
               <h4>{instructor.name}</h4>
-              <span>{text(locale, "Instructor reviews", "教师评价")}</span>
+              <InstructorDirectoryBadge
+                name={instructor.name}
+                email={`${instructor.nameDotNumber}@osu.edu`}
+                locale={locale}
+              />
             </div>
             <span className={styles.summaryScore}>
               <strong
@@ -300,11 +315,19 @@ function InstructorReviews({
                 )}
               </small>
             </span>
-            <ChevronDown
-              className={styles.disclosureIcon}
-              size={15}
-              aria-hidden="true"
-            />
+            <span className={styles.disclosureCue}>
+              <span className={styles.expandLabel}>
+                {text(locale, "View reviews", "查看评论")}
+              </span>
+              <span className={styles.collapseLabel}>
+                {text(locale, "Hide reviews", "收起评论")}
+              </span>
+              <ChevronDown
+                className={styles.disclosureIcon}
+                size={15}
+                aria-hidden="true"
+              />
+            </span>
           </div>
         </CollapsibleTrigger>
         <a href={instructor.profileUrl} target="_blank" rel="noreferrer">
@@ -326,6 +349,11 @@ function InstructorReviews({
         </ul>
       ) : null}
       <CollapsibleContent>
+        <InstructorDirectoryDetails
+          name={instructor.name}
+          email={`${instructor.nameDotNumber}@osu.edu`}
+          locale={locale}
+        />
         <dl className={styles.stats}>
           <div>
             <dt>{text(locale, "Recent quality", "近期教学评价")}</dt>
@@ -338,7 +366,13 @@ function InstructorReviews({
             <small>n = {instructor.recentDifficultyCount}</small>
           </div>
           <div>
-            <dt>{text(locale, "This course", "本课程评论")}</dt>
+            <dt>
+              {text(
+                locale,
+                "This instructor's course reviews",
+                "该教师针对本课程的评论",
+              )}
+            </dt>
             <dd>{instructor.reviewCount}</dd>
             <small>
               {text(
@@ -359,7 +393,7 @@ function InstructorReviews({
             )}
           </p>
         ) : null}
-        {reviews.length ? (
+        {instructor.reviewCount > 0 ? (
           <div className={styles.reviews}>
             <h5>
               {text(
@@ -368,109 +402,223 @@ function InstructorReviews({
                 `${instructor.name} 的课程评论`,
               )}
             </h5>
-            {reviews.map((review) => (
-              <div className={styles.review} key={review.id}>
-                <div className={styles.reviewMeta}>
-                  {review.date ? (
-                    <time className={styles.reviewDate} dateTime={review.date}>
-                      {review.date}
-                    </time>
-                  ) : (
-                    <span>{text(locale, "Date unavailable", "日期未知")}</span>
-                  )}
-                  {review.date && review.date < summary.recentSince ? (
-                    <span>
-                      {text(locale, "Older than two years", "两年前的评论")}
-                    </span>
-                  ) : null}
-                  <span
-                    className={styles.reviewQuality}
-                    data-tone={
-                      review.quality === null
-                        ? "none"
-                        : review.quality >= 4
-                          ? "positive"
-                          : review.quality < 3
-                            ? "caution"
-                            : "mixed"
-                    }
-                  >
-                    {text(locale, "Quality", "评价")} {score(review.quality)}
-                  </span>
-                  <span
-                    className={styles.reviewDifficulty}
-                    data-tone={
-                      review.difficulty === null
-                        ? "none"
-                        : review.difficulty >= 4
-                          ? "caution"
-                          : review.difficulty < 2.5
-                            ? "positive"
-                            : "mixed"
-                    }
-                  >
-                    {text(locale, "Difficulty", "难度")}{" "}
-                    {score(review.difficulty)}
-                  </span>
-                </div>
-                <p>
-                  {review.comment ||
-                    text(locale, "No written comment.", "未填写文字评论。")}
-                </p>
-                {review.tags.length ? (
-                  <ul
-                    className={styles.tags}
-                    aria-label={text(locale, "Review tags", "评论标签")}
-                  >
-                    {review.tags.map((tag) => (
-                      <li key={tag} data-tone={tagTone(tag)}>
-                        {tag}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ))}
-            {instructor.reviewCount > instructor.reviews.length ? (
-              <div className={styles.moreReviews}>
-                {pageError ? (
-                  <span role="alert">
-                    {text(
-                      locale,
-                      "Couldn't load more reviews.",
-                      "暂时无法加载更多评论。",
+            <div
+              className={
+                showAllReviews ? styles.reviewViewport : styles.reviewPreview
+              }
+              ref={reviewViewportRef}
+              tabIndex={showAllReviews ? 0 : undefined}
+              aria-label={text(
+                locale,
+                "Scrollable instructor reviews",
+                "可滚动的教师评论",
+              )}
+            >
+              {reviews.map((review) => (
+                <div className={styles.review} key={review.id}>
+                  <div className={styles.reviewMeta}>
+                    {review.date ? (
+                      <time
+                        className={styles.reviewDate}
+                        dateTime={review.date}
+                      >
+                        {review.date}
+                      </time>
+                    ) : (
+                      <span>
+                        {text(locale, "Date unavailable", "日期未知")}
+                      </span>
                     )}
-                  </span>
-                ) : null}
+                    {review.date && review.date < summary.recentSince ? (
+                      <span className={styles.olderReview}>
+                        {text(
+                          locale,
+                          "Older review · may be outdated",
+                          "较早评论，可能已过时",
+                        )}
+                      </span>
+                    ) : null}
+                    <span
+                      className={styles.reviewQuality}
+                      data-tone={
+                        review.quality === null
+                          ? "none"
+                          : review.quality >= 4
+                            ? "positive"
+                            : review.quality < 3
+                              ? "caution"
+                              : "mixed"
+                      }
+                    >
+                      {text(locale, "Quality", "评价")} {score(review.quality)}
+                    </span>
+                    <span
+                      className={styles.reviewDifficulty}
+                      data-tone={
+                        review.difficulty === null
+                          ? "none"
+                          : review.difficulty >= 4
+                            ? "caution"
+                            : review.difficulty < 2.5
+                              ? "positive"
+                              : "mixed"
+                      }
+                    >
+                      {text(locale, "Difficulty", "难度")}{" "}
+                      {score(review.difficulty)}
+                    </span>
+                  </div>
+                  <p>
+                    {review.comment ||
+                      text(locale, "No written comment.", "未填写文字评论。")}
+                  </p>
+                  {review.tags.length ? (
+                    <ul
+                      className={styles.tags}
+                      aria-label={text(locale, "Review tags", "评论标签")}
+                    >
+                      {review.tags.map((tag) => (
+                        <li key={tag} data-tone={tagTone(tag)}>
+                          {tag}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ))}
+              {showAllReviews && loadingPage && !reviews.length ? (
+                <p className={styles.loading} role="status">
+                  <LoaderCircle size={15} className="spin" />
+                  {text(locale, "Loading reviews…", "正在加载评论…")}
+                </p>
+              ) : null}
+              {showAllReviews && pageError && !reviews.length ? (
+                <p className={styles.pageError} role="alert">
+                  {text(
+                    locale,
+                    "Couldn't load this page.",
+                    "暂时无法加载这一页评论。",
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void loadPage(pageIndex)}
+                  >
+                    {text(locale, "Retry", "重试")}
+                  </button>
+                </p>
+              ) : null}
+            </div>
+            {!showAllReviews && instructor.reviewCount > reviews.length ? (
+              <button
+                className={styles.viewAll}
+                type="button"
+                onClick={() => {
+                  setShowAllReviews(true);
+                  void loadPage(0);
+                }}
+              >
+                {text(
+                  locale,
+                  reachableCount < instructor.reviewCount
+                    ? `Browse ${reachableCount} reviews`
+                    : `View all ${instructor.reviewCount} reviews`,
+                  reachableCount < instructor.reviewCount
+                    ? `浏览 ${reachableCount} 条评论`
+                    : `查看全部 ${instructor.reviewCount} 条评论`,
+                )}
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
+            ) : null}
+            {showAllReviews ? (
+              <button
+                className={styles.viewAll}
+                type="button"
+                onClick={() => {
+                  setShowAllReviews(false);
+                  setPageIndex(0);
+                }}
+              >
+                {text(locale, "Show latest 3", "收起至最新 3 条")}
+                <ChevronDown size={15} aria-hidden="true" />
+              </button>
+            ) : null}
+            {showAllReviews && pageCount > 1 ? (
+              <div className={styles.moreReviews}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setPageIndex((current) => Math.max(0, current - 1))
-                  }
-                  disabled={loadingMore || pageIndex === 0}
-                  title={text(locale, "Previous reviews", "上一页评论")}
-                  aria-label={text(locale, "Previous reviews", "上一页评论")}
+                  onClick={() => void loadPage(pageIndex - 1)}
+                  disabled={loadingPage || pageIndex === 0}
+                  title={text(locale, "Previous page", "上一页评论")}
+                  aria-label={text(locale, "Previous page", "上一页评论")}
                 >
                   <ChevronLeft size={14} />
+                  <span>{text(locale, "Previous", "上一页")}</span>
                 </button>
-                <span>
-                  {offset + 1}–{offset + reviews.length} /{" "}
-                  {instructor.reviewCount}
+                <nav
+                  className={styles.pageNumbers}
+                  aria-label={text(locale, "Review pages", "评论页码")}
+                >
+                  {pageSlots.map((slot) =>
+                    slot.type === "ellipsis" ? (
+                      <span key={slot.key} aria-hidden="true">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={slot.key}
+                        type="button"
+                        aria-current={
+                          slot.page === pageIndex ? "page" : undefined
+                        }
+                        aria-label={text(
+                          locale,
+                          `Page ${slot.page + 1}`,
+                          `第 ${slot.page + 1} 页`,
+                        )}
+                        onClick={() => void loadPage(slot.page)}
+                        disabled={loadingPage || slot.page === pageIndex}
+                      >
+                        {slot.page + 1}
+                      </button>
+                    ),
+                  )}
+                </nav>
+                <span className={styles.pageStatus}>
+                  {pageIndex + 1} / {pageCount}
                 </span>
                 <button
                   type="button"
-                  onClick={() => void loadMore()}
-                  disabled={loadingMore || nextOffset === null}
-                  title={text(locale, "More reviews", "更多评论")}
-                  aria-label={text(locale, "More reviews", "更多评论")}
+                  onClick={() => void loadPage(pageIndex + 1)}
+                  disabled={loadingPage || pageIndex >= pageCount - 1}
+                  title={text(locale, "Next page", "下一页评论")}
+                  aria-label={text(locale, "Next page", "下一页评论")}
                 >
-                  {loadingMore ? (
+                  {loadingPage ? (
                     <LoaderCircle size={14} className="spin" />
                   ) : (
                     <ChevronRight size={14} />
                   )}
+                  <span>{text(locale, "Next", "下一页")}</span>
                 </button>
               </div>
+            ) : null}
+            {showAllReviews && !loadingPage && reviews.length ? (
+              <p className={styles.pageSummary} aria-live="polite">
+                {text(
+                  locale,
+                  `Showing ${pageIndex * REVIEW_PAGE_SIZE + 1}–${pageIndex * REVIEW_PAGE_SIZE + reviews.length} of ${instructor.reviewCount} reviews`,
+                  `显示第 ${pageIndex * REVIEW_PAGE_SIZE + 1}–${pageIndex * REVIEW_PAGE_SIZE + reviews.length} 条，共 ${instructor.reviewCount} 条评论`,
+                )}
+              </p>
+            ) : null}
+            {showAllReviews && reachableCount < instructor.reviewCount ? (
+              <p className={styles.note}>
+                {text(
+                  locale,
+                  `The first ${reachableCount} reviews are available here. Open the RMP profile for older reviews.`,
+                  `这里可浏览前 ${reachableCount} 条评论，更早的评论可打开 RMP 教师页面查看。`,
+                )}
+              </p>
             ) : null}
           </div>
         ) : null}

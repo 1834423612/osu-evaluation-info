@@ -1,14 +1,13 @@
 import { getInstructorRmpReviews } from "@/lib/rmp/repository";
+import { parseReviewOffset } from "@/lib/rmp/pagination";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const rawOffset = params.get("offset") ?? "0";
-  if (!/^\d{1,5}$/.test(rawOffset))
-    return Response.json({ error: "Invalid review offset." }, { status: 400 });
-
   try {
+    const offset = parseReviewOffset(rawOffset);
     const result = await getInstructorRmpReviews(
       {
         subject: params.get("subject") ?? "",
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
         usernames: params.getAll("instructor"),
       },
       params.get("professor") ?? "",
-      Number(rawOffset),
+      offset,
     );
     return Response.json(result, {
       headers: { "Cache-Control": "private, max-age=60" },

@@ -1,5 +1,10 @@
 import { isDatabaseConfigured, queryDatabase } from "@/lib/db";
 import { normalizeRmpInput } from "./input";
+import {
+  MAX_REVIEW_OFFSET,
+  normalizeReviewOffset,
+  REVIEW_PAGE_SIZE,
+} from "./pagination";
 import type {
   CourseRmpInput,
   CourseRmpSummary,
@@ -184,9 +189,6 @@ export async function getCourseRmp(
   }
 }
 
-const REVIEW_PAGE_SIZE = 6;
-const MAX_REVIEW_OFFSET = 5_000;
-
 const REVIEW_PAGE_SQL = `
   WITH professor AS (
     SELECT m.professor_id,m.name_dot_number
@@ -230,12 +232,7 @@ export async function getInstructorRmpReviews(
   const input = normalizeRmpInput(rawInput);
   if (!/^\d{1,18}$/.test(rawProfessorId))
     throw new RangeError("Invalid RMP professor ID.");
-  if (
-    !Number.isSafeInteger(rawOffset) ||
-    rawOffset < 0 ||
-    rawOffset > MAX_REVIEW_OFFSET
-  )
-    throw new RangeError("Invalid review offset.");
+  const offset = normalizeReviewOffset(rawOffset);
   if (!input.usernames.length)
     return { reviews: [], total: 0, nextOffset: null };
   const result = await queryDatabase<{ total: number; reviews: RmpReview[] }>(
@@ -246,7 +243,7 @@ export async function getInstructorRmpReviews(
       `${input.subject}${input.catalogNumber}`.replace(/[\s_-]/g, ""),
       REVIEW_PAGE_SIZE,
       rawProfessorId,
-      rawOffset,
+      offset,
     ],
   );
   const row = result.rows[0] ?? { total: 0, reviews: [] };
@@ -254,8 +251,10 @@ export async function getInstructorRmpReviews(
     reviews: row.reviews,
     total: row.total,
     nextOffset:
-      rawOffset + row.reviews.length < row.total
-        ? rawOffset + row.reviews.length
+      row.reviews.length > 0 &&
+      offset + row.reviews.length < row.total &&
+      offset + row.reviews.length <= MAX_REVIEW_OFFSET
+        ? offset + row.reviews.length
         : null,
   };
 }

@@ -23,7 +23,7 @@
   font-weight: 600;
 }
 .heading span,
-.identity span,
+.identity > span,
 .note,
 .footer,
 .stats small {
@@ -57,11 +57,23 @@
 }
 .instructorToggle {
   flex: 1;
+  width: 100%;
   min-width: 0;
   border: 0;
+  border-radius: 8px;
   background: transparent;
   text-align: left;
   cursor: pointer;
+}
+.instructorToggle:hover .disclosureCue,
+.instructorToggle:focus-visible .disclosureCue {
+  border-color: #8ca9e8;
+  background: #e4edff;
+  color: #183f9c;
+}
+.instructorToggle:focus-visible {
+  outline: 2px solid #7598ed;
+  outline-offset: 3px;
 }
 .instructorHeading {
   flex-wrap: nowrap;
@@ -102,8 +114,38 @@
 }
 .disclosureIcon {
   flex: 0 0 auto;
-  color: #7890a8;
+  color: currentColor;
   transition: transform 160ms ease;
+}
+.disclosureCue {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  margin-left: 8px;
+  padding: 0 9px;
+  border: 1px solid #c5d6fb;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #294f9e;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+.collapseLabel {
+  display: none;
+}
+.instructorToggle[data-state="open"] .expandLabel {
+  display: none;
+}
+.instructorToggle[data-state="open"] .collapseLabel {
+  display: inline;
 }
 .instructorToggle[data-state="open"] .disclosureIcon {
   transform: rotate(180deg);
@@ -163,6 +205,23 @@
   font-weight: 600;
   margin: 0;
 }
+.reviewPreview,
+.reviewViewport {
+  min-width: 0;
+}
+.reviewViewport {
+  max-height: min(52vh, 430px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 9px;
+  scrollbar-gutter: stable;
+  scrollbar-color: #9bb2d4 #edf2f8;
+  scrollbar-width: thin;
+}
+.reviewViewport:focus-visible {
+  outline: 2px solid #8da9e8;
+  outline-offset: 2px;
+}
 .review {
   padding: 14px 0 4px;
   border-top: 1px solid var(--line, #dbe5f3);
@@ -179,6 +238,15 @@
   color: #315bd6;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
+}
+.olderReview {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--color-muted);
+  padding: 1px 5px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.7;
 }
 .reviewQuality,
 .reviewDifficulty {
@@ -303,30 +371,96 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding-top: 10px;
+  justify-content: space-between;
+  gap: 7px;
+  padding-top: 12px;
 }
-.moreReviews > span {
-  color: #a34337;
-  font-size: 11px;
+.pageNumbers {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.pageNumbers > span {
+  padding: 0 2px;
+  color: #73849a;
+  font-size: 12px;
 }
 .moreReviews button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 32px;
   border: 1px solid #c8d8e9;
   border-radius: 5px;
   background: #f5f9fd;
   color: #245783;
-  padding: 7px 11px;
+  padding: 5px 8px;
   font-size: 11px;
   font-weight: 600;
 }
+.moreReviews button[aria-current="page"] {
+  border-color: #315bd6;
+  background: #315bd6;
+  color: white;
+  box-shadow: 0 2px 7px #315bd633;
+}
 .moreReviews button:disabled {
-  cursor: wait;
-  opacity: 0.65;
+  cursor: default;
+  opacity: 0.6;
+}
+.moreReviews button:focus-visible,
+.viewAll:focus-visible,
+.pageError button:focus-visible {
+  outline: 2px solid #7598ed;
+  outline-offset: 2px;
+}
+.pageStatus,
+.pageSummary {
+  color: #62748d;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.pageSummary {
+  margin: 6px 0 0;
+}
+.viewAll {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 2px;
+  padding: 7px 10px;
+  border: 1px solid #c5d6fb;
+  border-radius: 6px;
+  background: #f2f6ff;
+  color: #294f9e;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+.viewAll:hover {
+  border-color: #8ca9e8;
+  background: #e4edff;
+}
+.pageError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #a34337;
+  font-size: 11px;
+}
+.pageError button {
+  color: #294f9e;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .footer {
   margin-top: 14px;
@@ -334,23 +468,32 @@
 @media (max-width: 480px) {
   .instructorToggle .identity {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) 15px;
-    gap: 6px 9px;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar name cue"
+      "avatar score cue";
+    gap: 5px 8px;
   }
   .instructorToggle .identity > :first-child {
-    grid-row: 1 / 3;
-    align-self: start;
+    grid-area: avatar;
+    align-self: center;
+  }
+  .instructorToggle .identity > :nth-child(2) {
+    grid-area: name;
+    min-width: 0;
   }
   .summaryScore {
-    grid-column: 2;
-    grid-row: 2;
+    grid-area: score;
     align-items: flex-start;
     text-align: left;
     margin-left: 0;
   }
-  .disclosureIcon {
-    grid-column: 3;
-    grid-row: 1;
+  .disclosureCue {
+    grid-area: cue;
+    align-self: center;
+    margin-left: 0;
+    padding: 0 7px;
+    font-size: 10px;
   }
   .instructorHeading h4 {
     font-size: 13px;
@@ -367,5 +510,23 @@
   }
   .instructor {
     padding: 13px;
+  }
+  .moreReviews {
+    gap: 4px;
+  }
+  .moreReviews > button {
+    gap: 3px;
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+  .pageNumbers {
+    gap: 2px;
+  }
+  .pageNumbers button {
+    min-width: 28px;
+    padding: 4px 5px;
+  }
+  .pageStatus {
+    display: none;
   }
 }
