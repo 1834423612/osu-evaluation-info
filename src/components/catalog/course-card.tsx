@@ -34,8 +34,17 @@ import {
 } from "@/components/ui/sheet";
 import { MeetingStrip } from "./meeting-strip";
 import { RatingSummary } from "./rating-summary";
+import { InstructorAvatar } from "./instructor-avatar";
 
 const EvaluationPanel = dynamic(() => import("./evaluation-panel"), {
+  loading: () => (
+    <div className="inline-loading">
+      <LoaderCircle size={16} className="spin" />
+    </div>
+  ),
+});
+
+const RmpPanel = dynamic(() => import("./rmp-panel"), {
   loading: () => (
     <div className="inline-loading">
       <LoaderCircle size={16} className="spin" />
@@ -173,6 +182,11 @@ function SectionRow({
         {section.instructors.length ? (
           section.instructors.map((instructor) => (
             <span key={instructor.email ?? instructor.name}>
+              <InstructorAvatar
+                name={instructor.name}
+                email={instructor.email}
+                size={28}
+              />
               {instructor.name}
             </span>
           ))
@@ -245,7 +259,7 @@ export function CourseCard({
 
   async function openTab(next: "sections" | "ratings", keepOpen = false) {
     setTab(keepOpen || tab !== next ? next : null);
-    if (next !== "sections" || detail || loading) return;
+    if (detail || loading) return;
     setLoading(true);
     setError(false);
     try {
@@ -281,7 +295,7 @@ export function CourseCard({
         className="course-detail-tabs"
         onValueChange={(value) => {
           if (value === "sections") void openTab("sections", true);
-          if (value === "ratings") setTab("ratings");
+          if (value === "ratings") void openTab("ratings", true);
         }}
       >
         <div className="detail-tabs-row">
@@ -376,6 +390,29 @@ export function CourseCard({
               )}
             </p>
             <EvaluationPanel summary={current.evaluation} locale={locale} />
+            {loading ? (
+              <p className="inline-loading" role="status">
+                <LoaderCircle size={16} className="spin" />
+                {text(
+                  locale,
+                  "Loading current instructors…",
+                  "正在获取当前授课教师…",
+                )}
+              </p>
+            ) : error ? (
+              <p className="inline-error" role="status">
+                {text(
+                  locale,
+                  "Current instructors could not be loaded. RMP reviews are unavailable.",
+                  "当前授课教师暂时无法获取，无法展示对应的 RMP 评论。",
+                )}{" "}
+                <button onClick={() => void openTab("ratings", true)}>
+                  {text(locale, "Retry", "重试")}
+                </button>
+              </p>
+            ) : (
+              <RmpPanel course={current} locale={locale} />
+            )}
           </div>
         </TabsContent>
       </Tabs>
