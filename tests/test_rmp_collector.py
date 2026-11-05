@@ -1,4 +1,6 @@
 import unittest
+from contextlib import nullcontext
+from unittest.mock import patch
 
 from scripts.collect_rmp_osu import (
     MIN_REQUEST_INTERVAL,
@@ -8,10 +10,63 @@ from scripts.collect_rmp_osu import (
     parse_retry_after,
     validate_page_progress,
     CollectionError,
+    collect_reviews,
 )
 
 
 class RmpCollectorTests(unittest.TestCase):
+    def test_terminal_page_with_missing_reviews_cannot_complete_or_delete(self):
+        class Result:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def fetchall(self):
+                return self.rows
+
+            def fetchone(self):
+                return self.rows[0]
+
+        class Database:
+            def __init__(self):
+                self.statements = []
+
+            def execute(self, sql, params=()):
+                self.statements.append(sql)
+                if "SELECT rp.professor_id" in sql:
+                    return Result([(1, "teacher-1", None, None)])
+                if "SELECT count(*) FROM osu_rmp.review" in sql:
+                    return Result([(2,)])
+                if "SELECT reviews_loaded" in sql:
+                    return Result([(2,)])
+                return Result([])
+
+            def transaction(self):
+                return nullcontext()
+
+            def commit(self):
+                pass
+
+        class Client:
+            at_limit = False
+            batch_size = 1
+            page_size = 50
+
+            def request(self, *args):
+                return {"p0": {"legacyId": 1, "numRatings": 2,
+                    "ratingsDistribution": {"total": 3}, "ratings": {
+                        "edges": [{"cursor": "a", "node": {"legacyId": 10}},
+                                  {"cursor": "b", "node": {"legacyId": 11}}],
+                        "pageInfo": {"hasNextPage": False}}}}
+
+        database = Database()
+        with patch("scripts.collect_rmp_osu.upsert_professor", return_value=1), \
+             patch("scripts.collect_rmp_osu.upsert_review"), \
+             patch("scripts.collect_rmp_osu.save_page_cursor"):
+            with self.assertRaisesRegex(CollectionError, "distribution total 3, stored 2"):
+                collect_reviews(database, lambda value: value, Client(), 1)
+        self.assertFalse(any("SET active = false" in sql for sql in database.statements))
+        self.assertFalse(any("SET last_full_refresh_at" in sql for sql in database.statements))
+
     def test_review_query_batches_distinct_cursors(self):
         query, variables = build_review_batch_query(
             [

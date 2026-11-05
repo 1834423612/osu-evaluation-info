@@ -815,11 +815,11 @@ def collect_reviews(
                             f"RMP returned repeated review IDs for professor {professor_id}: "
                             f"loaded {loaded} rows but stored {stored} distinct reviews."
                         )
-                        if distribution_total is not None and stored != expected:
-                            raise CollectionError(
-                                f"RMP review completeness failed for professor {professor_id}: "
-                                f"distribution total {expected}, stored {stored} distinct reviews."
-                            )
+                    if distribution_total is not None and stored != expected:
+                        raise CollectionError(
+                            f"RMP review completeness failed for professor {professor_id}: "
+                            f"distribution total {expected}, stored {stored} distinct reviews."
+                        )
                     if distribution_total is None and expected > 0 and stored == 0:
                         raise CollectionError(f"RMP returned no reviews for rated professor {professor_id}.")
                     conn.execute(
