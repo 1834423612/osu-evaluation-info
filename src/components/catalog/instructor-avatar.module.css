@@ -11,6 +11,8 @@
   color: var(--muted-foreground, #61646c);
   font-size: 0.72rem;
   font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
   vertical-align: middle;
 }
 

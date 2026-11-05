@@ -15,6 +15,10 @@ export function InstructorAvatar({
 }) {
   const identity = nameDotNumberFromEmail(email);
   const [failedIdentity, setFailedIdentity] = useState<string | null>(null);
+  let colorHash = 0;
+  for (const character of name.trim().toLowerCase())
+    colorHash = (colorHash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
+  const hue = colorHash % 360;
   const initials =
     name
       .trim()
@@ -28,7 +32,13 @@ export function InstructorAvatar({
   return (
     <span
       className={styles.avatar}
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: `hsl(${hue} 48% 92%)`,
+        color: `hsl(${hue} 38% 35%)`,
+        borderColor: `hsl(${hue} 35% 84%)`,
+      }}
       aria-hidden="true"
     >
       {initials}
