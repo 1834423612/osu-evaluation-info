@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   componentKind,
   getSectionFilterOptions,
+  rankSectionsForFilters,
   sectionMatchesFilters,
 } from "../src/lib/catalog/section-filters.ts";
 
@@ -44,19 +45,21 @@ function filters(overrides = {}) {
     excludeEarly: false,
     excludeLate: false,
     excludeWeekends: false,
+    earlyCutoffMinute: 9 * 60,
+    lateCutoffMinute: 18 * 60,
     ...overrides,
   };
 }
 
 describe("section filter choices", () => {
-  it("normalizes official component names and legacy abbreviations", () => {
+  it("keeps source component names and abbreviations intact", () => {
     assert.equal(componentKind("Lecture"), "Lecture");
-    assert.equal(componentKind("LEC"), "Lecture");
-    assert.equal(componentKind("Laboratory"), "Lab");
-    assert.equal(componentKind("LAB"), "Lab");
+    assert.equal(componentKind("LEC"), "LEC");
+    assert.equal(componentKind("Laboratory"), "Laboratory");
+    assert.equal(componentKind("LAB"), "LAB");
     assert.equal(componentKind("Recitation"), "Recitation");
-    assert.equal(componentKind("REC"), "Recitation");
-    assert.equal(componentKind("Seminar"), null);
+    assert.equal(componentKind("REC"), "REC");
+    assert.equal(componentKind("Seminar"), "Seminar");
   });
 
   it("offers only components, modes, days, and exclusions present in loaded sections", () => {
@@ -69,8 +72,9 @@ describe("section filter choices", () => {
           meeting({ days: [5], startTime: "08:30", endTime: "19:00" }),
         ],
       }),
+      section({ component: "Seminar" }),
     ]);
-    assert.deepEqual(choices.components, ["Lecture", "Lab"]);
+    assert.deepEqual(choices.components, ["Laboratory", "Lecture", "Seminar"]);
     assert.deepEqual(choices.instructionModes, [
       "Distance Enhanced",
       "In Person",
@@ -79,6 +83,7 @@ describe("section filter choices", () => {
     assert.equal(choices.hasEarlyMeetings, true);
     assert.equal(choices.hasLateMeetings, true);
     assert.equal(choices.hasWeekendMeetings, true);
+    assert.equal(choices.hasTimedMeetings, true);
     assert.deepEqual(getSectionFilterOptions([]), {
       components: [],
       instructionModes: [],
@@ -86,14 +91,70 @@ describe("section filter choices", () => {
       hasEarlyMeetings: false,
       hasLateMeetings: false,
       hasWeekendMeetings: false,
+      hasTimedMeetings: false,
     });
   });
 });
 
 describe("section row matching", () => {
+  it("moves all matching sections first without removing or mutating rows", () => {
+    const rows = [
+      section({ id: "rec", component: "Recitation" }),
+      section({ id: "lec-1" }),
+      section({ id: "lab", component: "Laboratory" }),
+      section({ id: "lec-2" }),
+    ];
+    const ranked = rankSectionsForFilters(
+      rows,
+      filters({ components: new Set(["Lecture"]) }),
+    );
+    assert.deepEqual(
+      ranked.map(({ section }) => section.id),
+      ["lec-1", "lec-2", "rec", "lab"],
+    );
+    assert.deepEqual(
+      ranked.map(({ matches }) => matches),
+      [true, true, false, false],
+    );
+    assert.deepEqual(
+      rows.map(({ id }) => id),
+      ["rec", "lec-1", "lab", "lec-2"],
+    );
+  });
+
+  it("places inactive sections after active sections in each matching group", () => {
+    const ranked = rankSectionsForFilters(
+      [
+        section({ id: "inactive-match", enrollmentStatus: "Inactive" }),
+        section({
+          id: "cancelled-other",
+          enrollmentStatus: "Cancelled",
+          component: "Recitation",
+        }),
+        section({ id: "active-other", component: "Recitation" }),
+        section({ id: "active-match" }),
+      ],
+      filters({ components: new Set(["Lecture"]) }),
+    );
+    assert.deepEqual(
+      ranked.map(({ section }) => section.id),
+      ["active-match", "inactive-match", "active-other", "cancelled-other"],
+    );
+    assert.deepEqual(
+      rankSectionsForFilters(
+        [
+          section({ id: "inactive", enrollmentStatus: "Inactive" }),
+          section({ id: "active" }),
+        ],
+        filters(),
+      ).map(({ section }) => section.id),
+      ["active", "inactive"],
+    );
+  });
+
   it("uses OR within one choice group and AND across groups", () => {
     const selected = filters({
-      components: new Set(["Lecture", "Lab"]),
+      components: new Set(["Lecture", "Laboratory"]),
       instructionModes: new Set(["In Person"]),
       days: new Set([1, 2]),
     });
@@ -118,6 +179,18 @@ describe("section row matching", () => {
         section({ meetings: [meeting({ days: [0, 4] })] }),
         selected,
       ),
+      false,
+    );
+  });
+
+  it("matches exact source component labels instead of normalizing abbreviations", () => {
+    const selected = filters({ components: new Set(["Lecture"]) });
+    assert.equal(
+      sectionMatchesFilters(section({ component: "Lecture" }), selected),
+      true,
+    );
+    assert.equal(
+      sectionMatchesFilters(section({ component: "LEC" }), selected),
       false,
     );
   });
@@ -208,6 +281,41 @@ describe("section row matching", () => {
         filters({ excludeEarly: true, excludeLate: true }),
       ),
       true,
+    );
+  });
+
+  it("supports custom 15-minute time cutoffs with inclusive boundaries", () => {
+    assert.equal(
+      sectionMatchesFilters(
+        section({ meetings: [meeting({ startTime: "09:00" })] }),
+        filters({ excludeEarly: true, earlyCutoffMinute: 9 * 60 + 15 }),
+      ),
+      false,
+    );
+    assert.equal(
+      sectionMatchesFilters(
+        section({ meetings: [meeting({ startTime: "09:15" })] }),
+        filters({ excludeEarly: true, earlyCutoffMinute: 9 * 60 + 15 }),
+      ),
+      true,
+    );
+    assert.equal(
+      sectionMatchesFilters(
+        section({
+          meetings: [meeting({ startTime: "17:45", endTime: "18:15" })],
+        }),
+        filters({ excludeLate: true, lateCutoffMinute: 18 * 60 + 15 }),
+      ),
+      true,
+    );
+    assert.equal(
+      sectionMatchesFilters(
+        section({
+          meetings: [meeting({ startTime: "18:15", endTime: "19:00" })],
+        }),
+        filters({ excludeLate: true, lateCutoffMinute: 18 * 60 + 15 }),
+      ),
+      false,
     );
   });
 });

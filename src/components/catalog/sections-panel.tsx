@@ -16,15 +16,24 @@ import type {
   CatalogSection,
 } from "@/lib/catalog/types";
 import {
-  componentKind,
   getSectionFilterOptions,
-  sectionMatchesFilters,
+  rankSectionsForFilters,
   type ComponentKind,
   type SectionFilterState,
 } from "@/lib/catalog/section-filters";
 import { usePreferences } from "@/hooks/use-preferences";
+import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
 import { text, type Locale } from "@/lib/i18n";
-import { InstructorAvatar } from "./instructor-avatar";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MeetingStrip } from "./meeting-strip";
+import { InstructorDirectoryIdentity } from "./people-directory-lookup";
 import styles from "./sections-panel.module.css";
 
 const DAYS = {
@@ -40,6 +49,8 @@ function emptyFilters(): SectionFilterState {
     excludeEarly: false,
     excludeLate: false,
     excludeWeekends: false,
+    earlyCutoffMinute: 9 * 60,
+    lateCutoffMinute: 18 * 60,
   };
 }
 
@@ -51,22 +62,49 @@ function toggleValue<T>(values: ReadonlySet<T>, value: T) {
 }
 
 function componentLabel(value: string, locale: Locale) {
-  const kind = componentKind(value);
-  if (kind === "Lecture") return text(locale, "Lecture", "讲授");
-  if (kind === "Lab") return text(locale, "Lab", "实验");
-  if (kind === "Recitation") return text(locale, "Recitation", "习题课");
-  return value || text(locale, "Section", "班次");
+  return value.trim() || text(locale, "Section", "班次");
 }
 
-function modeLabel(value: string, locale: Locale) {
-  if (locale === "en") return value;
-  const labels: Record<string, string> = {
-    "In Person": "面授",
-    "Distance Learning": "远程授课",
-    "Distance Enhanced": "混合授课",
-    "Hybrid Delivery": "混合授课",
-  };
-  return labels[value] ?? value;
+function formatCutoff(minute: number, locale: Locale) {
+  const hour = Math.floor(minute / 60);
+  const mins = String(minute % 60).padStart(2, "0");
+  if (locale === "zh") return `${String(hour).padStart(2, "0")}:${mins}`;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  return `${hour % 12 || 12}:${mins} ${suffix}`;
+}
+
+const QUARTER_HOURS = Array.from({ length: 24 * 4 }, (_, index) => index * 15);
+
+function TimeCutoffSelect({
+  value,
+  label,
+  locale,
+  onChange,
+}: {
+  value: number;
+  label: string;
+  locale: Locale;
+  onChange: (minute: number) => void;
+}) {
+  return (
+    <Select
+      value={String(value)}
+      onValueChange={(value) => onChange(Number(value))}
+    >
+      <SelectTrigger size="sm" className={styles.timeSelect} aria-label={label}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent position="popper" className="max-h-72">
+        <SelectGroup>
+          {QUARTER_HOURS.map((minute) => (
+            <SelectItem value={String(minute)} key={minute}>
+              {formatCutoff(minute, locale)}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
 }
 
 function meetingLabel(meeting: CatalogMeeting, locale: Locale) {
@@ -80,13 +118,16 @@ function meetingLabel(meeting: CatalogMeeting, locale: Locale) {
 }
 
 function instructorIdentity(instructor: CatalogInstructor) {
-  return instructor.email?.toLowerCase() || instructor.name.toLowerCase();
+  return (
+    nameDotNumberFromEmail(instructor.email) ?? instructor.name.toLowerCase()
+  );
 }
 
 function SectionRow({
   section,
   locale,
   matches,
+  highlighted,
   saved,
   savedInstructors,
   onSave,
@@ -95,6 +136,7 @@ function SectionRow({
   section: CatalogSection;
   locale: Locale;
   matches: boolean;
+  highlighted: boolean;
   saved: boolean;
   savedInstructors: ReadonlySet<string>;
   onSave: () => void;
@@ -112,7 +154,7 @@ function SectionRow({
 
   return (
     <li
-      className={`${styles.row}${matches ? "" : ` ${styles.unmatched}`}`}
+      className={`${styles.row}${matches ? (highlighted ? ` ${styles.highlighted}` : "") : ` ${styles.unmatched}`}`}
       data-matches={matches}
     >
       <div className={styles.rowMain}>
@@ -134,8 +176,7 @@ function SectionRow({
               {componentLabel(section.component, locale)} {section.section}
             </strong>
             <span className={styles.muted}>
-              #{section.classNumber} ·{" "}
-              {modeLabel(section.instructionMode, locale)}
+              #{section.classNumber} · {section.instructionMode}
             </span>
           </span>
         </button>
@@ -150,27 +191,33 @@ function SectionRow({
                   className={styles.instructor}
                   key={instructor.email ?? instructor.name}
                 >
-                  <InstructorAvatar
+                  <InstructorDirectoryIdentity
                     name={instructor.name}
                     email={instructor.email}
+                    locale={locale}
                     size={30}
                   />
-                  <span className={styles.instructorName}>
-                    {instructor.name}
-                  </span>
                   <button
                     className={`${styles.iconButton}${isSaved ? ` ${styles.saved}` : ""}`}
                     type="button"
                     aria-pressed={isSaved}
                     aria-label={text(
                       locale,
-                      `${isSaved ? "Unsave" : "Save"} instructor ${instructor.name}`,
-                      `${isSaved ? "取消收藏" : "收藏"}教师 ${instructor.name}`,
+                      isSaved
+                        ? `Remove ${instructor.name}'s saved course link`
+                        : `Save ${instructor.name} with this course`,
+                      isSaved
+                        ? `取消收藏教师与课程的关联：${instructor.name}`
+                        : `收藏教师与课程的关联：${instructor.name}`,
                     )}
                     title={text(
                       locale,
-                      isSaved ? "Unsave instructor" : "Save instructor",
-                      isSaved ? "取消收藏教师" : "收藏教师",
+                      isSaved
+                        ? "Remove saved instructor-course link"
+                        : "Save instructor with this course",
+                      isSaved
+                        ? "取消教师与课程的关联收藏"
+                        : "收藏教师与课程关联",
                     )}
                     onClick={() => onSaveInstructor(instructor)}
                   >
@@ -188,12 +235,14 @@ function SectionRow({
         <div className={styles.meetings}>
           {section.meetings.length ? (
             section.meetings.map((meeting, index) => (
-              <span className={styles.meeting} key={index}>
-                <span>{meetingLabel(meeting, locale)}</span>
+              <div className={styles.meeting} key={index}>
+                <MeetingStrip meeting={meeting} locale={locale} compact />
                 {meeting.location ? (
-                  <span className={styles.location}>{meeting.location}</span>
+                  <span className={styles.location} title={meeting.location}>
+                    {meeting.location}
+                  </span>
                 ) : null}
-              </span>
+              </div>
             ))
           ) : (
             <span className={styles.muted}>
@@ -256,7 +305,7 @@ function SectionRow({
             <div>
               <dt>{text(locale, "Instruction mode", "授课方式")}</dt>
               <dd>
-                {modeLabel(section.instructionMode, locale) ||
+                {section.instructionMode ||
                   text(locale, "Not posted", "未公布")}
               </dd>
             </div>
@@ -304,19 +353,22 @@ export default function SectionsPanel({
     () => getSectionFilterOptions(course.sections),
     [course.sections],
   );
-  const sectionMatches = useMemo(
-    () =>
-      course.sections.map((section) => sectionMatchesFilters(section, filters)),
+  const rankedSections = useMemo(
+    () => rankSectionsForFilters(course.sections, filters),
     [course.sections, filters],
   );
-  const matchCount = sectionMatches.filter(Boolean).length;
+  const matchCount = rankedSections.filter(({ matches }) => matches).length;
   const savedSectionIds = new Set(savedSections.map((section) => section.id));
   const savedInstructorIds = new Set(
     savedInstructors
       .filter((instructor) =>
         instructor.courses.some((related) => related.id === course.id),
       )
-      .map((instructor) => instructor.id),
+      .map(
+        (instructor) =>
+          nameDotNumberFromEmail(instructor.id || instructor.email) ??
+          instructor.id.toLowerCase(),
+      ),
   );
   const activeCount =
     filters.components.size +
@@ -394,7 +446,7 @@ export default function SectionsPanel({
                     onClick={() => toggleMode(mode)}
                     key={mode}
                   >
-                    {modeLabel(mode, locale)}
+                    {mode}
                   </button>
                 ))}
               </div>
@@ -419,42 +471,70 @@ export default function SectionsPanel({
             </fieldset>
           ) : null}
         </div>
-        {options.hasEarlyMeetings ||
+        {options.hasTimedMeetings ||
         options.hasLateMeetings ||
         options.hasWeekendMeetings ? (
           <fieldset className={styles.exclusions}>
             <legend>{text(locale, "Schedule preferences", "时间偏好")}</legend>
-            {options.hasEarlyMeetings ? (
-              <label htmlFor={`${id}-early`}>
-                <input
-                  id={`${id}-early`}
-                  type="checkbox"
-                  checked={filters.excludeEarly}
-                  onChange={(event) =>
+            {options.hasTimedMeetings ? (
+              <div className={styles.timePreference}>
+                <label htmlFor={`${id}-early`}>
+                  <input
+                    id={`${id}-early`}
+                    type="checkbox"
+                    checked={filters.excludeEarly}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        excludeEarly: event.target.checked,
+                      }))
+                    }
+                  />
+                  {text(locale, "No classes before", "排除早于")}
+                </label>
+                <TimeCutoffSelect
+                  value={filters.earlyCutoffMinute ?? 9 * 60}
+                  label={text(locale, "Early class cutoff", "最早上课时间")}
+                  locale={locale}
+                  onChange={(minute) =>
                     setFilters((current) => ({
                       ...current,
-                      excludeEarly: event.target.checked,
+                      earlyCutoffMinute: minute,
+                      excludeEarly: true,
                     }))
                   }
                 />
-                {text(locale, "No classes before 9 AM", "排除上午 9 点前的课")}
-              </label>
+              </div>
             ) : null}
-            {options.hasLateMeetings ? (
-              <label htmlFor={`${id}-late`}>
-                <input
-                  id={`${id}-late`}
-                  type="checkbox"
-                  checked={filters.excludeLate}
-                  onChange={(event) =>
+            {options.hasTimedMeetings ? (
+              <div className={styles.timePreference}>
+                <label htmlFor={`${id}-late`}>
+                  <input
+                    id={`${id}-late`}
+                    type="checkbox"
+                    checked={filters.excludeLate}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        excludeLate: event.target.checked,
+                      }))
+                    }
+                  />
+                  {text(locale, "No classes after", "排除晚于")}
+                </label>
+                <TimeCutoffSelect
+                  value={filters.lateCutoffMinute ?? 18 * 60}
+                  label={text(locale, "Late class cutoff", "最晚下课时间")}
+                  locale={locale}
+                  onChange={(minute) =>
                     setFilters((current) => ({
                       ...current,
-                      excludeLate: event.target.checked,
+                      lateCutoffMinute: minute,
+                      excludeLate: true,
                     }))
                   }
                 />
-                {text(locale, "No classes after 6 PM", "排除下午 6 点后的课")}
-              </label>
+              </div>
             ) : null}
             {options.hasWeekendMeetings ? (
               <label htmlFor={`${id}-weekends`}>
@@ -491,20 +571,21 @@ export default function SectionsPanel({
           <span>
             {text(
               locale,
-              "Non-matching sections are dimmed",
-              "不符合的班次已褪色",
+              "Matches first · other sections dimmed below",
+              "符合的班次优先 · 其余班次在下方褪色显示",
             )}
           </span>
         ) : null}
       </div>
       {course.sections.length ? (
         <ul className={styles.list}>
-          {course.sections.map((section, index) => (
+          {rankedSections.map(({ section, matches }) => (
             <SectionRow
               key={section.id}
               section={section}
               locale={locale}
-              matches={sectionMatches[index]}
+              matches={matches}
+              highlighted={activeCount > 0}
               saved={savedSectionIds.has(`${course.id}:${section.classNumber}`)}
               savedInstructors={savedInstructorIds}
               onSave={() => {

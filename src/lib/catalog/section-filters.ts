@@ -1,6 +1,6 @@
 import type { CatalogSection } from "@/lib/catalog/types";
 
-export type ComponentKind = "Lecture" | "Lab" | "Recitation";
+export type ComponentKind = string;
 
 export type SectionFilterState = {
   components: ReadonlySet<ComponentKind>;
@@ -9,6 +9,10 @@ export type SectionFilterState = {
   excludeEarly: boolean;
   excludeLate: boolean;
   excludeWeekends: boolean;
+  /** 15-minute cutoff used when excludeEarly is enabled (defaults to 09:00). */
+  earlyCutoffMinute?: number;
+  /** 15-minute cutoff used when excludeLate is enabled (defaults to 18:00). */
+  lateCutoffMinute?: number;
 };
 
 export type SectionFilterOptions = {
@@ -18,28 +22,11 @@ export type SectionFilterOptions = {
   hasEarlyMeetings: boolean;
   hasLateMeetings: boolean;
   hasWeekendMeetings: boolean;
+  hasTimedMeetings: boolean;
 };
 
-const COMPONENTS: ComponentKind[] = ["Lecture", "Lab", "Recitation"];
-
 export function componentKind(value: string): ComponentKind | null {
-  const normalized = value.trim().toLowerCase();
-  if (
-    /^(lec|lecture|lect)$/i.test(normalized) ||
-    normalized.includes("lecture")
-  )
-    return "Lecture";
-  if (
-    /^(lab|laboratory)$/i.test(normalized) ||
-    normalized.includes("laboratory")
-  )
-    return "Lab";
-  if (
-    /^(rec|recit|recitation)$/i.test(normalized) ||
-    normalized.includes("recitation")
-  )
-    return "Recitation";
-  return null;
+  return value.trim() || null;
 }
 
 function minuteOfDay(value: string | null) {
@@ -66,6 +53,7 @@ export function getSectionFilterOptions(
   let hasEarlyMeetings = false;
   let hasLateMeetings = false;
   let hasWeekendMeetings = false;
+  let hasTimedMeetings = false;
 
   for (const section of sections) {
     const kind = componentKind(section.component);
@@ -79,6 +67,7 @@ export function getSectionFilterOptions(
       }
       const start = minuteOfDay(meeting.startTime);
       const end = minuteOfDay(meeting.endTime);
+      if (start !== null || end !== null) hasTimedMeetings = true;
       if (start !== null && start < 9 * 60) hasEarlyMeetings = true;
       if (
         (start !== null && start > 18 * 60) ||
@@ -89,9 +78,7 @@ export function getSectionFilterOptions(
   }
 
   return {
-    components: COMPONENTS.filter((component) =>
-      presentComponents.has(component),
-    ),
+    components: [...presentComponents].toSorted((a, b) => a.localeCompare(b)),
     instructionModes: [...instructionModes].toSorted((a, b) =>
       a.localeCompare(b),
     ),
@@ -99,6 +86,7 @@ export function getSectionFilterOptions(
     hasEarlyMeetings,
     hasLateMeetings,
     hasWeekendMeetings,
+    hasTimedMeetings,
   };
 }
 
@@ -131,7 +119,8 @@ export function sectionMatchesFilters(
     filters.excludeEarly &&
     section.meetings.some((meeting) => {
       const start = minuteOfDay(meeting.startTime);
-      return start !== null && start < 9 * 60;
+      const cutoff = filters.earlyCutoffMinute ?? 9 * 60;
+      return start !== null && start < cutoff;
     })
   )
     return false;
@@ -141,8 +130,9 @@ export function sectionMatchesFilters(
     section.meetings.some((meeting) => {
       const start = minuteOfDay(meeting.startTime);
       const end = minuteOfDay(meeting.endTime);
+      const cutoff = filters.lateCutoffMinute ?? 18 * 60;
       return (
-        (start !== null && start > 18 * 60) || (end !== null && end > 18 * 60)
+        (start !== null && start > cutoff) || (end !== null && end > cutoff)
       );
     })
   )
@@ -157,4 +147,24 @@ export function sectionMatchesFilters(
     return false;
 
   return true;
+}
+
+/** Keep every row available, with matches first and inactive rows last in each group. */
+export function rankSectionsForFilters(
+  sections: readonly CatalogSection[],
+  filters: SectionFilterState,
+) {
+  return sections
+    .map((section) => ({
+      section,
+      matches: sectionMatchesFilters(section, filters),
+      inactive: /\b(inactive|cancelled|canceled)\b/i.test(
+        section.enrollmentStatus,
+      ),
+    }))
+    .toSorted(
+      (a, b) =>
+        Number(b.matches) - Number(a.matches) ||
+        Number(a.inactive) - Number(b.inactive),
+    );
 }
