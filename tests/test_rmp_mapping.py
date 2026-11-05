@@ -5,15 +5,48 @@ from scripts.sync_rmp_mappings import (
     catalog_candidates,
     collect_catalog_facts,
     confidence_score,
+    include_official_name_history,
     normalize_course_key,
     normalize_name,
     osu_username,
     parse_decisions,
+    refresh_fingerprint,
     should_auto_accept,
 )
 
 
 class RmpMappingTests(unittest.TestCase):
+    def test_refresh_fingerprint_is_order_stable_and_changes_with_evidence(self):
+        candidates = [
+            {"professor_id": 2, "username": "smith.2", "state": "candidate", "evidence": {"name": "B"}},
+            {"professor_id": 1, "username": "smith.1", "state": "accepted", "evidence": {"name": "A"}},
+        ]
+        terms = [{"source": "official_catalog", "term": "1272"}, {"source": "official_evaluation", "term": "SU 26"}]
+        digest = refresh_fingerprint(candidates, terms)
+        self.assertEqual(digest, refresh_fingerprint(list(reversed(candidates)), list(reversed(terms))))
+        changed = [{**item, "state": "candidate"} for item in candidates]
+        self.assertNotEqual(digest, refresh_fingerprint(changed, terms))
+
+    def test_official_aliases_stay_scoped_to_the_exact_username(self):
+        class Result:
+            def __init__(self, rows): self.rows = rows
+            def fetchone(self): return self.rows[0]
+            def fetchall(self): return self.rows
+        class Database:
+            def execute(self, sql, params=None):
+                if "to_regclass" in sql: return Result([(True,)])
+                self.selection = params[0]
+                return Result([("smith.1", ["Jane Smith", "Jane A Smith"])])
+        identities = {
+            "smith.1": {"names": ["Jane Smith"]},
+            "smith.2": {"names": ["Other Smith"]},
+        }
+        database = Database()
+        include_official_name_history(database, identities)
+        self.assertEqual(identities["smith.1"]["names"], ["Jane A Smith", "Jane Smith"])
+        self.assertEqual(identities["smith.2"]["names"], ["Other Smith"])
+        self.assertEqual(set(database.selection), {"smith.1", "smith.2"})
+
     def test_name_normalization_handles_accents_and_punctuation(self):
         self.assertEqual(normalize_name("María-José O’Neil"), "mariajoseoneil")
         self.assertEqual(normalize_name(None), "")
@@ -105,6 +138,37 @@ class RmpMappingTests(unittest.TestCase):
         ]
         candidates = catalog_candidates(profiles, identities, {724: "COL", 2610: "NWK"}, {"smith.1": {"cse"}})
         self.assertEqual({candidate["state"] for candidate in candidates}, {"accepted"})
+
+    def test_reviewed_department_alias_and_exact_course_disambiguate_same_names(self):
+        identities, facts = collect_catalog_facts([
+            {"email": "smith.1@osu.edu", "display_name": "Jane Smith", "term_code": "1248",
+             "class_number": "10001", "campus_code": "COL", "subject": "CSE", "catalog_number": "2221"},
+            {"email": "smith.2@osu.edu", "display_name": "Jane Smith", "term_code": "1248",
+             "class_number": "10002", "campus_code": "COL", "subject": "MATH", "catalog_number": "1151"},
+        ])
+        for user, item in identities.items():
+            item["course_facts"] = [row for row in facts if row[0] == user]
+        profiles = [{"legacy_id": 101, "first_name": "Jane", "last_name": "Smith", "department": "Computer Science",
+                     "course_codes": [{"courseName": "CSE 2221"}], "school_ids": [724]}]
+        candidates = catalog_candidates(profiles, identities, {724: "COL"},
+            {"smith.1": {"computerscienceengr"}, "smith.2": {"mathematics"}},
+            {"computerscience": {"computerscienceengr"}})
+        self.assertEqual({c["username"]: c["state"] for c in candidates},
+                         {"smith.1": "accepted", "smith.2": "candidate"})
+        self.assertEqual(candidates[0]["evidence"]["department_alias_matches"], ["computerscienceengr"])
+
+    def test_department_alias_does_not_replace_course_evidence(self):
+        identities, facts = collect_catalog_facts([
+            {"email": "smith.1@osu.edu", "display_name": "Jane Smith", "term_code": "1248",
+             "class_number": "10001", "campus_code": "COL", "subject": "CSE", "catalog_number": "2221"},
+        ])
+        identities["smith.1"]["course_facts"] = facts
+        candidates = catalog_candidates(
+            [{"legacy_id": 101, "first_name": "Jane", "last_name": "Smith", "department": "Computer Science",
+              "course_codes": [{"courseName": "CSE 9999"}], "school_ids": [724]}],
+            identities, {724: "COL"}, {"smith.1": {"computerscienceengr"}},
+            {"computerscience": {"computerscienceengr"}})
+        self.assertEqual(candidates[0]["state"], "candidate")
 
     def test_manual_accept_reserves_identity_without_overriding_manual_record(self):
         candidates = [{"professor_id": 101, "username": "smith.1", "state": "accepted",

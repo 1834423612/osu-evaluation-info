@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -17,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "db" / "rmp_app_schema.sql"
 LOCK_ID = 7241102917
 DEFAULT_TERM_WINDOW = 8
-SCHEMA_VERSION = "rmp-app-v1"
+SCHEMA_VERSION = "rmp-app-v3"
 OSU_EMAIL = re.compile(r"^([a-z][a-z0-9_-]*\.\d+)@(?:buckeyemail\.)?osu\.edu$", re.I)
 
 
@@ -342,6 +343,36 @@ def official_departments(conn) -> tuple[dict[str, set[str]], dict[str, int]]:
     return departments, instructor_ids
 
 
+def load_department_aliases(conn) -> dict[str, set[str]]:
+    if not conn.execute("SELECT to_regclass('osu_rmp.department_alias') IS NOT NULL").fetchone()[0]:
+        return {}
+    aliases: dict[str, set[str]] = defaultdict(set)
+    for rmp_label, official_label in conn.execute(
+        "SELECT rmp_department,official_department FROM osu_rmp.department_alias"
+    ).fetchall():
+        aliases[normalize_name(rmp_label)].add(normalize_name(official_label))
+    return aliases
+
+
+def include_official_name_history(conn, identities: dict[str, dict[str, Any]]) -> None:
+    """Add only aliases observed under that exact official OSU username."""
+    if not conn.execute(
+        "SELECT to_regclass('osu_eval.instructor_name_observation') IS NOT NULL"
+    ).fetchone()[0]:
+        return
+    aliases = conn.execute(
+        """SELECT i.name_dot_number,
+                  array_agg(DISTINCT n.first_name || ' ' || n.last_name)
+           FROM osu_eval.instructor i
+           JOIN osu_eval.instructor_name_observation n ON n.instructor_id=i.id
+           WHERE i.name_dot_number=ANY(%s)
+           GROUP BY i.name_dot_number""",
+        (list(identities),),
+    ).fetchall()
+    for username, values in aliases:
+        identities[username]["names"] = sorted(set(identities[username]["names"]) | set(values))
+
+
 def collect_catalog_facts(rows: list[dict[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[tuple[Any, ...]]]:
     names: dict[str, set[str]] = defaultdict(set)
     courses: dict[str, set[tuple[str, str, str, str, str, str, str]]] = defaultdict(set)
@@ -389,7 +420,9 @@ def collect_catalog_facts(rows: list[dict[str, Any]]) -> tuple[dict[str, dict[st
 def catalog_candidates(
     professors: list[dict[str, Any]], identities: dict[str, dict[str, Any]],
     schools: dict[int, str], department_evidence: dict[str, set[str]],
+    department_aliases: dict[str, set[str]] | None = None,
 ) -> list[dict[str, Any]]:
+    department_aliases = department_aliases or {}
     by_name: dict[str, list[str]] = defaultdict(list)
     for username, item in identities.items():
         for name in item["names"]:
@@ -420,16 +453,22 @@ def catalog_candidates(
                 fact[4] for fact in item.get("course_facts", []) if fact[3] in rmp_campuses
             }
             course_intersection = sorted(professor_courses & same_campus_courses)
-            dept_match = bool(rmp_departments and rmp_departments in department_evidence.get(username, set()))
+            official_depts = department_evidence.get(username, set())
+            alias_matches = sorted(department_aliases.get(rmp_departments, set()) & official_depts)
+            dept_match = bool(rmp_departments and (rmp_departments in official_depts or alias_matches))
             if not campus_intersection and not course_intersection and not dept_match:
                 continue
             entry = {
                 "professor_id": professor_id,
                 "username": username,
                 "name_exact": True,
+                "official_name_matches": sorted(
+                    name for name in item["names"] if normalize_name(name) == normalized
+                ),
                 "campus_match": bool(campus_intersection),
                 "campus_codes": campus_intersection,
                 "department_match": dept_match,
+                "department_alias_matches": alias_matches,
                 "rmp_department": profile.get("department"),
                 "osu_departments": sorted(department_evidence.get(username, set())),
                 "course_matches": course_intersection,
@@ -438,9 +477,12 @@ def catalog_candidates(
                 "school_ids": sorted(profile.get("school_ids", [])),
             }
             potential.append(entry)
-            professor_counts[professor_id] += 1
-            for campus in campus_intersection:
-                identity_campus_counts[username, campus] += 1
+            # Same-name entries without matching course and department evidence
+            # do not compete with a complete, exact identity candidate.
+            if campus_intersection and course_intersection and dept_match:
+                professor_counts[professor_id] += 1
+                for campus in campus_intersection:
+                    identity_campus_counts[username, campus] += 1
     for entry in potential:
         accepted = should_auto_accept(
             name_exact=entry["name_exact"], campus_match=entry["campus_match"],
@@ -469,6 +511,15 @@ def _manual_candidates(args, candidates: list[dict[str, Any]]) -> None:
         ) and (item["professor_id"], item["username"]) not in accepted:
             item["state"] = "candidate"
             item["evidence"]["manual_decision_reserved"] = True
+
+
+def refresh_fingerprint(candidates: list[dict[str, Any]], source_terms: list[dict[str, Any]]) -> str:
+    """Stable snapshot identity: unchanged evidence does not create audit churn."""
+    snapshot = {
+        "terms": sorted(source_terms, key=lambda item: (item["source"], item["term"])),
+        "candidates": sorted(candidates, key=lambda item: (item["professor_id"], item["username"])),
+    }
+    return hashlib.sha256(json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def _write_manual_decisions(conn, decisions: list[tuple[int, str, str]], reason: str) -> None:
@@ -540,7 +591,22 @@ def main(argv: list[str] | None = None) -> int:
         if not locked:
             print("[error] Another RMP mapping refresh is already running.", file=sys.stderr)
             return 2
-        ensure_schema(conn)
+        if args.dry_run:
+            schema_ready = conn.execute(
+                "SELECT to_regclass('osu_rmp.app_migration') IS NOT NULL"
+            ).fetchone()[0]
+            if schema_ready:
+                schema_ready = conn.execute(
+                    "SELECT EXISTS (SELECT 1 FROM osu_rmp.app_migration WHERE version=%s)",
+                    ("rmp-app-v1",),
+                ).fetchone()[0]
+            if not schema_ready:
+                raise RuntimeError(
+                    "Read-only dry runs require the RMP application schema; "
+                    "run the normal sync once to install it."
+                )
+        else:
+            ensure_schema(conn)
         catalog, catalog_terms = catalog_rows(conn, args.term_window)
         evaluations, evaluation_terms = evaluation_rows(conn, args.term_window)
         source_rows = catalog + retained_catalog_rows(conn, catalog_terms) + evaluations
@@ -550,6 +616,7 @@ def main(argv: list[str] | None = None) -> int:
         identities, course_rows = collect_catalog_facts(source_rows)
         if not identities:
             raise RuntimeError("No OSU instructors with valid osu.edu usernames were found in official snapshots.")
+        include_official_name_history(conn, identities)
         departments, official_ids = official_departments(conn)
         facts_by_user: dict[str, list[tuple[Any, ...]]] = defaultdict(list)
         for fact in course_rows:
@@ -567,7 +634,8 @@ def main(argv: list[str] | None = None) -> int:
                FROM osu_rmp.professor p LEFT JOIN osu_rmp.professor_school ps ON ps.professor_id=p.legacy_id
                WHERE p.active GROUP BY p.legacy_id"""
         ))
-        candidates = catalog_candidates(professors, identities, school_codes, departments)
+        candidates = catalog_candidates(professors, identities, school_codes, departments,
+                                        load_department_aliases(conn))
         manual_rows = conn.execute(
             """SELECT m.professor_id,m.name_dot_number,
                       coalesce(array_agg(DISTINCT s.campus_code) FILTER (WHERE s.campus_code IS NOT NULL),'{}')
@@ -677,6 +745,22 @@ def main(argv: list[str] | None = None) -> int:
                          score integer,evidence jsonb)""",
                     (json.dumps([{"professor_id": c["professor_id"], "username": c["username"], "state": c["state"],
                                   "score": c["score"], "evidence": c["evidence"]} for c in candidates], ensure_ascii=False),),
+                )
+            fingerprint = refresh_fingerprint(candidates, source_terms)
+            refresh_row = conn.execute(
+                """INSERT INTO osu_rmp.mapping_refresh
+                     (source_terms,candidate_sha256,identity_count,course_fact_count,candidate_count,accepted_count)
+                   VALUES (%s::jsonb,%s,%s,%s,%s,%s)
+                   ON CONFLICT (candidate_sha256) DO NOTHING RETURNING id""",
+                (json.dumps(source_terms), fingerprint, len(identities), len(course_rows),
+                 len(candidates), sum(item["state"] == "accepted" for item in candidates)),
+            ).fetchone()
+            if refresh_row:
+                conn.execute(
+                    """INSERT INTO osu_rmp.mapping_refresh_item
+                         (refresh_id,professor_id,name_dot_number,proposed_state,score,evidence)
+                       SELECT %s,professor_id,username,state,score,evidence FROM rmp_candidate_stage""",
+                    (refresh_row[0],),
                 )
             conn.execute("CREATE INDEX ON rmp_candidate_stage (professor_id,username)")
             conn.execute("ANALYZE rmp_candidate_stage")

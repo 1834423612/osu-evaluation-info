@@ -97,6 +97,44 @@ CREATE TABLE IF NOT EXISTS osu_rmp.mapping_decision_log (
 CREATE INDEX IF NOT EXISTS idx_rmp_map_decision_history
     ON osu_rmp.mapping_decision_log (professor_id, name_dot_number, decided_at DESC);
 
+-- Reviewed equivalents preserve the original source department labels.
+CREATE TABLE IF NOT EXISTS osu_rmp.department_alias (
+    rmp_department text NOT NULL,
+    official_department text NOT NULL,
+    evidence_url text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (rmp_department, official_department)
+);
+INSERT INTO osu_rmp.department_alias (rmp_department, official_department, evidence_url) VALUES
+    ('Computer Science', 'Computer Science & Engr', 'https://cse.osu.edu/'),
+    ('Electrical Engineering', 'Electrical & Computr Engr', 'https://ece.osu.edu/'),
+    ('Communication', 'School of Communication', 'https://comm.osu.edu/'),
+    ('Art History', 'History of Art', 'https://history-of-art.osu.edu/')
+ON CONFLICT DO NOTHING;
+
+-- Each changed refresh keeps its evidence; identical snapshots are deduplicated.
+CREATE TABLE IF NOT EXISTS osu_rmp.mapping_refresh (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    source_terms jsonb NOT NULL,
+    candidate_sha256 text NOT NULL UNIQUE CHECK (candidate_sha256 ~ '^[0-9a-f]{64}$'),
+    identity_count integer NOT NULL,
+    course_fact_count integer NOT NULL,
+    candidate_count integer NOT NULL,
+    accepted_count integer NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS osu_rmp.mapping_refresh_item (
+    refresh_id bigint NOT NULL REFERENCES osu_rmp.mapping_refresh(id),
+    professor_id bigint NOT NULL,
+    name_dot_number text NOT NULL,
+    proposed_state text NOT NULL CHECK (proposed_state IN ('accepted', 'candidate')),
+    score integer NOT NULL CHECK (score BETWEEN 0 AND 100),
+    evidence jsonb NOT NULL,
+    PRIMARY KEY (refresh_id, professor_id, name_dot_number)
+);
+CREATE INDEX IF NOT EXISTS idx_rmp_refresh_profile_history
+    ON osu_rmp.mapping_refresh_item (professor_id, name_dot_number, refresh_id DESC);
+
 -- Legacy SQLite rows have no immutable rating ID. Keep them separate until the
 -- regular collector observes a matching source review and reconciles provenance.
 CREATE TABLE IF NOT EXISTS osu_rmp.legacy_supplement (
@@ -159,4 +197,6 @@ LEFT JOIN LATERAL (
 WHERE m.state = 'accepted';
 
 INSERT INTO osu_rmp.app_migration (version) VALUES ('rmp-app-v1') ON CONFLICT DO NOTHING;
+INSERT INTO osu_rmp.app_migration (version) VALUES ('rmp-app-v2') ON CONFLICT DO NOTHING;
+INSERT INTO osu_rmp.app_migration (version) VALUES ('rmp-app-v3') ON CONFLICT DO NOTHING;
 COMMIT;
