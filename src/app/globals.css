@@ -2488,7 +2488,9 @@ body {
 }
 
 .section-row {
-  grid-template-columns: minmax(80px, 0.52fr) minmax(120px, 0.82fr) minmax(205px, 1.55fr) 82px;
+  grid-template-columns:
+    minmax(80px, 0.52fr) minmax(120px, 0.82fr) minmax(205px, 1.55fr)
+    82px;
   gap: 15px;
   padding: 16px 0;
   border-top-color: #e7edf6;
@@ -2614,7 +2616,9 @@ body {
   font-size: 18px;
 }
 
-.mobile-filter-sheet > [data-slot="sheet-header"] [data-slot="sheet-description"] {
+.mobile-filter-sheet
+  > [data-slot="sheet-header"]
+  [data-slot="sheet-description"] {
   color: var(--muted);
   font-size: 13px;
 }
@@ -2702,7 +2706,9 @@ body {
   }
 
   .section-row {
-    grid-template-columns: minmax(80px, 0.55fr) minmax(115px, 0.85fr) minmax(180px, 1.5fr) 75px;
+    grid-template-columns:
+      minmax(80px, 0.55fr) minmax(115px, 0.85fr) minmax(180px, 1.5fr)
+      75px;
   }
 }
 
@@ -2939,5 +2945,358 @@ body {
     width: 22px;
     height: 24px;
     font-size: 10px;
+  }
+}
+
+/* Course-level summaries and action feedback. */
+.course-card {
+  cursor: pointer;
+}
+.course-card:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.course-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "instructors sections availability" "schedule schedule schedule";
+  align-items: center;
+  gap: 11px 18px;
+  background: #f6f9ff;
+  padding: 13px 22px;
+}
+.preview-instructor-group {
+  grid-area: instructors;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.preview-avatars {
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+}
+.preview-avatar + .preview-avatar {
+  margin-left: -9px;
+}
+.preview-avatar {
+  border: 2px solid #fff;
+  border-radius: 50%;
+  display: inline-flex;
+}
+.preview-more {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: #e2eaff;
+  color: #315bd6;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: -5px;
+}
+.preview-summary-label,
+.preview-sections > span {
+  font-size: 10px;
+  color: #586980;
+}
+.preview-schedule {
+  grid-area: schedule;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.preview-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.preview-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 29px;
+  padding: 4px 2px;
+  border: 1px solid #d9e1ec;
+  border-radius: 5px;
+  color: #64748b;
+  background: #edf1f6;
+  text-align: center;
+}
+.preview-day strong {
+  font-size: 9px;
+  line-height: 1.1;
+}
+.preview-day.active {
+  border-color: #315bd6;
+  color: #173f9f;
+  background: #e2eaff;
+  box-shadow: inset 0 2px 0 #315bd6;
+}
+.preview-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  color: #244cae;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.preview-times > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.preview-sections {
+  grid-area: sections;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+.preview-sections strong {
+  color: #253f79;
+  font-size: 23px;
+  line-height: 1;
+}
+.preview-availability {
+  grid-area: availability;
+  display: flex;
+  gap: 4px;
+  flex-direction: column;
+  font-size: 10px;
+  font-weight: 600;
+}
+.preview-open {
+  color: #087b5a;
+  background: #e6f8f0;
+  padding: 3px 7px;
+  border-radius: 5px;
+}
+.preview-closed {
+  color: #b63848;
+  background: #fff0f2;
+  padding: 3px 7px;
+  border-radius: 5px;
+}
+.action-toast {
+  position: fixed;
+  z-index: 100;
+  top: max(18px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100vw - 24px);
+  width: max-content;
+  border: 1px solid #bce8d6;
+  background: #f4fffa;
+  color: #126348;
+  border-radius: 8px;
+  box-shadow: 0 8px 36px #18392b25;
+  padding: 12px 14px;
+  font-size: 12px;
+  animation: toast-enter 200ms ease-out;
+}
+.action-toast[data-state="removed"] {
+  border-color: #d8e1ed;
+  background: #f7f9fc;
+  color: #475a73;
+}
+.action-toast > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.action-toast button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.action-toast-close {
+  margin-left: 4px;
+}
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.course-list {
+  animation: page-enter 220ms ease-out;
+}
+@keyframes page-enter {
+  from {
+    opacity: 0.55;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 600px) {
+  .course-preview {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "instructors sections availability" "schedule schedule schedule";
+    gap: 10px 8px;
+    padding: 12px 16px;
+  }
+  .preview-instructor-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+  .preview-week {
+    gap: 3px;
+  }
+  .preview-day {
+    min-height: 27px;
+  }
+  .preview-day strong {
+    font-size: 8px;
+  }
+}
+
+.meeting-strip.compact {
+  min-width: 0;
+  gap: 8px;
+}
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+  max-width: 238px;
+}
+.day {
+  width: auto;
+  min-width: 0;
+  height: 25px;
+  border: 1px solid #d9e1ec;
+  border-radius: 4px;
+  background: #edf1f6;
+  color: #66758a;
+  font-size: 8px;
+  font-weight: 650;
+}
+.day.active {
+  border-color: #315bd6;
+  background: #315bd6;
+  color: #fff;
+  box-shadow: 0 2px 5px #315bd626;
+}
+.meeting-time {
+  gap: 5px;
+  color: #174c70;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.meeting-time > svg {
+  flex: 0 0 auto;
+  color: #0787a2;
+}
+.section-meetings .meeting {
+  min-width: 0;
+}
+.section-meetings .location {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .week-strip {
+    width: 100%;
+  }
+  .meeting-strip.compact {
+    flex-wrap: wrap;
+    row-gap: 5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .course-list,
+  .action-toast {
+    animation: none;
+  }
+}
+
+.course-detail-drawer {
+  overflow: hidden;
+  padding-bottom: 0;
+}
+.course-detail-drawer > [data-slot="drawer-header"] {
+  flex-shrink: 0;
+  padding-top: 12px;
+}
+.course-detail-drawer > .course-details {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.result-summary {
+  flex-wrap: wrap;
+  row-gap: 5px;
+}
+.result-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .results-toolbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .result-summary {
+    flex: 1 1 100%;
+    gap: 6px 12px;
+  }
+  .result-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .preview-day strong,
+  .day {
+    font-size: 9px;
+  }
+}
+.rating-source-tabs {
+  margin-top: 15px;
+  gap: 18px;
+}
+.rating-source-tabs > [data-slot="tabs-list"] {
+  width: fit-content;
+  background: #edf2fd;
+  padding: 4px;
+  border-radius: 8px;
+}
+.rating-source-tabs > [data-slot="tabs-list"] [data-state="active"] {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 1px 5px #23488415;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="tabs-content"][data-state="active"] {
+    animation: page-enter 180ms ease-out;
   }
 }

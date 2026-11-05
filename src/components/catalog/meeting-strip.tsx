@@ -2,18 +2,21 @@ import { Clock3, MapPin } from "lucide-react";
 import type { CatalogMeeting } from "@/lib/catalog/types";
 import { text, type Locale } from "@/lib/i18n";
 const DAYS = {
-  en: ["M", "T", "W", "T", "F", "S", "S"],
-  zh: ["一", "二", "三", "四", "五", "六", "日"],
+  en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  zh: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
 };
-const FULL_DAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const FULL_DAYS = {
+  en: [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ],
+  zh: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+};
 export function MeetingStrip({
   meeting,
   locale,
@@ -31,7 +34,7 @@ export function MeetingStrip({
         role="img"
         aria-label={
           days.length
-            ? days.map((day) => FULL_DAYS[day]).join(", ")
+            ? days.map((day) => FULL_DAYS[locale][day]).join(", ")
             : text(locale, "No scheduled meeting days", "无固定上课日期")
         }
       >

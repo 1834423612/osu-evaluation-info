@@ -1,19 +1,24 @@
 "use client";
-import { useId, useState, useSyncExternalStore } from "react";
-import dynamic from "next/dynamic";
 import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
+import {
+  AlertTriangle,
   Bookmark,
-  ChevronRight,
   GraduationCap,
   MapPin,
   ArrowUpRight,
-  History,
-  UsersRound,
   LoaderCircle,
-  ListChecks,
   X,
 } from "lucide-react";
-import type { CatalogCourse, CatalogSection } from "@/lib/catalog/types";
+import type { CatalogCourse } from "@/lib/catalog/types";
 import { localizedTerm, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +37,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { MeetingStrip } from "./meeting-strip";
 import { RatingSummary } from "./rating-summary";
 import { InstructorAvatar } from "./instructor-avatar";
+import SectionsPanel from "./sections-panel";
 
 const EvaluationPanel = dynamic(() => import("./evaluation-panel"), {
   loading: () => (
@@ -72,154 +77,159 @@ function useMobileViewport() {
   );
 }
 
-function status(section: CatalogSection, locale: Locale) {
-  const open = /open|^o$/i.test(section.enrollmentStatus);
-  const closed = /closed|^c$/i.test(section.enrollmentStatus);
-  return (
-    <span className={open ? "section-status open" : "section-status"}>
-      <span />
-      {open
-        ? text(locale, "Open", "可选")
-        : closed
-          ? text(locale, "Closed", "已满")
-          : section.enrollmentStatus || text(locale, "Unpublished", "尚未公布")}
-    </span>
-  );
-}
-
-function isFutureTerm(term: string) {
-  const english = term.match(/(spring|summer|autumn)\s*(\d{4})/i);
-  const chinese = term.match(/(\d{4})\s*(春季|夏季|秋季)/);
-  const match = english ?? chinese;
-  if (!match) return false;
-  const season = (english ? match[1] : match[2]).toLowerCase();
-  const year = Number(english ? match[2] : match[1]);
-  const rank = (value: string) =>
-    /spring|春季/.test(value) ? 0 : /summer|夏季/.test(value) ? 1 : 2;
-  const now = new Date();
-  const month = now.getMonth();
-  const currentSeason = month < 4 ? 0 : month < 7 ? 1 : 2;
-  return year * 3 + rank(season) > now.getFullYear() * 3 + currentSeason;
-}
-
-function bestRatedInstructor(course: CatalogCourse) {
-  const evaluation = course.evaluation;
-  const comparisonInstrument = evaluation?.primary?.instrument;
-  if (!evaluation || !comparisonInstrument) return null;
-  const instructors = new Map<
-    string,
-    { name: string; section: CatalogSection }
-  >();
-  for (const section of course.sections) {
-    for (const instructor of section.instructors) {
-      if (instructor.email)
-        instructors.set(instructor.email.toLowerCase(), {
-          name: instructor.name,
-          section,
-        });
-    }
-  }
-  if (instructors.size < 2) return null;
-  const candidates = evaluation.instructors.flatMap((instructor) => {
-    const email = instructor.email?.toLowerCase();
-    const listed = email ? instructors.get(email) : undefined;
-    const metric = instructor.primary;
-    if (
-      instructor.match !== "exact-email" ||
-      !listed ||
-      !metric ||
-      metric.instrument !== comparisonInstrument ||
-      metric.recommendation === "insufficient"
-    )
-      return [];
-    return [{ ...listed, metric }];
-  });
-  return (
-    candidates.toSorted((a, b) => b.metric.score - a.metric.score)[0] ?? null
-  );
-}
-
-function sectionMeetingLabel(section: CatalogSection, locale: Locale) {
-  const weekdays =
+function CoursePreview({
+  course,
+  locale,
+}: {
+  course: CatalogCourse;
+  locale: Locale;
+}) {
+  const instructors = new Map<string, { name: string; email: string | null }>();
+  const activeDays = new Set<number>();
+  const meetingPatterns = new Set<string>();
+  let hasUnscheduledMeeting = false;
+  const dayLabels =
     locale === "zh"
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const meetings = section.meetings
-    .map((meeting) => {
-      const days = meeting.days.flatMap((day) =>
-        weekdays[day] ? [weekdays[day]] : [],
+  const scheduleDayLabels =
+    locale === "zh"
+      ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+      : [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ];
+  let open = 0;
+  let closed = 0;
+  for (const section of course.sections) {
+    if (/open|^o$/i.test(section.enrollmentStatus)) open++;
+    if (/closed|^c$/i.test(section.enrollmentStatus)) closed++;
+    for (const instructor of section.instructors)
+      instructors.set(
+        instructor.email?.toLowerCase() ?? instructor.name.toLowerCase(),
+        instructor,
       );
-      const time = [meeting.startTime, meeting.endTime]
-        .filter(Boolean)
-        .join("–");
-      return [days.join(locale === "zh" ? "、" : "/"), time]
-        .filter(Boolean)
-        .join(" ");
-    })
-    .filter(Boolean);
-  return meetings.join(" · ") || text(locale, "Time not posted", "时间未公布");
-}
-
-function SectionRow({
-  section,
-  locale,
-}: {
-  section: CatalogSection;
-  locale: Locale;
-}) {
+    for (const meeting of section.meetings) {
+      if (!meeting.days.length) hasUnscheduledMeeting = true;
+      const time = meeting.startTime
+        ? `${meeting.startTime}–${meeting.endTime ?? "?"}`
+        : text(locale, "Time TBA", "时间待定");
+      meeting.days.forEach((day) => activeDays.add(day));
+      if (meeting.days.length)
+        meetingPatterns.add(
+          `${meeting.days.map((day) => scheduleDayLabels[day]).join(locale === "zh" ? "、" : "/")} · ${time}`,
+        );
+    }
+  }
+  const people = [...instructors.values()];
+  const visiblePeople = people.slice(0, 4);
   return (
-    <div className="section-row">
-      <div className="section-identity">
-        <span className="section-number">
-          {section.component} {section.section}
-        </span>
-        <span className="secondary-text">
-          #{section.classNumber} · {section.instructionMode}
-        </span>
-        {status(section, locale)}
-      </div>
-      <div className="section-instructors">
-        {section.instructors.length ? (
-          section.instructors.map((instructor) => (
-            <span key={instructor.email ?? instructor.name}>
+    <div
+      className="course-preview"
+      aria-label={text(locale, "Course overview", "课程概览")}
+    >
+      <div className="preview-instructor-group">
+        <div
+          className="preview-avatars"
+          aria-label={people.map((person) => person.name).join(", ")}
+        >
+          {visiblePeople.map((person, index) => (
+            <span
+              className="preview-avatar"
+              style={{ zIndex: 5 - index }}
+              key={person.email ?? person.name}
+            >
               <InstructorAvatar
-                name={instructor.name}
-                email={instructor.email}
-                size={28}
+                name={person.name}
+                email={person.email}
+                size={30}
               />
-              {instructor.name}
             </span>
-          ))
-        ) : (
-          <span className="secondary-text">
-            {text(locale, "Instructor TBA", "教师尚未公布")}
-          </span>
-        )}
-      </div>
-      <div className="section-meetings">
-        {section.meetings.length ? (
-          section.meetings.map((meeting, i) => (
-            <div key={i}>
-              <MeetingStrip meeting={meeting} locale={locale} />
-              {meeting.startDate ? (
-                <span className="meeting-dates">
-                  {meeting.startDate} – {meeting.endDate}
-                </span>
-              ) : null}
-            </div>
-          ))
-        ) : (
-          <MeetingStrip locale={locale} />
-        )}
-      </div>
-      <div className="section-enrollment">
-        <span>
-          {text(locale, "Enrolled", "已选人数")}{" "}
-          <strong>{section.enrollmentTotal ?? "—"}</strong>
+          ))}
+          {people.length > visiblePeople.length ? (
+            <span className="preview-more">
+              +{people.length - visiblePeople.length}
+            </span>
+          ) : null}
+          {!people.length ? (
+            <span className="preview-tba">{text(locale, "TBA", "待定")}</span>
+          ) : null}
+        </div>
+        <span className="preview-summary-label">
+          {people.length}{" "}
+          {text(
+            locale,
+            people.length === 1 ? "instructor" : "instructors",
+            "位教师",
+          )}
         </span>
-        {section.waitlistTotal ? (
-          <span>
-            {text(locale, "Waitlist", "候补")} {section.waitlistTotal}
+      </div>
+      <div className="preview-schedule">
+        <div
+          className="preview-week"
+          aria-label={text(locale, "Weekly schedule by day", "每周上课日程")}
+        >
+          {dayLabels.map((day, index) => {
+            return (
+              <span
+                className={
+                  activeDays.has(index) ? "preview-day active" : "preview-day"
+                }
+                key={`${day}-${index}`}
+              >
+                <strong>{day}</strong>
+              </span>
+            );
+          })}
+        </div>
+        <div className="preview-times">
+          {[...meetingPatterns].slice(0, 3).map((pattern) => (
+            <span key={pattern}>{pattern}</span>
+          ))}
+          {hasUnscheduledMeeting ? (
+            <span>
+              {text(
+                locale,
+                "Additional sections have no posted days",
+                "另有班次尚未公布上课日期",
+              )}
+            </span>
+          ) : null}
+          {meetingPatterns.size > 3 ? (
+            <span>
+              +{meetingPatterns.size - 3}{" "}
+              {text(locale, "more schedules", "种其他安排")}
+            </span>
+          ) : null}
+          {!meetingPatterns.size ? (
+            <span>{text(locale, "Time not posted", "时间未公布")}</span>
+          ) : null}
+        </div>
+      </div>
+      <div className="preview-sections">
+        <strong>
+          {course.sections.length}
+          {course.sectionsPartial ? "+" : ""}
+        </strong>
+        <span>{text(locale, "class sections", "个班次")}</span>
+      </div>
+      <div
+        className="preview-availability"
+        aria-label={text(locale, "Enrollment availability", "选课情况")}
+      >
+        {open ? (
+          <span className="preview-open">
+            {open} {text(locale, "open", "可选")}
+          </span>
+        ) : null}
+        {closed ? (
+          <span className="preview-closed">
+            {closed} {text(locale, "full", "已满")}
           </span>
         ) : null}
       </div>
@@ -238,7 +248,7 @@ export function CourseCard({
   saved: boolean;
   onSave: (course: CatalogCourse) => void;
 }) {
-  const [tab, setTab] = useState<"sections" | "ratings" | null>(null);
+  const searchParams = useSearchParams();
   const [detail, setDetail] = useState<CatalogCourse | null>(null);
   const [detailSource, setDetailSource] = useState<{
     mode: "official" | "mirror";
@@ -248,18 +258,23 @@ export function CourseCard({
   const [error, setError] = useState(false);
   const isMobile = useMobileViewport();
   const detailId = useId();
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const detailRequest = useRef(false);
+  const isSelected = searchParams.get("course") === course.id;
+  const requestedTab =
+    searchParams.get("detailTab") === "ratings" ? "ratings" : "sections";
+  const ratingSource =
+    searchParams.get("ratingSource") === "rmp" ? "rmp" : "official";
+  const tab = isSelected ? requestedTab : null;
   const current = detail ?? course;
-  const preview = course.sections[0];
-  const futureTerm = isFutureTerm(course.term);
-  const instructorHint = bestRatedInstructor(current);
   const credit =
     course.creditsMin === course.creditsMax
       ? String(course.creditsMin)
       : `${course.creditsMin}–${course.creditsMax}`;
 
-  async function openTab(next: "sections" | "ratings", keepOpen = false) {
-    setTab(keepOpen || tab !== next ? next : null);
-    if (detail || loading) return;
+  const loadDetail = useCallback(async () => {
+    if (detail || detailRequest.current) return;
+    detailRequest.current = true;
     setLoading(true);
     setError(false);
     try {
@@ -284,12 +299,143 @@ export function CourseCard({
     } catch {
       setError(true);
     } finally {
+      detailRequest.current = false;
       setLoading(false);
     }
+  }, [
+    course.campusCode,
+    course.catalogNumber,
+    course.subject,
+    course.termCode,
+    detail,
+  ]);
+
+  useEffect(() => {
+    if (!isSelected) return;
+    if (window.history.state?.courseDetail !== course.id) {
+      window.history.replaceState(
+        { courseDetail: course.id, courseDetailDepth: 0 },
+        "",
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      );
+    }
+    if (detail) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadDetail();
+    });
+    return () => {
+      active = false;
+    };
+  }, [course.id, detail, isSelected, loadDetail]);
+
+  function openTab(next: "sections" | "ratings", keepOpen = false) {
+    const nextTab = keepOpen || tab !== next ? next : null;
+    if (!nextTab) {
+      closeDetails();
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const needsHistoryEntry =
+      params.get("course") !== course.id || params.get("detailTab") !== nextTab;
+    params.set("course", course.id);
+    params.set("detailTab", nextTab);
+    if (nextTab !== "ratings") params.delete("ratingSource");
+    if (needsHistoryEntry) {
+      const query = params.toString();
+      const currentDepth =
+        window.history.state?.courseDetail === course.id &&
+        Number.isSafeInteger(window.history.state?.courseDetailDepth)
+          ? window.history.state.courseDetailDepth
+          : 0;
+      const state = {
+        courseDetail: course.id,
+        courseDetailDepth:
+          currentDepth + Number(!isSelected || currentDepth > 0),
+      };
+      const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+      if (!isSelected || currentDepth > 0)
+        window.history.pushState(state, "", url);
+      else window.history.replaceState(state, "", url);
+    }
+    if (error) void loadDetail();
+  }
+
+  function closeDetails() {
+    if (!isSelected) return;
+    if (window.history.state?.courseDetail === course.id) {
+      const depth = window.history.state.courseDetailDepth;
+      if (Number.isSafeInteger(depth) && depth > 0) {
+        window.history.go(-depth);
+        return;
+      }
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete("course");
+    params.delete("detailTab");
+    params.delete("ratingSource");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
+    );
+  }
+
+  function setRatingSource(value: string) {
+    if (value !== "official" && value !== "rmp") return;
+    const params = new URLSearchParams(window.location.search);
+    if (
+      params.get("course") === course.id &&
+      params.get("detailTab") === "ratings" &&
+      params.get("ratingSource") === value
+    )
+      return;
+    params.set("course", course.id);
+    params.set("detailTab", "ratings");
+    params.set("ratingSource", value);
+    const query = params.toString();
+    const currentDepth =
+      window.history.state?.courseDetail === course.id &&
+      Number.isSafeInteger(window.history.state?.courseDetailDepth)
+        ? window.history.state.courseDetailDepth
+        : 0;
+    const state = {
+      courseDetail: course.id,
+      courseDetailDepth: currentDepth + Number(currentDepth > 0),
+    };
+    const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+    if (currentDepth > 0) window.history.pushState(state, "", url);
+    else window.history.replaceState(state, "", url);
   }
 
   const detailContent = (
-    <div id={detailId} className="course-details">
+    <div
+      id={detailId}
+      className="course-details"
+      onTouchStart={(event) => {
+        if (
+          (event.target as HTMLElement).closest(
+            "button, input, select, a, [role='slider'], [data-chart]",
+          )
+        ) {
+          touchStart.current = null;
+          return;
+        }
+        const touch = event.touches[0];
+        if (touch) touchStart.current = { x: touch.clientX, y: touch.clientY };
+      }}
+      onTouchEnd={(event) => {
+        const start = touchStart.current;
+        const touch = event.changedTouches[0];
+        touchStart.current = null;
+        if (!start || !touch) return;
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+        openTab(dx < 0 ? "ratings" : "sections", true);
+      }}
+    >
       <Tabs
         value={tab ?? "sections"}
         className="course-detail-tabs"
@@ -357,24 +503,7 @@ export function CourseCard({
                 </button>
               </div>
             ) : null}
-            <div className="section-list">
-              {current.sections.map((section) => (
-                <SectionRow
-                  key={section.id}
-                  section={section}
-                  locale={locale}
-                />
-              ))}
-            </div>
-            {current.sectionsPartial && !loading ? (
-              <p className="detail-note">
-                {text(
-                  locale,
-                  "Some sections may be outside this result window. Narrow your filters or check the official search.",
-                  "部分班次可能不在当前结果中，可细化筛选或查看官方搜索。",
-                )}
-              </p>
-            ) : null}
+            <SectionsPanel course={current} locale={locale} />
           </div>
         </TabsContent>
         <TabsContent value="ratings">
@@ -385,11 +514,10 @@ export function CourseCard({
             <p className="detail-note">
               {text(
                 locale,
-                `Historical evaluations · ${course.campus} campus · Separate from the currently listed instructor.`,
-                `历史评价 · ${course.campus} 校区 · 不代表当前班次教师的评分。`,
+                `Historical course averages from ${course.campus} campus. Instructor results are shown separately below.`,
+                `以下为 ${course.campus} 校区的历届课程汇总；教师个人评价在下方分别展示。`,
               )}
             </p>
-            <EvaluationPanel summary={current.evaluation} locale={locale} />
             {loading ? (
               <p className="inline-loading" role="status">
                 <LoaderCircle size={16} className="spin" />
@@ -411,7 +539,32 @@ export function CourseCard({
                 </button>
               </p>
             ) : (
-              <RmpPanel course={current} locale={locale} />
+              <Tabs
+                value={ratingSource}
+                onValueChange={setRatingSource}
+                className="rating-source-tabs"
+              >
+                <TabsList
+                  aria-label={text(locale, "Evaluation source", "评价来源")}
+                >
+                  <TabsTrigger value="official">
+                    {text(locale, "OSU official", "OSU 官方评价")}
+                  </TabsTrigger>
+                  <TabsTrigger value="rmp">
+                    <AlertTriangle size={13} aria-hidden="true" />
+                    {text(locale, "RMP · student reviews", "RMP · 学生评论")}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="official">
+                  <EvaluationPanel
+                    summary={current.evaluation}
+                    locale={locale}
+                  />
+                </TabsContent>
+                <TabsContent value="rmp">
+                  <RmpPanel course={current} locale={locale} />
+                </TabsContent>
+              </Tabs>
             )}
           </div>
         </TabsContent>
@@ -422,6 +575,24 @@ export function CourseCard({
   return (
     <article
       className="course-card"
+      tabIndex={0}
+      onClick={(event) => {
+        const target = event.target as HTMLElement;
+        if (
+          target.closest(
+            "button, a, input, select, textarea, [role=tab], [data-slot=sheet-content], [data-slot=drawer-content]",
+          )
+        )
+          return;
+        void openTab("sections", true);
+      }}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void openTab("sections", true);
+        }
+      }}
       aria-label={`${course.subject} ${course.catalogNumber}: ${course.title}`}
     >
       <div className="course-main">
@@ -472,18 +643,6 @@ export function CourseCard({
               </Badge>
             ))}
           </div>
-          <Button
-            className="course-detail-action"
-            variant="outline"
-            size="sm"
-            onClick={() => void openTab("sections")}
-            aria-haspopup="dialog"
-            aria-expanded={Boolean(tab)}
-          >
-            <ListChecks data-icon="inline-start" />
-            {text(locale, "View class details", "查看课程详情")}
-            <ChevronRight data-icon="inline-end" />
-          </Button>
         </div>
         <button
           className="rating-trigger"
@@ -507,84 +666,33 @@ export function CourseCard({
           </span>
         </button>
       </div>
-      {preview ? (
-        <div className="course-preview">
-          <div className="preview-instructor">
-            <span className="preview-component">{preview.component}</span>
-            <span>
-              {preview.instructors[0]?.name ??
-                text(locale, "Instructor TBA", "教师尚未公布")}
-            </span>
-          </div>
-          <MeetingStrip meeting={preview.meetings[0]} locale={locale} compact />
-          {status(preview, locale)}
-          <span className="preview-section-count">
-            {text(locale, "Sections", "全部班次")}
-            <strong>
-              {current.sections.length}
-              {current.sectionsPartial ? "+" : ""}
-            </strong>
-          </span>
-        </div>
-      ) : null}
-      {futureTerm && current.evaluation?.status === "available" ? (
-        <p className="course-reference-note">
-          <History size={14} />
-          {text(
-            locale,
-            "Past offerings shown as a reference; these ratings are not for the listed instructor.",
-            "以下为往届同课评价参考，不代表当前列出的教师。",
-          )}
-        </p>
-      ) : null}
-      {futureTerm && current.evaluation?.status === "no-data" ? (
-        <p className="course-reference-note course-reference-empty">
-          <History size={14} />
-          {text(
-            locale,
-            "No prior course evaluations were found. The instructor may be new to this course, or historical records may not match.",
-            "未找到往届课程评价，教师可能首次开设此课，也可能是历史记录未匹配；这只是推测。",
-          )}
-        </p>
-      ) : null}
-      {instructorHint ? (
-        <p className="faculty-insight">
-          <UsersRound size={14} />
-          <span>
-            {text(
-              locale,
-              "Highest eligible past rating among listed instructors:",
-              "当前授课教师中可比的往届评分较高者：",
-            )}{" "}
-            <strong>{instructorHint.name}</strong>
-            {" · "}
-            {instructorHint.metric.score.toFixed(2)}/5
-            {" · "}
-            {instructorHint.metric.instrument}
-            {" · "}
-            {text(locale, "eligible responses", "有效回答")}{" "}
-            {instructorHint.metric.responseCount.toLocaleString()}
-            {" · "}
-            {text(locale, "Section", "班次")} {instructorHint.section.section}
-            {" · "}
-            {sectionMeetingLabel(instructorHint.section, locale)}
-            <span className="faculty-insight-note">
-              {text(
-                locale,
-                "Historical course-specific data; check this section’s meeting time against your schedule.",
-                "仅使用本课程的往届教师数据；请自行核对该班次时间是否冲突。",
-              )}
-            </span>
-          </span>
-        </p>
-      ) : null}
+      <CoursePreview course={current} locale={locale} />
       {isMobile ? (
         <Drawer
           open={Boolean(tab)}
-          onOpenChange={(open) => !open && setTab(null)}
+          onOpenChange={(open) => !open && closeDetails()}
           shouldScaleBackground={false}
+          handleOnly
+          closeThreshold={0.45}
         >
-          <DrawerContent className="course-detail-drawer">
+          <DrawerContent
+            className="course-detail-drawer"
+            onInteractOutside={(event) => {
+              const target = event.detail.originalEvent.target;
+              if (target instanceof Element && target.closest(".action-toast"))
+                event.preventDefault();
+            }}
+            onEscapeKeyDown={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest("[data-trend-point]") &&
+                event.target
+                  .closest("[data-trend-chart]")
+                  ?.querySelector("[data-trend-tooltip]")
+              )
+                event.preventDefault();
+            }}
+          >
             <DrawerHeader className="course-detail-header">
               <div>
                 <span className="course-detail-eyeline">
@@ -611,7 +719,7 @@ export function CourseCard({
                   "Close course details",
                   "关闭课程详情",
                 )}
-                onClick={() => setTab(null)}
+                onClick={closeDetails}
               >
                 <X />
               </Button>
@@ -622,13 +730,28 @@ export function CourseCard({
       ) : (
         <Sheet
           open={Boolean(tab)}
-          onOpenChange={(open) => !open && setTab(null)}
+          onOpenChange={(open) => !open && closeDetails()}
         >
           <SheetContent
             side="right"
             className="course-detail-panel"
             showCloseButton={false}
             aria-describedby={`${detailId}-description`}
+            onInteractOutside={(event) => {
+              const target = event.detail.originalEvent.target;
+              if (target instanceof Element && target.closest(".action-toast"))
+                event.preventDefault();
+            }}
+            onEscapeKeyDown={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest("[data-trend-point]") &&
+                event.target
+                  .closest("[data-trend-chart]")
+                  ?.querySelector("[data-trend-tooltip]")
+              )
+                event.preventDefault();
+            }}
           >
             <SheetHeader className="course-detail-header">
               <div>
@@ -656,7 +779,7 @@ export function CourseCard({
                   "Close course details",
                   "关闭课程详情",
                 )}
-                onClick={() => setTab(null)}
+                onClick={closeDetails}
               >
                 <X />
               </Button>

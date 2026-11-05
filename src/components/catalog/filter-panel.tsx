@@ -287,8 +287,7 @@ export function FilterPanel({
               facet={facet}
               items={items}
               selected={
-                params.get(facet.slug) ??
-                (facet.slug === "campus" ? "col" : "")
+                params.get(facet.slug) ?? (facet.slug === "campus" ? "col" : "")
               }
               label={labelFor(facet.slug, facet.title)}
               locale={locale}

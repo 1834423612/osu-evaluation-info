@@ -395,16 +395,32 @@ export function CourseExplorer() {
           >
             <div className="results-toolbar">
               <div className="result-summary">
-                <strong>{loading ? "…" : (result?.totalCourses ?? courses.length).toLocaleString()}</strong>
-                <span>{result?.totalCourses === null ? text(locale, "courses on this page", "门课程（本页）") : text(locale, "courses", "门课程")}</span>
+                <span className="result-count">
+                  <strong>
+                    {loading
+                      ? "…"
+                      : (
+                          result?.totalCourses ?? courses.length
+                        ).toLocaleString()}
+                  </strong>
+                  <span>
+                    {result?.totalCourses === null
+                      ? text(locale, "courses on this page", "门课程（本页）")
+                      : text(locale, "courses", "门课程")}
+                  </span>
+                </span>
                 <span className="count-divider" />
-                <strong>
-                  {loading ? "…" : (count?.toLocaleString() ?? "—")}
-                  {!loading && result?.capped && result.matchedSections === null
-                    ? "+"
-                    : ""}
-                </strong>
-                <span>{text(locale, "class results", "条班次结果")}</span>
+                <span className="result-count">
+                  <strong>
+                    {loading ? "…" : (count?.toLocaleString() ?? "—")}
+                    {!loading &&
+                    result?.capped &&
+                    result.matchedSections === null
+                      ? "+"
+                      : ""}
+                  </strong>
+                  <span>{text(locale, "class results", "条班次结果")}</span>
+                </span>
                 <span className="count-divider" />
                 <span className="results-campus">{campusLabel}</span>
               </div>

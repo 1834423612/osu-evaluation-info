@@ -65,7 +65,10 @@ function DrawerContent({
         )}
         {...props}
       >
-        <div className="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
+        <DrawerPrimitive.Handle
+          aria-label="Drag drawer"
+          className="mx-auto mt-3 mb-1 hidden h-1 w-10 shrink-0 rounded-full bg-slate-300 group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
+        />
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
