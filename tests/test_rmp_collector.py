@@ -1,6 +1,7 @@
 import unittest
-from contextlib import nullcontext
-from unittest.mock import patch
+import io
+from contextlib import nullcontext, redirect_stderr, redirect_stdout
+from unittest.mock import MagicMock, patch
 
 from scripts.collect_rmp_osu import (
     MIN_REQUEST_INTERVAL,
@@ -11,10 +12,97 @@ from scripts.collect_rmp_osu import (
     validate_page_progress,
     CollectionError,
     collect_reviews,
+    connect_database,
+    main,
+    save_paused_run,
 )
 
 
 class RmpCollectorTests(unittest.TestCase):
+    def test_installed_schema_skips_ddl_and_connection_has_timeout(self):
+        driver = MagicMock()
+        connection = driver.connect.return_value
+        connection.execute.return_value.fetchone.return_value = (True,)
+        with patch("scripts.collect_rmp_osu.require_psycopg", return_value=(driver, object())), \
+             patch("scripts.collect_rmp_osu.SCHEMA_PATH") as base_schema, \
+             patch("scripts.collect_rmp_osu.COLLECTOR_SCHEMA_PATH") as collector_schema:
+            returned, _ = connect_database("test-dsn")
+        self.assertIs(returned, connection)
+        self.assertEqual(driver.connect.call_args.kwargs["connect_timeout"], 5)
+        base_schema.read_text.assert_not_called()
+        collector_schema.read_text.assert_not_called()
+        connection.close.assert_not_called()
+
+    def test_schema_failure_releases_connection_and_preserves_original_error(self):
+        driver = MagicMock()
+        connection = driver.connect.return_value
+
+        def execute(sql, params=()):
+            if sql == "base-schema":
+                raise RuntimeError("DDL lock timeout")
+            result = MagicMock()
+            result.fetchone.return_value = ("pg_try_advisory_lock" in sql,)
+            return result
+
+        connection.execute.side_effect = execute
+        with patch("scripts.collect_rmp_osu.require_psycopg", return_value=(driver, object())), \
+             patch("scripts.collect_rmp_osu.SCHEMA_PATH") as base_schema:
+            base_schema.read_text.return_value = "base-schema"
+            with self.assertRaisesRegex(RuntimeError, "DDL lock timeout"):
+                connect_database("test-dsn")
+        connection.close.assert_called_once()
+
+    def test_aborted_transaction_rolls_back_before_saving_paused_status(self):
+        class Database:
+            def __init__(self):
+                self.aborted = True
+                self.events = []
+
+            def rollback(self):
+                self.events.append("rollback")
+                self.aborted = False
+
+            def execute(self, sql, params=()):
+                if self.aborted:
+                    raise RuntimeError("transaction aborted")
+                self.events.append((sql, params))
+
+            def commit(self):
+                self.events.append("commit")
+
+        database = Database()
+        self.assertTrue(save_paused_run(database, 7, RuntimeError("statement timeout")))
+        self.assertEqual(database.events[0], "rollback")
+        self.assertEqual(database.events[1][1], ("RuntimeError: statement timeout", 7))
+        self.assertEqual(database.events[-1], "commit")
+
+    def test_resume_error_closes_connection_without_starting_collection(self):
+        database = MagicMock()
+        with patch("scripts.collect_rmp_osu.load_database_url", return_value="test-dsn"), \
+             patch("scripts.collect_rmp_osu.connect_database", return_value=(database, object())), \
+             patch("scripts.collect_rmp_osu.start_or_resume_run", side_effect=CollectionError("resume mode differs")), \
+             patch("scripts.collect_rmp_osu.collect_search_pages") as collect, \
+             redirect_stderr(io.StringIO()):
+            self.assertEqual(main(["--confirm-authorization"]), 2)
+        database.close.assert_called_once()
+        collect.assert_not_called()
+
+    def test_status_write_failure_does_not_hide_collection_error_or_leak_connection(self):
+        database = MagicMock()
+        database.execute.side_effect = RuntimeError("connection lost while saving")
+        errors = io.StringIO()
+        with patch("scripts.collect_rmp_osu.load_database_url", return_value="test-dsn"), \
+             patch("scripts.collect_rmp_osu.connect_database", return_value=(database, object())), \
+             patch("scripts.collect_rmp_osu.start_or_resume_run", return_value=(7, None, False)), \
+             patch("scripts.collect_rmp_osu.GraphQLClient"), \
+             patch("scripts.collect_rmp_osu.collect_search_pages", side_effect=RuntimeError("original statement timeout")), \
+             redirect_stderr(errors), redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--confirm-authorization"]), 1)
+        self.assertIn("original statement timeout", errors.getvalue())
+        self.assertIn("connection lost while saving", errors.getvalue())
+        database.rollback.assert_called()
+        database.close.assert_called_once()
+
     def test_terminal_page_with_missing_reviews_cannot_complete_or_delete(self):
         class Result:
             def __init__(self, rows):

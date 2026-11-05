@@ -54,4 +54,11 @@ WHERE p.last_full_refresh_at IS NULL
   AND r.status = 'completed'
   AND jsonb_typeof(p.ratings_distribution->'total') = 'number';
 
+CREATE TABLE IF NOT EXISTS osu_rmp.collector_migration (
+    version text PRIMARY KEY,
+    applied_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO osu_rmp.collector_migration (version)
+VALUES ('rmp-collector-v1') ON CONFLICT DO NOTHING;
+
 COMMIT;

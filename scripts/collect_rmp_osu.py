@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -20,6 +21,7 @@ GRAPHQL_URL = "https://www.ratemyprofessors.com/graphql"
 SOURCE_PAGE = "https://www.ratemyprofessors.com/school/724"
 SCHEMA_PATH = ROOT / "db" / "rmp_schema.sql"
 COLLECTOR_SCHEMA_PATH = ROOT / "db" / "rmp_collector_schema.sql"
+COLLECTOR_SCHEMA_VERSION = "rmp-collector-v1"
 MIN_REQUEST_INTERVAL = 10.0
 MAX_PAGE_SIZE = 100
 SCHOOLS = (
@@ -355,19 +357,47 @@ def build_review_batch_query(
 
 def connect_database(dsn: str):
     psycopg, Jsonb = require_psycopg()
-    conn = psycopg.connect(dsn, application_name="osu-rmp-collector")
-    conn.execute("SET lock_timeout = '5s'")
-    conn.execute("SET statement_timeout = '60s'")
-    locked = conn.execute("SELECT pg_try_advisory_lock(7241102901)").fetchone()[0]
-    conn.commit()
-    if not locked:
-        conn.close()
-        raise CollectionError("Another RMP collector is already running; this run exited without waiting.")
-    conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
-    conn.commit()
-    conn.execute(COLLECTOR_SCHEMA_PATH.read_text(encoding="utf-8"))
-    conn.commit()
-    return conn, Jsonb
+    conn = psycopg.connect(dsn, application_name="osu-rmp-collector", connect_timeout=5)
+    try:
+        conn.execute("SET lock_timeout = '5s'")
+        conn.execute("SET statement_timeout = '60s'")
+        locked = conn.execute("SELECT pg_try_advisory_lock(7241102901)").fetchone()[0]
+        conn.commit()
+        if not locked:
+            raise CollectionError("Another RMP collector is already running; this run exited without waiting.")
+        exists = conn.execute("SELECT to_regclass('osu_rmp.collector_migration') IS NOT NULL").fetchone()[0]
+        installed = exists and conn.execute(
+            "SELECT EXISTS (SELECT 1 FROM osu_rmp.collector_migration WHERE version = %s)",
+            (COLLECTOR_SCHEMA_VERSION,),
+        ).fetchone()[0]
+        conn.commit()
+        if not installed:
+            conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
+            conn.commit()
+            conn.execute(COLLECTOR_SCHEMA_PATH.read_text(encoding="utf-8"))
+            conn.commit()
+        return conn, Jsonb
+    except BaseException:
+        with contextlib.suppress(Exception):
+            conn.close()
+        raise
+
+
+def save_paused_run(conn, run_id: int, error: Exception | None = None) -> bool:
+    """Recover an aborted transaction before recording resumable run status."""
+    try:
+        conn.rollback()
+        conn.execute(
+            "UPDATE osu_rmp.collection_run SET status = 'paused', last_error = %s, updated_at = now() WHERE id = %s",
+            (f"{type(error).__name__}: {str(error)[:500]}" if error else None, run_id),
+        )
+        conn.commit()
+        return True
+    except Exception as exc:
+        print(f"[error] Could not save paused status: {type(exc).__name__}: {exc}", file=sys.stderr)
+        with contextlib.suppress(Exception):
+            conn.rollback()
+        return False
 
 
 def start_or_resume_run(
@@ -895,6 +925,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.confirm_authorization:
         print("RMP collection requires prior authorization. Re-run with --confirm-authorization.", file=sys.stderr)
         return 2
+    conn = None
     try:
         dsn = load_database_url()
         conn, Jsonb = connect_database(dsn)
@@ -975,34 +1006,34 @@ def main(argv: list[str] | None = None) -> int:
                 f"professor reviews complete={complete_professors}; reviews loaded={reviews}"
             )
         except RequestLimitReached:
-            conn.execute(
-                "UPDATE osu_rmp.collection_run SET status = 'paused', updated_at = now() WHERE id = %s",
-                (run_id,),
-            )
-            conn.commit()
+            if not save_paused_run(conn, run_id):
+                return 1
             print("[run] request limit reached; saved progress can be resumed")
         except KeyboardInterrupt:
-            conn.execute(
-                "UPDATE osu_rmp.collection_run SET status = 'paused', updated_at = now() WHERE id = %s",
-                (run_id,),
-            )
-            conn.commit()
+            if not save_paused_run(conn, run_id):
+                return 1
             print("\n[run] interrupted; saved progress can be resumed")
         except Exception as exc:
-            conn.execute(
-                "UPDATE osu_rmp.collection_run SET status = 'paused', last_error = %s, updated_at = now() WHERE id = %s",
-                (f"{type(exc).__name__}: {str(exc)[:500]}", run_id),
+            saved = save_paused_run(conn, run_id, exc)
+            print(
+                f"[run] {'paused' if saved else 'stopped without saving paused status'} after error: "
+                f"{type(exc).__name__}: {exc}", file=sys.stderr,
             )
-            conn.commit()
-            print(f"[run] paused after error: {type(exc).__name__}: {exc}", file=sys.stderr)
             return 1
-        finally:
-            conn.execute("SELECT pg_advisory_unlock(7241102901)")
-            conn.close()
         return 0
     except CollectionError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 2
+    except Exception as exc:
+        print(f"[error] {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if conn is not None:
+            # Closing also releases the session lock, even after a lost connection.
+            try:
+                conn.close()
+            except Exception as exc:
+                print(f"[error] Could not close connection: {type(exc).__name__}: {exc}", file=sys.stderr)
 
 
 if __name__ == "__main__":
