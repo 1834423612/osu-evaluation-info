@@ -15,6 +15,12 @@ On a new installation, create `.env.local` from `.env.example` and set `DATABASE
 
 Open http://localhost:3000. The local environment already has a working database connection; never commit its credentials. Live official course search still works without the database, with explicit unavailable ratings and official search limits.
 
+`pnpm dev` also detects the machine's Tailscale IPv4 address, allows that development origin, and prints a Tailscale link (like `http://100.101.11.11:3000`). Other devices on the tailnet can open it, subject to your existing Tailscale access rules. Localhost remains available. The dev server listens on `0.0.0.0`, so ordinary LAN interfaces are also reachable where the firewall permits.
+
+On WSL2 with Tailscale installed on Windows, the launcher uses the Windows Tailscale CLI and creates a TCP Serve forward through Windows localhost to WSL (WSL's default localhost forwarding must be enabled). It removes its own forward when dev exits normally or receives Ctrl+C/SIGTERM, and leaves existing Serve ports unchanged. This uses tailnet-only Serve, not public Funnel. After a forced kill or machine crash, a stale forward may need manual removal with Windows `tailscale.exe serve --tcp 3000 off` (use the port printed at startup). If detection or forwarding fails, local development still starts and prints a diagnostic.
+
+`pnpm dev --port 3000` and `PORT=3000 pnpm dev` are supported; the Tailscale link follows Next.js's actual selected port. An explicit `--hostname`/`-H` overrides the listen address and skips automatic Tailscale sharing. Restart dev after the Tailscale IP changes.
+
 ```sh
 pnpm test
 pnpm typecheck
