@@ -271,6 +271,7 @@ export async function searchCatalogMirror(
       hasMore,
       totalItems: page.total_sections,
       matchedSections: page.total_sections,
+      totalCourses: page.total_courses,
       totalPages: Math.ceil(page.total_courses / limit),
       capped: false,
       filters,

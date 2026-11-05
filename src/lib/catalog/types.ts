@@ -56,6 +56,7 @@ export type CatalogResponse = {
   hasMore: boolean;
   totalItems: number; // Official hit count, or distinct mirrored sections; never a course count.
   matchedSections: number | null; // Mirror: distinct sections; official: facet hit counts.
+  totalCourses: number | null; // Exact for course-code searches and complete mirror snapshots.
   totalPages: number; // Official upstream pages, or grouped mirror pages. Use nextCursor.
   capped: boolean;
   filters: CatalogFacet[];

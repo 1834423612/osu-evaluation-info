@@ -7,6 +7,7 @@ import type {
   CatalogSection,
   CatalogTerm,
 } from "./types";
+import { parseExactCourseQuery } from "./exact-search";
 
 const BASE = "https://content.osu.edu/v2/classes/";
 const MAX_CACHE_ENTRIES = 48;
@@ -212,19 +213,51 @@ export async function searchOfficialCatalog(
 ): Promise<CatalogResponse> {
   const terms = await getSearchableTerms();
   const term = input.term || terms[0].code;
-  let query = input.q?.trim().slice(0, 200) ?? "";
-  let subject = input.subject;
-  const courseCode = query.match(
-    /^([a-z][a-z-]{0,19})\s*(\d{3,5}(?:\.\d{1,3})?[a-z]{0,2})$/i,
-  );
-  if (
-    courseCode &&
-    (!subject || subject.toLowerCase() === courseCode[1].toLowerCase())
-  ) {
-    subject = courseCode[1];
-    query = courseCode[2];
+  const query = input.q?.trim().slice(0, 200) ?? "";
+  const subject = input.subject;
+  const embeddedQuery = parseExactCourseQuery(query);
+  const exactQuery = embeddedQuery ?? parseExactCourseQuery(query, subject);
+  if (exactQuery) {
+    const conflicts =
+      embeddedQuery &&
+      subject &&
+      embeddedQuery.subject !== subject.toUpperCase();
+    const exact = conflicts
+      ? { courses: [], complete: true, fetchedAt: new Date().toISOString() }
+      : await getOfficialCourse({
+          subject: exactQuery.subject,
+          catalog: exactQuery.catalogNumber,
+          term,
+          campus: input.campus ?? "col",
+          filters: input.filters,
+        });
+    const courses = exact.courses;
+    const sectionCount = courses.reduce(
+      (count, course) => count + course.sections.length,
+      0,
+    );
+    return {
+      courses,
+      page: 1,
+      nextCursor: null,
+      hasMore: false,
+      totalItems: sectionCount,
+      matchedSections: exact.complete ? sectionCount : null,
+      totalCourses: exact.complete ? courses.length : null,
+      totalPages: 1,
+      capped: !exact.complete,
+      filters: [],
+      terms,
+      source: "https://classes.osu.edu/",
+      sourceMode: "official",
+      fetchedAt: exact.fetchedAt || new Date().toISOString(),
+      evaluationStatus: "unavailable",
+    };
   }
-  const campus = input.campus === "all" ? "" : (input.campus ?? "col");
+  const campus =
+    input.campus?.toLowerCase() === "all"
+      ? ""
+      : (input.campus ?? "col").toLowerCase();
   if (input.cursor && !/^\d{1,2}:\d{1,3}$/.test(input.cursor))
     throw new CatalogInputError("Invalid course pagination cursor.");
   const [cursorPage, cursorOffset] = (input.cursor ?? "")
@@ -298,6 +331,7 @@ export async function searchOfficialCatalog(
     nextCursor,
     hasMore: nextCursor !== null,
     totalItems,
+    totalCourses: null,
     totalPages,
     matchedSections: selectedCounts.length
       ? Math.min(...selectedCounts)
@@ -356,10 +390,11 @@ export async function getOfficialCourse(input: {
   catalog: string;
   term?: string;
   campus?: string;
+  filters?: Record<string, string>;
 }) {
   const terms = await getSearchableTerms();
   const term = input.term || terms[0].code;
-  const campus = input.campus ?? "col";
+  const campus = (input.campus ?? "col").toLowerCase();
   const params = new URLSearchParams({
     q: input.catalog,
     client: "class-search-ui",
@@ -368,13 +403,12 @@ export async function getOfficialCourse(input: {
     p: "1",
   });
   if (campus !== "all") params.set("campus", campus);
-  if (/^[1-8]/.test(input.catalog))
-    params.set("catalog-number", `${input.catalog[0]}xxx`);
+  for (const key of FILTER_KEYS)
+    if (input.filters?.[key]) params.set(key, input.filters[key].slice(0, 200));
   const startedAt = Date.now();
-  let course: CatalogCourse | null = null;
+  const grouped = new Map<string, CatalogCourse>();
   let fetchedAt = "";
   let complete = false;
-  const sections = new Map<string, CatalogSection>();
   // Bound expansion work even for unusually large independent-study subjects.
   for (let page = 1; page <= 12; page++) {
     if (page > 1 && Date.now() - startedAt > 15_000) break;
@@ -395,9 +429,11 @@ export async function getOfficialCourse(input: {
       )
         continue;
       const normalized = normalizeOfficialCourse(item, term);
-      course = course ? mergeCatalogCourse(course, normalized) : normalized;
-      for (const section of normalized.sections)
-        sections.set(section.id, section);
+      const existing = grouped.get(normalized.id);
+      grouped.set(
+        normalized.id,
+        existing ? mergeCatalogCourse(existing, normalized) : normalized,
+      );
     }
     const totalPages = num(data.totalPages) ?? 0;
     if (page >= totalPages) {
@@ -405,14 +441,17 @@ export async function getOfficialCourse(input: {
       break;
     }
   }
-  if (course) {
-    course.sections = [...sections.values()].sort((a, b) =>
+  const courses = [...grouped.values()];
+  for (const course of courses) {
+    course.sections.sort((a, b) =>
       a.classNumber.localeCompare(b.classNumber, undefined, { numeric: true }),
     );
     course.sectionsPartial = !complete;
   }
   return {
-    course,
+    // Detail requests select one campus; exact all-campus searches use the full list.
+    course: courses[0] ?? null,
+    courses,
     fetchedAt,
     complete,
     source: "https://classes.osu.edu/",

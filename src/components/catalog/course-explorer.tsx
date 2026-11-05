@@ -83,6 +83,13 @@ function restorePageState(history: string | null, cursor: string | null) {
 export function CourseExplorer() {
   const searchParams = useSearchParams();
   const query = searchParams.toString();
+  const catalogQuery = (() => {
+    const params = new URLSearchParams(query);
+    params.delete("course");
+    params.delete("detailTab");
+    params.delete("ratingSource");
+    return params.toString();
+  })();
   const { locale, saved, toggleSaved } = usePreferences();
   const [result, setResult] = useState<CatalogResponse | null>(null);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
@@ -134,7 +141,7 @@ export function CourseExplorer() {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (skipQueryFetch.current === query) {
+    if (skipQueryFetch.current === catalogQuery) {
       skipQueryFetch.current = null;
       requestController.current?.abort();
       requestController.current = controller;
@@ -143,7 +150,7 @@ export function CourseExplorer() {
     requestController.current?.abort();
     requestController.current = controller;
     const current = ++generation.current;
-    const params = new URLSearchParams(query);
+    const params = new URLSearchParams(catalogQuery);
     const restoredPage = restorePageState(
       params.get(PAGE_HISTORY_PARAM),
       params.get("cursor"),
@@ -177,7 +184,7 @@ export function CourseExplorer() {
     }
     void load();
     return () => controller.abort();
-  }, [query, retry]);
+  }, [catalogQuery, retry]);
 
   const loadPage = useCallback(
     async (direction: "next" | "previous" | "current") => {
@@ -190,6 +197,9 @@ export function CourseExplorer() {
       const params = new URLSearchParams(query);
       params.delete("cursor");
       params.delete(PAGE_HISTORY_PARAM);
+      params.delete("course");
+      params.delete("detailTab");
+      params.delete("ratingSource");
       const targetIndex =
         direction === "next"
           ? pageIndex + 1
@@ -257,7 +267,11 @@ export function CourseExplorer() {
           }
           const nextQuery = urlParams.toString();
           if (nextQuery !== query) {
-            skipQueryFetch.current = nextQuery;
+            const fetchParams = new URLSearchParams(nextQuery);
+            fetchParams.delete("course");
+            fetchParams.delete("detailTab");
+            fetchParams.delete("ratingSource");
+            skipQueryFetch.current = fetchParams.toString();
             window.history.pushState(
               null,
               "",
@@ -284,7 +298,16 @@ export function CourseExplorer() {
 
   const activeFilters = [...searchParams.entries()].filter(
     ([key]) =>
-      !["q", "term", "sort", "cursor", PAGE_HISTORY_PARAM].includes(key),
+      ![
+        "q",
+        "term",
+        "sort",
+        "cursor",
+        PAGE_HISTORY_PARAM,
+        "course",
+        "detailTab",
+        "ratingSource",
+      ].includes(key),
   );
   const filters = (
     <FilterPanel
@@ -372,6 +395,9 @@ export function CourseExplorer() {
           >
             <div className="results-toolbar">
               <div className="result-summary">
+                <strong>{loading ? "…" : (result?.totalCourses ?? courses.length).toLocaleString()}</strong>
+                <span>{result?.totalCourses === null ? text(locale, "courses on this page", "门课程（本页）") : text(locale, "courses", "门课程")}</span>
+                <span className="count-divider" />
                 <strong>
                   {loading ? "…" : (count?.toLocaleString() ?? "—")}
                   {!loading && result?.capped && result.matchedSections === null
