@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 
 from scripts.sync_rmp_mappings import (
@@ -5,6 +8,7 @@ from scripts.sync_rmp_mappings import (
     catalog_candidates,
     collect_catalog_facts,
     confidence_score,
+    export_candidates,
     include_official_name_history,
     normalize_course_key,
     normalize_name,
@@ -16,6 +20,57 @@ from scripts.sync_rmp_mappings import (
 
 
 class RmpMappingTests(unittest.TestCase):
+    def test_candidate_export_is_sorted_and_keeps_review_evidence(self):
+        candidates = [
+            {
+                "professor_id": 202,
+                "username": "jones.2",
+                "state": "candidate",
+                "score": 70,
+                "evidence": {"campus_match": True, "course_matches": ["MATH1151"]},
+            },
+            {
+                "professor_id": 101,
+                "username": "smith.1",
+                "state": "candidate",
+                "score": 85,
+                "evidence": {"department_match": True},
+            },
+            {
+                "professor_id": 303,
+                "username": "accepted.3",
+                "state": "accepted",
+                "score": 100,
+                "evidence": {},
+            },
+        ]
+        professors = [
+            {
+                "legacy_id": 101,
+                "first_name": "Jane",
+                "last_name": "Smith",
+                "department": "Mathematics",
+                "school_ids": [724],
+                "course_codes": [{"courseName": "MATH 1151"}],
+            }
+        ]
+        identities = {
+            "smith.1": {
+                "display_name": "Jane Smith",
+                "names": ["Jane Smith", "Jane A. Smith"],
+            }
+        }
+        with TemporaryDirectory() as directory:
+            report_path = Path(directory) / "review" / "candidates.jsonl"
+            exported = export_candidates(report_path, candidates, professors, identities)
+            rows = [json.loads(line) for line in report_path.read_text().splitlines()]
+
+        self.assertEqual(exported, 2)
+        self.assertEqual([row["rmp_profile_id"] for row in rows], [101, 202])
+        self.assertEqual(rows[0]["rmp_name"], "Jane Smith")
+        self.assertEqual(rows[0]["osu_name_variants"], ["Jane Smith", "Jane A. Smith"])
+        self.assertEqual(rows[0]["evidence"], {"department_match": True})
+
     def test_refresh_fingerprint_is_order_stable_and_changes_with_evidence(self):
         candidates = [
             {"professor_id": 2, "username": "smith.2", "state": "candidate", "evidence": {"name": "B"}},

@@ -15,6 +15,21 @@ manual decisions. It reads the eight newest complete catalog terms and active
 official SEI/SSLE evaluation terms. In-progress catalog terms are held out until
 their snapshot completes.
 
+To review weaker exact-name matches, export the current read-only candidate
+set as UTF-8 JSON Lines:
+
+```sh
+python3 scripts/sync_rmp_mappings.py --dry-run \
+  --export-candidates /tmp/osu-rmp-mapping-candidates.jsonl
+```
+
+Each line contains the RMP profile ID and source details, OSU username and name
+variants, proposed score, and the campus, department, and course evidence used
+by the matcher. Confirm a candidate from reliable public evidence before
+recording it with `--accept`; use `--reject` for a confirmed different person.
+Do not bulk-accept by name or proposed score. The export option requires
+`--dry-run` and never changes mapping rows.
+
 Automatic acceptance requires an exact normalized name, matching campus, an
 exact department name or a reviewed department-label equivalent, an overlapping
 course, and unique complete evidence for that RMP profile and OSU identity at

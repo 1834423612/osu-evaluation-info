@@ -107,6 +107,11 @@ def parse_args(argv: list[str] | None = None):
     parser.add_argument("--term-window", type=int, default=DEFAULT_TERM_WINDOW,
                         help="Use the newest N complete OSU catalog terms (1-16).")
     parser.add_argument("--dry-run", action="store_true", help="Report candidates without changing mapping rows.")
+    parser.add_argument(
+        "--export-candidates",
+        metavar="PATH",
+        help="Write current pending candidate evidence as UTF-8 JSONL; requires --dry-run.",
+    )
     parser.add_argument("--accept", action="append", default=[], metavar="RMP_ID:OSU_USERNAME",
                         help="Record a reviewed accepted mapping; repeat for multiple decisions.")
     parser.add_argument("--reject", action="append", default=[], metavar="RMP_ID:OSU_USERNAME",
@@ -116,6 +121,8 @@ def parse_args(argv: list[str] | None = None):
     args = parser.parse_args(argv)
     if not 1 <= args.term_window <= 16:
         parser.error("--term-window must be between 1 and 16.")
+    if args.export_candidates and not args.dry_run:
+        parser.error("--export-candidates requires --dry-run.")
     try:
         args.decisions = parse_decisions(args.accept, args.reject)
     except ValueError as exc:
@@ -139,6 +146,52 @@ def parse_decisions(accepted: list[str], rejected: list[str]) -> list[tuple[int,
     if len(set(accepted_professors)) != len(accepted_professors):
         raise ValueError("Each RMP profile can be accepted for only one OSU username.")
     return [(professor, username, state) for (professor, username), state in result.items()]
+
+
+def export_candidates(
+    path: str | Path,
+    candidates: list[dict[str, Any]],
+    professors: list[dict[str, Any]],
+    identities: dict[str, dict[str, Any]],
+) -> int:
+    """Write pending exact-name candidates with their review evidence as JSONL."""
+    profiles = {int(profile["legacy_id"]): profile for profile in professors}
+    pending = sorted(
+        (item for item in candidates if item["state"] == "candidate"),
+        key=lambda item: (
+            -int(item["score"]),
+            int(item["professor_id"]),
+            str(item["username"]),
+        ),
+    )
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("w", encoding="utf-8", newline="\n") as report:
+        for item in pending:
+            profile = profiles.get(int(item["professor_id"]), {})
+            identity = identities.get(str(item["username"]), {})
+            row = {
+                "rmp_profile_id": item["professor_id"],
+                "rmp_name": " ".join(
+                    part
+                    for part in (
+                        str(profile.get("first_name") or "").strip(),
+                        str(profile.get("last_name") or "").strip(),
+                    )
+                    if part
+                ),
+                "rmp_department": profile.get("department"),
+                "rmp_school_ids": sorted(profile.get("school_ids", [])),
+                "rmp_course_codes": profile.get("course_codes", []),
+                "osu_username": item["username"],
+                "osu_display_name": identity.get("display_name"),
+                "osu_name_variants": identity.get("names", []),
+                "state": item["state"],
+                "score": item["score"],
+                "evidence": item["evidence"],
+            }
+            report.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+    return len(pending)
 
 
 def load_dsn(explicit: str | None) -> str:
@@ -655,6 +708,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.dry_run:
             if args.decisions:
                 print("[mapping] dry-run: manual decisions were validated but not saved")
+            if args.export_candidates:
+                exported = export_candidates(
+                    args.export_candidates, candidates, professors, identities
+                )
+                print(
+                    f"[mapping] exported {exported} pending candidates to "
+                    f"{args.export_candidates}"
+                )
             return 0
 
         with conn.transaction():
