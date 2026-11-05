@@ -74,6 +74,7 @@ web_modules/
 postgres.env
 *.local
 scripts/__pycache__/
+tests/__pycache__/
 AGENTS.md
 CLAUDE.md
 
@@ -160,3 +161,10 @@ db/osu_rmp.sql
 db/osu_rmp.sqlite*
 osu_rmp.sqlite*
 osu_rmp_sync/
+db/*rmp*.sql
+!db/rmp*schema.sql
+db/*rmp*.sqlite*
+db/*rmp*.db*
+data/local/rmp/
+docs/rmp-data-comparison-*.md
+docs/rmp-data-comparison-*.json
