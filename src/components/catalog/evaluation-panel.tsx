@@ -12,6 +12,7 @@ import type {
   CourseEvaluationSummary,
   EvaluationMetric,
 } from "@/lib/evaluations/types";
+import { text } from "@/lib/i18n";
 import {
   confidenceLabel,
   evaluationLabels,
@@ -42,9 +43,12 @@ const copy = {
     score: "Score",
     instruments:
       "The evaluation changed from SEI to SSLE in Autumn 2025. Each instrument is shown separately.",
-    instructors: "This course’s instructors",
-    noInstructorMatch: "No exact OSU email match",
-    noInstructorData: "No matched evaluations for this course",
+    instructors: "Instructors in official course records",
+    currentOffering: "Current classes",
+    pastOffering: "Past offerings",
+    courseTotal: "All instructors combined for this course",
+    noInstructorMatch: "No matching OSU evaluation record",
+    noInstructorData: "No course evaluations for this instructor",
     exact: "Exact OSU email match",
     noData: "No evaluations match this course.",
     unavailable: "Evaluation data is temporarily unavailable.",
@@ -76,9 +80,12 @@ const copy = {
     score: "评分",
     instruments:
       "OSU 于 2025 年秋季由 SEI 更换为 SSLE；两种量表分别展示，不混合计算。",
-    instructors: "本课程授课教师",
-    noInstructorMatch: "未匹配到完全一致的 OSU 邮箱",
-    noInstructorData: "本课程暂无匹配教学评价",
+    instructors: "官方课程记录中的教师",
+    currentOffering: "当前班次",
+    pastOffering: "往届班次",
+    courseTotal: "本课程所有教师合并统计",
+    noInstructorMatch: "OSU 评价资料中没有对应记录",
+    noInstructorData: "该教师暂无本课程评价",
     exact: "OSU 邮箱完全匹配",
     noData: "本课程暂无匹配的教学评价。",
     unavailable: "教学评价数据暂时无法读取。",
@@ -109,6 +116,7 @@ function TrendChart({
   const chartId = useId();
   const chartRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(520);
+  const [activePoint, setActivePoint] = useState<number | null>(null);
   const labels = copy[locale];
   const points = metric.trend.toSorted((a, b) => a.sortKey - b.sortKey);
   const height = 140;
@@ -156,7 +164,7 @@ function TrendChart({
     <div className={styles.chart} ref={chartRef}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        role="img"
+        role="group"
         aria-labelledby={`${chartId}-title ${chartId}-description`}
       >
         <title id={`${chartId}-title`}>
@@ -200,12 +208,47 @@ function TrendChart({
               cy={y(point.score)}
               r={3.5}
               className={styles.chartPoint}
+              tabIndex={0}
+              role="button"
+              aria-label={`${point.term}: ${point.score.toFixed(2)} / 5, ${number(point.responses, locale)} ${labels.responses}`}
+              onPointerEnter={() => setActivePoint(index)}
+              onPointerLeave={() => setActivePoint(null)}
+              onFocus={() => setActivePoint(index)}
+              onBlur={() => setActivePoint(null)}
+              onTouchStart={() => setActivePoint(index)}
             >
               <title>
                 {point.term}: {point.score.toFixed(2)} / 5 ·{" "}
                 {number(point.responses, locale)} {labels.responses}
               </title>
             </circle>
+            {activePoint === index ? (
+              <g
+                className={styles.pointTooltip}
+                aria-hidden="true"
+                pointerEvents="none"
+              >
+                <rect
+                  x={Math.min(Math.max(2, x(index) - 61), width - 126)}
+                  y={Math.max(1, y(point.score) - 42)}
+                  width="124"
+                  height="32"
+                  rx="5"
+                />
+                <text
+                  x={Math.min(Math.max(8, x(index) - 55), width - 120)}
+                  y={Math.max(14, y(point.score) - 22)}
+                >
+                  {point.term} · {point.score.toFixed(2)} / 5
+                </text>
+                <text
+                  x={Math.min(Math.max(8, x(index) - 55), width - 120)}
+                  y={Math.max(27, y(point.score) - 9)}
+                >
+                  {number(point.responses, locale)} {labels.responses}
+                </text>
+              </g>
+            ) : null}
             {labelIndices.has(index) ? (
               <text
                 x={x(index)}
@@ -255,6 +298,49 @@ function TrendChart({
       </Collapsible>
     </div>
   );
+}
+
+function MiniTrend({
+  metric,
+  locale,
+}: {
+  metric: EvaluationMetric;
+  locale: EvaluationLocale;
+}) {
+  const points = metric.trend.toSorted((a, b) => a.sortKey - b.sortKey);
+  const width = 86;
+  const height = 24;
+  const coordinates = points.map((point, index) => {
+    const x =
+      points.length < 2 ? width / 2 : (index / (points.length - 1)) * width;
+    const y = 2 + ((5 - point.score) / 4) * (height - 4);
+    return { x, y, point };
+  });
+  return (
+    <svg
+      className={styles.miniTrend}
+      viewBox={`0 0 ${width} ${height}`}
+      aria-label={`${metric.instrument} ${text(locale, "trend", "趋势")}`}
+    >
+      {coordinates.length > 1 ? (
+        <polyline
+          points={coordinates.map(({ x, y }) => `${x},${y}`).join(" ")}
+        />
+      ) : null}
+      {coordinates.map(({ x, y, point }) => (
+        <circle key={point.term} cx={x} cy={y} r="2">
+          <title>
+            {point.term}: {point.score.toFixed(2)} / 5 ·{" "}
+            {number(point.responses, locale)} {copy[locale].responses}
+          </title>
+        </circle>
+      ))}
+    </svg>
+  );
+}
+
+function gradeTone(score: number) {
+  return score >= 4.2 ? "positive" : score <= 3.3 ? "caution" : "mixed";
 }
 
 function MetricPanel({
@@ -347,8 +433,12 @@ export function EvaluationPanel({
     <section className={styles.panel} aria-label={labels.title}>
       <div className={styles.panelHeading}>
         <h3>{labels.title}</h3>
-        <span className={styles.subtle}>SEI / SSLE</span>
+        <span className={styles.officialBadge}>
+          <ShieldCheck size={14} />{" "}
+          {text(locale, "Official OSU data", "OSU 官方数据")}
+        </span>
       </div>
+      <p className={styles.courseTotal}>{labels.courseTotal}</p>
       {!primary ? (
         <div className={styles.emptyState}>
           <CircleHelp size={22} aria-hidden="true" />
@@ -376,39 +466,89 @@ export function EvaluationPanel({
         <section className={styles.instructors} aria-label={labels.instructors}>
           <h4>{labels.instructors}</h4>
           {summary.instructors.map((instructor, index) => (
-            <div
-              className={styles.instructorRow}
+            <Collapsible
+              className={styles.instructorItem}
               key={`${instructor.email ?? instructor.name}-${index}`}
             >
-              <div>
-                <span className={styles.instructorName}>{instructor.name}</span>
-                <span className={styles.subtle}>
-                  {instructor.match === "unmatched"
-                    ? labels.noInstructorMatch
-                    : instructor.primary
-                      ? `${number(instructor.primary.responseCount, locale)} ${evaluationLabels[locale].responses} · ${instructor.primary.lastTerm}`
-                      : labels.noInstructorData}
-                </span>
-              </div>
-              {instructor.primary && instructor.match === "exact-email" ? (
-                <div className={styles.instructorScore} title={labels.exact}>
-                  <strong>
-                    {instructor.primary.score.toFixed(2)}
-                    <small> / 5</small>
-                  </strong>
-                  <span className={styles.subtle}>
-                    {instructor.primary.instrument}
+              <CollapsibleTrigger className={styles.instructorRow}>
+                <span className={styles.instructorIdentity}>
+                  <span className={styles.instructorName}>
+                    {instructor.name}
                   </span>
-                </div>
-              ) : (
-                <span
-                  className={styles.subtle}
-                  aria-label={labels.noInstructorData}
-                >
-                  —
+                  <span className={styles.subtle}>
+                    {instructor.currentlyListed
+                      ? labels.currentOffering
+                      : labels.pastOffering}
+                    {" · "}
+                    {instructor.match === "unmatched"
+                      ? labels.noInstructorMatch
+                      : instructor.primary
+                        ? `${number(instructor.primary.responseCount, locale)} ${evaluationLabels[locale].responses} · ${instructor.primary.lastTerm}`
+                        : labels.noInstructorData}
+                  </span>
                 </span>
-              )}
-            </div>
+                <span className={styles.instructorMetrics}>
+                  {(["SSLE", "SEI"] as const).map((instrument) => {
+                    const metric = instructor.metrics.find(
+                      (item) => item.instrument === instrument,
+                    );
+                    return (
+                      <span
+                        className={styles.instructorMiniMetric}
+                        key={instrument}
+                      >
+                        <span>{instrument}</span>
+                        {metric ? (
+                          <>
+                            <MiniTrend metric={metric} locale={locale} />
+                            <strong data-tone={gradeTone(metric.score)}>
+                              {metric.score.toFixed(2)}
+                            </strong>
+                          </>
+                        ) : (
+                          <small>—</small>
+                        )}
+                      </span>
+                    );
+                  })}
+                </span>
+                {instructor.primary ? (
+                  <span
+                    className={styles.instructorScore}
+                    data-tone={gradeTone(instructor.primary.score)}
+                  >
+                    <strong>
+                      {instructor.primary.score.toFixed(2)}
+                      <small>/5</small>
+                    </strong>
+                    <span>{instructor.primary.instrument}</span>
+                  </span>
+                ) : (
+                  <span className={styles.instructorScore}>—</span>
+                )}
+                <ChevronDown aria-hidden="true" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className={styles.instructorDetail}>
+                {instructor.match === "unmatched" ? (
+                  <p className={styles.subtle}>{labels.noInstructorMatch}</p>
+                ) : instructor.metrics.length ? (
+                  <div className={styles.metricList}>
+                    {instructor.metrics.map((metric) => (
+                      <MetricPanel
+                        key={metric.instrument}
+                        metric={metric}
+                        locale={locale}
+                        primary={
+                          metric.instrument === instructor.primary?.instrument
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.subtle}>{labels.noInstructorData}</p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           ))}
         </section>
       ) : null}

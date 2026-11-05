@@ -1,7 +1,7 @@
 import { isDatabaseConfigured, queryDatabase } from "@/lib/db";
 import {
   buildMetrics,
-  nameDotNumberFromEmail,
+  buildInstructorSummaries,
   SCORING_POLICY,
 } from "./scoring";
 import type {
@@ -9,7 +9,6 @@ import type {
   CourseEvaluationSummary,
   EvaluationAggregateRow,
   EvaluationSource,
-  InstructorEvaluationSummary,
 } from "./types";
 
 const CACHE_TTL = 5 * 60_000;
@@ -122,35 +121,6 @@ const COURSE_SQL = `
     i.current_first_name, i.current_last_name, e.instrument, t.label, t.sort_key
   ORDER BY subj.code, c.catalog, t.sort_key
 `;
-
-function buildInstructorSummaries(
-  input: CourseEvaluationInput,
-  rows: EvaluationAggregateRow[],
-): InstructorEvaluationSummary[] {
-  const seen = new Set<string>();
-  return (input.instructors ?? []).flatMap((instructor) => {
-    const identity = nameDotNumberFromEmail(instructor.email);
-    const key = identity ?? `${instructor.name}\0${instructor.email ?? ""}`;
-    if (seen.has(key)) return [];
-    seen.add(key);
-    const matchedRows = identity
-      ? rows.filter((row) => row.name_dot_number.toLowerCase() === identity)
-      : [];
-    const metrics = buildMetrics(matchedRows);
-    return [
-      {
-        name: instructor.name,
-        email: instructor.email ?? null,
-        nameDotNumber: identity,
-        match: matchedRows.length
-          ? ("exact-email" as const)
-          : ("unmatched" as const),
-        primary: metrics[0] ?? null,
-        metrics,
-      },
-    ];
-  });
-}
 
 /**
  * A page-sized batch, keyed by `SUBJECT CATALOG`. Faculty matches apply only to

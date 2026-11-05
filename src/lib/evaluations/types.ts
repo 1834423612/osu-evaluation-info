@@ -41,6 +41,7 @@ export interface InstructorEvaluationSummary {
   name: string;
   email: string | null;
   nameDotNumber: string | null;
+  currentlyListed: boolean;
   /** Exact OSU email identity only; display names never establish a match. */
   match: "exact-email" | "unmatched";
   /** Current course only. A professor's other courses are not silently substituted. */

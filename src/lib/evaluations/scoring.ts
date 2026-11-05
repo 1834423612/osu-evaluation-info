@@ -1,4 +1,6 @@
 import type {
+  CourseEvaluationInput,
+  InstructorEvaluationSummary,
   EvaluationAggregateRow,
   EvaluationInstrument,
   EvaluationMetric,
@@ -151,4 +153,65 @@ export function nameDotNumberFromEmail(email?: string | null): string | null {
     email.trim(),
   );
   return match ? match[1].toLowerCase() : null;
+}
+
+/**
+ * Empty course rows mean no course history, not a failed email identity match.
+ * A current official catalog email is sufficient evidence of the OSU username.
+ */
+export function evaluationRowsForEmail<Row extends { name_dot_number: string }>(
+  email: string | null | undefined,
+  rows: readonly Row[],
+) {
+  const nameDotNumber = nameDotNumberFromEmail(email);
+  return {
+    nameDotNumber,
+    match: nameDotNumber ? ("exact-email" as const) : ("unmatched" as const),
+    rows: nameDotNumber
+      ? rows.filter(
+          (row) => row.name_dot_number.toLowerCase() === nameDotNumber,
+        )
+      : [],
+  };
+}
+
+/** Keep current teachers and historical course evidence under one official identity. */
+export function buildInstructorSummaries(
+  input: CourseEvaluationInput,
+  rows: EvaluationAggregateRow[],
+): InstructorEvaluationSummary[] {
+  const instructors = new Map<
+    string,
+    { name: string; email: string | null; currentlyListed: boolean }
+  >();
+  for (const instructor of input.instructors ?? []) {
+    const identity = nameDotNumberFromEmail(instructor.email);
+    const key = identity ?? `${instructor.name}\0${instructor.email ?? ""}`;
+    instructors.set(key, {
+      name: instructor.name,
+      email: instructor.email ?? null,
+      currentlyListed: true,
+    });
+  }
+  for (const row of rows) {
+    const email = `${row.name_dot_number}@osu.edu`;
+    const identity = nameDotNumberFromEmail(email);
+    if (!identity || instructors.has(identity)) continue;
+    instructors.set(identity, {
+      name: `${row.first_name} ${row.last_name}`.trim(),
+      email,
+      currentlyListed: false,
+    });
+  }
+  return [...instructors.values()].map((instructor) => {
+    const evidence = evaluationRowsForEmail(instructor.email, rows);
+    const metrics = buildMetrics(evidence.rows);
+    return {
+      ...instructor,
+      nameDotNumber: evidence.nameDotNumber,
+      match: evidence.match,
+      primary: metrics[0] ?? null,
+      metrics,
+    };
+  });
 }

@@ -4,6 +4,8 @@ import {
   aggregateMetric,
   buildMetrics,
   nameDotNumberFromEmail,
+  evaluationRowsForEmail,
+  buildInstructorSummaries,
 } from "../src/lib/evaluations/scoring.ts";
 
 // Fixed dates make the coverage and decay expectations independent of test day.
@@ -48,6 +50,34 @@ function recentTerms(mean, responsesPerTerm = 100) {
 }
 
 describe("evaluation aggregation", () => {
+  it("includes historical teachers when future sections have no assigned instructors", () => {
+    const summaries = buildInstructorSummaries({ instructors: [] }, [
+      observation(),
+    ]);
+    assert.equal(summaries.length, 1);
+    assert.equal(summaries[0].nameDotNumber, "example.1");
+    assert.equal(summaries[0].currentlyListed, false);
+    assert.equal(summaries[0].primary.score, 4.5);
+  });
+
+  it("deduplicates official email variants and distinguishes missing history from identity", () => {
+    const summaries = buildInstructorSummaries(
+      {
+        instructors: [
+          { name: "Current Name", email: "EXAMPLE.1@buckeyemail.osu.edu" },
+          { name: "Current Name", email: "example.1@osu.edu" },
+          { name: "Another Teacher", email: "another.2@osu.edu" },
+        ],
+      },
+      [observation()],
+    );
+    assert.equal(summaries.length, 2);
+    assert.equal(summaries[0].currentlyListed, true);
+    assert.equal(summaries[0].name, "Current Name");
+    assert.equal(summaries[1].match, "exact-email");
+    assert.equal(summaries[1].primary, null);
+  });
+
   it("keeps SEI and SSLE evidence separate and prefers the latest instrument", () => {
     const metrics = buildMetrics(
       [
@@ -265,5 +295,24 @@ describe("faculty identity", () => {
     ]) {
       assert.equal(nameDotNumberFromEmail(value), null);
     }
+  });
+
+  it("keeps exact identity separate from the presence of course history", () => {
+    const rows = [{ name_dot_number: "smith.123", rating: 4 }];
+    assert.deepEqual(evaluationRowsForEmail("smith.123@osu.edu", []), {
+      nameDotNumber: "smith.123",
+      match: "exact-email",
+      rows: [],
+    });
+    assert.deepEqual(evaluationRowsForEmail("smith.123@osu.edu", rows), {
+      nameDotNumber: "smith.123",
+      match: "exact-email",
+      rows,
+    });
+    assert.deepEqual(evaluationRowsForEmail("Jane Smith", rows), {
+      nameDotNumber: null,
+      match: "unmatched",
+      rows: [],
+    });
   });
 });
