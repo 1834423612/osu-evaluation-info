@@ -19,6 +19,11 @@ import {
   EvaluationSignalLabel,
   type EvaluationLocale,
 } from "./rating-summary";
+import {
+  InstructorDirectoryBadge,
+  InstructorDirectoryDetails,
+} from "./people-directory-lookup";
+import { InstructorAvatar } from "./instructor-avatar";
 import styles from "./evaluation-panel.module.css";
 import {
   Collapsible,
@@ -39,11 +44,16 @@ const copy = {
     history: "By term",
     chartLabel: "Response-weighted average by term, on a 1 to 5 scale",
     chartTable: "View exact term values",
+    chartHint: "Hover or tap any term · ← → to explore · Esc to clear",
+    sections: "sections",
+    responseRateShort: "Response rate",
     term: "Term",
     score: "Score",
     instruments:
       "The evaluation changed from SEI to SSLE in Autumn 2025. Each instrument is shown separately.",
     instructors: "Instructors in official course records",
+    unscoredNote:
+      "Instructors with published course evaluations appear first. A missing score can reflect a teaching assistant, a new appointment, or no published evaluation; it does not establish a role. Open an instructor to view directory appointments.",
     currentOffering: "Current classes",
     pastOffering: "Past offerings",
     courseTotal: "All instructors combined for this course",
@@ -76,11 +86,16 @@ const copy = {
     history: "分学期趋势",
     chartLabel: "各学期按回答数量加权的平均分，量表范围 1 至 5 分",
     chartTable: "查看各学期准确数据",
+    chartHint: "沿学期移动或轻点查看 · 方向键切换 · Esc 清除",
+    sections: "个班次",
+    responseRateShort: "回应率",
     term: "学期",
     score: "评分",
     instruments:
       "OSU 于 2025 年秋季由 SEI 更换为 SSLE；两种量表分别展示，不混合计算。",
     instructors: "官方课程记录中的教师",
+    unscoredNote:
+      "有本课程官方评价的教师优先显示。暂无评分可能涉及助教、新任职或尚无公开评价，不能据此认定身份；展开教师可查看目录中的公开任职部门。",
     currentOffering: "当前班次",
     pastOffering: "往届班次",
     courseTotal: "本课程所有教师合并统计",
@@ -116,14 +131,16 @@ function TrendChart({
   const chartId = useId();
   const chartRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(520);
-  const [activePoint, setActivePoint] = useState<number | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+  const activePoint = hoveredPoint ?? selectedPoint;
   const labels = copy[locale];
   const points = metric.trend.toSorted((a, b) => a.sortKey - b.sortKey);
-  const height = 140;
+  const height = 172;
   const left = 28;
   const right = 28;
-  const top = 12;
-  const bottom = 28;
+  const top = 18;
+  const bottom = 34;
   const plotHeight = height - top - bottom;
   const plotWidth = width - left - right;
   const x = (index: number) =>
@@ -135,6 +152,19 @@ function TrendChart({
   const line = points
     .map((point, index) => `${x(index)},${y(point.score)}`)
     .join(" ");
+  const active = activePoint === null ? null : points[activePoint];
+  const activeX = activePoint === null ? 0 : x(activePoint);
+  const activeY = active ? y(active.score) : 0;
+  const tooltipWidth = Math.min(212, width - 8);
+  const tooltipHeight = 62;
+  const tooltipX = Math.min(
+    Math.max(4, activeX - tooltipWidth / 2),
+    width - tooltipWidth - 4,
+  );
+  const tooltipY =
+    activeY > top + tooltipHeight + 12
+      ? activeY - tooltipHeight - 12
+      : Math.min(activeY + 14, height - bottom - tooltipHeight - 4);
   const labelCount = Math.min(
     6,
     points.length,
@@ -161,15 +191,15 @@ function TrendChart({
   if (points.length === 0) return null;
 
   return (
-    <div className={styles.chart} ref={chartRef}>
+    <div className={styles.chart} ref={chartRef} data-chart>
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="group"
-        aria-labelledby={`${chartId}-title ${chartId}-description`}
+        aria-label={`${metric.instrument} · ${labels.history}`}
+        aria-describedby={`${chartId}-description ${chartId}-hint`}
+        onPointerLeave={() => setHoveredPoint(null)}
+        data-trend-chart
       >
-        <title id={`${chartId}-title`}>
-          {metric.instrument} · {labels.history}
-        </title>
         <desc id={`${chartId}-description`}>
           {labels.chartLabel}.{" "}
           {points
@@ -179,8 +209,8 @@ function TrendChart({
             )
             .join("; ")}
         </desc>
-        {[1, 3, 5].map((tick) => (
-          <g key={tick}>
+        {[1, 2, 3, 4, 5].map((tick) => (
+          <g key={tick} aria-hidden="true">
             <line
               x1={left}
               x2={width - right}
@@ -198,70 +228,193 @@ function TrendChart({
             </text>
           </g>
         ))}
+        <line
+          x1={left}
+          x2={width - right}
+          y1={height - bottom}
+          y2={height - bottom}
+          className={styles.chartAxis}
+          aria-hidden="true"
+        />
         {points.length > 1 ? (
-          <polyline points={line} className={styles.chartLine} />
+          <polyline
+            points={line}
+            className={styles.chartLine}
+            aria-hidden="true"
+          />
         ) : null}
-        {points.map((point, index) => (
-          <g key={point.term}>
+        {active ? (
+          <g pointerEvents="none" aria-hidden="true">
+            <rect
+              x={Math.max(left, activeX - 12)}
+              y={top}
+              width={Math.min(24, width - right - Math.max(left, activeX - 12))}
+              height={plotHeight}
+              rx="5"
+              className={styles.chartActiveBand}
+            />
+            <line
+              x1={activeX}
+              x2={activeX}
+              y1={top}
+              y2={height - bottom + 5}
+              className={styles.chartCrosshair}
+            />
+            <line
+              x1={left}
+              x2={width - right}
+              y1={activeY}
+              y2={activeY}
+              className={styles.chartCrosshairHorizontal}
+            />
             <circle
-              cx={x(index)}
-              cy={y(point.score)}
-              r={3.5}
-              className={styles.chartPoint}
-              tabIndex={0}
-              role="button"
-              aria-label={`${point.term}: ${point.score.toFixed(2)} / 5, ${number(point.responses, locale)} ${labels.responses}`}
-              onPointerEnter={() => setActivePoint(index)}
-              onPointerLeave={() => setActivePoint(null)}
-              onFocus={() => setActivePoint(index)}
-              onBlur={() => setActivePoint(null)}
-              onTouchStart={() => setActivePoint(index)}
-            >
-              <title>
-                {point.term}: {point.score.toFixed(2)} / 5 ·{" "}
-                {number(point.responses, locale)} {labels.responses}
-              </title>
-            </circle>
-            {activePoint === index ? (
-              <g
-                className={styles.pointTooltip}
-                aria-hidden="true"
-                pointerEvents="none"
-              >
-                <rect
-                  x={Math.min(Math.max(2, x(index) - 61), width - 126)}
-                  y={Math.max(1, y(point.score) - 42)}
-                  width="124"
-                  height="32"
-                  rx="5"
-                />
-                <text
-                  x={Math.min(Math.max(8, x(index) - 55), width - 120)}
-                  y={Math.max(14, y(point.score) - 22)}
-                >
-                  {point.term} · {point.score.toFixed(2)} / 5
-                </text>
-                <text
-                  x={Math.min(Math.max(8, x(index) - 55), width - 120)}
-                  y={Math.max(27, y(point.score) - 9)}
-                >
-                  {number(point.responses, locale)} {labels.responses}
-                </text>
-              </g>
-            ) : null}
-            {labelIndices.has(index) ? (
-              <text
-                x={x(index)}
-                y={height - 6}
-                textAnchor="middle"
-                className={styles.chartLabel}
-              >
-                {point.term}
-              </text>
-            ) : null}
+              cx={activeX}
+              cy={activeY}
+              r="8"
+              className={styles.chartPointHalo}
+            />
+            <circle
+              cx={activeX}
+              cy={height - bottom}
+              r="3"
+              className={styles.chartAxisMarker}
+            />
           </g>
-        ))}
+        ) : null}
+        {points.map((point, index) => {
+          const pointX = x(index);
+          const pointY = y(point.score);
+          const bandLeft =
+            index === 0 ? left - 10 : (x(index - 1) + pointX) / 2;
+          const bandRight =
+            index === points.length - 1
+              ? width - right + 10
+              : (pointX + x(index + 1)) / 2;
+          return (
+            <g key={point.term}>
+              <rect
+                x={bandLeft}
+                y={top - 7}
+                width={bandRight - bandLeft}
+                height={height - top + 4}
+                rx="5"
+                className={styles.chartHitArea}
+                tabIndex={0}
+                role="button"
+                data-trend-point={index}
+                aria-pressed={selectedPoint === index}
+                aria-label={`${point.term}: ${point.score.toFixed(2)} / 5, ${number(point.responses, locale)} ${labels.responses}, ${labels.responseRate}: ${point.responseRate === null ? "—" : `${point.responseRate.toFixed(0)}%`}, ${point.sections} ${labels.sections}`}
+                onPointerEnter={() => setHoveredPoint(index)}
+                onPointerMove={() => setHoveredPoint(index)}
+                onFocus={() => setHoveredPoint(index)}
+                onBlur={() => setHoveredPoint(null)}
+                onClick={() => {
+                  setSelectedPoint((current) =>
+                    current === index ? null : index,
+                  );
+                  setHoveredPoint(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedPoint((current) =>
+                      current === index ? null : index,
+                    );
+                  }
+                  if (
+                    ["ArrowLeft", "ArrowRight", "Home", "End"].includes(
+                      event.key,
+                    )
+                  ) {
+                    event.preventDefault();
+                    const next =
+                      event.key === "Home"
+                        ? 0
+                        : event.key === "End"
+                          ? points.length - 1
+                          : Math.max(
+                              0,
+                              Math.min(
+                                points.length - 1,
+                                index + (event.key === "ArrowRight" ? 1 : -1),
+                              ),
+                            );
+                    chartRef.current
+                      ?.querySelector<SVGRectElement>(
+                        `[data-trend-point="${next}"]`,
+                      )
+                      ?.focus();
+                  }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setSelectedPoint(null);
+                    setHoveredPoint(null);
+                  }
+                }}
+              />
+              <circle
+                cx={pointX}
+                cy={pointY}
+                r={activePoint === index ? 4.5 : 3.5}
+                className={`${styles.chartPoint}${activePoint === index ? ` ${styles.chartPointActive}` : ""}`}
+                pointerEvents="none"
+                aria-hidden="true"
+              />
+              {labelIndices.has(index) ? (
+                <text
+                  x={pointX}
+                  y={height - 10}
+                  textAnchor="middle"
+                  className={`${styles.chartLabel}${activePoint === index ? ` ${styles.chartLabelActive}` : ""}`}
+                  pointerEvents="none"
+                  aria-hidden="true"
+                >
+                  {point.term}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+        {/* SVG paint order keeps the tooltip above every point and hit area. */}
+        {active ? (
+          <g
+            className={styles.pointTooltip}
+            pointerEvents="none"
+            aria-hidden="true"
+            data-trend-tooltip
+          >
+            <rect
+              x={tooltipX}
+              y={tooltipY}
+              width={tooltipWidth}
+              height={tooltipHeight}
+              rx="9"
+            />
+            <text x={tooltipX + 11} y={tooltipY + 18}>
+              {active.term} · {active.score.toFixed(2)} / 5
+            </text>
+            <text x={tooltipX + 11} y={tooltipY + 35}>
+              {number(active.responses, locale)} {labels.responses}
+            </text>
+            <text
+              x={tooltipX + 11}
+              y={tooltipY + 50}
+              className={styles.pointTooltipDetail}
+            >
+              {labels.responseRateShort}:{" "}
+              {active.responseRate === null
+                ? "—"
+                : `${active.responseRate.toFixed(0)}%`}
+              {" · "}
+              {number(active.sections, locale)} {labels.sections}
+            </text>
+          </g>
+        ) : null}
       </svg>
+      <p className={styles.chartHint} id={`${chartId}-hint`}>
+        {labels.chartHint}
+      </p>
       <Collapsible className={styles.chartDetails}>
         <CollapsibleTrigger className={styles.disclosureTrigger}>
           {labels.chartTable}
@@ -328,12 +481,7 @@ function MiniTrend({
         />
       ) : null}
       {coordinates.map(({ x, y, point }) => (
-        <circle key={point.term} cx={x} cy={y} r="2">
-          <title>
-            {point.term}: {point.score.toFixed(2)} / 5 ·{" "}
-            {number(point.responses, locale)} {copy[locale].responses}
-          </title>
-        </circle>
+        <circle key={point.term} cx={x} cy={y} r="2" />
       ))}
     </svg>
   );
@@ -341,6 +489,15 @@ function MiniTrend({
 
 function gradeTone(score: number) {
   return score >= 4.2 ? "positive" : score <= 3.3 ? "caution" : "mixed";
+}
+
+function instructorDataSortKey(
+  instructor: CourseEvaluationSummary["instructors"][number],
+) {
+  return instructor.metrics.reduce(
+    (latest, metric) => Math.max(latest, metric.lastTermSortKey),
+    instructor.primary?.lastTermSortKey ?? Number.NEGATIVE_INFINITY,
+  );
 }
 
 function MetricPanel({
@@ -428,6 +585,17 @@ export function EvaluationPanel({
     summary?.metrics.toSorted(
       (a, b) => b.lastTermSortKey - a.lastTermSortKey,
     ) ?? [];
+  const instructors =
+    summary?.instructors.toSorted((a, b) => {
+      const aHasData = Number(Boolean(a.primary || a.metrics.length));
+      const bHasData = Number(Boolean(b.primary || b.metrics.length));
+      return (
+        bHasData - aHasData ||
+        (bHasData
+          ? instructorDataSortKey(b) - instructorDataSortKey(a)
+          : Number(b.currentlyListed) - Number(a.currentlyListed))
+      );
+    }) ?? [];
 
   return (
     <section className={styles.panel} aria-label={labels.title}>
@@ -462,18 +630,31 @@ export function EvaluationPanel({
           </div>
         </>
       )}
-      {summary && summary.instructors.length > 0 ? (
+      {instructors.length > 0 ? (
         <section className={styles.instructors} aria-label={labels.instructors}>
           <h4>{labels.instructors}</h4>
-          {summary.instructors.map((instructor, index) => (
+          <p className={styles.instructorNote}>{labels.unscoredNote}</p>
+          {instructors.map((instructor, index) => (
             <Collapsible
               className={styles.instructorItem}
               key={`${instructor.email ?? instructor.name}-${index}`}
             >
               <CollapsibleTrigger className={styles.instructorRow}>
                 <span className={styles.instructorIdentity}>
-                  <span className={styles.instructorName}>
-                    {instructor.name}
+                  <span className={styles.instructorNameLine}>
+                    <InstructorAvatar
+                      name={instructor.name}
+                      email={instructor.email}
+                      size={32}
+                    />
+                    <span className={styles.instructorName}>
+                      {instructor.name}
+                      <InstructorDirectoryBadge
+                        name={instructor.name}
+                        email={instructor.email}
+                        locale={locale}
+                      />
+                    </span>
                   </span>
                   <span className={styles.subtle}>
                     {instructor.currentlyListed
@@ -529,6 +710,11 @@ export function EvaluationPanel({
                 <ChevronDown aria-hidden="true" />
               </CollapsibleTrigger>
               <CollapsibleContent className={styles.instructorDetail}>
+                <InstructorDirectoryDetails
+                  name={instructor.name}
+                  email={instructor.email}
+                  locale={locale}
+                />
                 {instructor.match === "unmatched" ? (
                   <p className={styles.subtle}>{labels.noInstructorMatch}</p>
                 ) : instructor.metrics.length ? (
