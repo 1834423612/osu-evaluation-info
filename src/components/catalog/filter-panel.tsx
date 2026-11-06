@@ -129,6 +129,9 @@ function FilterFacet({
             size="sm"
             aria-pressed={selected === "all"}
             className="filter-chip"
+            data-analytics-action="filter_option"
+            data-analytics-label={facet.slug}
+            data-analytics-value="all"
             onClick={() => onChange(facet.slug, "all")}
           >
             {text(locale, "All campuses", "全部校区")}
@@ -140,6 +143,9 @@ function FilterFacet({
             size="sm"
             aria-pressed={!selected}
             className="filter-chip"
+            data-analytics-action="filter_option"
+            data-analytics-label={facet.slug}
+            data-analytics-value="all"
             onClick={() => onChange(facet.slug, "")}
           >
             {text(locale, "All", "全部")}
@@ -153,6 +159,9 @@ function FilterFacet({
             size="sm"
             aria-pressed={selected === item.value}
             className="filter-chip"
+            data-analytics-action="filter_option"
+            data-analytics-label={facet.slug}
+            data-analytics-value={item.value}
             onClick={() =>
               onChange(facet.slug, selected === item.value ? "" : item.value)
             }

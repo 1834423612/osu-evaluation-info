@@ -37,6 +37,7 @@ import { RatingSummary } from "@/components/evaluations/rating-summary";
 import { InstructorAvatar } from "@/components/people/instructor-avatar";
 import SectionsPanel from "./sections-panel";
 import { TranslateText } from "@/components/translation/translate-text";
+import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 
 const EvaluationPanel = dynamic(
   () => import("@/components/evaluations/evaluation-panel"),
@@ -408,6 +409,12 @@ export function CourseCard({
         const dx = touch.clientX - start.x;
         const dy = touch.clientY - start.y;
         if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+        trackUmamiEvent("ui_interaction", {
+          action: "course_detail_swipe",
+          direction: dx < 0 ? "ratings" : "sections",
+          area: "course_details",
+          path: window.location.pathname,
+        });
         openTab(dx < 0 ? "ratings" : "sections", true);
       }}
     >
@@ -482,6 +489,7 @@ export function CourseCard({
                 type="button"
                 size="sm"
                 variant="outline"
+                data-analytics-action="enrollment_refresh"
                 disabled={loading}
                 onClick={() => void loadDetail()}
               >
@@ -501,7 +509,10 @@ export function CourseCard({
                   "Couldn't refresh official data. Enrollment availability is hidden.",
                   "暂无法刷新官方信息，选课状态和人数已隐藏。",
                 )}{" "}
-                <button onClick={() => void openTab("sections", true)}>
+                <button
+                  data-analytics-action="enrollment_retry"
+                  onClick={() => void openTab("sections", true)}
+                >
                   {text(locale, "Retry", "重试")}
                 </button>
               </div>
@@ -583,6 +594,8 @@ export function CourseCard({
   return (
     <article
       className="course-card"
+      data-analytics-label="course_card"
+      data-analytics-value={`${course.subject} ${course.catalogNumber}`}
       tabIndex={0}
       onClick={(event) => {
         const target = event.target as HTMLElement;
@@ -618,6 +631,9 @@ export function CourseCard({
               onClick={() => onSave(current)}
               aria-label={`${saved ? text(locale, "Unsave", "取消收藏") : text(locale, "Save", "收藏")} ${course.subject} ${course.catalogNumber}`}
               aria-pressed={saved}
+              data-analytics-action="course_favorite"
+              data-analytics-label="course"
+              data-analytics-value={`${course.subject} ${course.catalogNumber}`}
               className="save-course"
             >
               <Bookmark fill={saved ? "currentColor" : "none"} />
@@ -625,6 +641,9 @@ export function CourseCard({
           </div>
           <h2>
             <button
+              data-analytics-action="course_open"
+              data-analytics-label="course"
+              data-analytics-value={`${course.subject} ${course.catalogNumber}`}
               onClick={() => void openTab("sections")}
               aria-haspopup="dialog"
               aria-expanded={Boolean(tab)}

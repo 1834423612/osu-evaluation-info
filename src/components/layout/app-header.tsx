@@ -76,6 +76,7 @@ export function AppHeader({
             <Button
               variant="ghost"
               size="sm"
+              data-analytics-action="locale_switch"
               onClick={() => setLocale(locale === "en" ? "zh" : "en")}
               aria-label={text(locale, "Switch to Chinese", "切换到英文")}
             >

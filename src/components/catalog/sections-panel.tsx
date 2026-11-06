@@ -208,6 +208,8 @@ function SectionRow({
                     className={`${styles.iconButton}${isSaved ? ` ${styles.saved}` : ""}`}
                     type="button"
                     aria-pressed={isSaved}
+                    data-analytics-action="instructor_course_favorite"
+                    data-analytics-label="instructor_course"
                     aria-label={text(
                       locale,
                       isSaved
@@ -279,6 +281,9 @@ function SectionRow({
           className={`${styles.iconButton} ${styles.sectionSave}${saved ? ` ${styles.saved}` : ""}`}
           type="button"
           aria-pressed={saved}
+          data-analytics-action="section_favorite"
+          data-analytics-label="section"
+          data-analytics-value={section.section}
           aria-label={text(
             locale,
             `${saved ? "Unsave" : "Save"} section ${section.section}`,
@@ -472,6 +477,9 @@ export default function SectionsPanel({
                     type="button"
                     className={styles.chip}
                     aria-pressed={filters.components.has(component)}
+                    data-analytics-action="section_filter"
+                    data-analytics-label="component"
+                    data-analytics-value={component}
                     onClick={() => toggleComponent(component)}
                     key={component}
                   >
@@ -490,6 +498,9 @@ export default function SectionsPanel({
                     type="button"
                     className={styles.chip}
                     aria-pressed={filters.instructionModes.has(mode)}
+                    data-analytics-action="section_filter"
+                    data-analytics-label="instruction_mode"
+                    data-analytics-value={mode}
                     onClick={() => toggleMode(mode)}
                     key={mode}
                   >
@@ -508,6 +519,9 @@ export default function SectionsPanel({
                     type="button"
                     className={`${styles.chip} ${styles.dayChip}`}
                     aria-pressed={filters.days.has(day)}
+                    data-analytics-action="section_filter"
+                    data-analytics-label="meeting_day"
+                    data-analytics-value={DAYS[locale][day]}
                     onClick={() => toggleDay(day)}
                     key={day}
                   >

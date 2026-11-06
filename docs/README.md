@@ -10,5 +10,6 @@ All commands run from the repository root unless a guide says otherwise.
 | People directory     | [Identity verification and cache](people/directory.md)                                                                                                                                                             |
 | Rate My Professors   | [Collection](rmp/import.md), [identity mappings](rmp/mapping.md), [legacy supplements](rmp/supplement.md)                                                                                                          |
 | Translation          | [Translation providers and scheduling](translation.md)                                                                                                                                                             |
+| Analytics            | [Umami setup, events, replays, and heatmaps](analytics/umami.md)                                                                                                                                                   |
 
 The [project README](../README.md) describes startup, checks, and the repository layout.

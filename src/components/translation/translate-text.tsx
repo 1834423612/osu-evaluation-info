@@ -406,6 +406,7 @@ export function TranslateText({
         <button
           type="button"
           className={styles.actionButton}
+          data-analytics-action="translation_toggle"
           onClick={() => {
             if (showingTranslation) setVisible(false);
             else if (translation !== null) setVisible(true);
@@ -448,6 +449,7 @@ export function TranslateText({
             <button
               type="button"
               className={styles.settingsButton}
+              data-analytics-action="translation_settings_open"
               ref={settingsRef}
               aria-label={labels.settings}
               title={labels.settings}
@@ -473,6 +475,7 @@ export function TranslateText({
               <button
                 type="button"
                 className={styles.autoChoice}
+                data-analytics-action="translation_auto_toggle"
                 role="switch"
                 aria-label={labels.auto}
                 aria-checked={automatic}
@@ -488,6 +491,7 @@ export function TranslateText({
               <button
                 type="button"
                 className={styles.modeChoice}
+                data-analytics-action="translation_mode_bilingual"
                 aria-pressed={mode === "bilingual"}
                 onClick={(event) => chooseMode("bilingual", event)}
               >
@@ -501,6 +505,7 @@ export function TranslateText({
               <button
                 type="button"
                 className={styles.modeChoice}
+                data-analytics-action="translation_mode_replace"
                 aria-pressed={mode === "replace"}
                 onClick={(event) => chooseMode("replace", event)}
               >

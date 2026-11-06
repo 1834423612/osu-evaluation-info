@@ -510,6 +510,8 @@ export function CourseExplorer() {
                   <input
                     type="checkbox"
                     role="switch"
+                    data-analytics-action="enrollment_watch_toggle"
+                    data-analytics-label="enrollment_watch"
                     checked={enrollmentWatch}
                     onChange={(event) =>
                       setEnrollmentWatch(event.currentTarget.checked)

@@ -100,6 +100,7 @@ export default function RmpPanel({
   return (
     <section
       className={styles.panel}
+      data-analytics-area="rmp_reviews"
       aria-label={text(locale, "Rate My Professors reviews", "RMP 学生评论")}
     >
       <div className={styles.heading}>
@@ -151,6 +152,7 @@ export default function RmpPanel({
           )}{" "}
           <button
             type="button"
+            data-analytics-action="rmp_retry"
             onClick={() => {
               setResult(null);
               setAttempt((value) => value + 1);
@@ -547,6 +549,7 @@ function InstructorReviews({
                   )}
                   <button
                     type="button"
+                    data-analytics-action="rmp_review_retry"
                     onClick={() => void loadPage(pageIndex)}
                   >
                     {text(locale, "Retry", "重试")}
@@ -558,6 +561,7 @@ function InstructorReviews({
               <button
                 className={styles.viewAll}
                 type="button"
+                data-analytics-action="rmp_reviews_expand"
                 onClick={() => {
                   setShowAllReviews(true);
                   void loadPage(0);
@@ -579,6 +583,7 @@ function InstructorReviews({
               <button
                 className={styles.viewAll}
                 type="button"
+                data-analytics-action="rmp_reviews_collapse"
                 onClick={() => {
                   setShowAllReviews(false);
                   setPageIndex(0);
@@ -592,6 +597,7 @@ function InstructorReviews({
               <div className={styles.moreReviews}>
                 <button
                   type="button"
+                  data-analytics-action="rmp_review_page_previous"
                   onClick={() => void loadPage(pageIndex - 1)}
                   disabled={loadingPage || pageIndex === 0}
                   title={text(locale, "Previous page", "上一页评论")}
@@ -613,6 +619,7 @@ function InstructorReviews({
                       <button
                         key={slot.key}
                         type="button"
+                        data-analytics-action="rmp_review_page_select"
                         aria-current={
                           slot.page === pageIndex ? "page" : undefined
                         }
@@ -634,6 +641,7 @@ function InstructorReviews({
                 </span>
                 <button
                   type="button"
+                  data-analytics-action="rmp_review_page_next"
                   onClick={() => void loadPage(pageIndex + 1)}
                   disabled={loadingPage || pageIndex >= pageCount - 1}
                   title={text(locale, "Next page", "下一页评论")}
@@ -685,6 +693,7 @@ function InstructorEmail({
     <button
       className={styles.emailReveal}
       type="button"
+      data-analytics-action="instructor_email_reveal"
       onClick={() => setVisible((value) => !value)}
     >
       <Mail size={13} aria-hidden="true" />

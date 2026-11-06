@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
+import { UmamiAnalytics } from "@/components/analytics/umami-analytics";
 import { brand } from "@/lib/brand";
 import "./globals.css";
 
@@ -77,7 +79,36 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Script
+          id="umami-url-filter"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.umamiBeforeSend = function(type, payload) {
+              if (!payload || typeof payload !== "object") return payload;
+              for (const field of ["url", "referrer"]) {
+                if (typeof payload[field] !== "string" || !payload[field]) continue;
+                try {
+                  const url = new URL(payload[field], window.location.origin);
+                  const params = new URLSearchParams();
+                  for (const [key, value] of url.searchParams) {
+                    if (/^utm_(source|medium|campaign|term|content)$/i.test(key)) params.append(key, value);
+                  }
+                  url.search = params.toString();
+                  payload[field] = url.href;
+                } catch {}
+              }
+              return payload;
+            };`,
+          }}
+        />
+        {children}
+        <UmamiAnalytics
+          websiteId={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? ""}
+          trackerUrl={process.env.NEXT_PUBLIC_UMAMI_TRACKER_URL ?? ""}
+          recorderUrl={process.env.NEXT_PUBLIC_UMAMI_RECORDER_URL ?? ""}
+        />
+      </body>
     </html>
   );
 }

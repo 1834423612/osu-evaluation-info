@@ -513,6 +513,7 @@ export function InstructorDirectoryIdentity({
             <button
               className={`${styles.roleTrigger} ${checked && roleCaption ? styles.role : styles.unknown}`}
               data-directory-role-trigger
+              data-analytics-action="directory_identity_check"
               data-role={compactRole?.category}
               ref={triggerRef}
               type="button"
