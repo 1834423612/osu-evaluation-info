@@ -5,9 +5,9 @@ settings are configured. Set these values before building or restarting the
 application:
 
 ```dotenv
-NEXT_PUBLIC_UMAMI_WEBSITE_ID=0a208bac-69d3-4872-bce6-6a1d690dccec
-NEXT_PUBLIC_UMAMI_TRACKER_URL=https://tj.kjch.net/kjchtj_main.js
-NEXT_PUBLIC_UMAMI_RECORDER_URL=https://tj.kjch.net/recorder.js
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+NEXT_PUBLIC_UMAMI_TRACKER_URL=https://example.com/umami_main.js
+NEXT_PUBLIC_UMAMI_RECORDER_URL=https://example.com/recorder.js
 ```
 
 The recorder URL is optional. The tracker collects page views for client-side
