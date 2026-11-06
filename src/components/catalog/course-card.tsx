@@ -680,7 +680,7 @@ export function CourseCard({
           onOpenChange={(open) => !open && closeDetails()}
           shouldScaleBackground={false}
           handleOnly
-          closeThreshold={0.25}
+          closeThreshold={0.1}
         >
           <DrawerContent
             className="course-detail-drawer"
