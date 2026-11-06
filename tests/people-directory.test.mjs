@@ -8,6 +8,9 @@ import {
   searchSocketIo,
   validDirectoryFallbackName,
   validDirectorySearchTerm,
+  directoryNameQueries,
+  parseDepartmentProfile,
+  DIRECTORY_SOURCE_BUDGET_MS,
 } from "../src/lib/people/directory.ts";
 import {
   distinctDirectoryAppointments,
@@ -175,7 +178,11 @@ test("automatic instructor badges accept only an unambiguous identity or name ma
     appointments: [],
   };
   const instructor = { name: "Casey Example", email: null };
-  assert.equal(selectDirectoryCandidate([candidate], instructor), candidate);
+  assert.equal(selectDirectoryCandidate([candidate], instructor), null);
+  assert.equal(
+    selectDirectoryCandidate([candidate], { name: "Casey Morgan Example" }),
+    candidate,
+  );
   assert.equal(
     selectDirectoryCandidate(
       [candidate, { ...candidate, name: "Casey N Example" }],
@@ -474,6 +481,86 @@ test("directory lookup accepts names and OSU name-dot-number terms only", () => 
   assert.equal(validDirectoryFallbackName("Rajiv Ramnath"), true);
   assert.equal(validDirectoryFallbackName("ramnath.6"), false);
   assert.equal(validDirectoryFallbackName("<script> not a name"), false);
+});
+
+test("bounded name queries skip middle names and include joined compound families", () => {
+  assert.deepEqual(directoryNameQueries("Julian Alonso Mejia Cordero"), [
+    "Julian Cordero",
+    "Julian MejiaCordero",
+    "Julian Mejia Cordero",
+  ]);
+  assert.deepEqual(directoryNameQueries("Neil John DeBoer"), ["Neil DeBoer"]);
+  assert.deepEqual(directoryNameQueries("Tena I. Katsaounis"), [
+    "Tena Katsaounis",
+  ]);
+});
+
+test("the entire upstream fallback chain shares one source deadline", async () => {
+  const originalNow = Date.now;
+  const originalFetch = globalThis.fetch;
+  const originalSocket = globalThis.WebSocket;
+  let now = originalNow();
+  let legacyRequests = 0;
+  Date.now = () => now;
+  globalThis.WebSocket = class {
+    constructor() {
+      throw new Error("unavailable fixture");
+    }
+  };
+  globalThis.fetch = async () => {
+    legacyRequests++;
+    now += DIRECTORY_SOURCE_BUDGET_MS + 1;
+    return Response.json({ data: { people: [] } });
+  };
+  try {
+    const result = await lookupDirectory("Deadline Middle Compound Fixture");
+    assert.equal(result.status, "available");
+    assert.equal(legacyRequests, 1);
+    assert.ok(DIRECTORY_SOURCE_BUDGET_MS < 30_000);
+  } finally {
+    Date.now = originalNow;
+    globalThis.fetch = originalFetch;
+    globalThis.WebSocket = originalSocket;
+  }
+});
+
+test("department profiles accept only the exact official account and scoped job title", () => {
+  const profile = `<link rel="canonical" href="https://math.osu.edu/people/fixture.1">
+    <nav>Professor directory</nav><section class="user-profile__contact-information">
+      <div class="field field--name-field-your-title"><div class="field--label">Job Title</div>
+      <div class="field--item">Lecturer</div></div>
+      <a href="mailto:fixture.1@osu.edu">Email</a></section>`;
+  assert.deepEqual(parseDepartmentProfile(profile, "fixture.1", "MATH"), [
+    { title: "Lecturer", organization: "Department of Mathematics" },
+  ]);
+  assert.equal(
+    parseDepartmentProfile(
+      profile.replace("mailto:fixture.1@osu.edu", "mailto:other.1@osu.edu"),
+      "fixture.1",
+      "MATH",
+    ),
+    null,
+  );
+  assert.equal(
+    parseDepartmentProfile(
+      profile.replace("field--name-field-your-title", "unrelated-title"),
+      "fixture.1",
+      "MATH",
+    ),
+    null,
+  );
+  assert.equal(
+    parseDepartmentProfile(
+      profile.replace(
+        "https://math.osu.edu/people/fixture.1",
+        "https://outside.invalid/people/fixture.1",
+      ),
+      "fixture.1",
+      "MATH",
+    ),
+    null,
+  );
+  assert.equal(parseDepartmentProfile(profile, "fixture.1", "CSE"), null);
 });
 
 test("Socket.IO search waits for the people provider and sends only the query", async () => {

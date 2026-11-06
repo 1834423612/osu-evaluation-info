@@ -9,13 +9,34 @@ const CACHE_LIMIT = 384;
 const SUCCESS_TTL = 6 * 60 * 60 * 1000;
 const EMPTY_TTL = 30 * 60 * 1000;
 const ERROR_TTL = 30 * 1000;
+const INCOMPLETE_TTL = 30 * 60 * 1000;
 const LOOKUP_TIMEOUT_MS = 5_000;
+export const DIRECTORY_SOURCE_BUDGET_MS = 18_000;
 const MAX_PENDING_LOOKUPS = 12;
 const NAME_DOT_NUMBER = /^[a-z0-9_-]+\.\d{1,10}$/i;
 
 export function directoryAccountFromTerm(term: string) {
   const value = term.trim();
   return NAME_DOT_NUMBER.test(value) ? value.toLocaleLowerCase() : null;
+}
+
+export function hasDirectoryRoleEvidence(person: DirectoryCandidate) {
+  return person.roles.length > 0 || person.appointments.length > 0;
+}
+
+/** Search terms omit middle names; result acceptance still uses the full name. */
+export function directoryNameQueries(name: string) {
+  const words = name.trim().replace(/\s+/g, " ").split(" ");
+  if (words.length <= 2) return [words.join(" ")];
+  const first = words[0];
+  const last = words.at(-1)!;
+  const queries = [`${first} ${last}`];
+  // Four or more words can carry a compound family name after middle names.
+  if (words.length >= 4) {
+    const family = words.slice(-2);
+    queries.push(`${first} ${family.join("")}`, `${first} ${family.join(" ")}`);
+  }
+  return [...new Set(queries)].slice(0, 3);
 }
 
 export type DirectoryRole =
@@ -41,7 +62,8 @@ export interface DirectoryCandidate {
 export type DirectoryLookupResult =
   | {
       status: "available";
-      source: "osu-search" | "content-api-v2";
+      source: "osu-search" | "content-api-v2" | "department-profile";
+      sourceUrl?: string;
       verifiedAt?: string;
       cache: "memory" | "database" | "source";
       stale?: boolean;
@@ -74,12 +96,13 @@ type CacheEntry = { expiresAt: number; value: DirectoryLookupResult };
 const cache = new Map<string, CacheEntry>();
 const pending = new Map<string, Promise<DirectoryLookupResult>>();
 
-function cacheKey(term: string, fallbackName?: string) {
+function cacheKey(term: string, fallbackName?: string, subject?: string) {
   return createHash("sha256")
     .update(
       JSON.stringify([
         term.toLocaleLowerCase(),
         fallbackName?.toLocaleLowerCase() ?? "",
+        subject?.toUpperCase() ?? "",
       ]),
     )
     .digest("hex");
@@ -243,6 +266,10 @@ function dedupeCandidates(candidates: DirectoryCandidate[]) {
 }
 
 async function readJsonLimited(response: Response): Promise<unknown> {
+  return JSON.parse(await readTextLimited(response));
+}
+
+async function readTextLimited(response: Response): Promise<string> {
   const length = Number(response.headers.get("content-length"));
   if (Number.isFinite(length) && length > MAX_RESULT_BYTES)
     throw new Error("response too large");
@@ -270,10 +297,130 @@ async function readJsonLimited(response: Response): Promise<unknown> {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return JSON.parse(new TextDecoder().decode(bytes));
+  return new TextDecoder().decode(bytes);
 }
 
-export function searchSocketIo(term: string): Promise<unknown[] | null> {
+const DEPARTMENT_PROFILES: Record<
+  string,
+  { origin: string; organization: string }
+> = {
+  MATH: {
+    origin: "https://math.osu.edu",
+    organization: "Department of Mathematics",
+  },
+};
+
+export function directoryHasDepartmentProfile(subject?: string) {
+  return Boolean(subject && DEPARTMENT_PROFILES[subject.toUpperCase()]);
+}
+
+function remainingTimeout(deadline: number) {
+  return Math.max(0, Math.min(LOOKUP_TIMEOUT_MS, deadline - Date.now()));
+}
+
+function textFromHtml(value: string) {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#(\d+);/g, (_, code: string) =>
+      String.fromCodePoint(Number(code)),
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function parseDepartmentProfile(
+  html: string,
+  identity: string,
+  subject: string,
+): DirectoryAppointment[] | null {
+  const department = DEPARTMENT_PROFILES[subject.toUpperCase()];
+  if (!department || !NAME_DOT_NUMBER.test(identity)) return null;
+  const expectedUrl = `${department.origin}/people/${identity.toLowerCase()}`;
+  const canonical = html.match(
+    /<link\b(?=[^>]*\brel=["']canonical["'])(?=[^>]*\bhref=["']([^"']+)["'])[^>]*>/i,
+  )?.[1];
+  if (canonical?.replace(/\/$/, "") !== expectedUrl) return null;
+  const profile = html.match(
+    /<section\b[^>]*class=["'][^"']*\buser-profile__contact-information\b[^"']*["'][^>]*>([\s\S]*?)<\/section>/i,
+  )?.[1];
+  if (!profile) return null;
+  const emails = [
+    ...profile.matchAll(/href=["']mailto:([^"'?]+)(?:\?[^"']*)?["']/gi),
+  ].map((match) => match[1].toLowerCase());
+  if (!emails.includes(`${identity.toLowerCase()}@osu.edu`)) return null;
+  const titleFields = [
+    ...profile.matchAll(
+      /<div\b[^>]*class=["'][^"']*\bfield--name-field-your-title\b[^"']*["'][^>]*>\s*(?:<div\b[^>]*class=["'][^"']*\bfield--label\b[^"']*["'][^>]*>[\s\S]*?<\/div>)?\s*<div\b[^>]*class=["'][^"']*\bfield--item\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+    ),
+  ];
+  if (titleFields.length !== 1) return null;
+  const title = textFromHtml(titleFields[0][1]);
+  if (!title || title.length > 180) return null;
+  return [{ title, organization: department.organization }];
+}
+
+async function searchDepartmentProfile(
+  identity: string,
+  subject: string | undefined,
+  deadline: number,
+) {
+  const department = subject
+    ? DEPARTMENT_PROFILES[subject.toUpperCase()]
+    : null;
+  if (!department || !NAME_DOT_NUMBER.test(identity)) return null;
+  const sourceUrl = `${department.origin}/people/${identity.toLowerCase()}`;
+  let url = new URL(sourceUrl);
+  for (let redirects = 0; redirects <= 2; redirects++) {
+    const timeout = remainingTimeout(deadline);
+    if (!timeout) return null;
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        signal: AbortSignal.timeout(timeout),
+        redirect: "manual",
+        cache: "no-store",
+        headers: {
+          Accept: "text/html",
+          "User-Agent": "osu-eval-directory-lookup/1.0",
+        },
+      });
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get("location");
+        await response.body?.cancel();
+        if (!location) return null;
+        const target = new URL(location, url);
+        if (target.origin !== department.origin) return null;
+        url = target;
+        continue;
+      }
+      if (
+        !response.ok ||
+        !response.headers.get("content-type")?.includes("text/html")
+      ) {
+        await response.body?.cancel();
+        return null;
+      }
+      const appointments = parseDepartmentProfile(
+        await readTextLimited(response),
+        identity,
+        subject!,
+      );
+      return appointments ? { appointments, sourceUrl } : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export function searchSocketIo(
+  term: string,
+  timeout = LOOKUP_TIMEOUT_MS,
+): Promise<unknown[] | null> {
   return new Promise((resolve) => {
     if (typeof WebSocket === "undefined") return resolve(null);
     let socket: WebSocket;
@@ -284,7 +431,7 @@ export function searchSocketIo(term: string): Promise<unknown[] | null> {
     }
     let settled = false;
     let requested = false;
-    const timer = setTimeout(() => finish(null), LOOKUP_TIMEOUT_MS);
+    const timer = setTimeout(() => finish(null), timeout);
     const finish = (value: unknown[] | null) => {
       if (settled) return;
       settled = true;
@@ -346,7 +493,10 @@ export function searchSocketIo(term: string): Promise<unknown[] | null> {
   });
 }
 
-async function searchLegacy(term: string): Promise<unknown[] | null> {
+async function searchLegacy(
+  term: string,
+  deadline: number,
+): Promise<unknown[] | null> {
   if (/^[a-z0-9_-]+\.\d{1,10}$/i.test(term)) return null;
   const words = term.split(/\s+/).filter(Boolean);
   const params = new URLSearchParams();
@@ -355,15 +505,17 @@ async function searchLegacy(term: string): Promise<unknown[] | null> {
     // Legacy firstname excludes middle names. Account fallback still requires
     // an exact username/email match before accepting the result.
     params.set("firstname", words[0]);
-    params.set("lastname", words.at(-1)!);
+    params.set("lastname", words.slice(1).join(" "));
   }
   let url = new URL(LEGACY_SEARCH_URL);
   url.search = params.toString();
   for (let redirects = 0; redirects <= 2; redirects++) {
+    const timeout = remainingTimeout(deadline);
+    if (!timeout) return null;
     let response: Response;
     try {
       response = await fetch(url, {
-        signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeout),
         cache: "no-store",
         redirect: "manual",
         headers: {
@@ -444,21 +596,86 @@ function prepareResult(
 async function fetchLookup(
   term: string,
   fallbackName?: string,
+  subject?: string,
 ): Promise<DirectoryLookupResult> {
+  const deadline = Date.now() + DIRECTORY_SOURCE_BUDGET_MS;
   const identity = /^[a-z0-9_-]+\.\d{1,10}$/i.test(term)
     ? term.toLocaleLowerCase()
     : undefined;
-  const current = await searchSocketIo(term);
-  if (current && current.length > 0) {
-    const normalized = prepareResult(current, "osu-search", false, identity);
-    if (normalized.results.length) return normalized;
+  let matched: Extract<DirectoryLookupResult, { status: "available" }> | null =
+    null;
+  let sourceAvailable = false;
+  const exactName = (name: string) =>
+    name
+      .normalize("NFKD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, "");
+  const accept = (result: DirectoryLookupResult) => {
+    if (result.status !== "available") return null;
+    if (!identity)
+      result.results = result.results.filter(
+        (candidate) => exactName(candidate.name) === exactName(term),
+      );
+    return result.results.length ? result : null;
+  };
+  for (const query of identity ? [term] : directoryNameQueries(term)) {
+    const timeout = remainingTimeout(deadline);
+    if (!timeout) break;
+    const current = await searchSocketIo(query, timeout);
+    if (current === null) continue;
+    sourceAvailable = true;
+    const normalized = accept(
+      prepareResult(current, "osu-search", false, identity),
+    );
+    if (!normalized) continue;
+    matched = normalized;
+    if (normalized.results.some(hasDirectoryRoleEvidence)) return normalized;
+    break;
   }
-  // The old endpoint only supports names. Keep the original account as the
-  // acceptance condition when a caller supplies its instructor's full name.
-  const fallback = await searchLegacy(identity ? (fallbackName ?? term) : term);
-  if (fallback)
-    return prepareResult(fallback, "content-api-v2", true, identity);
-  if (current?.length === 0 || (identity && current))
+  // A legacy name search only supplies candidates. The original account or
+  // canonical full name remains the acceptance condition.
+  const legacyName = identity ? fallbackName : term;
+  if (legacyName) {
+    for (const query of directoryNameQueries(legacyName)) {
+      if (!remainingTimeout(deadline)) break;
+      const legacy = await searchLegacy(query, deadline);
+      if (legacy === null) continue;
+      sourceAvailable = true;
+      const normalized = accept(
+        prepareResult(legacy, "content-api-v2", true, identity),
+      );
+      if (!normalized) continue;
+      matched ??= normalized;
+      if (normalized.results.some(hasDirectoryRoleEvidence)) return normalized;
+      break;
+    }
+  }
+  if (identity && matched?.results.length === 1) {
+    const profile = await searchDepartmentProfile(identity, subject, deadline);
+    if (profile) {
+      const person = matched.results[0];
+      return {
+        status: "available",
+        source: "department-profile",
+        sourceUrl: profile.sourceUrl,
+        cache: "source",
+        results: [
+          {
+            ...person,
+            appointments: profile.appointments,
+            roles: inferRoles(
+              profile.appointments,
+              [],
+              person.roles.includes("student"),
+            ),
+          },
+        ],
+      };
+    }
+  }
+  if (matched) return matched;
+  if (sourceAvailable)
     return {
       status: "available",
       source: "osu-search",
@@ -487,6 +704,7 @@ export function validDirectoryFallbackName(value: unknown): value is string {
 export async function lookupDirectory(
   termValue: string,
   fallbackNameValue?: string,
+  subject?: string,
 ): Promise<DirectoryLookupResult> {
   if (!validDirectorySearchTerm(termValue))
     return { status: "unavailable", source: null, results: [] };
@@ -494,7 +712,7 @@ export async function lookupDirectory(
   const fallbackName = validDirectoryFallbackName(fallbackNameValue)
     ? fallbackNameValue.trim().replace(/\s+/g, " ")
     : undefined;
-  const key = cacheKey(term, fallbackName);
+  const key = cacheKey(term, fallbackName, subject);
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
     cache.delete(key);
@@ -509,7 +727,7 @@ export async function lookupDirectory(
   if (pending.size >= MAX_PENDING_LOOKUPS)
     return { status: "unavailable", source: null, results: [] };
 
-  const request = fetchLookup(term, fallbackName)
+  const request = fetchLookup(term, fallbackName, subject)
     .catch((): DirectoryLookupResult => ({
       status: "unavailable",
       source: null,
@@ -524,7 +742,9 @@ export async function lookupDirectory(
         verified.status === "unavailable"
           ? ERROR_TTL
           : verified.results.length
-            ? SUCCESS_TTL
+            ? verified.results.some(hasDirectoryRoleEvidence)
+              ? SUCCESS_TTL
+              : INCOMPLETE_TTL
             : EMPTY_TTL;
       cache.set(key, { value: verified, expiresAt: Date.now() + ttl });
       while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);

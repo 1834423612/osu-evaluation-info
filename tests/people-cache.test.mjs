@@ -14,10 +14,17 @@ const databaseText = stripTypeScriptTypes(
     new URL("../src/lib/people/database.ts", import.meta.url),
     "utf8",
   ),
-).replace(
-  'import { queryDatabase } from "@/lib/db";',
-  `const queryDatabase = (...args) => globalThis[Symbol.for("osu-directory-cache-test")].queryDatabase(...args);`,
-);
+)
+  .replace(
+    'import { queryDatabase } from "@/lib/db";',
+    `const queryDatabase = (...args) => globalThis[Symbol.for("osu-directory-cache-test")].queryDatabase(...args);`,
+  )
+  .replace(
+    '"./directory"',
+    JSON.stringify(
+      new URL("../src/lib/people/directory.ts", import.meta.url).href,
+    ),
+  );
 const database = await import(
   "data:text/javascript;base64," + Buffer.from(databaseText).toString("base64")
 );
@@ -44,7 +51,7 @@ const routeText = stripTypeScriptTypes(
   )
   .replace(
     /import\s*\{[^;]*\}\s*from "@\/lib\/people\/database";/,
-    `const { DIRECTORY_CACHE_MAX_AGE_MS, directoryPersonResponse, isVerifiedDirectoryPerson, readDirectoryPerson, writeDirectoryPerson } = globalThis[Symbol.for("osu-directory-cache-test")];`,
+    `const { directoryPersonIsFresh, directoryPersonResponse, isVerifiedDirectoryPerson, readDirectoryPerson, writeDirectoryPerson } = globalThis[Symbol.for("osu-directory-cache-test")];`,
   );
 const route = await import(
   "data:text/javascript;base64," + Buffer.from(routeText).toString("base64")
@@ -69,6 +76,7 @@ function row(verifiedAt = new Date().toISOString()) {
     roles: ["lecturer", "employee"],
     appointments: [{ title: "Senior Lecturer", organization: "Mathematics" }],
     source: "osu-search",
+    cache_version: 3,
     verified_at: verifiedAt,
   };
 }
@@ -220,5 +228,76 @@ describe("verified directory cache", { concurrency: false }, () => {
     assert.equal(response.status, 200);
     assert.equal(body.cache, "source");
     assert.equal(body.results[0].name, "Verified Fixture");
+  });
+
+  it("refreshes an old protocol row and shortens caching for empty role evidence", async () => {
+    const person = {
+      nameDotNumber: "verifiedfixture.1",
+      person: { name: "Verified Fixture", roles: [], appointments: [] },
+      source: "osu-search",
+      verifiedAt: new Date().toISOString(),
+      cacheVersion: 2,
+    };
+    assert.equal(database.directoryPersonIsFresh(person), false);
+    assert.equal(
+      database.directoryPersonIsFresh({ ...person, cacheVersion: 3 }),
+      true,
+    );
+    assert.equal(
+      database.directoryPersonIsFresh({
+        ...person,
+        cacheVersion: 3,
+        verifiedAt: new Date(Date.now() - 31 * 60 * 1000).toISOString(),
+      }),
+      false,
+    );
+  });
+
+  it("enriches a fresh incomplete account when its department subject becomes available", async () => {
+    let upstreamCalls = 0;
+    const queries = [];
+    globalThis[fixtureKey].queryDatabase = async (sql, params) => {
+      queries.push({ sql, params });
+      return {
+        rows: sql.startsWith("SELECT")
+          ? [{ ...row(), roles: [], appointments: [] }]
+          : [],
+      };
+    };
+    globalThis[fixtureKey].lookupDirectory = async (
+      term,
+      fallback,
+      subject,
+    ) => {
+      upstreamCalls++;
+      assert.equal(term, "verifiedfixture.1");
+      assert.equal(subject, "MATH");
+      return {
+        status: "available",
+        source: "department-profile",
+        cache: "source",
+        sourceUrl: "https://math.osu.edu/people/verifiedfixture.1",
+        verifiedAt: new Date().toISOString(),
+        results: [
+          {
+            name: "Verified Fixture",
+            roles: ["lecturer", "employee"],
+            appointments: [
+              { title: "Lecturer", organization: "Department of Mathematics" },
+            ],
+          },
+        ],
+      };
+    };
+    const noSubject = await route.POST(request({ term: "verifiedfixture.1" }));
+    assert.equal((await noSubject.json()).cache, "database");
+    assert.equal(upstreamCalls, 0);
+    const withSubject = await route.POST(
+      request({ term: "verifiedfixture.1", subject: "MATH" }),
+    );
+    const enriched = await withSubject.json();
+    assert.equal(upstreamCalls, 1);
+    assert.equal(enriched.results[0].appointments[0].title, "Lecturer");
+    assert.ok(queries.some((entry) => entry.sql.startsWith("INSERT")));
   });
 });

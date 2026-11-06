@@ -227,6 +227,7 @@ export function SavedCourses() {
                                 email={instructor.email}
                                 locale={locale}
                                 size={24}
+                                subject={item.courseLabel.split(/\s+/, 1)[0]}
                               />
                             </div>
                           ))}
@@ -266,6 +267,9 @@ export function SavedCourses() {
                             email={instructor.email}
                             locale={locale}
                             size={38}
+                            subject={
+                              instructor.courses[0]?.label.split(/\s+/, 1)[0]
+                            }
                           />
                         </div>
                         <span className={styles.relationCount}>

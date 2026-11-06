@@ -6,9 +6,8 @@ import {
   AlertCircle,
   BriefcaseBusiness,
   Building2,
-  Check,
-  ChevronDown,
   GraduationCap,
+  Info,
   LoaderCircle,
   ShieldCheck,
   X,
@@ -33,14 +32,15 @@ type Props = DirectoryInstructor & { locale: EvaluationLocale };
 type AvailableDirectoryResult = Extract<
   DirectoryLookupResult,
   { status: "available" }
->;
+> & { lookupSubject?: string };
 type StoredDirectoryResult = {
   verifiedAt: string;
   result: AvailableDirectoryResult;
 };
 
-const STORAGE_KEY = "course-atlas:people-directory:v2";
+const STORAGE_KEY = "course-atlas:people-directory:v3";
 const LOCAL_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const INCOMPLETE_LOCAL_TTL_MS = 30 * 60 * 1000;
 const MAX_LOCAL_RECORDS = 256;
 const roleSet = new Set<DirectoryRole>([
   "professor",
@@ -54,6 +54,41 @@ const roleSet = new Set<DirectoryRole>([
 const inFlight = new Map<string, Promise<DirectoryLookupResult>>();
 const cachedResults = new Map<string, AvailableDirectoryResult>();
 const listeners = new Set<() => void>();
+const attempts = new Map<string, number>();
+const requestQueue: Array<() => void> = [];
+let activeRequests = 0;
+let nextRequestTimer: ReturnType<typeof setTimeout> | null = null;
+
+function runNextRequest() {
+  if (activeRequests >= 2 || !requestQueue.length || nextRequestTimer) return;
+  const start = requestQueue.shift()!;
+  activeRequests++;
+  start();
+  nextRequestTimer = setTimeout(() => {
+    nextRequestTimer = null;
+    runNextRequest();
+  }, 350);
+}
+
+function completeResult(result: AvailableDirectoryResult) {
+  return result.results.some(
+    (person) => person.roles.length > 0 || person.appointments.length > 0,
+  );
+}
+
+function resultIsFresh(result: AvailableDirectoryResult, subject?: string) {
+  if (
+    !completeResult(result) &&
+    subject?.toUpperCase() === "MATH" &&
+    result.lookupSubject !== "MATH"
+  )
+    return false;
+  const maxAge = completeResult(result)
+    ? LOCAL_TTL_MS
+    : INCOMPLETE_LOCAL_TTL_MS;
+  const age = Date.now() - Date.parse(result.verifiedAt ?? "");
+  return age >= -60_000 && age < maxAge;
+}
 
 function subscribe(callback: () => void) {
   listeners.add(callback);
@@ -70,23 +105,20 @@ function publish(identity: string, result: AvailableDirectoryResult) {
   listeners.forEach((listener) => listener());
 }
 
-function useCachedResult(identity: string | null) {
+function useCachedResult(identity: string | null, subject?: string) {
   const result = useSyncExternalStore(
     subscribe,
     () => {
       const cached = identity ? cachedResults.get(identity) : null;
-      return cached &&
-        Date.now() - Date.parse(cached.verifiedAt ?? "") < LOCAL_TTL_MS
-        ? cached
-        : null;
+      return cached && resultIsFresh(cached, subject) ? cached : null;
     },
     () => null,
   );
   useEffect(() => {
     if (!identity) return;
-    const local = readLocal(identity);
+    const local = readLocal(identity, subject);
     if (local) publish(identity, local);
-  }, [identity]);
+  }, [identity, subject]);
   return result;
 }
 
@@ -156,7 +188,13 @@ function isAvailableResult(value: unknown): value is AvailableDirectoryResult {
   const result = value as Partial<AvailableDirectoryResult>;
   return (
     result.status === "available" &&
-    (result.source === "osu-search" || result.source === "content-api-v2") &&
+    (result.source === "osu-search" ||
+      result.source === "content-api-v2" ||
+      result.source === "department-profile") &&
+    (result.sourceUrl === undefined ||
+      /^https:\/\/math\.osu\.edu\/people\/[a-z0-9_-]+\.\d{1,10}$/.test(
+        result.sourceUrl,
+      )) &&
     ["source", "memory", "database"].includes(result.cache ?? "") &&
     typeof result.verifiedAt === "string" &&
     Number.isFinite(Date.parse(result.verifiedAt)) &&
@@ -166,14 +204,18 @@ function isAvailableResult(value: unknown): value is AvailableDirectoryResult {
   );
 }
 
-function queryKey(term: string, fallbackName?: string) {
+function queryKey(term: string, fallbackName?: string, subject?: string) {
   return JSON.stringify([
     term.trim().toLocaleLowerCase(),
     fallbackName?.trim().toLocaleLowerCase() ?? "",
+    subject?.toUpperCase() ?? "",
   ]);
 }
 
-function readLocal(identity: string): AvailableDirectoryResult | null {
+function readLocal(
+  identity: string,
+  subject?: string,
+): AvailableDirectoryResult | null {
   try {
     const parsed: unknown = JSON.parse(
       localStorage.getItem(STORAGE_KEY) ?? "{}",
@@ -184,7 +226,7 @@ function readLocal(identity: string): AvailableDirectoryResult | null {
     if (
       !record ||
       !isAvailableResult(record.result) ||
-      Date.now() - Date.parse(record.verifiedAt) >= LOCAL_TTL_MS ||
+      !resultIsFresh(record.result, subject) ||
       Date.parse(record.verifiedAt) > Date.now() + 60_000 ||
       record.verifiedAt !== record.result.verifiedAt ||
       record.result.stale
@@ -196,9 +238,14 @@ function readLocal(identity: string): AvailableDirectoryResult | null {
   }
 }
 
-function writeLocal(identity: string, result: AvailableDirectoryResult) {
+function writeLocal(
+  identity: string,
+  result: AvailableDirectoryResult,
+  subject?: string,
+) {
   if (result.stale || !result.results.length) return;
-  publish(identity, result);
+  const stored = { ...result, lookupSubject: subject?.toUpperCase() };
+  publish(identity, stored);
   try {
     let parsed: Record<string, StoredDirectoryResult> = {};
     try {
@@ -210,12 +257,12 @@ function writeLocal(identity: string, result: AvailableDirectoryResult) {
     } catch {
       parsed = {};
     }
-    parsed[identity] = { verifiedAt: result.verifiedAt!, result };
+    parsed[identity] = { verifiedAt: stored.verifiedAt!, result: stored };
     for (const [key, value] of Object.entries(parsed))
       if (
         !value ||
         !isAvailableResult(value.result) ||
-        Date.now() - Date.parse(value.verifiedAt) >= LOCAL_TTL_MS
+        !resultIsFresh(value.result)
       )
         delete parsed[key];
     for (const key of Object.keys(parsed).slice(0, -MAX_LOCAL_RECORDS))
@@ -229,31 +276,46 @@ function writeLocal(identity: string, result: AvailableDirectoryResult) {
 function lookup(
   term: string,
   fallbackName: string | undefined,
+  subject?: string,
 ): Promise<DirectoryLookupResult> {
-  const key = queryKey(term, fallbackName);
+  const key = queryKey(term, fallbackName, subject);
   const existing = inFlight.get(key);
   if (existing) return existing;
-  const request = fetch("/api/people/lookup", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify({ term, ...(fallbackName ? { fallbackName } : {}) }),
-    signal: AbortSignal.timeout(11_000),
-  })
-    .then(async (response): Promise<DirectoryLookupResult> => {
-      if (!response.ok)
-        return { status: "unavailable", source: null, results: [] };
-      const body: unknown = await response.json();
-      if (!isAvailableResult(body))
-        return { status: "unavailable", source: null, results: [] };
-      return body;
-    })
-    .catch((): DirectoryLookupResult => ({
-      status: "unavailable",
-      source: null,
-      results: [],
-    }))
-    .finally(() => inFlight.delete(key));
+  const request = new Promise<DirectoryLookupResult>((resolve) => {
+    requestQueue.push(() => {
+      void fetch("/api/people/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          term,
+          ...(fallbackName ? { fallbackName } : {}),
+          ...(subject ? { subject } : {}),
+        }),
+        signal: AbortSignal.timeout(30_000),
+      })
+        .then(async (response): Promise<DirectoryLookupResult> => {
+          if (!response.ok)
+            return { status: "unavailable", source: null, results: [] };
+          const body: unknown = await response.json();
+          if (!isAvailableResult(body))
+            return { status: "unavailable", source: null, results: [] };
+          return body;
+        })
+        .catch((): DirectoryLookupResult => ({
+          status: "unavailable",
+          source: null,
+          results: [],
+        }))
+        .then(resolve)
+        .finally(() => {
+          inFlight.delete(key);
+          activeRequests--;
+          runNextRequest();
+        });
+    });
+    runNextRequest();
+  });
   inFlight.set(key, request);
   return request;
 }
@@ -325,7 +387,8 @@ export function InstructorDirectoryIdentity({
   );
   const triggerRef = useRef<HTMLButtonElement>(null);
   const identity = verifiedIdentity(props);
-  const cached = useCachedResult(identity);
+  const { name, email, subject } = props;
+  const cached = useCachedResult(identity, subject);
   const effectiveResult = result ?? cached;
   const term = identity ?? instructorDirectoryQuery(props);
   const fallbackName =
@@ -340,36 +403,96 @@ export function InstructorDirectoryIdentity({
   async function verify() {
     if (
       (effectiveResult?.status === "available" &&
+        resultIsFresh(effectiveResult, subject) &&
         selectDirectoryCandidate(effectiveResult.results, props)) ||
       loading
     )
       return;
-    const stored = identity ? readLocal(identity) : null;
+    const stored = identity ? readLocal(identity, subject) : null;
     if (stored) {
       setResult(stored);
       return;
     }
     setLoading(true);
     try {
-      const next = await lookup(term, fallbackName);
-      setResult(next);
+      const next = await lookup(term, fallbackName, props.subject);
+      const displayed =
+        next.status === "available"
+          ? { ...next, lookupSubject: subject?.toUpperCase() }
+          : next;
+      setResult(displayed);
+      setLoading(false);
       if (
         identity &&
         next.status === "available" &&
         !next.stale &&
         selectDirectoryCandidate(next.results, props)
       )
-        writeLocal(identity, next);
+        writeLocal(identity, next, subject);
     } finally {
       setLoading(false);
     }
   }
 
+  useEffect(() => {
+    const element = triggerRef.current;
+    if (!element || !term || (cached && resultIsFresh(cached, subject))) return;
+    let alive = true;
+    const key = queryKey(term, fallbackName, subject);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const request = () => {
+      if (!alive || Date.now() - (attempts.get(key) ?? 0) < 30_000) return;
+      attempts.set(key, Date.now());
+      while (attempts.size > MAX_LOCAL_RECORDS)
+        attempts.delete(attempts.keys().next().value!);
+      setLoading(true);
+      void lookup(term, fallbackName, subject)
+        .then((next) => {
+          if (!alive) return;
+          const displayed =
+            next.status === "available"
+              ? { ...next, lookupSubject: subject?.toUpperCase() }
+              : next;
+          setResult(displayed);
+          setLoading(false);
+          if (
+            identity &&
+            next.status === "available" &&
+            !next.stale &&
+            selectDirectoryCandidate(next.results, { name, email })
+          )
+            writeLocal(identity, next, subject);
+        })
+        .finally(() => {
+          if (alive) setLoading(false);
+        });
+    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          if (!timer) timer = setTimeout(request, 250);
+        } else if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      },
+      { rootMargin: "0px", threshold: 0.1 },
+    );
+    observer.observe(element);
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [term, fallbackName, subject, identity, cached, name, email]);
+
   const roles = person ? visibleDirectoryRoles(person.roles) : [];
-  const roleCaption = roles
-    .slice(0, 2)
-    .map((role) => roleLabel(role, person!, props.locale))
-    .join(" · ");
+  const roleCaption =
+    person?.appointments[0]?.title ||
+    roles
+      .slice(0, 2)
+      .map((role) => roleLabel(role, person!, props.locale))
+      .join(" · ");
   const checked = Boolean(person && effectiveResult?.status === "available");
 
   return (
@@ -405,32 +528,32 @@ export function InstructorDirectoryIdentity({
                 {roleCaption}
               </span>
             ) : (
-              <span className={styles.unknown}>
-                {loading
-                  ? props.locale === "zh"
-                    ? "正在核验…"
-                    : "Checking…"
-                  : checked
+              <span
+                className={styles.unknown}
+                aria-label={
+                  loading
                     ? props.locale === "zh"
-                      ? "已核验"
-                      : "Verified"
+                      ? "正在读取身份"
+                      : "Loading identity"
                     : props.locale === "zh"
-                      ? "核验身份"
-                      : "Verify identity"}
+                      ? "身份信息暂缺"
+                      : "Role information unavailable"
+                }
+              >
+                {loading ? (
+                  <LoaderCircle size={12} className="spin" aria-hidden="true" />
+                ) : (
+                  <Info size={12} aria-hidden="true" />
+                )}
               </span>
             )}
           </span>
-          <ChevronDown
-            className={styles.chevron}
-            data-open={open}
-            size={13}
-            aria-hidden="true"
-          />
         </button>
       </Popover.Trigger>
       <Popover.Portal container={portalContainer}>
         <Popover.Content
           className={styles.popover}
+          data-directory-popover
           side="bottom"
           align="start"
           sideOffset={8}
@@ -473,7 +596,7 @@ export function InstructorDirectoryIdentity({
                   ) : row.icon === "department" ? (
                     <Building2 size={14} aria-hidden="true" />
                   ) : (
-                    <Check size={15} aria-hidden="true" />
+                    <Info size={15} aria-hidden="true" />
                   )}
                   <span>{row.label}</span>
                 </div>
@@ -510,8 +633,17 @@ export function InstructorDirectoryIdentity({
                     ? "OSU 官方资料缓存"
                     : "Verified OSU directory cache"
                   : props.locale === "zh"
-                    ? "来自 OSU 官方人员目录"
-                    : "From the official OSU directory"}
+                    ? "来自 OSU 官方资料"
+                    : "From an official OSU source"}
+              {effectiveResult.sourceUrl ? (
+                <a
+                  href={effectiveResult.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {props.locale === "zh" ? " 查看来源" : " View source"}
+                </a>
+              ) : null}
               {effectiveResult.verifiedAt
                 ? ` · ${new Date(effectiveResult.verifiedAt).toLocaleDateString(
                     props.locale === "zh" ? "zh-CN" : "en-US",

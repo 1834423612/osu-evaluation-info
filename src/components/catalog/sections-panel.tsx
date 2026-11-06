@@ -126,6 +126,7 @@ function instructorIdentity(instructor: CatalogInstructor) {
 function SectionRow({
   section,
   locale,
+  subject,
   matches,
   highlighted,
   savedFocus,
@@ -136,6 +137,7 @@ function SectionRow({
 }: {
   section: CatalogSection;
   locale: Locale;
+  subject: string;
   matches: boolean;
   highlighted: boolean;
   savedFocus: boolean;
@@ -200,6 +202,7 @@ function SectionRow({
                     email={instructor.email}
                     locale={locale}
                     size={30}
+                    subject={subject}
                   />
                   <button
                     className={`${styles.iconButton}${isSaved ? ` ${styles.saved}` : ""}`}
@@ -628,6 +631,7 @@ export default function SectionsPanel({
               key={section.id}
               section={section}
               locale={locale}
+              subject={course.subject}
               matches={matches}
               highlighted={activeCount > 0}
               savedFocus={focusClassNumber === section.classNumber}

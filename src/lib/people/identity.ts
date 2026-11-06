@@ -4,7 +4,11 @@ import type {
   DirectoryRole,
 } from "./directory";
 
-export type DirectoryInstructor = { name: string; email?: string | null };
+export type DirectoryInstructor = {
+  name: string;
+  email?: string | null;
+  subject?: string;
+};
 
 /** OSU can list one appointment both with and without college or contract suffixes. */
 export function distinctDirectoryAppointments(
@@ -59,12 +63,12 @@ export function instructorDirectoryQuery(instructor: DirectoryInstructor) {
   );
 }
 
-function normalizedName(name: string) {
+export function normalizedDirectoryName(name: string) {
   return name
     .normalize("NFKD")
     .replace(/\p{M}/gu, "")
     .toLocaleLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
     .trim();
 }
 
@@ -78,20 +82,9 @@ export function selectDirectoryCandidate(
     // The server accepts an identity search result only when its account matches.
     return candidates.length === 1 ? candidates[0] : null;
   }
-  const expected = normalizedName(instructor.name);
+  const expected = normalizedDirectoryName(instructor.name);
   const exact = candidates.filter(
-    (person) => normalizedName(person.name) === expected,
+    (person) => normalizedDirectoryName(person.name) === expected,
   );
-  if (exact.length) return exact.length === 1 ? exact[0] : null;
-  const words = expected.split(" ");
-  if (words.length < 2) return null;
-  const matches = candidates.filter((person) => {
-    const actual = normalizedName(person.name).split(" ");
-    return (
-      actual.length >= 2 &&
-      actual[0] === words[0] &&
-      actual.at(-1) === words.at(-1)
-    );
-  });
-  return matches.length === 1 ? matches[0] : null;
+  return exact.length === 1 ? exact[0] : null;
 }

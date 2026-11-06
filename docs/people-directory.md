@@ -1,129 +1,115 @@
 # OSU people directory lookup
 
-Instructor identities appear beside each avatar / name. No requests run merely
-because a list rendered; a person must be clicked to verify their identity.
-The compact, outside-dismissable popover shows the role and a few appointment
-or department facts. A second click on the person closes it. Known `@osu.edu`
-addresses become the primary exact `name.#` query; the server accepts only
-official records whose account matches that query. For name-only searches, the
-UI requires a unique full-name match (allowing an omitted middle name).
-Ambiguous or partial-name results leave the role unconfirmed. The server does
-not return contact details.
+Instructor lists display specific appointment titles beside the avatar / name.
+Only visible instructor rows initiate lookup: a shared queue permits at most two
+requests at once, spaces starts by 350 ms, deduplicates duplicate identities,
+and applies a 250 ms visibility delay. Cached records render immediately;
+background course cards never mount instructor lists. A click opens a compact
+popover with appointment / department facts without changing the section row's
+height. The same trigger and outside dismissal close it. Missing role evidence
+uses an information icon and never a generic verified-person label.
 
-## Providers
+## Identity and providers
 
-1. OSU Search is the primary source:
+Known `@osu.edu` addresses become the primary exact `name.#` query. The server
+accepts OSU Search results only when their account ID or OSU email exactly
+matches. Name-only queries omit middle names and use at most three bounded
+first / family-name combinations, including joined compound surnames. Their
+results must still match the canonical complete name, including middle names,
+and must be unique before the UI assigns a role. A first-and-last-only match
+is insufficient to establish identity.
+
+1. OSU Search is primary:
    `wss://search-api.intcomm.osu.edu/socket.io/?EIO=3&transport=websocket`.
-   The Node 24 built-in WebSocket client implements the verified Engine.IO 3
-   handshake and sends the Socket.IO `search` event with
-   `{term, providers:["people"]}`. Only a `results` event from the `people`
-   provider and the submitted term is accepted.
-2. On an unavailable or empty primary result, the legacy
-   `https://content.osu.edu/v2/people/search` endpoint is tried with
-   `firstname` / `lastname` using the first and last name parts (middle names
-   are omitted because this API's `firstname` field excludes them). For an
-   account query, the client also supplies the instructor's full name as
-   `fallbackName`. If the primary account lookup is unavailable or has no exact
-   match, that name is used only to locate legacy candidates. A candidate is
-   accepted only when its `username` is exactly the
-   original account or its `email` is exactly that account at `osu.edu` (case
-   insensitive). Matching names alone are insufficient. Without a full fallback
-   name, an account query never becomes an unverified surname search.
+   The Node 24 built-in client implements Engine.IO 3, sends
+   `search {term, providers:["people"]}`, and accepts only the matching
+   `results` event for provider `people` and the submitted term.
+2. The legacy `https://content.osu.edu/v2/people/search` endpoint follows when
+   the primary result is absent or lacks role evidence. It receives bounded
+   first / family-name query parts, without middle names. An account query
+   carries a full `fallbackName` only to find candidates: exact legacy
+   `username` or OSU email equality is still mandatory.
+3. When central directory results identify the account but omit role data,
+   supported official department profile pages can supply the explicit title.
+   The initial fixed subject mapping is `MATH -> https://math.osu.edu` and
+   `GET /people/name.#`. The parser requires the exact canonical profile URL,
+   a matching OSU account email inside the main contact section, and exactly
+   one `field-your-title` job-title field in that same section. Other page text,
+   navigation items, arbitrary user-provided URLs, and other hosts never
+   establish roles. Same-origin redirects are bounded. The source profile URL
+   is retained as provenance and shown in the popover.
 
-Both sources were probed successfully on 2026-11-05, including the new endpoint
-without an Origin header. HAR evidence was used to establish field names and
-event structure; credentials and raw directory responses are not repository
-fixtures.
+The HAR and the live official Search JavaScript were rechecked: expanding a
+Search contact card only reveals existing DOM data and sends no extra detail
+API request. The central record for `mejiacordero.2` currently has empty
+appointment, affiliation, and major arrays. The current official Mathematics
+profile explicitly lists Julian Mejia Cordero as **Lecturer**, with the exact
+OSU account email. The departmental fallback therefore yields Lecturer and
+Department of Mathematics without guessing Professor or TA.
 
-## Data and role semantics
+## Cache and trust boundaries
 
-`POST /api/people/lookup` accepts `{term, fallbackName?}`. It accepts lookup
-terms only and ignores client-provided role, department, source, or person
-objects. The server always checks its own database first for an exact account,
-then calls OSU if the entry is missing or older than 30 days. Only an account
-match verified against OSU Search record `id` / email or legacy Content API
-`username` / email is written to `osu_directory.person_cache`. The table keeps
-the minimal normalized name, role tags, appointments, verified upstream, and
-verification timestamp; it contains no raw record or contact information.
-An unavailable database does not prevent lookup, and failed upstream refreshes
-can use an older verified database row marked stale.
+`POST /api/people/lookup` accepts `{term, fallbackName?, subject?}`. Subject is
+an optional hint into the fixed department mapping, never a host or URL. The
+endpoint ignores client-provided roles, appointments, person objects, and
+claimed source metadata. Only source responses fetched and account-checked
+by the server can reach the database write path.
 
-Install the additive cache table with `pnpm db:people:init` after configuring
-`DATABASE_URL`. The user initiating a lookup never submits data that the server
-stores as official.
+The browser reads its own bounded localStorage cache first. On a miss it calls
+the website server, which reads `osu_directory.person_cache` before contacting
+OSU. The additive table keeps normalized name, roles, appointments, verified
+source, optional official source URL, protocol version, and verification time.
+It excludes phone, postal address, email, raw source payloads, and student
+program details. Name-only searches are not persisted as account identities.
 
-An optional fallback name follows the same character/length bounds as `term`
-and must contain at least two name parts. Each source is projected into the
-same minimal shape: name, role tags, and appointment titles / organization.
-Phone numbers, addresses, emails, student majors, and raw source records
-are not stored in the database. The response includes the person's name for
-display; the other contact and student-program fields are excluded.
+Install or upgrade with `pnpm db:people:init` after configuring `DATABASE_URL`.
+The migration is idempotent and supports both fresh and existing tables. Cache
+protocol v3 invalidates prior incomplete records so they can be enriched.
+Complete evidence lasts 30 days; a record with no roles or appointment lasts
+30 minutes, so missing data does not become a month-long conclusion. A source
+failure can return a previously verified database row marked stale, without
+replacing it. Database read / write failure safely falls back to direct official
+lookup. Raw browser data is never uploaded as official evidence.
 
-Role tags use explicit appointment titles and affiliation labels. Teaching
-assistant and student-assistant tags require those specific title phrases.
-Professor and Lecturer have distinct tags; Instructor / Faculty is used
-only for other explicitly stated teaching affiliations. Graduate / Undergraduate
-TA labels preserve the distinction when their appointment title states it.
-Multiple roles can coexist. An employee tag follows a listed
-appointment. A student tag follows student affiliation or the presence of
-listed major information; the program itself is not exposed. Student is
-suppressed as a redundant second label when an explicit teaching-assistant or
-student-assistant appointment already establishes that relationship.
+A newly supplied supported department subject bypasses a fresh incomplete
+database entry to allow enrichment. The browser also records the subject under
+which a negative lookup was attempted, so a generic empty cache does not block
+later Mathematics profile discovery. Completed empty lookups clear loading
+before publishing cache updates, leaving the information icon visible.
 
-These tags do not establish full-time or tenure status, and missing directory
-or evaluation data does not establish that someone is a TA. Recitation is not
-used as identity evidence. Same-name results remain separate candidates unless
-their complete minimal projections are identical.
+## Role semantics and bounds
 
-## Bounds and failures
+Role tags follow explicit appointment titles and affiliation labels. Professor,
+Lecturer, other teaching faculty, graduate / undergraduate teaching assistants,
+and student assistants remain distinct. The trigger prefers the actual official
+appointment title. Student and employee tags are suppressed when redundant
+with an explicit TA / student-assistant title. A role does not establish
+full-time or tenure status. Missing evaluations and teaching Recitation never
+establish TA status.
 
-- Input: 2–120 characters; name / `name.#` characters only; a 4 KiB request-body
-  limit and three-second body-read deadline.
-- Requests: 60 per minute per proxy address key, with only address hashes kept
-  in a bounded process-local map; at most 12 concurrent source lookups.
-- Upstreams: five-second deadlines, 512 KiB result bounds, fixed provider
-  hosts, and same-origin redirects for the legacy source.
-- Display: at most 15 candidates and eight appointments per candidate; only
-  uniquely matched instructor records receive identity labels. Appointment
-  information appears inside that instructor's own popover.
-- Browser work: a shared in-flight map deduplicates concurrent clicks. Only
-  successful, uniquely matched public identity records are cached in the
-  initiating browser, for at most 30 days. Lists do not issue background
-  directory requests.
-- Cache: a bounded server-memory LRU keys both the query and optional fallback
-  name. Successful matches last six hours, empty results 30 minutes, and
-  failures 30 seconds. No raw provider payload or HAR is cached or persisted.
-
-The API returns 503 for provider failure and an empty successful result for a
-confirmed empty directory response, so an outage is not presented as a
-missing person. The process-local rate limit supplements deployment-level
-controls; it is not a distributed rate limiter.
+- Requests are limited to 60 per minute per hashed address key; the process
+  keeps a bounded rate map and caps simultaneous source lookups.
+- Input is limited to 2–120 name / account characters, with a 4 KiB body limit
+  and a three-second body read deadline.
+- Source requests have five-second deadlines, 512 KiB response limits, fixed
+  hosts, and bounded same-origin redirects.
+- All source attempts and redirects share an 18-second overall budget. Browser
+  requests allow 30 seconds, beginning only when their queued network task
+  starts; queue wait time does not consume the request deadline.
+- At most 15 candidates and eight normalized appointments are retained; the
+  popover shows only a few distinct appointment / department highlights.
+- Provider failures return 503; confirmed empty results return an empty
+  successful response. No contact or directory payload is written to logs or
+  source-control fixtures.
 
 ## Verification
 
-On 2026-11-05, fresh live probes of `ramnath.6` and the corresponding full
-name both returned one matching record from OSU Search with Professor
-appointments and Engineering / Computer Science and Engineering departments.
-A direct legacy API name probe also returned HTTP 200 and one record. A fresh
-legacy schema probe confirmed string `username` and `email` fields that exactly
-matched the expected account; these fields are used transiently for identity
-verification and are excluded from API responses. The synthetic test suite
-exercises transport failure and empty-result fallback, exact legacy account
-checks, rejection of same-name wrong accounts, distinct fallback-name caches,
-account mismatches,
-ambiguous names, role evidence, and minimal response projection. Raw directory
-records and the source HAR are excluded from the repository.
-
-A full-name probe for Neil John DeBoer also confirmed that legacy
-`firstname=Neil John` returns no record while `firstname=Neil` returns the
-expected full-name record. Account fallback therefore searches the first and
-last name only and retains the exact account acceptance check.
-
-The cache route tests exercise database hits without source requests, expired
-record refresh, malformed cache rows, source-only persistence despite forged
-client fields, stale fallback, and unavailable database behavior. A live request
-for `ramnath.6` returned OSU Search first and the database cache on the next
-request. Desktop and mobile browser checks verified zero requests on list
-render, one explicit `mejiacordero.2` lookup, unchanged section-row height,
-popover close / outside dismissal, and cached identity labels after reload
-without another server request.
+Tests cover exact account acceptance, rejected same-name accounts, strict
+canonical full-name matching, middle-name-free query variants, department-page
+job-title scoping and wrong-account rejection, role inference, and deduplication.
+Cache route tests cover source-free database hits, malformed rows, expiry and
+protocol refresh, client data poisoning attempts, stale fallback, and database
+outages. Fresh live checks verified the Lecturer profile for `mejiacordero.2`
+and retained official source provenance through the database cache. Desktop and
+mobile browser checks cover visible automatic lookup, the concurrency ceiling,
+local cache hydration, role captions, two-row popovers, and unchanged row height.

@@ -178,6 +178,7 @@ export default function RmpPanel({
                 summary={summary}
                 locale={locale}
                 courseQuery={query}
+                subject={course.subject}
               />
             ))}
           <footer className={styles.footer}>
@@ -206,11 +207,13 @@ function InstructorReviews({
   summary,
   locale,
   courseQuery,
+  subject,
 }: {
   instructor: CourseRmpSummary["instructors"][number];
   summary: CourseRmpSummary;
   locale: Locale;
   courseQuery: string;
+  subject: string;
 }) {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [pages, setPages] = useState<Record<number, typeof instructor.reviews>>(
@@ -290,6 +293,7 @@ function InstructorReviews({
             email={`${instructor.nameDotNumber}@osu.edu`}
             locale={locale}
             size={36}
+            subject={subject}
           />
         </div>
         <CollapsibleTrigger

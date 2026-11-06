@@ -563,9 +563,11 @@ function MetricPanel({
 export function EvaluationPanel({
   summary,
   locale,
+  subject,
 }: {
   summary?: CourseEvaluationSummary;
   locale: EvaluationLocale;
+  subject?: string;
 }) {
   const labels = copy[locale];
   const unavailable = summary?.status === "unavailable";
@@ -641,6 +643,7 @@ export function EvaluationPanel({
                     name={instructor.name}
                     email={instructor.email}
                     size={32}
+                    subject={subject}
                     locale={locale}
                   />
                   <span className={styles.subtle}>

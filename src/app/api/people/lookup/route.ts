@@ -6,7 +6,7 @@ import {
   directoryAccountFromTerm,
 } from "@/lib/people/directory";
 import {
-  DIRECTORY_CACHE_MAX_AGE_MS,
+  directoryPersonIsFresh,
   directoryPersonResponse,
   isVerifiedDirectoryPerson,
   readDirectoryPerson,
@@ -113,6 +113,11 @@ export async function POST(request: Request) {
   if (!validDirectorySearchTerm(term))
     return response({ error: "Enter a name or OSU name.#." }, 400);
   const fallbackName = (body as { fallbackName?: unknown }).fallbackName;
+  const subjectValue = (body as { subject?: unknown }).subject;
+  const subject =
+    typeof subjectValue === "string" && /^[A-Za-z]{2,8}$/.test(subjectValue)
+      ? subjectValue.toUpperCase()
+      : undefined;
   if (fallbackName !== undefined && !validDirectoryFallbackName(fallbackName))
     return response(
       { error: "Enter a full instructor name for fallback." },
@@ -130,13 +135,12 @@ export async function POST(request: Request) {
     if (
       savedPerson &&
       isVerifiedDirectoryPerson(savedPerson, identity) &&
-      Date.now() - Date.parse(savedPerson.verifiedAt) <
-        DIRECTORY_CACHE_MAX_AGE_MS
+      directoryPersonIsFresh(savedPerson, subject)
     )
       return response(directoryPersonResponse(savedPerson));
   }
 
-  const result = await lookupDirectory(term, fallbackName);
+  const result = await lookupDirectory(term, fallbackName, subject);
   if (
     identity &&
     result.status === "available" &&
