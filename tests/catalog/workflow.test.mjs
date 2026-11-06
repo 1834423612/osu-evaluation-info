@@ -22,6 +22,18 @@ it("catalog automation only accepts the four-hour scheduled event", async () => 
   assert.match(source, /if: github\.event_name == 'schedule'/);
   assert.match(source, /cancel-in-progress: false/);
   assert.doesNotMatch(source, /run:.*catalog:migrate/);
+  assert.doesNotMatch(
+    source,
+    /^\s*uses:/m,
+    "owner-only policy rejects external Actions",
+  );
+  assert.ok(
+    source.indexOf("Validate database configuration") <
+      source.indexOf("git init"),
+  );
+  assert.match(source, /fetch --no-tags --depth=1 origin "\$GITHUB_SHA"/);
+  assert.match(source, /test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
+  assert.match(source, /run: bash scripts\/ci\/setup-catalog-runtime.sh/);
   const sync = source.indexOf("run: pnpm catalog:sync");
   const prune = source.indexOf("run: pnpm catalog:prune");
   assert.ok(

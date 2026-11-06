@@ -20,18 +20,25 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
+      - name: Validate database configuration
+        shell: bash
+        run: |
+          if [[ -z "${DATABASE_URL//[[:space:]]/}" ]]; then
+            echo "::error::Configure the repository Actions secret DATABASE_URL before the next scheduled run."
+            exit 1
+          fi
+
       - name: Check out repository
-        uses: actions/checkout@v4
+        shell: bash
+        run: |
+          git init --quiet .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          git -c protocol.version=2 fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout --detach --quiet FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.18.0
+      - name: Set up Node.js 24 and pinned pnpm
+        run: bash scripts/ci/setup-catalog-runtime.sh
 
       - name: Install runtime dependencies
         run: pnpm install --prod --frozen-lockfile
