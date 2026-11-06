@@ -136,6 +136,24 @@
   border-top: 1px solid #e5ebf3;
   transition: opacity 150ms ease;
 }
+.row[data-saved-focus="true"] {
+  position: relative;
+  z-index: 1;
+  border-radius: 6px;
+  outline: 2px solid #b76b13;
+  outline-offset: 3px;
+  background: #fff9ed;
+  scroll-margin-block: 24px;
+  transition:
+    outline-color 180ms ease,
+    background-color 180ms ease;
+}
+.focusAnnouncement {
+  margin: 8px 0 0;
+  color: #576b81;
+  font-size: 11px;
+  line-height: 1.5;
+}
 .unmatched {
   opacity: 0.42;
 }

@@ -264,6 +264,13 @@ export function CourseCard({
   const isSelected = searchParams.get("course") === course.id;
   const requestedTab =
     searchParams.get("detailTab") === "ratings" ? "ratings" : "sections";
+  const focusSectionValue = searchParams.get("focusSection");
+  const focusSection =
+    isSelected &&
+    focusSectionValue &&
+    /^[A-Za-z0-9_-]{1,24}$/.test(focusSectionValue)
+      ? focusSectionValue
+      : null;
   const ratingSource =
     searchParams.get("ratingSource") === "rmp" ? "rmp" : "official";
   const tab = isSelected ? requestedTab : null;
@@ -375,6 +382,7 @@ export function CourseCard({
     params.delete("course");
     params.delete("detailTab");
     params.delete("ratingSource");
+    params.delete("focusSection");
     const query = params.toString();
     window.history.replaceState(
       null,
@@ -508,7 +516,11 @@ export function CourseCard({
                 </button>
               </div>
             ) : null}
-            <SectionsPanel course={current} locale={locale} />
+            <SectionsPanel
+              course={current}
+              locale={locale}
+              focusClassNumber={focusSection}
+            />
           </div>
         </TabsContent>
         <TabsContent value="ratings">

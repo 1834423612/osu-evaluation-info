@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Bookmark,
   ChevronDown,
@@ -128,6 +128,7 @@ function SectionRow({
   locale,
   matches,
   highlighted,
+  savedFocus,
   saved,
   savedInstructors,
   onSave,
@@ -137,6 +138,7 @@ function SectionRow({
   locale: Locale;
   matches: boolean;
   highlighted: boolean;
+  savedFocus: boolean;
   saved: boolean;
   savedInstructors: ReadonlySet<string>;
   onSave: () => void;
@@ -156,6 +158,8 @@ function SectionRow({
     <li
       className={`${styles.row}${matches ? (highlighted ? ` ${styles.highlighted}` : "") : ` ${styles.unmatched}`}`}
       data-matches={matches}
+      data-class-number={section.classNumber}
+      data-saved-focus={savedFocus ? "true" : undefined}
     >
       <div className={styles.rowMain}>
         <button
@@ -341,11 +345,14 @@ function SectionRow({
 export default function SectionsPanel({
   course,
   locale,
+  focusClassNumber = null,
 }: {
   course: CatalogCourse;
   locale: Locale;
+  focusClassNumber?: string | null;
 }) {
   const [filters, setFilters] = useState<SectionFilterState>(emptyFilters);
+  const listRef = useRef<HTMLUListElement>(null);
   const id = useId();
   const { savedSections, savedInstructors, toggleSection, toggleInstructor } =
     usePreferences();
@@ -377,6 +384,43 @@ export default function SectionsPanel({
     Number(filters.excludeEarly) +
     Number(filters.excludeLate) +
     Number(filters.excludeWeekends);
+  const savedFocusFound = course.sections.some(
+    (section) => section.classNumber === focusClassNumber,
+  );
+  const focusAnnouncement = !focusClassNumber
+    ? ""
+    : savedFocusFound
+      ? text(
+          locale,
+          `Saved class ${focusClassNumber} highlighted.`,
+          `已定位并标亮收藏的班次 ${focusClassNumber}。`,
+        )
+      : course.sectionsPartial
+        ? ""
+        : text(
+            locale,
+            `Saved class ${focusClassNumber} is not in the current course listing.`,
+            `当前课程列表中未找到收藏的班次 ${focusClassNumber}。`,
+          );
+
+  useEffect(() => {
+    if (!focusClassNumber) return;
+    const target = [
+      ...(listRef.current?.querySelectorAll<HTMLElement>(
+        "[data-class-number]",
+      ) ?? []),
+    ].find((row) => row.dataset.classNumber === focusClassNumber);
+    if (!target) return;
+    target.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
+    target
+      .querySelector<HTMLButtonElement>("button")
+      ?.focus({ preventScroll: true });
+  }, [course.id, course.sections, focusClassNumber]);
   function toggleComponent(value: ComponentKind) {
     setFilters((current) => ({
       ...current,
@@ -578,7 +622,7 @@ export default function SectionsPanel({
         ) : null}
       </div>
       {course.sections.length ? (
-        <ul className={styles.list}>
+        <ul className={styles.list} ref={listRef}>
           {rankedSections.map(({ section, matches }) => (
             <SectionRow
               key={section.id}
@@ -586,6 +630,7 @@ export default function SectionsPanel({
               locale={locale}
               matches={matches}
               highlighted={activeCount > 0}
+              savedFocus={focusClassNumber === section.classNumber}
               saved={savedSectionIds.has(`${course.id}:${section.classNumber}`)}
               savedInstructors={savedInstructorIds}
               onSave={() => {
@@ -604,6 +649,15 @@ export default function SectionsPanel({
           </strong>
         </div>
       )}
+      {focusAnnouncement ? (
+        <p
+          className={styles.focusAnnouncement}
+          role="status"
+          aria-live="polite"
+        >
+          {focusAnnouncement}
+        </p>
+      ) : null}
     </div>
   );
 }

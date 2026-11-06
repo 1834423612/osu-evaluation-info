@@ -88,6 +88,7 @@ export function CourseExplorer() {
     params.delete("course");
     params.delete("detailTab");
     params.delete("ratingSource");
+    params.delete("focusSection");
     return params.toString();
   })();
   const { locale, saved, toggleSaved } = usePreferences();
@@ -200,6 +201,7 @@ export function CourseExplorer() {
       params.delete("course");
       params.delete("detailTab");
       params.delete("ratingSource");
+      params.delete("focusSection");
       const targetIndex =
         direction === "next"
           ? pageIndex + 1
@@ -271,6 +273,7 @@ export function CourseExplorer() {
             fetchParams.delete("course");
             fetchParams.delete("detailTab");
             fetchParams.delete("ratingSource");
+            fetchParams.delete("focusSection");
             skipQueryFetch.current = fetchParams.toString();
             window.history.pushState(
               null,
@@ -307,6 +310,7 @@ export function CourseExplorer() {
         "course",
         "detailTab",
         "ratingSource",
+        "focusSection",
       ].includes(key),
   );
   const filters = (

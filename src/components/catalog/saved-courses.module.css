@@ -6,9 +6,15 @@
   width: 100%;
   justify-content: flex-start;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border-bottom: 1px solid #dce5ef;
   border-radius: 0;
   gap: 7px;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
 }
 
 .tabList button {
@@ -67,6 +73,17 @@
   color: #155a88;
   font-size: 11px;
   font-weight: 700;
+}
+
+.sectionDestination {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  text-decoration: none;
+}
+
+.sectionDestination:hover .courseCode {
+  text-decoration: underline;
 }
 
 .itemIdentity strong {

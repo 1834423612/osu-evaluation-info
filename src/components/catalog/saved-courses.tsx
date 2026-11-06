@@ -48,12 +48,15 @@ function relatedCourse(snapshot: {
   };
 }
 
-function courseHref(snapshot: {
-  id: string;
-  label: string;
-  termCode?: string;
-  campusCode?: string;
-}) {
+function courseHref(
+  snapshot: {
+    id: string;
+    label: string;
+    termCode?: string;
+    campusCode?: string;
+  },
+  focusSection?: string,
+) {
   return {
     pathname: "/",
     query: {
@@ -66,6 +69,7 @@ function courseHref(snapshot: {
       ).toLowerCase(),
       course: snapshot.id,
       detailTab: "sections",
+      ...(focusSection ? { focusSection } : {}),
     },
   };
 }
@@ -160,23 +164,28 @@ export function SavedCourses() {
                       <div className={styles.itemHeading}>
                         <div className={styles.itemIdentity}>
                           <Link
-                            className={styles.courseCode}
-                            href={courseHref({
-                              id: item.courseId,
-                              label: item.courseLabel,
-                              termCode: item.termCode,
-                              campusCode: item.campusCode,
-                            })}
+                            className={styles.sectionDestination}
+                            href={courseHref(
+                              {
+                                id: item.courseId,
+                                label: item.courseLabel,
+                                termCode: item.termCode,
+                                campusCode: item.campusCode,
+                              },
+                              item.section.classNumber,
+                            )}
                           >
-                            {item.courseLabel}
+                            <span className={styles.courseCode}>
+                              {item.courseLabel}
+                            </span>
+                            <strong>
+                              {item.section.component} {item.section.section}
+                            </strong>
+                            <span className={styles.muted}>
+                              #{item.section.classNumber} · {item.term} ·{" "}
+                              {item.campus}
+                            </span>
                           </Link>
-                          <strong>
-                            {item.section.component} {item.section.section}
-                          </strong>
-                          <span className={styles.muted}>
-                            #{item.section.classNumber} · {item.term} ·{" "}
-                            {item.campus}
-                          </span>
                         </div>
                         <Button
                           variant="ghost"
