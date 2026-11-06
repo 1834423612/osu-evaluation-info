@@ -45,8 +45,6 @@ const ICONS: Record<string, LucideIcon> = {
   "class-attribute-value": Sparkles,
   evening: Clock3,
 };
-const QUICK_ITEM_COUNT = 8;
-
 type FilterItem = CatalogFacet["items"][number];
 
 function FilterFacet({
@@ -77,21 +75,13 @@ function FilterFacet({
       )
     : items;
   const normalizedSearch = search.trim().toLocaleLowerCase();
-  const selectedItem = orderedItems.find((item) => item.value === selected);
   const matchingItems = normalizedSearch
     ? orderedItems.filter(
         (item) =>
           item.label.toLocaleLowerCase().includes(normalizedSearch) ||
           item.value.toLocaleLowerCase().includes(normalizedSearch),
       )
-    : [
-        ...new Map(
-          [
-            ...orderedItems.slice(0, QUICK_ITEM_COUNT),
-            ...(selectedItem ? [selectedItem] : []),
-          ].map((item) => [item.value, item]),
-        ).values(),
-      ];
+    : orderedItems;
 
   return (
     <fieldset
@@ -181,17 +171,6 @@ function FilterFacet({
           </span>
         ) : null}
       </div>
-      {searchable &&
-      !normalizedSearch &&
-      orderedItems.length > QUICK_ITEM_COUNT ? (
-        <span className="filter-helper">
-          {text(
-            locale,
-            `Top ${QUICK_ITEM_COUNT} · search to find any option`,
-            `显示常用 ${QUICK_ITEM_COUNT} 项 · 搜索可查找全部选项`,
-          )}
-        </span>
-      ) : null}
     </fieldset>
   );
 }
