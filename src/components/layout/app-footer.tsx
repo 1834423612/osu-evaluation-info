@@ -20,7 +20,7 @@ export function AppFooter() {
           <BrandMascot portrait size={28} />
           <strong>{brand.name}</strong>
         </Link>
-        <span>
+        <span className="footer-description">
           {text(
             locale,
             "Independent OSU course & professor guide",
