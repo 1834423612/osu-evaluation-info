@@ -15,9 +15,11 @@ type ToastDetail = {
 export function ActionToast() {
   const { locale } = usePreferences();
   const [toast, setToast] = useState<ToastDetail | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     const onToast = (event: Event) => {
+      setLeaving(false);
       setToast((event as CustomEvent<ToastDetail>).detail);
     };
     window.addEventListener("course-atlas:toast", onToast);
@@ -26,15 +28,22 @@ export function ActionToast() {
 
   useEffect(() => {
     if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(null), 4500);
+    const timeout = window.setTimeout(() => setLeaving(true), 4500);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    if (!leaving) return;
+    const timeout = window.setTimeout(() => setToast(null), 170);
+    return () => window.clearTimeout(timeout);
+  }, [leaving]);
 
   if (!toast) return null;
   return createPortal(
     <div
       className="action-toast"
       data-state={toast.added ? "added" : "removed"}
+      data-phase={leaving ? "closing" : "open"}
       role="status"
       aria-live="polite"
       style={{ pointerEvents: "auto" }}
@@ -54,7 +63,7 @@ export function ActionToast() {
         type="button"
         onClick={() => {
           toast.undo();
-          setToast(null);
+          setLeaving(true);
         }}
       >
         <RotateCcw size={14} aria-hidden="true" />
@@ -64,7 +73,7 @@ export function ActionToast() {
         type="button"
         className="action-toast-close"
         aria-label={text(locale, "Dismiss", "关闭提示")}
-        onClick={() => setToast(null)}
+        onClick={() => setLeaving(true)}
       >
         <X size={15} aria-hidden="true" />
       </button>

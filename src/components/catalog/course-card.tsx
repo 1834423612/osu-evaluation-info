@@ -576,6 +576,7 @@ export function CourseCard({
                   <EvaluationPanel
                     summary={current.evaluation}
                     locale={locale}
+                    subject={current.subject}
                   />
                 </TabsContent>
                 <TabsContent value="rmp">
@@ -695,13 +696,16 @@ export function CourseCard({
           onOpenChange={(open) => !open && closeDetails()}
           shouldScaleBackground={false}
           handleOnly
-          closeThreshold={0.45}
+          closeThreshold={0.25}
         >
           <DrawerContent
             className="course-detail-drawer"
             onInteractOutside={(event) => {
               const target = event.detail.originalEvent.target;
-              if (target instanceof Element && target.closest(".action-toast"))
+              if (
+                target instanceof Element &&
+                target.closest(".action-toast, [data-translation-popover]")
+              )
                 event.preventDefault();
             }}
             onEscapeKeyDown={(event) => {
@@ -761,7 +765,10 @@ export function CourseCard({
             aria-describedby={`${detailId}-description`}
             onInteractOutside={(event) => {
               const target = event.detail.originalEvent.target;
-              if (target instanceof Element && target.closest(".action-toast"))
+              if (
+                target instanceof Element &&
+                target.closest(".action-toast, [data-translation-popover]")
+              )
                 event.preventDefault();
             }}
             onEscapeKeyDown={(event) => {
