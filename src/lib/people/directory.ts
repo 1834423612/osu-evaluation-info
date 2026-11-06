@@ -11,6 +11,12 @@ const EMPTY_TTL = 30 * 60 * 1000;
 const ERROR_TTL = 30 * 1000;
 const LOOKUP_TIMEOUT_MS = 5_000;
 const MAX_PENDING_LOOKUPS = 12;
+const NAME_DOT_NUMBER = /^[a-z0-9_-]+\.\d{1,10}$/i;
+
+export function directoryAccountFromTerm(term: string) {
+  const value = term.trim();
+  return NAME_DOT_NUMBER.test(value) ? value.toLocaleLowerCase() : null;
+}
 
 export type DirectoryRole =
   | "professor"
@@ -36,6 +42,9 @@ export type DirectoryLookupResult =
   | {
       status: "available";
       source: "osu-search" | "content-api-v2";
+      verifiedAt?: string;
+      cache: "memory" | "database" | "source";
+      stale?: boolean;
       results: DirectoryCandidate[];
     }
   | { status: "unavailable"; source: null; results: [] };
@@ -429,7 +438,7 @@ function prepareResult(
         Boolean(candidate),
       ),
   ).slice(0, MAX_RESULTS);
-  return { status: "available", source, results };
+  return { status: "available", source, cache: "source", results };
 }
 
 async function fetchLookup(
@@ -450,7 +459,12 @@ async function fetchLookup(
   if (fallback)
     return prepareResult(fallback, "content-api-v2", true, identity);
   if (current?.length === 0 || (identity && current))
-    return { status: "available", source: "osu-search", results: [] };
+    return {
+      status: "available",
+      source: "osu-search",
+      cache: "source",
+      results: [],
+    };
   return { status: "unavailable", source: null, results: [] };
 }
 
@@ -485,7 +499,9 @@ export async function lookupDirectory(
   if (cached && cached.expiresAt > Date.now()) {
     cache.delete(key);
     cache.set(key, cached);
-    return cached.value;
+    return cached.value.status === "available"
+      ? { ...cached.value, cache: "memory" }
+      : cached.value;
   }
   if (cached) cache.delete(key);
   const inflight = pending.get(key);
@@ -500,15 +516,19 @@ export async function lookupDirectory(
       results: [],
     }))
     .then((value) => {
+      const verified =
+        value.status === "available"
+          ? { ...value, verifiedAt: new Date().toISOString() }
+          : value;
       const ttl =
-        value.status === "unavailable"
+        verified.status === "unavailable"
           ? ERROR_TTL
-          : value.results.length
+          : verified.results.length
             ? SUCCESS_TTL
             : EMPTY_TTL;
-      cache.set(key, { value, expiresAt: Date.now() + ttl });
+      cache.set(key, { value: verified, expiresAt: Date.now() + ttl });
       while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
-      return value;
+      return verified;
     })
     .finally(() => pending.delete(key));
   pending.set(key, request);

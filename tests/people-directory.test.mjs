@@ -10,9 +10,27 @@ import {
   validDirectorySearchTerm,
 } from "../src/lib/people/directory.ts";
 import {
+  distinctDirectoryAppointments,
   instructorDirectoryQuery,
   selectDirectoryCandidate,
+  visibleDirectoryRoles,
 } from "../src/lib/people/identity.ts";
+
+test("appointment highlights collapse duplicate contract and college labels while keeping distinct jobs", () => {
+  const preferred = {
+    title: "Lecturer (9M)",
+    organization: "Arts and Sciences - Mathematics",
+  };
+  const research = { title: "Research Associate", organization: "Mathematics" };
+  assert.deepEqual(
+    distinctDirectoryAppointments([
+      preferred,
+      { title: "Lecturer", organization: "Mathematics" },
+      research,
+    ]),
+    [preferred, research],
+  );
+});
 
 test("directory role inference requires explicit teaching appointment evidence", () => {
   assert.deepEqual(
@@ -52,6 +70,18 @@ test("directory roles can overlap when the official record supports them", () =>
     ),
     ["employee"],
   );
+});
+
+test("assistant identities omit the redundant student badge", () => {
+  assert.deepEqual(
+    visibleDirectoryRoles(["teaching-assistant", "student", "employee"]),
+    ["teaching-assistant"],
+  );
+  assert.deepEqual(
+    visibleDirectoryRoles(["student-assistant", "student", "employee"]),
+    ["student-assistant"],
+  );
+  assert.deepEqual(visibleDirectoryRoles(["student"]), ["student"]);
 });
 
 test("new OSU Search records normalize only public role evidence", () => {
@@ -224,11 +254,11 @@ test("OSU account lookups exclude similar accounts returned by the search provid
   }
   globalThis.WebSocket = IdentitySocket;
   try {
-    assert.deepEqual(await lookupDirectory("identityfixture.987654321"), {
-      status: "available",
-      source: "osu-search",
-      results: [],
-    });
+    const result = await lookupDirectory("identityfixture.987654321");
+    assert.equal(result.status, "available");
+    assert.equal(result.source, "osu-search");
+    assert.equal(result.cache, "source");
+    assert.deepEqual(result.results, []);
   } finally {
     globalThis.WebSocket = original;
   }

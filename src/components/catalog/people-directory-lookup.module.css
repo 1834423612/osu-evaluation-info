@@ -1,53 +1,7 @@
-.roles {
-  display: inline-flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
-.role,
-.unknown {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  padding: 2px 6px;
-  border: 1px solid #dce2ed;
-  border-radius: 6px;
-  color: #63718b;
-  background: #f5f7fb;
-  font-size: 0.62rem;
-  font-weight: 650;
-  line-height: 1.35;
-  white-space: nowrap;
-}
-.role[data-role="professor"],
-.role[data-role="lecturer"],
-.role[data-role="faculty"] {
-  color: #285c42;
-  border-color: #bde3cc;
-  background: #eef9f1;
-}
-.role[data-role="teaching-assistant"] {
-  color: #85510e;
-  border-color: #edd29b;
-  background: #fff6df;
-}
-.role[data-role="student-assistant"],
-.role[data-role="student"] {
-  color: #60408d;
-  border-color: #d9c9ef;
-  background: #f5efff;
-}
-.unknown {
-  font-weight: 500;
-}
-.identity {
-  min-width: 0;
-  flex: 1 1 auto;
-}
 .identityButton {
   display: flex;
   width: 100%;
+  min-width: 0;
   align-items: center;
   gap: 7px;
   padding: 0;
@@ -58,73 +12,195 @@
   text-align: left;
   cursor: pointer;
 }
-.identityButton:hover {
-  color: #335cad;
+
+.identityButton:hover .identityName > span:first-child {
+  color: #225e83;
 }
+
 .identityButton:focus-visible {
-  outline: 3px solid #9bbcff;
+  outline: 3px solid #8ab3cf;
   outline-offset: 3px;
 }
+
 .identityName {
   display: grid;
   min-width: 0;
+  flex: 1 1 auto;
   gap: 3px;
   font-size: 0.76rem;
-  line-height: 1.4;
+  line-height: 1.35;
 }
+
 .identityName > span:first-child {
   overflow-wrap: anywhere;
 }
+
+.role,
+.unknown {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid #d3e4ed;
+  border-radius: 5px;
+  color: #385e75;
+  background: #edf5f8;
+  font-size: 0.64rem;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.role[data-role="professor"],
+.role[data-role="lecturer"],
+.role[data-role="faculty"] {
+  color: #285c42;
+  border-color: #bde3cc;
+  background: #eef9f1;
+}
+
+.role[data-role="teaching-assistant"],
+.role[data-role="student-assistant"] {
+  color: #76500b;
+  border-color: #ead6a7;
+  background: #fbf5e5;
+}
+
+.unknown {
+  color: #526a7c;
+  background: #f1f5f7;
+  font-weight: 550;
+}
+
 .chevron {
   flex: 0 0 auto;
   margin-left: auto;
   color: #74829b;
   transition: transform 160ms ease;
 }
+
 .chevron[data-open="true"] {
   transform: rotate(180deg);
 }
-.appointments {
-  display: grid;
-  gap: 7px;
-  margin-top: 9px;
-  padding: 11px;
-  border: 1px solid #dce5f4;
-  border-radius: 10px;
-  background: #f7faff;
+
+.popover {
+  position: relative;
+  z-index: 90;
+  width: min(310px, calc(100vw - 24px));
+  padding: 13px 34px 12px 13px;
+  border: 1px solid #cadce7;
+  border-radius: 8px;
+  background: #fff;
+  color: #243b4b;
+  box-shadow: 0 12px 34px rgb(23 52 70 / 20%);
+  outline: none;
+  animation: popover-enter 120ms ease-out;
 }
-.detailHeading {
+
+.arrow {
+  fill: white;
+  stroke: #cadce7;
+  stroke-width: 1px;
+}
+
+.popoverHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #38527c;
-  font-size: 0.74rem;
-}
-.appointments ul {
-  display: grid;
   gap: 7px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.appointments li {
-  display: grid;
-  gap: 2px;
-  color: #3d4c65;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #e6edf1;
+  color: #2e596f;
   font-size: 0.74rem;
-  line-height: 1.45;
 }
-.appointments li small {
-  color: #6e7e96;
-  font-size: 0.7rem;
+
+.popoverHeader svg {
+  flex: 0 0 auto;
 }
-.appointments p {
-  margin: 0;
-  color: #6d7b92;
-  font-size: 0.73rem;
+
+.details {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.detailRow {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+  color: #334d5e;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.detailRow svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #3e718b;
+}
+
+.detailRow span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  margin: 10px 0 0;
+  color: #5c7180;
+  font-size: 0.74rem;
   line-height: 1.5;
 }
-.appointments p.note {
-  color: #8993a5;
+
+.source {
+  margin: 10px 0 0;
+  color: #74848f;
   font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.closeButton {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  color: #607483;
+  background: transparent;
+}
+
+.closeButton:hover {
+  color: #183b4f;
+  background: #eef4f7;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid #6c9db8;
+  outline-offset: 1px;
+}
+
+.closeButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+@keyframes popover-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
 }

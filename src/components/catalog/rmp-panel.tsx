@@ -20,13 +20,9 @@ import type { CourseRmpSummary } from "@/lib/rmp/types";
 import { REVIEW_PAGE_SIZE, reviewPagination } from "@/lib/rmp/pagination";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
 import { text, type Locale } from "@/lib/i18n";
-import { InstructorAvatar } from "./instructor-avatar";
-import {
-  InstructorDirectoryBadge,
-  InstructorDirectoryDetails,
-} from "./people-directory-lookup";
-import styles from "./rmp-panel.module.css";
+import { InstructorDirectoryIdentity } from "./people-directory-lookup";
 import { TranslateText } from "./translate-text";
+import styles from "./rmp-panel.module.css";
 
 function score(value: number | null) {
   return value === null ? "—" : `${value.toFixed(2)} / 5`;
@@ -278,58 +274,67 @@ function InstructorReviews({
       ];
     });
   return (
-    <Collapsible className={styles.instructor}>
+    <Collapsible
+      className={styles.instructor}
+      role="group"
+      aria-label={text(
+        locale,
+        `${instructor.name}'s RMP reviews`,
+        `${instructor.name} 的 RMP 评论`,
+      )}
+    >
       <div className={styles.instructorHeading}>
-        <CollapsibleTrigger className={styles.instructorToggle}>
-          <div className={styles.identity}>
-            <InstructorAvatar
-              name={instructor.name}
-              email={`${instructor.nameDotNumber}@osu.edu`}
+        <div className={styles.identity}>
+          <InstructorDirectoryIdentity
+            name={instructor.name}
+            email={`${instructor.nameDotNumber}@osu.edu`}
+            locale={locale}
+            size={36}
+          />
+        </div>
+        <CollapsibleTrigger
+          className={styles.instructorToggle}
+          aria-label={text(
+            locale,
+            `View ${instructor.name}'s reviews`,
+            `查看 ${instructor.name} 的评论`,
+          )}
+        >
+          <span className={styles.summaryScore}>
+            <strong
+              data-tone={
+                instructor.recentQuality === null
+                  ? "none"
+                  : instructor.recentQuality >= 4.2
+                    ? "positive"
+                    : instructor.recentQuality <= 3.3
+                      ? "caution"
+                      : "mixed"
+              }
+            >
+              {score(instructor.recentQuality)}
+            </strong>
+            <small>
+              {text(
+                locale,
+                `${instructor.recentReviewCount} recent · ${instructor.reviewCount} total`,
+                `近两年 ${instructor.recentReviewCount} 条 · 总计 ${instructor.reviewCount} 条`,
+              )}
+            </small>
+          </span>
+          <span className={styles.disclosureCue}>
+            <span className={styles.expandLabel}>
+              {text(locale, "View reviews", "查看评论")}
+            </span>
+            <span className={styles.collapseLabel}>
+              {text(locale, "Hide reviews", "收起评论")}
+            </span>
+            <ChevronDown
+              className={styles.disclosureIcon}
+              size={15}
+              aria-hidden="true"
             />
-            <div>
-              <h4>{instructor.name}</h4>
-              <InstructorDirectoryBadge
-                name={instructor.name}
-                email={`${instructor.nameDotNumber}@osu.edu`}
-                locale={locale}
-              />
-            </div>
-            <span className={styles.summaryScore}>
-              <strong
-                data-tone={
-                  instructor.recentQuality === null
-                    ? "none"
-                    : instructor.recentQuality >= 4.2
-                      ? "positive"
-                      : instructor.recentQuality <= 3.3
-                        ? "caution"
-                        : "mixed"
-                }
-              >
-                {score(instructor.recentQuality)}
-              </strong>
-              <small>
-                {text(
-                  locale,
-                  `${instructor.recentReviewCount} recent · ${instructor.reviewCount} total`,
-                  `近两年 ${instructor.recentReviewCount} 条 · 总计 ${instructor.reviewCount} 条`,
-                )}
-              </small>
-            </span>
-            <span className={styles.disclosureCue}>
-              <span className={styles.expandLabel}>
-                {text(locale, "View reviews", "查看评论")}
-              </span>
-              <span className={styles.collapseLabel}>
-                {text(locale, "Hide reviews", "收起评论")}
-              </span>
-              <ChevronDown
-                className={styles.disclosureIcon}
-                size={15}
-                aria-hidden="true"
-              />
-            </span>
-          </div>
+          </span>
         </CollapsibleTrigger>
         <a href={instructor.profileUrl} target="_blank" rel="noreferrer">
           RMP <ArrowUpRight size={13} aria-hidden="true" />
@@ -350,11 +355,6 @@ function InstructorReviews({
         </ul>
       ) : null}
       <CollapsibleContent>
-        <InstructorDirectoryDetails
-          name={instructor.name}
-          email={`${instructor.nameDotNumber}@osu.edu`}
-          locale={locale}
-        />
         <dl className={styles.stats}>
           <div>
             <dt>{text(locale, "Recent quality", "近期教学评价")}</dt>

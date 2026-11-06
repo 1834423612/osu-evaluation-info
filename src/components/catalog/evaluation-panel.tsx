@@ -19,11 +19,7 @@ import {
   EvaluationSignalLabel,
   type EvaluationLocale,
 } from "./rating-summary";
-import {
-  InstructorDirectoryBadge,
-  InstructorDirectoryDetails,
-} from "./people-directory-lookup";
-import { InstructorAvatar } from "./instructor-avatar";
+import { InstructorDirectoryIdentity } from "./people-directory-lookup";
 import styles from "./evaluation-panel.module.css";
 import {
   Collapsible,
@@ -639,23 +635,14 @@ export function EvaluationPanel({
               className={styles.instructorItem}
               key={`${instructor.email ?? instructor.name}-${index}`}
             >
-              <CollapsibleTrigger className={styles.instructorRow}>
-                <span className={styles.instructorIdentity}>
-                  <span className={styles.instructorNameLine}>
-                    <InstructorAvatar
-                      name={instructor.name}
-                      email={instructor.email}
-                      size={32}
-                    />
-                    <span className={styles.instructorName}>
-                      {instructor.name}
-                      <InstructorDirectoryBadge
-                        name={instructor.name}
-                        email={instructor.email}
-                        locale={locale}
-                      />
-                    </span>
-                  </span>
+              <div className={styles.instructorRow}>
+                <div className={styles.instructorIdentity}>
+                  <InstructorDirectoryIdentity
+                    name={instructor.name}
+                    email={instructor.email}
+                    size={32}
+                    locale={locale}
+                  />
                   <span className={styles.subtle}>
                     {instructor.currentlyListed
                       ? labels.currentOffering
@@ -667,54 +654,58 @@ export function EvaluationPanel({
                         ? `${number(instructor.primary.responseCount, locale)} ${evaluationLabels[locale].responses} · ${instructor.primary.lastTerm}`
                         : labels.noInstructorData}
                   </span>
-                </span>
-                <span className={styles.instructorMetrics}>
-                  {(["SSLE", "SEI"] as const).map((instrument) => {
-                    const metric = instructor.metrics.find(
-                      (item) => item.instrument === instrument,
-                    );
-                    return (
-                      <span
-                        className={styles.instructorMiniMetric}
-                        key={instrument}
-                      >
-                        <span>{instrument}</span>
-                        {metric ? (
-                          <>
-                            <MiniTrend metric={metric} locale={locale} />
-                            <strong data-tone={gradeTone(metric.score)}>
-                              {metric.score.toFixed(2)}
-                            </strong>
-                          </>
-                        ) : (
-                          <small>—</small>
-                        )}
-                      </span>
-                    );
-                  })}
-                </span>
-                {instructor.primary ? (
-                  <span
-                    className={styles.instructorScore}
-                    data-tone={gradeTone(instructor.primary.score)}
-                  >
-                    <strong>
-                      {instructor.primary.score.toFixed(2)}
-                      <small>/5</small>
-                    </strong>
-                    <span>{instructor.primary.instrument}</span>
+                </div>
+                <CollapsibleTrigger
+                  className={styles.instructorRatingsToggle}
+                  aria-label={text(
+                    locale,
+                    `View ${instructor.name}'s official evaluation trends`,
+                    `查看 ${instructor.name} 的官方评价趋势`,
+                  )}
+                >
+                  <span className={styles.instructorMetrics}>
+                    {(["SSLE", "SEI"] as const).map((instrument) => {
+                      const metric = instructor.metrics.find(
+                        (item) => item.instrument === instrument,
+                      );
+                      return (
+                        <span
+                          className={styles.instructorMiniMetric}
+                          key={instrument}
+                        >
+                          <span>{instrument}</span>
+                          {metric ? (
+                            <>
+                              <MiniTrend metric={metric} locale={locale} />
+                              <strong data-tone={gradeTone(metric.score)}>
+                                {metric.score.toFixed(2)}
+                              </strong>
+                            </>
+                          ) : (
+                            <small>—</small>
+                          )}
+                        </span>
+                      );
+                    })}
                   </span>
-                ) : (
-                  <span className={styles.instructorScore}>—</span>
-                )}
-                <ChevronDown aria-hidden="true" />
-              </CollapsibleTrigger>
+                  {instructor.primary ? (
+                    <span
+                      className={styles.instructorScore}
+                      data-tone={gradeTone(instructor.primary.score)}
+                    >
+                      <strong>
+                        {instructor.primary.score.toFixed(2)}
+                        <small>/5</small>
+                      </strong>
+                      <span>{instructor.primary.instrument}</span>
+                    </span>
+                  ) : (
+                    <span className={styles.instructorScore}>—</span>
+                  )}
+                  <ChevronDown aria-hidden="true" />
+                </CollapsibleTrigger>
+              </div>
               <CollapsibleContent className={styles.instructorDetail}>
-                <InstructorDirectoryDetails
-                  name={instructor.name}
-                  email={instructor.email}
-                  locale={locale}
-                />
                 {instructor.match === "unmatched" ? (
                   <p className={styles.subtle}>{labels.noInstructorMatch}</p>
                 ) : instructor.metrics.length ? (

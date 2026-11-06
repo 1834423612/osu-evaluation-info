@@ -3,7 +3,15 @@ import {
   lookupDirectory,
   validDirectoryFallbackName,
   validDirectorySearchTerm,
+  directoryAccountFromTerm,
 } from "@/lib/people/directory";
+import {
+  DIRECTORY_CACHE_MAX_AGE_MS,
+  directoryPersonResponse,
+  isVerifiedDirectoryPerson,
+  readDirectoryPerson,
+  writeDirectoryPerson,
+} from "@/lib/people/database";
 
 export const runtime = "nodejs";
 
@@ -11,7 +19,7 @@ const MAX_REQUEST_BYTES = 4 * 1024;
 const RATE_WINDOW_MS = 60 * 1000;
 // Visible instructor lists can contain many distinct people; the client queues
 // requests and the provider layer separately bounds simultaneous upstream work.
-const RATE_LIMIT = 120;
+const RATE_LIMIT = 60;
 const MAX_RATE_ENTRIES = 2048;
 const requests = new Map<string, { start: number; count: number }>();
 
@@ -111,7 +119,38 @@ export async function POST(request: Request) {
       400,
     );
 
+  const identity = directoryAccountFromTerm(term);
+  let savedPerson = null;
+  if (identity) {
+    try {
+      savedPerson = await readDirectoryPerson(identity);
+    } catch {
+      // The official source remains available when the optional cache is down.
+    }
+    if (
+      savedPerson &&
+      isVerifiedDirectoryPerson(savedPerson, identity) &&
+      Date.now() - Date.parse(savedPerson.verifiedAt) <
+        DIRECTORY_CACHE_MAX_AGE_MS
+    )
+      return response(directoryPersonResponse(savedPerson));
+  }
+
   const result = await lookupDirectory(term, fallbackName);
+  if (
+    identity &&
+    result.status === "available" &&
+    result.results.length === 1
+  ) {
+    try {
+      await writeDirectoryPerson(identity, result.results[0], result);
+    } catch {
+      // Persistence is best effort; do not turn an official lookup into failure.
+    }
+  }
+  if (result.status === "unavailable" && identity && savedPerson) {
+    return response(directoryPersonResponse(savedPerson, { stale: true }));
+  }
   if (result.status === "unavailable")
     return response(
       { error: "The OSU directory is temporarily unavailable." },

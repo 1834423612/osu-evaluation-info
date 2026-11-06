@@ -11,6 +11,7 @@
     "format:write": "prettier --write .",
     "db:validate": "python3 scripts/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --validate-only --expected-rows 68729",
     "db:import": "python3 scripts/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --dsn \"$DATABASE_URL\" --init-schema --expected-rows 68729",
+    "db:people:init": "node --env-file-if-exists=.env.local scripts/setup_people_directory.mjs",
     "rmp:collect": "python3 scripts/collect_rmp_osu.py",
     "rmp:mappings": "python3 scripts/sync_rmp_mappings.py",
     "rmp:supplement": "python3 scripts/import_rmp_supplement.py",
