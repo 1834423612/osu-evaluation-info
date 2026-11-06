@@ -18,6 +18,7 @@ export function useCourseDetails(
     error: false,
   });
   const refreshRef = useRef<(() => Promise<void>) | null>(null);
+  const pollingRef = useRef<((enabled: boolean) => void) | null>(null);
   const { subject, catalogNumber, termCode, campusCode, id } = course;
   const courseRef = useRef(course);
   useEffect(() => {
@@ -37,15 +38,20 @@ export function useCourseDetails(
       onUpdate: setState,
       window,
       document,
-      poll,
+      poll: false,
     });
     refreshRef.current = updater.refresh;
+    pollingRef.current = updater.setPolling;
     updater.start();
     return () => {
       refreshRef.current = null;
+      pollingRef.current = null;
       updater.stop();
     };
-  }, [open, poll, subject, catalogNumber, termCode, campusCode, id]);
+  }, [open, subject, catalogNumber, termCode, campusCode, id]);
+  useEffect(() => {
+    pollingRef.current?.(poll);
+  }, [poll]);
   const refresh = useCallback(() => refreshRef.current?.(), []);
   return { ...state, refresh };
 }

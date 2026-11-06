@@ -248,11 +248,13 @@ export function CourseCard({
   locale,
   saved,
   onSave,
+  enrollmentWatch,
 }: {
   course: CatalogCourse;
   locale: Locale;
   saved: boolean;
   onSave: (course: CatalogCourse) => void;
+  enrollmentWatch: boolean;
 }) {
   const searchParams = useSearchParams();
   const isMobile = useMobileViewport();
@@ -277,7 +279,11 @@ export function CourseCard({
     loading,
     error,
     refresh: loadDetail,
-  } = useCourseDetails(course, isSelected, requestedTab === "sections");
+  } = useCourseDetails(
+    course,
+    isSelected,
+    requestedTab === "sections" && enrollmentWatch,
+  );
   const loaded = detail ?? course;
   const fresh = useAvailabilityFresh(loaded);
   const current = fresh ? loaded : withoutCourseAvailability(loaded);

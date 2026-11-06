@@ -95,7 +95,8 @@ export function CourseExplorer() {
     params.delete("focusSection");
     return params.toString();
   })();
-  const { locale, saved, toggleSaved } = usePreferences();
+  const { locale, saved, toggleSaved, enrollmentWatch, setEnrollmentWatch } =
+    usePreferences();
   const [result, setResult] = useState<CatalogResponse | null>(null);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -505,6 +506,33 @@ export function CourseExplorer() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                <label className="enrollment-watch-control">
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    checked={enrollmentWatch}
+                    onChange={(event) =>
+                      setEnrollmentWatch(event.currentTarget.checked)
+                    }
+                    aria-describedby="enrollment-watch-hint"
+                  />
+                  <span className="enrollment-watch-copy">
+                    <strong>{text(locale, "Seat watch", "抢课模式")}</strong>
+                    <small id="enrollment-watch-hint">
+                      {enrollmentWatch
+                        ? text(
+                            locale,
+                            "Every 30 sec while details are open",
+                            "详情打开时每 30 秒并在返回时刷新",
+                          )
+                        : text(
+                            locale,
+                            "Checks once when details open",
+                            "每次打开班次详情时查询一次",
+                          )}
+                    </small>
+                  </span>
+                </label>
               </div>
             </div>
             {activeFilters.length ? (
@@ -586,6 +614,7 @@ export function CourseExplorer() {
                     course={course}
                     locale={locale}
                     saved={saved.some((item) => item.id === course.id)}
+                    enrollmentWatch={enrollmentWatch}
                     onSave={(item) => setStorageError(!toggleSaved(item))}
                   />
                 ))}

@@ -165,4 +165,56 @@ describe("visible course detail refresh", () => {
     assert.equal(calls, 2);
     reopened.engine.stop();
   });
+  it("refreshes once by default and ignores focus, timer, and visibility restoration", async () => {
+    let calls = 0;
+    const env = setup(async () => {
+      calls++;
+      return response();
+    }, false);
+    env.engine.start();
+    await flush();
+    assert.equal(calls, 1);
+
+    env.window.dispatchEvent(new Event("focus"));
+    env.tick();
+    await flush();
+    assert.equal(calls, 1);
+
+    env.document.visibilityState = "hidden";
+    env.document.dispatchEvent(new Event("visibilitychange"));
+    env.document.visibilityState = "visible";
+    env.document.dispatchEvent(new Event("visibilitychange"));
+    await flush();
+    assert.equal(calls, 1);
+
+    await env.engine.refresh();
+    assert.equal(calls, 2);
+    env.engine.stop();
+    assert.equal(env.cancelled, false);
+  });
+  it("starts aggressive refresh immediately when enabled and stops it without another read", async () => {
+    let calls = 0;
+    const env = setup(async () => {
+      calls++;
+      return response();
+    }, false);
+    env.engine.start();
+    await flush();
+    assert.equal(calls, 1);
+
+    env.engine.setPolling(true);
+    await flush();
+    assert.equal(calls, 2);
+    env.tick();
+    await flush();
+    assert.equal(calls, 3);
+
+    env.engine.setPolling(false);
+    assert.equal(env.cancelled, true);
+    env.window.dispatchEvent(new Event("focus"));
+    env.tick();
+    await flush();
+    assert.equal(calls, 3);
+    env.engine.stop();
+  });
 });

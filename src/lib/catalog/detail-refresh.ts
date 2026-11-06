@@ -35,6 +35,7 @@ export function createDetailRefresh(options: RefreshOptions) {
   let generation = 0;
   let current = withoutCourseAvailability(options.course);
   let timer: ReturnType<typeof setInterval> | undefined;
+  let polling = options.poll !== false;
   const visible = () => options.document.visibilityState !== "hidden";
   const clear = (loading: boolean, error = false) => {
     current = withoutCourseAvailability(current);
@@ -77,26 +78,45 @@ export function createDetailRefresh(options: RefreshOptions) {
     }
   }
   function onVisibility() {
-    if (visible()) void refresh();
-    else {
-      generation++;
-      controller?.abort();
-      controller = null;
-      clear(false);
+    if (visible()) {
+      if (polling) void refresh();
+      return;
     }
+    generation++;
+    controller?.abort();
+    controller = null;
+    clear(false);
   }
   const onFocus = () => {
-    void refresh();
+    if (polling) void refresh();
   };
+  function setPolling(enabled: boolean) {
+    if (disposed || polling === enabled) return;
+    polling = enabled;
+    if (!started) return;
+    if (enabled) {
+      options.window.addEventListener("focus", onFocus);
+      timer = (options.every ?? setInterval)(onFocus, AVAILABILITY_TTL_MS);
+      void refresh();
+    } else {
+      options.window.removeEventListener("focus", onFocus);
+      if (timer !== undefined) {
+        (options.cancelEvery ?? clearInterval)(timer);
+        timer = undefined;
+      }
+    }
+  }
   return {
     refresh,
+    setPolling,
     start() {
       if (disposed || started) return;
       started = true;
-      options.window.addEventListener("focus", onFocus);
       options.document.addEventListener("visibilitychange", onVisibility);
-      if (options.poll !== false)
+      if (polling) {
+        options.window.addEventListener("focus", onFocus);
         timer = (options.every ?? setInterval)(onFocus, AVAILABILITY_TTL_MS);
+      }
       queueMicrotask(() => {
         void refresh();
       });
@@ -107,6 +127,7 @@ export function createDetailRefresh(options: RefreshOptions) {
       controller?.abort();
       controller = null;
       if (timer !== undefined) (options.cancelEvery ?? clearInterval)(timer);
+      timer = undefined;
       options.window.removeEventListener("focus", onFocus);
       options.document.removeEventListener("visibilitychange", onVisibility);
     },

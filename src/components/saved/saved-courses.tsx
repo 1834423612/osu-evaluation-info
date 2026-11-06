@@ -78,6 +78,7 @@ export function SavedCourses() {
     toggleSaved,
     toggleSection,
     toggleInstructor,
+    enrollmentWatch,
   } = usePreferences();
   const savedCount =
     saved.length + savedSections.length + savedInstructors.length;
@@ -141,6 +142,7 @@ export function SavedCourses() {
                       course={course}
                       locale={locale}
                       saved
+                      enrollmentWatch={enrollmentWatch}
                       onSave={toggleSaved}
                     />
                   ))}

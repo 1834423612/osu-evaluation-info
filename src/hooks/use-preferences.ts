@@ -13,6 +13,7 @@ import { migrateSavedAvailability } from "@/lib/catalog/saved-storage";
 let storageMigrated = false;
 
 const LOCALE_KEY = "course-atlas:locale:v1";
+const ENROLLMENT_WATCH_KEY = "course-atlas:enrollment-watch:v1";
 const SAVED_KEY = "course-atlas:saved:v1";
 const SAVED_SECTIONS_KEY = "course-atlas:saved-sections:v1";
 const SAVED_INSTRUCTORS_KEY = "course-atlas:saved-instructors:v1";
@@ -64,6 +65,13 @@ function getLocale(): Locale {
     return localStorage.getItem(LOCALE_KEY) === "zh" ? "zh" : "en";
   } catch {
     return "en";
+  }
+}
+function getEnrollmentWatch() {
+  try {
+    return localStorage.getItem(ENROLLMENT_WATCH_KEY) === "true";
+  } catch {
+    return false;
   }
 }
 function getSaved() {
@@ -154,6 +162,11 @@ export function usePreferences() {
     getLocale,
     () => "en" as Locale,
   );
+  const enrollmentWatch = useSyncExternalStore(
+    subscribe,
+    getEnrollmentWatch,
+    () => false,
+  );
   const saved = useSyncExternalStore(subscribe, getSaved, () => EMPTY);
   const savedSections = useSyncExternalStore(
     subscribe,
@@ -173,6 +186,14 @@ export function usePreferences() {
       /* Storage may be disabled. */
     }
     document.documentElement.lang = value === "zh" ? "zh-CN" : "en";
+    window.dispatchEvent(new Event(EVENT));
+  }
+  function setEnrollmentWatch(value: boolean) {
+    try {
+      localStorage.setItem(ENROLLMENT_WATCH_KEY, String(value));
+    } catch {
+      return;
+    }
     window.dispatchEvent(new Event(EVENT));
   }
   function toggleSaved(value: CatalogCourse) {
@@ -371,6 +392,8 @@ export function usePreferences() {
   }
   return {
     locale,
+    enrollmentWatch,
+    setEnrollmentWatch,
     setLocale,
     saved,
     savedSections,
