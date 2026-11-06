@@ -15,7 +15,7 @@ import { useCourseDetails } from "@/hooks/use-course-details";
 import { useAvailabilityFresh } from "@/hooks/use-availability";
 import { withoutCourseAvailability } from "@/lib/catalog/availability";
 import type { CatalogCourse } from "@/lib/catalog/types";
-import { localizedTerm, text, type Locale } from "@/lib/i18n";
+import { localizedCampus, localizedTerm, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +38,8 @@ import { InstructorAvatar } from "@/components/people/instructor-avatar";
 import SectionsPanel from "./sections-panel";
 import { TranslateText } from "@/components/translation/translate-text";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
+import { EnrollmentWatchControl } from "./enrollment-watch-control";
+import type { EnrollmentWatchInterval } from "@/hooks/use-preferences";
 
 const EvaluationPanel = dynamic(
   () => import("@/components/evaluations/evaluation-panel"),
@@ -76,6 +78,31 @@ function useMobileViewport() {
     isMobileViewport,
     () => false,
   );
+}
+
+function localizedCareer(value: string, locale: Locale) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes("undergraduate"))
+    return text(locale, "Undergraduate", "本科生");
+  if (normalized.includes("graduate"))
+    return text(locale, "Graduate", "研究生");
+  if (normalized.includes("professional"))
+    return text(locale, "Professional", "专业课程");
+  if (normalized.includes("non-degree") || normalized.includes("nondegree"))
+    return text(locale, "Non-degree", "非学位课程");
+  return value;
+}
+
+function courseDetailEyeline(course: CatalogCourse, locale: Locale) {
+  const careers = (course.academicCareers ?? [course.academicCareer])
+    .filter(Boolean)
+    .map((career) => localizedCareer(career, locale));
+  return [
+    `${course.subject} ${course.catalogNumber}`,
+    localizedCampus(course.campusCode, locale) || course.campus,
+    ...careers,
+    localizedTerm(course.term, locale),
+  ].join(" · ");
 }
 
 function CoursePreview({
@@ -250,12 +277,18 @@ export function CourseCard({
   saved,
   onSave,
   enrollmentWatch,
+  enrollmentWatchInterval,
+  onEnrollmentWatchChange,
+  onEnrollmentWatchIntervalChange,
 }: {
   course: CatalogCourse;
   locale: Locale;
   saved: boolean;
   onSave: (course: CatalogCourse) => void;
   enrollmentWatch: boolean;
+  enrollmentWatchInterval: EnrollmentWatchInterval;
+  onEnrollmentWatchChange: (enabled: boolean) => void;
+  onEnrollmentWatchIntervalChange: (seconds: EnrollmentWatchInterval) => void;
 }) {
   const searchParams = useSearchParams();
   const isMobile = useMobileViewport();
@@ -284,6 +317,7 @@ export function CourseCard({
     course,
     isSelected,
     requestedTab === "sections" && enrollmentWatch,
+    enrollmentWatchInterval,
   );
   const loaded = detail ?? course;
   const fresh = useAvailabilityFresh(loaded);
@@ -495,6 +529,13 @@ export function CourseCard({
               >
                 {text(locale, "Refresh availability", "刷新选课状态")}
               </Button>
+              <EnrollmentWatchControl
+                enabled={enrollmentWatch}
+                intervalSeconds={enrollmentWatchInterval}
+                locale={locale}
+                onEnabledChange={onEnrollmentWatchChange}
+                onIntervalChange={onEnrollmentWatchIntervalChange}
+              />
             </div>
             {loading ? (
               <div className="inline-loading">
@@ -731,8 +772,7 @@ export function CourseCard({
             <DrawerHeader className="course-detail-header">
               <div>
                 <span className="course-detail-eyeline">
-                  {course.subject} {course.catalogNumber} ·{" "}
-                  {localizedTerm(course.term, locale)}
+                  {courseDetailEyeline(course, locale)}
                 </span>
                 <DrawerTitle>
                   {course.title || `${course.subject} ${course.catalogNumber}`}
@@ -794,8 +834,7 @@ export function CourseCard({
             <SheetHeader className="course-detail-header">
               <div>
                 <span className="course-detail-eyeline">
-                  {course.subject} {course.catalogNumber} ·{" "}
-                  {localizedTerm(course.term, locale)}
+                  {courseDetailEyeline(course, locale)}
                 </span>
                 <SheetTitle>
                   {course.title || `${course.subject} ${course.catalogNumber}`}

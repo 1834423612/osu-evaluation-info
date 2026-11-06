@@ -79,6 +79,9 @@ export function SavedCourses() {
     toggleSection,
     toggleInstructor,
     enrollmentWatch,
+    enrollmentWatchInterval,
+    setEnrollmentWatch,
+    setEnrollmentWatchInterval,
   } = usePreferences();
   const savedCount =
     saved.length + savedSections.length + savedInstructors.length;
@@ -143,6 +146,11 @@ export function SavedCourses() {
                       locale={locale}
                       saved
                       enrollmentWatch={enrollmentWatch}
+                      enrollmentWatchInterval={enrollmentWatchInterval}
+                      onEnrollmentWatchChange={setEnrollmentWatch}
+                      onEnrollmentWatchIntervalChange={
+                        setEnrollmentWatchInterval
+                      }
                       onSave={toggleSaved}
                     />
                   ))}

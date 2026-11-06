@@ -1,6 +1,7 @@
 import type { CatalogCourse, CatalogSection } from "./types";
 
 export const AVAILABILITY_TTL_MS = 30_000;
+export const MIN_AVAILABILITY_POLL_MS = 10_000;
 export const UNAVAILABLE_ENROLLMENT = {
   enrollmentStatus: "",
   enrollmentTotal: null,

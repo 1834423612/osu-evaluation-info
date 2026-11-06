@@ -1,5 +1,6 @@
 import {
   AVAILABILITY_TTL_MS,
+  MIN_AVAILABILITY_POLL_MS,
   isAvailabilityFresh,
   withoutCourseAvailability,
 } from "./availability.ts";
@@ -23,6 +24,7 @@ type RefreshOptions = {
   >;
   fetcher?: typeof fetch;
   poll?: boolean;
+  intervalMs?: number;
   every?: typeof setInterval;
   cancelEvery?: typeof clearInterval;
 };
@@ -36,6 +38,10 @@ export function createDetailRefresh(options: RefreshOptions) {
   let current = withoutCourseAvailability(options.course);
   let timer: ReturnType<typeof setInterval> | undefined;
   let polling = options.poll !== false;
+  let intervalMs = Math.max(
+    MIN_AVAILABILITY_POLL_MS,
+    options.intervalMs ?? AVAILABILITY_TTL_MS,
+  );
   const visible = () => options.document.visibilityState !== "hidden";
   const clear = (loading: boolean, error = false) => {
     current = withoutCourseAvailability(current);
@@ -90,20 +96,31 @@ export function createDetailRefresh(options: RefreshOptions) {
   const onFocus = () => {
     if (polling) void refresh();
   };
-  function setPolling(enabled: boolean) {
-    if (disposed || polling === enabled) return;
+  function setPolling(enabled: boolean, requestedIntervalMs = intervalMs) {
+    if (disposed) return;
+    const nextInterval = Math.max(
+      MIN_AVAILABILITY_POLL_MS,
+      requestedIntervalMs,
+    );
+    const wasPolling = polling;
+    const intervalChanged = intervalMs !== nextInterval;
+    if (wasPolling === enabled && !intervalChanged) return;
     polling = enabled;
+    intervalMs = nextInterval;
     if (!started) return;
-    if (enabled) {
+    if (!wasPolling && enabled) {
       options.window.addEventListener("focus", onFocus);
-      timer = (options.every ?? setInterval)(onFocus, AVAILABILITY_TTL_MS);
+      timer = (options.every ?? setInterval)(onFocus, intervalMs);
       void refresh();
-    } else {
+    } else if (wasPolling && !enabled) {
       options.window.removeEventListener("focus", onFocus);
       if (timer !== undefined) {
         (options.cancelEvery ?? clearInterval)(timer);
         timer = undefined;
       }
+    } else if (enabled && intervalChanged) {
+      if (timer !== undefined) (options.cancelEvery ?? clearInterval)(timer);
+      timer = (options.every ?? setInterval)(onFocus, intervalMs);
     }
   }
   return {
@@ -115,7 +132,7 @@ export function createDetailRefresh(options: RefreshOptions) {
       options.document.addEventListener("visibilitychange", onVisibility);
       if (polling) {
         options.window.addEventListener("focus", onFocus);
-        timer = (options.every ?? setInterval)(onFocus, AVAILABILITY_TTL_MS);
+        timer = (options.every ?? setInterval)(onFocus, intervalMs);
       }
       queueMicrotask(() => {
         void refresh();

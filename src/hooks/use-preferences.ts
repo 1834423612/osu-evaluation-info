@@ -14,6 +14,8 @@ let storageMigrated = false;
 
 const LOCALE_KEY = "course-atlas:locale:v1";
 const ENROLLMENT_WATCH_KEY = "course-atlas:enrollment-watch:v1";
+const ENROLLMENT_WATCH_INTERVAL_KEY =
+  "course-atlas:enrollment-watch-interval:v1";
 const SAVED_KEY = "course-atlas:saved:v1";
 const SAVED_SECTIONS_KEY = "course-atlas:saved-sections:v1";
 const SAVED_INSTRUCTORS_KEY = "course-atlas:saved-instructors:v1";
@@ -22,6 +24,9 @@ const TOAST_EVENT = "course-atlas:toast";
 const EMPTY: CatalogCourse[] = [];
 const EMPTY_SECTIONS: SavedSection[] = [];
 const EMPTY_INSTRUCTORS: SavedInstructor[] = [];
+export const ENROLLMENT_WATCH_INTERVALS = [30, 20, 15, 10] as const;
+export type EnrollmentWatchInterval =
+  (typeof ENROLLMENT_WATCH_INTERVALS)[number];
 export type SavedSection = {
   id: string;
   courseId: string;
@@ -72,6 +77,18 @@ function getEnrollmentWatch() {
     return localStorage.getItem(ENROLLMENT_WATCH_KEY) === "true";
   } catch {
     return false;
+  }
+}
+function getEnrollmentWatchInterval(): EnrollmentWatchInterval {
+  try {
+    const stored = Number(localStorage.getItem(ENROLLMENT_WATCH_INTERVAL_KEY));
+    return ENROLLMENT_WATCH_INTERVALS.includes(
+      stored as EnrollmentWatchInterval,
+    )
+      ? (stored as EnrollmentWatchInterval)
+      : 30;
+  } catch {
+    return 30;
   }
 }
 function getSaved() {
@@ -167,6 +184,11 @@ export function usePreferences() {
     getEnrollmentWatch,
     () => false,
   );
+  const enrollmentWatchInterval = useSyncExternalStore(
+    subscribe,
+    getEnrollmentWatchInterval,
+    () => 30 as EnrollmentWatchInterval,
+  );
   const saved = useSyncExternalStore(subscribe, getSaved, () => EMPTY);
   const savedSections = useSyncExternalStore(
     subscribe,
@@ -191,6 +213,15 @@ export function usePreferences() {
   function setEnrollmentWatch(value: boolean) {
     try {
       localStorage.setItem(ENROLLMENT_WATCH_KEY, String(value));
+    } catch {
+      return;
+    }
+    window.dispatchEvent(new Event(EVENT));
+  }
+  function setEnrollmentWatchInterval(value: EnrollmentWatchInterval) {
+    if (!ENROLLMENT_WATCH_INTERVALS.includes(value)) return;
+    try {
+      localStorage.setItem(ENROLLMENT_WATCH_INTERVAL_KEY, String(value));
     } catch {
       return;
     }
@@ -393,7 +424,9 @@ export function usePreferences() {
   return {
     locale,
     enrollmentWatch,
+    enrollmentWatchInterval,
     setEnrollmentWatch,
+    setEnrollmentWatchInterval,
     setLocale,
     saved,
     savedSections,

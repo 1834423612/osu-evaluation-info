@@ -10,6 +10,7 @@ export function useCourseDetails(
   course: CatalogCourse,
   open: boolean,
   poll: boolean,
+  pollIntervalSeconds: number,
 ) {
   const [state, setState] = useState<CourseDetailState>({
     course: null,
@@ -18,7 +19,9 @@ export function useCourseDetails(
     error: false,
   });
   const refreshRef = useRef<(() => Promise<void>) | null>(null);
-  const pollingRef = useRef<((enabled: boolean) => void) | null>(null);
+  const pollingRef = useRef<
+    ((enabled: boolean, intervalMs: number) => void) | null
+  >(null);
   const { subject, catalogNumber, termCode, campusCode, id } = course;
   const courseRef = useRef(course);
   useEffect(() => {
@@ -50,8 +53,8 @@ export function useCourseDetails(
     };
   }, [open, subject, catalogNumber, termCode, campusCode, id]);
   useEffect(() => {
-    pollingRef.current?.(poll);
-  }, [poll]);
+    pollingRef.current?.(poll, pollIntervalSeconds * 1000);
+  }, [poll, pollIntervalSeconds]);
   const refresh = useCallback(() => refreshRef.current?.(), []);
   return { ...state, refresh };
 }

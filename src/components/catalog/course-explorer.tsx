@@ -25,6 +25,7 @@ import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { FilterPanel } from "./filter-panel";
 import { CourseCard } from "./course-card";
+import { EnrollmentWatchControl } from "./enrollment-watch-control";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -95,8 +96,15 @@ export function CourseExplorer() {
     params.delete("focusSection");
     return params.toString();
   })();
-  const { locale, saved, toggleSaved, enrollmentWatch, setEnrollmentWatch } =
-    usePreferences();
+  const {
+    locale,
+    saved,
+    toggleSaved,
+    enrollmentWatch,
+    enrollmentWatchInterval,
+    setEnrollmentWatch,
+    setEnrollmentWatchInterval,
+  } = usePreferences();
   const [result, setResult] = useState<CatalogResponse | null>(null);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -506,35 +514,13 @@ export function CourseExplorer() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <label className="enrollment-watch-control">
-                  <input
-                    type="checkbox"
-                    role="switch"
-                    data-analytics-action="enrollment_watch_toggle"
-                    data-analytics-label="enrollment_watch"
-                    checked={enrollmentWatch}
-                    onChange={(event) =>
-                      setEnrollmentWatch(event.currentTarget.checked)
-                    }
-                    aria-describedby="enrollment-watch-hint"
-                  />
-                  <span className="enrollment-watch-copy">
-                    <strong>{text(locale, "Seat watch", "抢课模式")}</strong>
-                    <small id="enrollment-watch-hint">
-                      {enrollmentWatch
-                        ? text(
-                            locale,
-                            "Every 30 sec while details are open",
-                            "详情打开时每 30 秒并在返回时刷新",
-                          )
-                        : text(
-                            locale,
-                            "Checks once when details open",
-                            "每次打开班次详情时查询一次",
-                          )}
-                    </small>
-                  </span>
-                </label>
+                <EnrollmentWatchControl
+                  enabled={enrollmentWatch}
+                  intervalSeconds={enrollmentWatchInterval}
+                  locale={locale}
+                  onEnabledChange={setEnrollmentWatch}
+                  onIntervalChange={setEnrollmentWatchInterval}
+                />
               </div>
             </div>
             {activeFilters.length ? (
@@ -617,6 +603,9 @@ export function CourseExplorer() {
                     locale={locale}
                     saved={saved.some((item) => item.id === course.id)}
                     enrollmentWatch={enrollmentWatch}
+                    enrollmentWatchInterval={enrollmentWatchInterval}
+                    onEnrollmentWatchChange={setEnrollmentWatch}
+                    onEnrollmentWatchIntervalChange={setEnrollmentWatchInterval}
                     onSave={(item) => setStorageError(!toggleSaved(item))}
                   />
                 ))}

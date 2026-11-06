@@ -16,11 +16,13 @@ function course() {
     ],
   };
 }
-function setup(fetcher, poll = true) {
+function setup(fetcher, poll = true, intervalMs = 30000) {
   const document = new EventTarget();
   document.visibilityState = "visible";
   const window = new EventTarget();
   const updates = [];
+  const intervals = [];
+  const cancelledIntervals = [];
   let tick;
   let cancelled = false;
   const engine = createDetailRefresh({
@@ -31,12 +33,15 @@ function setup(fetcher, poll = true) {
     document,
     fetcher,
     poll,
+    intervalMs,
     every(callback, interval) {
-      assert.equal(interval, 30000);
+      intervals.push(interval);
       tick = callback;
-      return 1;
+      return interval;
     },
-    cancelEvery() {
+    cancelEvery(interval) {
+      assert.ok(interval >= 10000);
+      cancelledIntervals.push(interval);
       cancelled = true;
     },
   });
@@ -45,6 +50,8 @@ function setup(fetcher, poll = true) {
     document,
     window,
     updates,
+    intervals,
+    cancelledIntervals,
     tick: () => tick?.(),
     get cancelled() {
       return cancelled;
@@ -215,6 +222,30 @@ describe("visible course detail refresh", () => {
     env.tick();
     await flush();
     assert.equal(calls, 3);
+    env.engine.stop();
+  });
+  it("supports a configurable interval with a ten-second minimum", async () => {
+    let calls = 0;
+    const env = setup(
+      async () => {
+        calls++;
+        return response();
+      },
+      false,
+      8_000,
+    );
+    env.engine.start();
+    await flush();
+    env.engine.setPolling(true, 8_000);
+    await flush();
+    assert.equal(calls, 2);
+    env.engine.setPolling(true, 15_000);
+    await flush();
+    assert.deepEqual(env.intervals, [10_000, 15_000]);
+    assert.deepEqual(env.cancelledIntervals, [10_000]);
+    assert.equal(calls, 2);
+    env.engine.setPolling(false, 15_000);
+    assert.deepEqual(env.cancelledIntervals, [10_000, 15_000]);
     env.engine.stop();
   });
 });
