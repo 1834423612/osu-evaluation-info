@@ -28,8 +28,14 @@ try {
   await client.query(
     "CREATE TABLE IF NOT EXISTS osu_catalog.schema_versions (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())",
   );
-  const migrations = [{ version: 1, file: "../../db/schemas/catalog.sql" }];
-  for (const migration of migrations) {
+  const migrations = [
+    {
+      version: 2,
+      file: "../../db/migrations/catalog/002-versioned-snapshots.sql",
+    },
+    { version: 1, file: "../../db/schemas/catalog.sql" },
+  ];
+  for (const migration of migrations.sort((a, b) => a.version - b.version)) {
     if (
       (
         await client.query(

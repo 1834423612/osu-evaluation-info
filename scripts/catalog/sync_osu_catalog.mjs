@@ -9,6 +9,8 @@ import {
   withPageTransaction,
 } from "./database.mjs";
 
+import { publishCatalogSnapshot } from "./snapshots.mjs";
+
 loadCatalogEnvironment();
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
@@ -99,7 +101,7 @@ try {
   const termCodes = terms.map((t) => t.strm).sort();
   if (!args.includes("--new-run")) {
     const previous = await client.query(
-      "SELECT id FROM osu_catalog.sync_runs WHERE status IN ('running','failed') AND terms = $1::jsonb ORDER BY started_at DESC LIMIT 1",
+      "SELECT r.id FROM osu_catalog.sync_runs r JOIN osu_catalog.snapshot_versions v ON v.run_id=r.id WHERE v.published_at IS NULL AND r.status IN ('running','failed') AND r.terms = $1::jsonb ORDER BY r.started_at DESC LIMIT 1",
       [JSON.stringify(termCodes)],
     );
     runId = previous.rows[0]?.id;
@@ -112,10 +114,16 @@ try {
     console.log(`Resuming run ${runId}`);
   } else {
     runId = randomUUID();
-    await client.query(
-      "INSERT INTO osu_catalog.sync_runs (id,status,terms) VALUES ($1,'running',$2::jsonb)",
-      [runId, JSON.stringify(termCodes)],
-    );
+    await withPageTransaction(client, async () => {
+      await client.query(
+        "INSERT INTO osu_catalog.sync_runs (id,status,terms) VALUES ($1,'running',$2::jsonb)",
+        [runId, JSON.stringify(termCodes)],
+      );
+      await client.query(
+        "INSERT INTO osu_catalog.snapshot_versions(run_id) VALUES($1)",
+        [runId],
+      );
+    });
     console.log(`Started run ${runId}`);
   }
 
@@ -290,15 +298,15 @@ try {
       const sectionsJson = JSON.stringify(sections);
       await withPageTransaction(client, async () => {
         await client.query(
-          `INSERT INTO osu_catalog.courses (term_code,course_id,offering_number,campus_code,subject,catalog_number,title,description,data,fetched_at,last_seen_run)
+          `INSERT INTO osu_catalog.course_snapshots (term_code,course_id,offering_number,campus_code,subject,catalog_number,title,description,data,fetched_at,last_seen_run)
           SELECT x.*, $2::timestamptz, $3::uuid FROM jsonb_to_recordset($1::jsonb) AS x(term_code text,course_id text,offering_number text,campus_code text,subject text,catalog_number text,title text,description text,data jsonb)
-          ON CONFLICT (term_code,course_id,offering_number,campus_code) DO UPDATE SET subject=EXCLUDED.subject,catalog_number=EXCLUDED.catalog_number,title=EXCLUDED.title,description=EXCLUDED.description,data=EXCLUDED.data,fetched_at=EXCLUDED.fetched_at,last_seen_run=EXCLUDED.last_seen_run`,
+          ON CONFLICT (last_seen_run,term_code,course_id,offering_number,campus_code) DO UPDATE SET subject=EXCLUDED.subject,catalog_number=EXCLUDED.catalog_number,title=EXCLUDED.title,description=EXCLUDED.description,data=EXCLUDED.data,fetched_at=EXCLUDED.fetched_at,last_seen_run=EXCLUDED.last_seen_run`,
           [coursesJson, fetchedAt, runId],
         );
         await client.query(
-          `INSERT INTO osu_catalog.sections (term_code,class_number,course_id,offering_number,campus_code,subject,catalog_number,data,fetched_at,last_seen_run)
+          `INSERT INTO osu_catalog.section_snapshots (term_code,class_number,course_id,offering_number,campus_code,subject,catalog_number,data,fetched_at,last_seen_run)
           SELECT x.*, $2::timestamptz, $3::uuid FROM jsonb_to_recordset($1::jsonb) AS x(term_code text,class_number text,course_id text,offering_number text,campus_code text,subject text,catalog_number text,data jsonb)
-          ON CONFLICT (term_code,class_number) DO UPDATE SET course_id=EXCLUDED.course_id,offering_number=EXCLUDED.offering_number,campus_code=EXCLUDED.campus_code,subject=EXCLUDED.subject,catalog_number=EXCLUDED.catalog_number,data=EXCLUDED.data,fetched_at=EXCLUDED.fetched_at,last_seen_run=EXCLUDED.last_seen_run`,
+          ON CONFLICT (last_seen_run,term_code,class_number) DO UPDATE SET course_id=EXCLUDED.course_id,offering_number=EXCLUDED.offering_number,campus_code=EXCLUDED.campus_code,subject=EXCLUDED.subject,catalog_number=EXCLUDED.catalog_number,data=EXCLUDED.data,fetched_at=EXCLUDED.fetched_at,last_seen_run=EXCLUDED.last_seen_run`,
           [sectionsJson, fetchedAt, runId],
         );
         await client.query(
@@ -323,7 +331,7 @@ try {
   const count = Number(
     (
       await client.query(
-        "SELECT count(*) AS n FROM osu_catalog.sections WHERE last_seen_run=$1",
+        "SELECT count(*) AS n FROM osu_catalog.section_snapshots WHERE last_seen_run=$1",
         [runId],
       )
     ).rows[0].n,
@@ -357,10 +365,7 @@ try {
       throw new Error(
         `Coverage check failed: official ${expectedTotal}, partition expectation ${audit.expected}, fetched ${audit.fetched}, mismatched partitions ${audit.mismatched}. Start a new run if the official index changed.`,
       );
-    await client.query(
-      "UPDATE osu_catalog.sync_runs SET status='complete',completed_at=now(),fetched_hits=$2,distinct_sections=$3 WHERE id=$1",
-      [runId, audit.fetched, count],
-    );
+    await publishCatalogSnapshot(client, runId, expectedTotal, count);
     console.log(
       `Complete: ${audit.fetched} official hits reconciled exactly, ${count} distinct sections (${audit.fetched - count} duplicate hits); run ${runId}`,
     );

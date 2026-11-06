@@ -270,26 +270,16 @@ def ensure_schema(conn) -> None:
 
 
 def catalog_rows(conn, term_window: int) -> tuple[list[dict[str, Any]], list[str]]:
-    if not conn.execute("SELECT to_regclass('osu_catalog.sections') IS NOT NULL").fetchone()[0]:
+    if not conn.execute("SELECT to_regclass('osu_catalog.snapshot_versions') IS NOT NULL").fetchone()[0]:
         return [], []
-    # Rows are replaced in place by catalog sync. A newer incomplete run could
-    # already have replaced part of a completed term: never use that partial
-    # snapshot to invalidate previously confirmed evidence.
+    # Published generations remain immutable during new or failed refreshes.
     selected = conn.execute(
-        """WITH completed_term AS (
-                 SELECT r.id AS run_id, r.completed_at, term.code AS term_code
-                 FROM osu_catalog.sync_runs r
-                 CROSS JOIN LATERAL jsonb_array_elements_text(r.terms) term(code)
-                 WHERE r.status='complete' AND r.completed_at IS NOT NULL
-             ), latest AS (
-                 SELECT DISTINCT ON (term_code) * FROM completed_term
-                 ORDER BY term_code, completed_at DESC
-             ) SELECT t.term_code,t.run_id FROM latest t
-             WHERE NOT EXISTS (
-                 SELECT 1 FROM osu_catalog.sync_runs newer
-                 WHERE newer.status <> 'complete' AND newer.started_at > t.completed_at
-                   AND newer.terms ? t.term_code
-             ) ORDER BY t.term_code DESC LIMIT %s""", (term_window,)
+        """SELECT DISTINCT ON (term.code) term.code, v.run_id
+             FROM osu_catalog.snapshot_versions v
+             JOIN osu_catalog.sync_runs r ON r.id=v.run_id
+             CROSS JOIN LATERAL jsonb_array_elements_text(r.terms) term(code)
+             WHERE v.published_at IS NOT NULL AND r.status='complete'
+             ORDER BY term.code DESC,v.published_at DESC LIMIT %s""", (term_window,)
     ).fetchall()
     if not selected:
         return [], []
@@ -302,7 +292,7 @@ def catalog_rows(conn, term_window: int) -> tuple[list[dict[str, Any]], list[str
                     instructor->>'email' AS email,
                     instructor->>'displayName' AS display_name
              FROM selected_terms t
-             JOIN osu_catalog.sections s ON s.term_code = t.term_code AND s.last_seen_run = t.run_id
+             JOIN osu_catalog.section_snapshots s ON s.term_code = t.term_code AND s.last_seen_run = t.run_id
              CROSS JOIN LATERAL jsonb_array_elements(
                  CASE WHEN jsonb_typeof(s.data->'meetings') = 'array'
                       THEN s.data->'meetings' ELSE '[]'::jsonb END
@@ -322,7 +312,7 @@ def catalog_rows(conn, term_window: int) -> tuple[list[dict[str, Any]], list[str
 
 def retained_catalog_rows(conn, refreshed_terms: list[str]) -> list[dict[str, Any]]:
     """Preserve the last mapping evidence while an in-place catalog refresh is partial."""
-    if not conn.execute("SELECT to_regclass('osu_catalog.sections') IS NOT NULL").fetchone()[0]:
+    if not conn.execute("SELECT to_regclass('osu_catalog.snapshot_versions') IS NOT NULL").fetchone()[0]:
         return []
     return dict_rows(conn.execute(
         """SELECT ic.latest_term AS term_code,ic.source_record_key,ic.campus_code,ic.subject,

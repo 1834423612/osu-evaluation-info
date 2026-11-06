@@ -1,4 +1,8 @@
 import "server-only";
+import {
+  FIND_CATALOG_SNAPSHOT_SQL,
+  LATEST_CATALOG_TERM_SQL,
+} from "./snapshot-policy";
 import type { PoolClient } from "pg";
 import { getDatabasePool, isDatabaseConfigured } from "@/lib/db";
 import {
@@ -46,30 +50,21 @@ export function canUseCatalogMirror(input: CatalogSearch) {
 type CatalogConnection = PoolClient;
 
 async function latestEligibleTerm(connection: CatalogConnection) {
-  const result = await connection.query<{ term_code: string }>(`
-    SELECT available.term_code
-    FROM osu_catalog.sync_runs r
-    CROSS JOIN LATERAL jsonb_array_elements_text(r.terms) AS available(term_code)
-    WHERE r.status='complete' AND r.completed_at IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM osu_catalog.sync_runs newer
-        WHERE newer.started_at>r.started_at AND newer.terms ? available.term_code
-          AND newer.status<>'complete')
-    ORDER BY available.term_code DESC,r.completed_at DESC LIMIT 1`);
+  const result = await connection.query<{ term_code: string }>(
+    LATEST_CATALOG_TERM_SQL,
+  );
   return result.rows[0]?.term_code ?? null;
 }
 
-async function findSnapshot(connection: CatalogConnection, term: string) {
-  const result = await connection.query<Snapshot>(
-    `
-    SELECT r.id,r.completed_at,
-      ARRAY(SELECT jsonb_array_elements_text(r.terms)) AS terms
-    FROM osu_catalog.sync_runs r
-    WHERE r.status='complete' AND r.terms ? $1 AND r.completed_at IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM osu_catalog.sync_runs newer
-        WHERE newer.started_at>r.started_at AND newer.terms ? $1 AND newer.status<>'complete')
-    ORDER BY r.completed_at DESC LIMIT 1`,
-    [term],
-  );
+async function findSnapshot(
+  connection: CatalogConnection,
+  term: string,
+  run?: string,
+) {
+  const result = await connection.query<Snapshot>(FIND_CATALOG_SNAPSHOT_SQL, [
+    term,
+    run ?? null,
+  ]);
   return result.rows[0] ?? null;
 }
 
@@ -124,7 +119,7 @@ export async function searchCatalogMirror(
       await connection.query("COMMIT");
       return null;
     }
-    const snapshot = await findSnapshot(connection, term);
+    const snapshot = await findSnapshot(connection, term, cursor?.run);
     if (!snapshot) {
       await connection.query("COMMIT");
       return null;
@@ -163,7 +158,7 @@ export async function searchCatalogMirror(
       WITH grouped AS (
         SELECT subject,catalog_number,campus_code,count(*)::int AS section_count,
           COALESCE(lpad(substring(catalog_number from '^[0-9]+'),8,'0') || regexp_replace(catalog_number,'^[0-9]+',''),catalog_number) AS number_key
-        FROM osu_catalog.sections
+        FROM osu_catalog.section_snapshots
         WHERE last_seen_run=$1::uuid AND term_code=$2 AND ($3='' OR campus_code=$3) AND ($4='' OR subject=$4)
         GROUP BY subject,catalog_number,campus_code
       ), ordered AS (
@@ -203,13 +198,13 @@ export async function searchCatalogMirror(
         WITH requested AS (SELECT * FROM unnest($3::text[],$4::text[],$5::text[]) AS r(subject,catalog_number,campus_code))
         SELECT r.*,
           COALESCE((SELECT json_agg(c.data ORDER BY c.course_id,c.offering_number)
-            FROM osu_catalog.courses c WHERE c.last_seen_run=$1::uuid AND c.term_code=$2
+            FROM osu_catalog.course_snapshots c WHERE c.last_seen_run=$1::uuid AND c.term_code=$2
               AND c.subject=r.subject AND c.catalog_number=r.catalog_number
-              AND (c.campus_code=r.campus_code OR NOT EXISTS(SELECT 1 FROM osu_catalog.courses exact
+              AND (c.campus_code=r.campus_code OR NOT EXISTS(SELECT 1 FROM osu_catalog.course_snapshots exact
                 WHERE exact.last_seen_run=$1::uuid AND exact.term_code=$2 AND exact.subject=r.subject
                   AND exact.catalog_number=r.catalog_number AND exact.campus_code=r.campus_code))),'[]'::json) AS course_data,
           COALESCE((SELECT json_agg(s.data ORDER BY s.class_number)
-            FROM osu_catalog.sections s WHERE s.last_seen_run=$1::uuid AND s.term_code=$2
+            FROM osu_catalog.section_snapshots s WHERE s.last_seen_run=$1::uuid AND s.term_code=$2
               AND s.subject=r.subject AND s.catalog_number=r.catalog_number AND s.campus_code=r.campus_code),'[]'::json) AS section_data
         FROM requested r`,
         [
@@ -301,7 +296,7 @@ async function getMirrorTerms(
   }>(
     `
     SELECT term_code,MAX(NULLIF(data->>'term','')) AS label
-    FROM osu_catalog.courses WHERE last_seen_run=$1::uuid AND term_code=ANY($2::text[])
+    FROM osu_catalog.course_snapshots WHERE last_seen_run=$1::uuid AND term_code=ANY($2::text[])
     GROUP BY term_code`,
     [snapshot.id, snapshot.terms],
   );
@@ -324,14 +319,14 @@ async function getMirrorFacets(
   const [subjects, campuses] = await Promise.all([
     connection.query<{ value: string; count: number }>(
       `
-      SELECT subject AS value,count(*)::int AS count FROM osu_catalog.sections
+      SELECT subject AS value,count(*)::int AS count FROM osu_catalog.section_snapshots
       WHERE last_seen_run=$1::uuid AND term_code=$2 GROUP BY subject ORDER BY subject`,
       [run, term],
     ),
     connection.query<{ value: string; label: string | null; count: number }>(
       `
       SELECT campus_code AS value,MAX(NULLIF(data->>'campus','')) AS label,count(*)::int AS count
-      FROM osu_catalog.sections WHERE last_seen_run=$1::uuid AND term_code=$2
+      FROM osu_catalog.section_snapshots WHERE last_seen_run=$1::uuid AND term_code=$2
       GROUP BY campus_code ORDER BY campus_code`,
       [run, term],
     ),
@@ -393,16 +388,16 @@ export async function getCatalogCourseMirror(input: {
       `
       SELECT selected.campus_code,
         COALESCE((SELECT json_agg(c.data ORDER BY c.course_id,c.offering_number)
-          FROM osu_catalog.courses c WHERE c.last_seen_run=$1::uuid AND c.term_code=$2
+          FROM osu_catalog.course_snapshots c WHERE c.last_seen_run=$1::uuid AND c.term_code=$2
             AND c.subject=$3 AND c.catalog_number=$4
             AND (c.campus_code=selected.campus_code OR NOT EXISTS(
-              SELECT 1 FROM osu_catalog.courses exact WHERE exact.last_seen_run=$1::uuid
+              SELECT 1 FROM osu_catalog.course_snapshots exact WHERE exact.last_seen_run=$1::uuid
                 AND exact.term_code=$2 AND exact.subject=$3 AND exact.catalog_number=$4
                 AND exact.campus_code=selected.campus_code))),'[]'::json) AS course_data,
         COALESCE((SELECT json_agg(s.data ORDER BY s.class_number)
-          FROM osu_catalog.sections s WHERE s.last_seen_run=$1::uuid AND s.term_code=$2
+          FROM osu_catalog.section_snapshots s WHERE s.last_seen_run=$1::uuid AND s.term_code=$2
             AND s.subject=$3 AND s.catalog_number=$4 AND s.campus_code=selected.campus_code),'[]'::json) AS section_data
-      FROM (SELECT DISTINCT campus_code FROM osu_catalog.sections
+      FROM (SELECT DISTINCT campus_code FROM osu_catalog.section_snapshots
         WHERE last_seen_run=$1::uuid AND term_code=$2 AND subject=$3 AND catalog_number=$4
           AND ($5='ALL' OR campus_code=$5)) selected`,
       [
