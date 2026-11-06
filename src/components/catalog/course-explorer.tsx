@@ -21,6 +21,7 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMascot } from "@/components/brand/brand-mascot";
+import { SceneMascot } from "@/components/brand/scene-mascot";
 import { FilterPanel } from "./filter-panel";
 import { CourseCard } from "./course-card";
 import { Button } from "@/components/ui/button";
@@ -561,6 +562,12 @@ export function CourseExplorer() {
                 aria-label={text(locale, "Loading courses", "正在加载课程")}
                 aria-busy="true"
               >
+                <div className="mascot-loading" role="status">
+                  <BrandMascot expression="tired-typing" size={64} eager />
+                  <span>
+                    {text(locale, "Looking up your courses…", "正在查找课程…")}
+                  </span>
+                </div>
                 {[1, 2, 3].map((i) => (
                   <div className="course-skeleton" key={i}>
                     <Skeleton className="h-4 w-24" />
@@ -602,7 +609,7 @@ export function CourseExplorer() {
             ) : null}
             {error ? (
               <div className="error-state" role="alert">
-                <CircleAlert size={20} />
+                <SceneMascot scene="error" size={64} />
                 <div>
                   <strong>
                     {text(

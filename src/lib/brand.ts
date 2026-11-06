@@ -9,6 +9,12 @@ export const brand = {
   assets: {
     portrait: "/brand/mascot/portrait.webp",
     mascot: "/brand/mascot/full.webp",
+    expressions: {
+      salute: "/brand/mascot/expressions/salute.webp",
+      "belly-laugh": "/brand/mascot/expressions/belly-laugh.webp",
+      "pointing-laugh": "/brand/mascot/expressions/pointing-laugh.webp",
+      "tired-typing": "/brand/mascot/expressions/tired-typing.webp",
+    },
     social: "/brand/social/og-image.png",
     icons: {
       app192: "/brand/icons/app-192.png",
@@ -18,3 +24,6 @@ export const brand = {
     },
   },
 } as const;
+
+export type MascotExpression =
+  "thinking" | keyof typeof brand.assets.expressions;

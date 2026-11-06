@@ -1,15 +1,15 @@
 "use client";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
-import { BrandMascot } from "@/components/brand/brand-mascot";
+import { SceneMascot } from "@/components/brand/scene-mascot";
 import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 export default function ErrorPage({
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   const { locale } = usePreferences();
   return (
@@ -17,7 +17,7 @@ export default function ErrorPage({
       <AppHeader />
       <main className="saved-shell">
         <div className="empty-results">
-          <BrandMascot />
+          <SceneMascot scene="error" />
           <h1 className="status-heading">
             {text(
               locale,
@@ -32,7 +32,7 @@ export default function ErrorPage({
               "稍等片刻，再试一次。",
             )}
           </p>
-          <Button onClick={reset}>{text(locale, "Try again", "重试")}</Button>
+          <Button onClick={retry}>{text(locale, "Try again", "重试")}</Button>
         </div>
       </main>
       <AppFooter />

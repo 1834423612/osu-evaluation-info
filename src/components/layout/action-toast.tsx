@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, BookmarkCheck, RotateCcw, X } from "lucide-react";
+import { Bookmark, RotateCcw, X } from "lucide-react";
+import { BrandMascot } from "@/components/brand/brand-mascot";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 
@@ -49,7 +50,7 @@ export function ActionToast() {
       style={{ pointerEvents: "auto" }}
     >
       {toast.added ? (
-        <BookmarkCheck size={17} aria-hidden="true" />
+        <BrandMascot expression="belly-laugh" size={32} eager />
       ) : (
         <Bookmark size={17} aria-hidden="true" />
       )}

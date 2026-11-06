@@ -319,7 +319,7 @@ export function SavedCourses() {
           </Tabs>
         ) : (
           <div className="empty-results">
-            <BrandMascot />
+            <BrandMascot expression="salute" size={136} />
             <h2>
               {text(locale, "Keep the courses you like", "收藏感兴趣的课程")}
             </h2>
