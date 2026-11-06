@@ -85,6 +85,7 @@ function FilterFacet({
 
   return (
     <fieldset
+      data-filter-facet={facet.slug}
       className={
         searchable
           ? "filter-field filter-chip-field searchable-filter"
@@ -118,67 +119,71 @@ function FilterFacet({
         </label>
       ) : null}
       <div
-        className="filter-chip-list"
+        className="filter-option-group"
         role="group"
         aria-labelledby={`${id}-label`}
       >
-        {facet.slug === "campus" ? (
-          <Button
-            type="button"
-            variant={selected === "all" ? "default" : "outline"}
-            size="sm"
-            aria-pressed={selected === "all"}
-            className="filter-chip"
-            data-analytics-action="filter_option"
-            data-analytics-label={facet.slug}
-            data-analytics-value="all"
-            onClick={() => onChange(facet.slug, "all")}
-          >
-            {text(locale, "All campuses", "全部校区")}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant={!selected ? "default" : "outline"}
-            size="sm"
-            aria-pressed={!selected}
-            className="filter-chip"
-            data-analytics-action="filter_option"
-            data-analytics-label={facet.slug}
-            data-analytics-value="all"
-            onClick={() => onChange(facet.slug, "")}
-          >
-            {text(locale, "All", "全部")}
-          </Button>
-        )}
-        {matchingItems.map((item) => (
-          <Button
-            key={item.value}
-            type="button"
-            variant={selected === item.value ? "default" : "outline"}
-            size="sm"
-            aria-pressed={selected === item.value}
-            className="filter-chip"
-            data-analytics-action="filter_option"
-            data-analytics-label={facet.slug}
-            data-analytics-value={item.value}
-            onClick={() =>
-              onChange(facet.slug, selected === item.value ? "" : item.value)
-            }
-          >
-            <span>{item.label}</span>
-            {item.count > 0 ? (
-              <span className="filter-chip-count">
-                {item.count.toLocaleString()}
-              </span>
-            ) : null}
-          </Button>
-        ))}
-        {!matchingItems.length ? (
-          <span className="filter-no-matches">
-            {text(locale, "No matches", "没有匹配项")}
-          </span>
-        ) : null}
+        <div className="filter-all-option">
+          {facet.slug === "campus" ? (
+            <Button
+              type="button"
+              variant={selected === "all" ? "default" : "outline"}
+              size="sm"
+              aria-pressed={selected === "all"}
+              className="filter-chip"
+              data-analytics-action="filter_option"
+              data-analytics-label={facet.slug}
+              data-analytics-value="all"
+              onClick={() => onChange(facet.slug, "all")}
+            >
+              {text(locale, "All campuses", "全部校区")}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant={!selected ? "default" : "outline"}
+              size="sm"
+              aria-pressed={!selected}
+              className="filter-chip"
+              data-analytics-action="filter_option"
+              data-analytics-label={facet.slug}
+              data-analytics-value="all"
+              onClick={() => onChange(facet.slug, "")}
+            >
+              {text(locale, "All", "全部")}
+            </Button>
+          )}
+        </div>
+        <div className="filter-chip-list">
+          {matchingItems.map((item) => (
+            <Button
+              key={item.value}
+              type="button"
+              variant={selected === item.value ? "default" : "outline"}
+              size="sm"
+              aria-pressed={selected === item.value}
+              className="filter-chip"
+              data-analytics-action="filter_option"
+              data-analytics-label={facet.slug}
+              data-analytics-value={item.value}
+              onClick={() =>
+                onChange(facet.slug, selected === item.value ? "" : item.value)
+              }
+            >
+              <span>{item.label}</span>
+              {item.count > 0 ? (
+                <span className="filter-chip-count">
+                  {item.count.toLocaleString()}
+                </span>
+              ) : null}
+            </Button>
+          ))}
+          {!matchingItems.length ? (
+            <span className="filter-no-matches">
+              {text(locale, "No matches", "没有匹配项")}
+            </span>
+          ) : null}
+        </div>
       </div>
     </fieldset>
   );
