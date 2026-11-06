@@ -916,6 +916,29 @@ h1 {
   font-size: 12px;
   margin: 10px 0 20px;
 }
+.empty-result-illustration {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  min-height: 128px;
+}
+.empty-result-line-art {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  margin: 0 0 8px -16px;
+  border: 1px solid var(--accent-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--accent);
+}
+.empty-results .empty-result-illustration + h2 {
+  max-width: 620px;
+  text-wrap: balance;
+}
 .error-state {
   display: flex;
   gap: 15px;

@@ -43,6 +43,40 @@
   font-size: 12px;
   line-height: 1.7;
 }
+.emptyCard {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--subtle-surface);
+}
+.emptyCard > img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+.emptyCard > div {
+  min-width: 0;
+}
+.emptyCard strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.emptyCard p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.emptyCard > svg {
+  color: var(--accent);
+}
 .empty button {
   color: var(--primary);
   text-decoration: underline;
@@ -468,6 +502,19 @@
   margin-top: 14px;
 }
 @media (max-width: 480px) {
+  .emptyCard {
+    grid-template-columns: 60px minmax(0, 1fr) 18px;
+    gap: 8px;
+    padding: 10px;
+  }
+  .emptyCard > img {
+    width: 60px;
+    height: 60px;
+  }
+  .emptyCard > svg {
+    width: 18px;
+    height: 18px;
+  }
   .instructorHeading {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 9px;
@@ -523,6 +570,19 @@
     padding: 4px 5px;
   }
   .pageStatus {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .emptyCard {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+  .emptyCard > img {
+    width: 52px;
+    height: 52px;
+  }
+  .emptyCard > svg {
     display: none;
   }
 }

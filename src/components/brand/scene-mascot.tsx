@@ -8,6 +8,8 @@ import { BrandMascot } from "./brand-mascot";
 const pools = {
   "not-found": ["salute", "belly-laugh", "pointing-laugh", "tired-typing"],
   error: ["thinking", "tired-typing", "salute"],
+  "no-results": ["thinking", "salute", "belly-laugh", "pointing-laugh"],
+  "rmp-empty": ["thinking", "salute", "belly-laugh"],
 } as const satisfies Record<string, readonly MascotExpression[]>;
 
 type MascotScene = keyof typeof pools;
@@ -50,6 +52,8 @@ function createSceneStore(scene: MascotScene) {
 const stores = {
   "not-found": createSceneStore("not-found"),
   error: createSceneStore("error"),
+  "no-results": createSceneStore("no-results"),
+  "rmp-empty": createSceneStore("rmp-empty"),
 };
 const getServerSnapshot = () => undefined;
 

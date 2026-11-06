@@ -10,6 +10,7 @@ import {
   CircleAlert,
   ChevronLeft,
   ChevronRight,
+  SearchX,
 } from "lucide-react";
 import type {
   CatalogCourse,
@@ -591,15 +592,26 @@ export function CourseExplorer() {
               </div>
             ) : !error ? (
               <div className="empty-results">
-                <BrandMascot />
+                <div className="empty-result-illustration" aria-hidden="true">
+                  <SceneMascot scene="no-results" size={128} />
+                  <span className="empty-result-line-art">
+                    <SearchX size={30} strokeWidth={1.4} />
+                  </span>
+                </div>
                 <h2>
-                  {text(locale, "No matching classes", "未找到符合条件的课程")}
+                  {searchParams.get("subject")
+                    ? text(
+                        locale,
+                        `No classes found for ${searchParams.get("subject")}`,
+                        `暂未找到 ${searchParams.get("subject")} 科目的课程`,
+                      )
+                    : text(locale, "No matching classes", "未找到匹配课程")}
                 </h2>
                 <p>
                   {text(
                     locale,
-                    "Try a broader search or adjust your filters.",
-                    "试试更宽泛的关键词，或调整筛选条件。",
+                    "Try a different course name, or broaden the campus and filter choices.",
+                    "换个课程名称试试，或放宽校区与筛选条件。",
                   )}
                 </p>
                 <Button variant="outline" onClick={resetFilters}>

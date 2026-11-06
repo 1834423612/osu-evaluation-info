@@ -9,6 +9,7 @@ import {
   ChevronRight,
   LoaderCircle,
   Mail,
+  SearchX,
 } from "lucide-react";
 import {
   Collapsible,
@@ -22,6 +23,7 @@ import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
 import { text, type Locale } from "@/lib/i18n";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
 import { TranslateText } from "@/components/translation/translate-text";
+import { SceneMascot } from "@/components/brand/scene-mascot";
 import styles from "./rmp-panel.module.css";
 
 function score(value: number | null) {
@@ -161,13 +163,26 @@ export default function RmpPanel({
       {summary && summary.status !== "unavailable" ? (
         <>
           {summary.status === "no-data" ? (
-            <p className={styles.empty}>
-              {text(
-                locale,
-                "No RMP reviews are available for this course.",
-                "这门课程目前没有可显示的 RMP 评论。",
-              )}
-            </p>
+            <div className={styles.emptyCard} role="status">
+              <SceneMascot scene="rmp-empty" size={88} />
+              <div>
+                <strong>
+                  {text(
+                    locale,
+                    "No course-matched reviews yet",
+                    "暂未匹配到本课程评论",
+                  )}
+                </strong>
+                <p>
+                  {text(
+                    locale,
+                    "We couldn't find RMP reviews connected to the instructors for this course. Other courses' ratings are kept separate.",
+                    "暂未找到与本课程教师关联的 RMP 评论。其他课程的评分不会混入这里。",
+                  )}
+                </p>
+              </div>
+              <SearchX size={22} strokeWidth={1.5} aria-hidden="true" />
+            </div>
           ) : null}
           {summary.instructors
             .filter((instructor) => instructor.reviewCount > 0)
