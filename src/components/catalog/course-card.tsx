@@ -37,20 +37,23 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { RatingSummary } from "./rating-summary";
-import { InstructorAvatar } from "./instructor-avatar";
+import { RatingSummary } from "@/components/evaluations/rating-summary";
+import { InstructorAvatar } from "@/components/people/instructor-avatar";
 import SectionsPanel from "./sections-panel";
-import { TranslateText } from "./translate-text";
+import { TranslateText } from "@/components/translation/translate-text";
 
-const EvaluationPanel = dynamic(() => import("./evaluation-panel"), {
-  loading: () => (
-    <div className="inline-loading">
-      <LoaderCircle size={16} className="spin" />
-    </div>
-  ),
-});
+const EvaluationPanel = dynamic(
+  () => import("@/components/evaluations/evaluation-panel"),
+  {
+    loading: () => (
+      <div className="inline-loading">
+        <LoaderCircle size={16} className="spin" />
+      </div>
+    ),
+  },
+);
 
-const RmpPanel = dynamic(() => import("./rmp-panel"), {
+const RmpPanel = dynamic(() => import("@/components/rmp/rmp-panel"), {
   loading: () => (
     <div className="inline-loading">
       <LoaderCircle size={16} className="spin" />

@@ -1,0 +1,222 @@
+.identity {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.roleTrigger:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.identityName {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 3px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.identityName > span:first-child {
+  overflow-wrap: anywhere;
+}
+
+.role,
+.unknown {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  font-size: 0.64rem;
+  font-weight: 650;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.roleTrigger {
+  gap: 4px;
+  min-height: 20px;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast, 120ms) ease,
+    border-color var(--motion-fast, 120ms) ease;
+}
+
+.roleTrigger:hover,
+.roleTrigger[aria-expanded="true"] {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.roleTrigger svg {
+  flex: 0 0 auto;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.role[data-role="professor"],
+.role[data-role="lecturer"],
+.role[data-role="faculty"] {
+  color: #285c42;
+  border-color: #bde3cc;
+  background: #eef9f1;
+}
+
+.role[data-role="teaching-assistant"],
+.role[data-role="assistant"] {
+  color: #76500b;
+  border-color: #ead6a7;
+  background: #fbf5e5;
+}
+
+.unknown {
+  color: var(--muted);
+  background: var(--muted-surface);
+  font-weight: 550;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.popover {
+  position: relative;
+  z-index: 90;
+  width: min(310px, calc(100vw - 24px));
+  padding: 13px 34px 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--ink) 20%, transparent);
+  outline: none;
+  animation: popover-enter 120ms ease-out;
+}
+
+.arrow {
+  fill: white;
+  stroke: var(--line);
+  stroke-width: 1px;
+}
+
+.popoverHeader {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+  color: var(--secondary-foreground);
+  font-size: 0.74rem;
+}
+
+.popoverHeader svg {
+  flex: 0 0 auto;
+}
+
+.details {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.detailRow {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--secondary-foreground);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.detailRow svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.detailRow span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.source {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.closeButton {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+}
+
+.closeButton:hover {
+  color: var(--accent-foreground);
+  background: var(--accent-soft);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.closeButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+@keyframes popover-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
+}

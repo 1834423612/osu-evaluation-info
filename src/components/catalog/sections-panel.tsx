@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MeetingStrip } from "./meeting-strip";
-import { InstructorDirectoryIdentity } from "./people-directory-lookup";
+import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
 import styles from "./sections-panel.module.css";
 
 const DAYS = {

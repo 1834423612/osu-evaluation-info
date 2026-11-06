@@ -1,0 +1,202 @@
+.tabs {
+  gap: 18px;
+}
+
+.tabList {
+  width: 100%;
+  justify-content: flex-start;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  gap: 7px;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tabList button {
+  flex: 0 0 auto;
+  gap: 7px;
+  padding: 0 13px;
+  color: var(--muted);
+}
+
+.tabList button[data-state="active"] {
+  color: var(--primary);
+}
+
+.tabList button > span {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabContent {
+  min-width: 0;
+}
+
+.list {
+  display: grid;
+  gap: 11px;
+}
+
+.item {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.itemHeading,
+.instructorHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.itemIdentity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.courseCode {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sectionDestination {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  text-decoration: none;
+}
+
+.sectionDestination:hover .courseCode {
+  text-decoration: underline;
+}
+
+.itemIdentity strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.muted,
+.relatedTitle {
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.relatedTitle {
+  margin-top: 3px;
+}
+
+.people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+}
+
+.people > div,
+.peopleIdentity {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+  color: var(--secondary-foreground);
+  font-size: 11px;
+}
+
+.meetings {
+  display: grid;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.meetings :global(.meeting-strip) {
+  min-width: 0;
+}
+
+.peopleIdentity strong,
+.peopleIdentity span {
+  overflow-wrap: anywhere;
+}
+
+.relationCount {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 5px;
+  background: #e9f5ef;
+  color: #176342;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.relations {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.relation {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.relation a {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  text-decoration: none;
+}
+
+.relation a > span:nth-child(2) {
+  color: var(--ink);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.relation small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.emptyCategory {
+  margin: 0;
+  padding: 22px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 540px) {
+  .item {
+    padding: 12px;
+  }
+
+  .tabList {
+    gap: 0;
+  }
+
+  .tabList button {
+    padding: 0 9px;
+    font-size: 11px;
+  }
+}

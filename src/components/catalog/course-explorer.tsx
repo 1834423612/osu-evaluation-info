@@ -18,7 +18,9 @@ import type {
 } from "@/lib/catalog/types";
 import { text, localizedCampus, localizedTerm } from "@/lib/i18n";
 import { usePreferences } from "@/hooks/use-preferences";
-import { AppHeader } from "./app-header";
+import { AppHeader } from "@/components/layout/app-header";
+import { AppFooter } from "@/components/layout/app-footer";
+import { BrandMascot } from "@/components/brand/brand-mascot";
 import { FilterPanel } from "./filter-panel";
 import { CourseCard } from "./course-card";
 import { Button } from "@/components/ui/button";
@@ -346,7 +348,15 @@ export function CourseExplorer() {
       <main className="explorer-shell">
         <div className="page-heading">
           <div>
+            <span className="brand-eyebrow">OHIO STATE · COURSE ATLAS</span>
             <h1>{text(locale, "Explore courses", "课程查询")}</h1>
+            <p>
+              {text(
+                locale,
+                "Courses, schedules, and professor evaluations. Think through your next semester.",
+                "课程、课表与教授评价，为下一学期多想一步。",
+              )}
+            </p>
           </div>
           <div className="term-control">
             <label htmlFor="term-select">
@@ -574,7 +584,7 @@ export function CourseExplorer() {
               </div>
             ) : !error ? (
               <div className="empty-results">
-                <Search size={30} />
+                <BrandMascot />
                 <h2>
                   {text(locale, "No matching classes", "未找到符合条件的课程")}
                 </h2>
@@ -697,24 +707,7 @@ export function CourseExplorer() {
           </section>
         </div>
       </main>
-      <footer className="site-footer">
-        <span>
-          Course Atlas <span>·</span>{" "}
-          {text(
-            locale,
-            "Independent OSU course explorer",
-            "独立的 OSU 课程查询工具",
-          )}
-        </span>
-        <a href="https://buckeyelink.osu.edu/" target="_blank" rel="noreferrer">
-          {text(
-            locale,
-            "Confirm enrollment in Buckeye Link",
-            "选课请以 Buckeye Link 为准",
-          )}
-          <ArrowUpRight size={12} />
-        </a>
-      </footer>
+      <AppFooter />
     </>
   );
 }

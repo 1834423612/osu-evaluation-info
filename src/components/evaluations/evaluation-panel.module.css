@@ -1,0 +1,662 @@
+.ratingSummary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  color: var(--ink);
+}
+.ratingLine {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+.compactScore {
+  font-size: 25px;
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.scoreScale {
+  font-size: 12px;
+  color: var(--muted);
+}
+.instrument {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-left: 3px;
+}
+.responseLabel {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.signal[data-signal="positive"] {
+  color: var(--positive, #35704a);
+}
+.signal[data-signal="caution"] {
+  color: #b63f31;
+}
+.signal[data-signal="mixed"] {
+  color: var(--secondary-foreground);
+}
+.ratingEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.emptyScore {
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 500;
+  color: var(--muted);
+}
+.panel {
+  font-size: 13px;
+  color: var(--ink);
+  min-width: 0;
+}
+.panelHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.panel h3,
+.panel h4 {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+  margin: 0;
+}
+.subtle {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.panelHeading > .subtle {
+  white-space: nowrap;
+}
+.instrumentNote {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 0 18px;
+  max-width: 620px;
+}
+.metricList {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.metricPanel {
+  min-width: 0;
+}
+.metricPanel + .metricPanel {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.metricHeading {
+  position: relative;
+  margin-bottom: 13px;
+}
+.metricHeading h4 {
+  padding-right: 130px;
+}
+.coverage {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.metricOverview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 19px;
+}
+.bigScore {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.bigScore > span {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0 0 13px;
+}
+.stats dt {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.stats dd {
+  font-size: 15px;
+  line-height: 1.8;
+  font-weight: 550;
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.chart {
+  min-width: 0;
+}
+.chart > svg {
+  display: block;
+  width: 100%;
+  height: 172px;
+  overflow: visible;
+  touch-action: pan-y;
+}
+.chartGrid {
+  stroke: var(--line);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 5;
+}
+.chartAxis {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.chartActiveBand {
+  fill: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+.chartCrosshair {
+  stroke: var(--ring);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 4;
+  stroke-linecap: round;
+}
+.chartCrosshairHorizontal {
+  stroke: var(--ring);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 5;
+  opacity: 0.7;
+}
+.chartPointHalo {
+  fill: color-mix(in srgb, var(--primary) 12%, transparent);
+  stroke: color-mix(in srgb, var(--primary) 22%, transparent);
+  stroke-width: 1;
+}
+.chartAxisMarker {
+  fill: var(--primary);
+  stroke: white;
+  stroke-width: 1.5;
+}
+.chartHint {
+  margin: 0 0 3px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.chartLabelActive {
+  fill: var(--primary);
+  font-weight: 700;
+}
+.chartLabel {
+  fill: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+.chartLine {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chartPoint {
+  fill: var(--primary);
+  stroke: var(--surface, #fff);
+  stroke-width: 1.5;
+}
+.chartDetails {
+  font-size: 11px;
+  margin-top: 8px;
+  color: var(--muted);
+}
+.disclosureTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: inherit;
+  text-align: left;
+}
+.disclosureTrigger:hover {
+  color: var(--primary);
+}
+.disclosureTrigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+.disclosureTrigger > svg:last-child {
+  width: 13px;
+  height: 13px;
+  transition: transform 160ms ease;
+}
+.disclosureTrigger[data-state="open"] > svg:last-child {
+  transform: rotate(180deg);
+}
+.tableScroll {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+.tableScroll table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.tableScroll td,
+.tableScroll th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.tableScroll th {
+  font-weight: 550;
+}
+.instructors {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 18px;
+}
+.instructors > h4 {
+  margin-bottom: 9px;
+}
+.instructorNote {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.instructorRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.instructorRow + .instructorRow {
+  border-top: 1px solid var(--line);
+}
+.instructorName {
+  font-size: 13px;
+  font-weight: 550;
+  display: block;
+  margin-bottom: 2px;
+}
+.instructorScore {
+  text-align: right;
+  white-space: nowrap;
+}
+.instructorScore strong {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.instructorScore small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.methodology {
+  margin-top: 17px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.methodology p {
+  margin: 9px 0 0;
+  max-width: 680px;
+}
+.source {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 17px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.source span,
+.source a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.source a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.source a:hover {
+  color: var(--primary);
+}
+.emptyState {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 16px 0;
+  color: var(--muted);
+}
+.emptyState strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--ink);
+}
+.emptyState p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 5px 0 0;
+  max-width: 500px;
+}
+@media (max-width: 480px) {
+  .coverage {
+    font-size: 10px;
+  }
+  .metricHeading {
+    gap: 7px;
+  }
+  .stats {
+    gap: 8px;
+  }
+  .stats dt {
+    font-size: 10px;
+  }
+  .stats dd {
+    font-size: 14px;
+  }
+  .metricOverview {
+    margin-bottom: 15px;
+  }
+  .source {
+    gap: 2px 10px;
+  }
+  .instrumentNote {
+    font-size: 10px;
+  }
+  .compactScore {
+    font-size: 23px;
+  }
+}
+
+.officialBadge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 5px;
+  color: #08704a;
+  background: #e4f6ec;
+  border: 1px solid #bde6ce;
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 10px;
+  font-weight: 650;
+}
+.courseTotal {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--secondary-foreground);
+}
+.instructorItem {
+  border-bottom: 1px solid var(--line);
+}
+.instructorRow {
+  width: 100%;
+  padding: 12px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 235px;
+  gap: 10px;
+}
+.instructorRatingsToggle {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) 60px 15px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 3px 0;
+  text-align: left;
+  cursor: pointer;
+}
+.instructorRatingsToggle > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+.instructorRatingsToggle[data-state="open"] > svg {
+  transform: rotate(180deg);
+}
+.instructorIdentity {
+  min-width: 0;
+}
+.instructorNameLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 5px;
+}
+.instructorNameLine > .instructorName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 0;
+}
+.instructorRatingsToggle:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 7px;
+}
+.instructorIdentity .subtle {
+  font-size: 10px;
+}
+.instructorName {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.instructorMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.instructorMiniMetric {
+  display: grid;
+  grid-template-columns: 27px 1fr 28px;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  color: var(--muted);
+}
+.instructorMiniMetric strong {
+  font-size: 10px;
+}
+.miniTrend {
+  display: block;
+  width: 86px;
+  height: 24px;
+  overflow: visible;
+}
+.miniTrend polyline {
+  fill: none;
+  stroke: var(--ring);
+  stroke-width: 1.5;
+}
+.miniTrend circle {
+  fill: var(--primary);
+}
+.instructorScore {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 6px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: 9px;
+}
+.instructorScore strong {
+  font-size: 19px;
+}
+.instructorScore small {
+  margin-left: 2px;
+  font-size: 9px;
+}
+.instructorScore[data-tone="positive"],
+.instructorMiniMetric strong[data-tone="positive"] {
+  color: #087549;
+}
+.instructorScore[data-tone="positive"] {
+  background: #e7f6ed;
+}
+.instructorScore[data-tone="caution"],
+.instructorMiniMetric strong[data-tone="caution"] {
+  color: #b43d3f;
+}
+.instructorScore[data-tone="caution"] {
+  background: #fff0ed;
+}
+.instructorDetail {
+  padding: 4px 12px 18px;
+  background: var(--subtle-surface);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.instructorDetail .metricList {
+  padding-top: 12px;
+  gap: 14px;
+}
+.instructorDetail .metricHeading {
+  margin-bottom: 8px;
+}
+.instructorDetail .bigScore {
+  font-size: 24px;
+}
+.instructorDetail .subtle {
+  font-size: 10px;
+}
+.pointTooltip rect {
+  fill: var(--ink);
+  stroke: var(--secondary-foreground);
+  stroke-width: 1;
+  filter: drop-shadow(
+    0 4px 7px color-mix(in srgb, var(--ink) 25%, transparent)
+  );
+}
+.pointTooltip text {
+  fill: white;
+  font-size: 11px;
+  font-weight: 650;
+  font-family: inherit;
+}
+.pointTooltip .pointTooltipDetail {
+  fill: var(--line);
+  font-size: 9px;
+  font-weight: 500;
+}
+.chartPoint {
+  pointer-events: none;
+}
+.chartHitArea {
+  fill: transparent;
+  stroke: transparent;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.chartHitArea:focus-visible {
+  outline: none;
+  fill: color-mix(in srgb, var(--primary) 5%, transparent);
+  stroke: var(--ring);
+  stroke-width: 1;
+}
+.chartPointActive {
+  fill: var(--primary);
+  stroke: #fff;
+  stroke-width: 2;
+}
+@media (max-width: 520px) {
+  .instructorRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .instructorRatingsToggle {
+    grid-template-columns: minmax(0, 1fr) 60px 14px;
+    gap: 8px;
+    padding-left: 40px;
+  }
+  .instructorMetrics {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .instructorMiniMetric {
+    grid-template-columns: 25px 57px 25px;
+  }
+  .miniTrend {
+    width: 57px;
+    height: 18px;
+  }
+  .instructorScore {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .instructorRatingsToggle > svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .panelHeading {
+    gap: 6px;
+  }
+  .officialBadge {
+    font-size: 9px;
+  }
+}

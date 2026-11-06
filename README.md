@@ -23,6 +23,7 @@ On WSL2 with Tailscale installed on Windows, the launcher uses the Windows Tails
 
 ```sh
 pnpm test
+pnpm test:python
 pnpm typecheck
 pnpm lint
 pnpm build
@@ -43,23 +44,30 @@ Official search is queried live with a short cache for text searches and detaile
 ## Project layout
 
 - `src/app`: pages `/`, `/saved`, `/methodology`, and API route handlers.
-- `src/components/catalog`: reusable course cards, section/week views, filters, evaluations and app shell.
-- `src/components/ui`: shadcn primitives and shared interaction foundations.
+- `src/components/catalog`: course search, cards, section/week views, and filters.
+- `src/components/layout` and `src/components/brand`: shared navigation, footer, notifications, and mascot.
+- `src/components/evaluations`, `people`, `rmp`, `saved`, and `translation`: feature components with colocated CSS modules.
+- `src/components/ui`: the shadcn primitives used by the app.
 - `src/hooks/use-preferences.ts`: versioned device-local language and saved-course snapshots.
 - `src/lib/catalog`: official service adapter, typed data contracts, and bounded snapshot browsing.
 - `src/lib/evaluations`: database aggregates, exact faculty identity matching, and versioned scoring policy.
-- `scripts`: original evaluation tools plus the resumable course synchronizer.
-- `tests/scoring.test.mjs`: deterministic scoring tests, independent of network and database.
+- `public/brand`: the images actively served by the app; paths are centralized in `src/lib/brand.ts`.
+- `assets/brand`: original artwork and unused variants, with duplicate image copies removed.
+- `scripts/{catalog,evaluations,people,rmp}`: maintenance tools grouped by data source; `scripts/dev.mjs` starts development.
+- `db/schemas`: versioned SQL schema definitions. Existing ignored local database archives remain in `db/`.
+- `tests/{catalog,evaluations,people,rmp,translation}`: JavaScript and Python tests grouped by feature.
+- `docs`: [guides organized by area](docs/README.md).
 
 Search and filters are stored in the URL. Heavy evaluation charts load on demand. Requests cancel on query changes. Automatic loading covers the first result windows, followed by an explicit load-more control; mounted course results are capped at 96 and old windows are replaced. Saved courses are device-local snapshots, capped at 100. Neither all catalog data nor the SQL export is shipped to the browser.
 
 ## Data references
 
-- [Official service and synchronization](docs/catalog-api.md)
-- [Evaluation methods, identity matching, and score thresholds](docs/evaluation-methodology.md)
-- [Original evaluation import instructions](docs/data-import.md)
-- [Authorized Rate My Professors collection](docs/rmp-import.md)
-- [Legacy SQLite supplements](docs/rmp-supplement.md)
-- [Official course content and instructor photos](docs/osu-content-and-photos.md)
+- [Brand assets, browser icons, and sharing configuration](docs/design/branding.md)
+- [Official service and synchronization](docs/catalog/api.md)
+- [Evaluation methods, identity matching, and score thresholds](docs/evaluations/methodology.md)
+- [Original evaluation import instructions](docs/evaluations/import.md)
+- [Authorized Rate My Professors collection](docs/rmp/import.md)
+- [Legacy SQLite supplements](docs/rmp/supplement.md)
+- [Official course content and instructor photos](docs/catalog/content-and-photos.md)
 
 The verified November 3, 2026 import covered Summer 2026, Autumn 2026 and Spring 2027: 713 partitions, 70,454 official hits and 70,435 distinct term/class-number sections. The 19 duplicate official hits were preserved in audit counts and removed from section identity. These are import-time facts, not hardcoded UI counts.

@@ -73,8 +73,8 @@ web_modules/
 # Local source credentials and raw Blue request tokens
 postgres.env
 *.local
-scripts/__pycache__/
-tests/__pycache__/
+__pycache__/
+*.py[cod]
 AGENTS.md
 CLAUDE.md
 
