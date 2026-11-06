@@ -154,7 +154,7 @@ function SectionRow({
     ? text(locale, "Open", "可选")
     : isClosed
       ? text(locale, "Full", "已满")
-      : section.enrollmentStatus || text(locale, "Unpublished", "未公布");
+      : section.enrollmentStatus || text(locale, "Unavailable", "暂不可用");
 
   return (
     <li

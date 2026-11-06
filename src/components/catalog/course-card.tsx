@@ -1,12 +1,5 @@
 "use client";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
@@ -18,6 +11,9 @@ import {
   LoaderCircle,
   X,
 } from "lucide-react";
+import { useCourseDetails } from "@/hooks/use-course-details";
+import { useAvailabilityFresh } from "@/hooks/use-availability";
+import { withoutCourseAvailability } from "@/lib/catalog/availability";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { localizedTerm, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -88,6 +84,7 @@ function CoursePreview({
   course: CatalogCourse;
   locale: Locale;
 }) {
+  const live = useAvailabilityFresh(course);
   const instructors = new Map<string, { name: string; email: string | null }>();
   const activeDays = new Set<number>();
   const meetingPatterns = new Set<string>();
@@ -111,8 +108,8 @@ function CoursePreview({
   let open = 0;
   let closed = 0;
   for (const section of course.sections) {
-    if (/open|^o$/i.test(section.enrollmentStatus)) open++;
-    if (/closed|^c$/i.test(section.enrollmentStatus)) closed++;
+    if (live && /open|^o$/i.test(section.enrollmentStatus)) open++;
+    if (live && /closed|^c$/i.test(section.enrollmentStatus)) closed++;
     for (const instructor of section.instructors)
       instructors.set(
         instructor.email?.toLowerCase() ?? instructor.name.toLowerCase(),
@@ -226,6 +223,11 @@ function CoursePreview({
         className="preview-availability"
         aria-label={text(locale, "Enrollment availability", "选课情况")}
       >
+        {!live ? (
+          <span>
+            {text(locale, "Availability unavailable", "选课状态暂不可用")}
+          </span>
+        ) : null}
         {open ? (
           <span className="preview-open">
             {open} {text(locale, "open", "可选")}
@@ -253,17 +255,9 @@ export function CourseCard({
   onSave: (course: CatalogCourse) => void;
 }) {
   const searchParams = useSearchParams();
-  const [detail, setDetail] = useState<CatalogCourse | null>(null);
-  const [detailSource, setDetailSource] = useState<{
-    mode: "official" | "mirror";
-    snapshotAt?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
   const isMobile = useMobileViewport();
   const detailId = useId();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const detailRequest = useRef(false);
   const isSelected = searchParams.get("course") === course.id;
   const requestedTab =
     searchParams.get("detailTab") === "ratings" ? "ratings" : "sections";
@@ -277,49 +271,20 @@ export function CourseCard({
   const ratingSource =
     searchParams.get("ratingSource") === "rmp" ? "rmp" : "official";
   const tab = isSelected ? requestedTab : null;
-  const current = detail ?? course;
+  const {
+    course: detail,
+    source: detailSource,
+    loading,
+    error,
+    refresh: loadDetail,
+  } = useCourseDetails(course, isSelected, requestedTab === "sections");
+  const loaded = detail ?? course;
+  const fresh = useAvailabilityFresh(loaded);
+  const current = fresh ? loaded : withoutCourseAvailability(loaded);
   const credit =
     course.creditsMin === course.creditsMax
       ? String(course.creditsMin)
       : `${course.creditsMin}–${course.creditsMax}`;
-
-  const loadDetail = useCallback(async () => {
-    if (detail || detailRequest.current) return;
-    detailRequest.current = true;
-    setLoading(true);
-    setError(false);
-    try {
-      const params = new URLSearchParams({
-        subject: course.subject,
-        catalog: course.catalogNumber,
-        term: course.termCode,
-        campus: course.campusCode.toLowerCase(),
-      });
-      const response = await fetch(`/api/catalog/course?${params}`, {
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!response.ok) throw new Error("Course details unavailable");
-      const payload = await response.json();
-      if (payload.course) {
-        setDetail(payload.course);
-        setDetailSource({
-          mode: payload.sourceMode === "mirror" ? "mirror" : "official",
-          snapshotAt: payload.snapshotAt,
-        });
-      } else setError(true);
-    } catch {
-      setError(true);
-    } finally {
-      detailRequest.current = false;
-      setLoading(false);
-    }
-  }, [
-    course.campusCode,
-    course.catalogNumber,
-    course.subject,
-    course.termCode,
-    detail,
-  ]);
 
   useEffect(() => {
     if (!isSelected) return;
@@ -330,15 +295,7 @@ export function CourseCard({
         `${window.location.pathname}${window.location.search}${window.location.hash}`,
       );
     }
-    if (detail) return;
-    let active = true;
-    queueMicrotask(() => {
-      if (active) void loadDetail();
-    });
-    return () => {
-      active = false;
-    };
-  }, [course.id, detail, isSelected, loadDetail]);
+  }, [course.id, isSelected]);
 
   function openTab(next: "sections" | "ratings", keepOpen = false) {
     const nextTab = keepOpen || tab !== next ? next : null;
@@ -501,6 +458,30 @@ export function CourseCard({
                 ))}
               </div>
             ) : null}
+            <div className="availability-refresh" aria-live="polite">
+              <span>
+                {fresh
+                  ? text(
+                      locale,
+                      `Availability checked at ${new Date(loaded.availability!.fetchedAt!).toLocaleTimeString("en-US")}`,
+                      `选课状态获取于 ${new Date(loaded.availability!.fetchedAt!).toLocaleTimeString("zh-CN")}`,
+                    )
+                  : text(
+                      locale,
+                      "Live availability is currently unavailable. Check the official search before enrolling.",
+                      "实时选课状态暂不可用，请以官方选课系统为准。",
+                    )}
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={loading}
+                onClick={() => void loadDetail()}
+              >
+                {text(locale, "Refresh availability", "刷新选课状态")}
+              </Button>
+            </div>
             {loading ? (
               <div className="inline-loading">
                 <LoaderCircle className="spin" size={17} />
@@ -511,8 +492,8 @@ export function CourseCard({
               <div className="inline-error">
                 {text(
                   locale,
-                  "Couldn't fetch complete sections. Showing loaded results.",
-                  "暂无法获取完整班次，当前显示已加载结果。",
+                  "Couldn't refresh official data. Enrollment availability is hidden.",
+                  "暂无法刷新官方信息，选课状态和人数已隐藏。",
                 )}{" "}
                 <button onClick={() => void openTab("sections", true)}>
                   {text(locale, "Retry", "重试")}
