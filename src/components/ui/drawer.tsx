@@ -4,6 +4,7 @@ import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
+import { DrawerDismissHandle } from "./drawer-dismiss-handle";
 
 function Drawer({
   ...props
@@ -48,8 +49,13 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  onHandleDismiss,
+  handleLabel = "Drag down to close drawer",
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  onHandleDismiss?: () => void;
+  handleLabel?: string;
+}) {
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
@@ -65,14 +71,21 @@ function DrawerContent({
         )}
         {...props}
       >
-        <DrawerPrimitive.Handle
-          data-slot="drawer-handle"
-          aria-label="Drag drawer"
-          preventCycle
-          className="hidden shrink-0 group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
-        >
-          <span data-slot="drawer-grip" />
-        </DrawerPrimitive.Handle>
+        {onHandleDismiss ? (
+          <DrawerDismissHandle
+            label={handleLabel}
+            onDismiss={onHandleDismiss}
+          />
+        ) : (
+          <DrawerPrimitive.Handle
+            data-slot="drawer-handle"
+            aria-label="Drag drawer"
+            preventCycle
+            className="hidden shrink-0 group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
+          >
+            <span data-slot="drawer-grip" />
+          </DrawerPrimitive.Handle>
+        )}
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>

@@ -746,10 +746,15 @@ export function CourseCard({
           onOpenChange={(open) => !open && closeDetails()}
           shouldScaleBackground={false}
           handleOnly
-          closeThreshold={0.1}
         >
           <DrawerContent
             className="course-detail-drawer"
+            onHandleDismiss={closeDetails}
+            handleLabel={text(
+              locale,
+              "Drag down to close course details",
+              "向下拖动关闭课程详情",
+            )}
             onInteractOutside={(event) => {
               const target = event.detail.originalEvent.target;
               if (
