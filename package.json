@@ -20,7 +20,8 @@
     "catalog:discover": "node scripts/catalog/sync_osu_catalog.mjs --discover-only",
     "test": "node --test tests/**/*.test.mjs",
     "test:python": "python3 -m unittest discover -s tests -p 'test_*.py'",
-    "catalog:migrate": "node scripts/catalog/migrate_catalog.mjs"
+    "catalog:migrate": "node scripts/catalog/migrate_catalog.mjs",
+    "catalog:prune": "node scripts/catalog/prune_snapshots.mjs"
   },
   "dependencies": {
     "@iconify/react": "^5.2.1",

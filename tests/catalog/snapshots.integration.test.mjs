@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { it } from "node:test";
 import pg from "pg";
+import { pruneCatalogSnapshots } from "../../scripts/catalog/prune_snapshots.mjs";
 import { publishCatalogSnapshot } from "../../scripts/catalog/snapshots.mjs";
 import { FIND_CATALOG_SNAPSHOT_SQL } from "../../src/lib/catalog/snapshot-policy.ts";
 
@@ -165,6 +166,32 @@ it(
         /publication rejected/,
       );
       assert.equal(await find(client), next);
+      const kept = await pruneCatalogSnapshots(scoped);
+      assert.equal(
+        kept.deletedRows,
+        0,
+        "default age and version limits protect existing cursors",
+      );
+      const pruned = await pruneCatalogSnapshots(scoped, {
+        keep: 1,
+        minAgeHours: 0,
+        batchSize: 1,
+        wait: async () => {},
+      });
+      assert.equal(pruned.runId, old);
+      assert.equal(pruned.deletedRows, 2);
+      assert.equal(pruned.complete, true);
+      assert.equal(await find(client, old), undefined);
+      assert.equal(await find(client), next);
+      assert.equal(
+        (
+          await scoped.query(
+            "SELECT count(*)::int AS n FROM osu_catalog.sections",
+          )
+        ).rows[0].n,
+        1,
+        "legacy rows remain unchanged",
+      );
     } finally {
       await reader.query("ROLLBACK").catch(() => {});
       if (created) await client.query(`DROP SCHEMA ${schema} CASCADE`);
