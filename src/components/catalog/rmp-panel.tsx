@@ -26,6 +26,7 @@ import {
   InstructorDirectoryDetails,
 } from "./people-directory-lookup";
 import styles from "./rmp-panel.module.css";
+import { TranslateText } from "./translate-text";
 
 function score(value: number | null) {
   return value === null ? "—" : `${value.toFixed(2)} / 5`;
@@ -468,10 +469,13 @@ function InstructorReviews({
                       {score(review.difficulty)}
                     </span>
                   </div>
-                  <p>
-                    {review.comment ||
-                      text(locale, "No written comment.", "未填写文字评论。")}
-                  </p>
+                  {review.comment ? (
+                    <TranslateText text={review.comment} locale={locale} />
+                  ) : (
+                    <p>
+                      {text(locale, "No written comment.", "未填写文字评论。")}
+                    </p>
+                  )}
                   {review.tags.length ? (
                     <ul
                       className={styles.tags}

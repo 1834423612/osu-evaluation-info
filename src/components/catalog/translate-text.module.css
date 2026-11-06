@@ -1,0 +1,146 @@
+.content {
+  min-width: 0;
+}
+
+.original,
+.translated,
+.replaced {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.content[data-preview="true"] .original {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.translated {
+  margin-top: 7px;
+  border-left: 2px solid #82a8d4;
+  padding-left: 9px;
+  color: #405974;
+}
+
+.actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  vertical-align: middle;
+}
+
+.actionButton,
+.settingsButton {
+  display: inline-flex;
+  min-width: 27px;
+  min-height: 25px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #536d88;
+  cursor: pointer;
+}
+
+.actionButton {
+  padding: 3px 5px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.settingsButton {
+  width: 27px;
+  padding: 0;
+}
+
+.actionButton:hover,
+.settingsButton:hover,
+.settingsButton[aria-expanded="true"] {
+  border-color: #ccdae8;
+  background: #f3f7fb;
+  color: #174d78;
+}
+
+.actionButton:focus-visible,
+.settingsButton:focus-visible,
+.modeChoice:focus-visible {
+  outline: 2px solid #7598ed;
+  outline-offset: 2px;
+}
+
+.busyIcon {
+  animation: turn 900ms linear infinite;
+}
+
+.modeMenu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  width: max-content;
+  max-width: min(245px, calc(100vw - 32px));
+  gap: 3px;
+  border: 1px solid #d5e0eb;
+  border-radius: 6px;
+  background: #fff;
+  padding: 5px;
+  box-shadow: 0 8px 24px #18334b24;
+}
+
+.modeChoice {
+  display: flex;
+  min-height: 33px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 5px 7px;
+  color: #2f455c;
+  text-align: left;
+  cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.modeChoice:hover,
+.modeChoice[aria-pressed="true"] {
+  background: #edf4fa;
+  color: #174d78;
+}
+
+.modeChoice svg {
+  flex: 0 0 auto;
+}
+
+.status {
+  display: inline-block;
+  margin-left: 4px;
+  color: #718197;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.error {
+  color: #9b3c42;
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .busyIcon {
+    animation: none;
+  }
+}

@@ -40,6 +40,7 @@ import {
 import { RatingSummary } from "./rating-summary";
 import { InstructorAvatar } from "./instructor-avatar";
 import SectionsPanel from "./sections-panel";
+import { TranslateText } from "./translate-text";
 
 const EvaluationPanel = dynamic(() => import("./evaluation-panel"), {
   loading: () => (
@@ -475,7 +476,11 @@ export function CourseCard({
                 )}
               </p>
             ) : null}
-            <p className="full-description">{course.description}</p>
+            <TranslateText
+              text={course.description}
+              locale={locale}
+              className="full-description"
+            />
             {course.attributes.length ? (
               <div className="attribute-list">
                 {course.attributes.map((attribute) => (
@@ -625,7 +630,12 @@ export function CourseCard({
               {course.title || `${course.subject} ${course.catalogNumber}`}
             </button>
           </h2>
-          <p className="course-description">{course.description}</p>
+          <TranslateText
+            text={course.description}
+            locale={locale}
+            className="course-description"
+            preview
+          />
           <div className="course-meta">
             <span>
               <GraduationCap size={13} />
