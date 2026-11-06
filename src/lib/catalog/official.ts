@@ -1,5 +1,6 @@
 import "server-only";
 import type {
+  CatalogAvailability,
   CatalogCourse,
   CatalogFacet,
   CatalogResponse,
@@ -105,7 +106,11 @@ export async function getSearchableTerms(): Promise<CatalogTerm[]> {
   return terms.sort((a, b) => b.code.localeCompare(a.code));
 }
 
-function normalizeSection(input: JsonObject, termCode: string): CatalogSection {
+function normalizeSection(
+  input: JsonObject,
+  termCode: string,
+  available: boolean,
+): CatalogSection {
   const instructors = new Map<string, { name: string; email: string | null }>();
   const meetings = list(input.meetings).map((meeting) => {
     for (const instructor of list(meeting.instructors)) {
@@ -133,9 +138,9 @@ function normalizeSection(input: JsonObject, termCode: string): CatalogSection {
     section: str(input.section),
     component: str(input.component),
     instructionMode: str(input.instructionMode),
-    enrollmentStatus: str(input.enrollmentStatus),
-    enrollmentTotal: num(input.enrollmentTotal),
-    waitlistTotal: num(input.waitlistTotal),
+    enrollmentStatus: available ? str(input.enrollmentStatus) : "",
+    enrollmentTotal: available ? num(input.enrollmentTotal) : null,
+    waitlistTotal: available ? num(input.waitlistTotal) : null,
     session: str(input.sessionDescription),
     sessionCode: str(input.sessionCode),
     instructors: [...instructors.values()],
@@ -146,12 +151,17 @@ function normalizeSection(input: JsonObject, termCode: string): CatalogSection {
 export function normalizeOfficialCourse(
   item: JsonObject,
   requestedTerm: string,
+  availability: CatalogAvailability = {
+    source: "unavailable",
+    fetchedAt: null,
+  },
 ): CatalogCourse {
   const c = object(item.course);
   const sections = list(item.sections);
   const termCode = str(sections[0]?.termCode) || requestedTerm;
   const campusCode = str(c.campusCode);
   return {
+    availability,
     id: `${termCode}-${str(c.subject)}-${str(c.catalogNumber)}-${campusCode}`,
     subject: str(c.subject),
     subjectName: str(c.subjectDesc),
@@ -173,7 +183,9 @@ export function normalizeOfficialCourse(
           .filter(Boolean),
       ),
     ],
-    sections: sections.map((s) => normalizeSection(s, termCode)),
+    sections: sections.map((s) =>
+      normalizeSection(s, termCode, availability.source === "official"),
+    ),
     // The official endpoint groups only the sections in this 200-hit page.
     sectionsPartial: true,
   };
@@ -203,6 +215,17 @@ export function mergeCatalogCourse(
         ].filter(Boolean),
       ),
     ],
+    availability:
+      existing.availability?.source === "official" &&
+      incoming.availability?.source === "official"
+        ? {
+            source: "official",
+            fetchedAt:
+              [existing.availability.fetchedAt, incoming.availability.fetchedAt]
+                .filter((value): value is string => Boolean(value))
+                .sort()[0] ?? null,
+          }
+        : { source: "unavailable", fetchedAt: null },
     sections: [...sections.values()],
     sectionsPartial: existing.sectionsPartial || incoming.sectionsPartial,
   };
@@ -295,7 +318,10 @@ export async function searchOfficialCatalog(
   const data = object(await request(`search?${params}`));
   const groupedCourses = new Map<string, CatalogCourse>();
   for (const item of list(data.courses)) {
-    const course = normalizeOfficialCourse(item, term);
+    const course = normalizeOfficialCourse(item, term, {
+      source: "official",
+      fetchedAt: fetchedTimes.get(data) ?? new Date().toISOString(),
+    });
     const existing = groupedCourses.get(course.id);
     groupedCourses.set(
       course.id,
@@ -428,7 +454,10 @@ export async function getOfficialCourse(input: {
         str(raw.catalogNumber).toUpperCase() !== input.catalog.toUpperCase()
       )
         continue;
-      const normalized = normalizeOfficialCourse(item, term);
+      const normalized = normalizeOfficialCourse(item, term, {
+        source: "official",
+        fetchedAt: fetchedTimes.get(data) ?? new Date().toISOString(),
+      });
       const existing = grouped.get(normalized.id);
       grouped.set(
         normalized.id,

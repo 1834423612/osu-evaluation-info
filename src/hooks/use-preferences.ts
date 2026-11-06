@@ -1,9 +1,16 @@
 "use client";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { CatalogSection } from "@/lib/catalog/types";
 import type { Locale } from "@/lib/i18n";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
+
+import {
+  withoutCourseAvailability,
+  withoutSectionAvailability,
+} from "@/lib/catalog/availability";
+import { migrateSavedAvailability } from "@/lib/catalog/saved-storage";
+let storageMigrated = false;
 
 const LOCALE_KEY = "course-atlas:locale:v1";
 const SAVED_KEY = "course-atlas:saved:v1";
@@ -72,6 +79,7 @@ function getSaved() {
               v && typeof v.id === "string" && Array.isArray(v.sections),
           )
           .slice(0, 100)
+          .map(withoutCourseAvailability)
       : EMPTY;
   } catch {
     savedCache = EMPTY;
@@ -99,7 +107,14 @@ function getSavedDetails<T>(key: string, type: "sections" | "instructors") {
   }
   if (type === "sections") {
     savedSectionsRaw = raw;
-    savedSectionsCache = parsed as SavedSection[];
+    savedSectionsCache = (parsed as SavedSection[])
+      .filter(
+        (item) => item && item.section && typeof item.section === "object",
+      )
+      .map((item) => ({
+        ...item,
+        section: withoutSectionAvailability(item.section),
+      }));
     return savedSectionsCache as T[];
   }
   savedInstructorsRaw = raw;
@@ -124,6 +139,16 @@ function instructorKey(identity: string) {
   return nameDotNumberFromEmail(identity) ?? identity.trim().toLowerCase();
 }
 export function usePreferences() {
+  useEffect(() => {
+    if (storageMigrated) return;
+    storageMigrated = true;
+    try {
+      migrateSavedAvailability(window.localStorage);
+    } catch {
+      /* Storage may be disabled. */
+    }
+    window.dispatchEvent(new Event(EVENT));
+  }, []);
   const locale = useSyncExternalStore(
     subscribe,
     getLocale,
@@ -150,7 +175,8 @@ export function usePreferences() {
     document.documentElement.lang = value === "zh" ? "zh-CN" : "en";
     window.dispatchEvent(new Event(EVENT));
   }
-  function toggleSaved(course: CatalogCourse) {
+  function toggleSaved(value: CatalogCourse) {
+    const course = withoutCourseAvailability(value);
     const current = getSaved();
     const next = current.some((item) => item.id === course.id)
       ? current.filter((item) => item.id !== course.id)
@@ -176,7 +202,8 @@ export function usePreferences() {
     });
     return true;
   }
-  function toggleSection(course: CatalogCourse, section: CatalogSection) {
+  function toggleSection(course: CatalogCourse, value: CatalogSection) {
+    const section = withoutSectionAvailability(value);
     const current = getSavedDetails<SavedSection>(
       SAVED_SECTIONS_KEY,
       "sections",

@@ -28,7 +28,7 @@ Returns `{course,fetchedAt,complete,source}`; missing exact courses return `cour
 
 `GET /api/catalog/facets` accepts the same filters and returns official facets and terms.
 
-The server maintains a 48-entry, 60-second cache with shared in-flight promises and evicts failed requests. Each upstream request times out after 20 seconds. `fetchedAt` is the original fetch time, including cached responses. Unsupported backup searches and missing snapshots produce explicit 502 responses; malformed inputs produce 400. Evaluation queries are batched per window and return unavailable status on a database failure without removing official courses.
+The server keeps at most 48 in-flight requests for deduplication; completed official responses have zero cache lifetime. Upstream and API requests use `no-store`. Each upstream request times out after 20 seconds. `fetchedAt` is the original fetch time, including cached responses. Unsupported backup searches and missing snapshots produce explicit 502 responses; malformed inputs produce 400. Evaluation queries are batched per window and return unavailable status on a database failure without removing official courses.
 
 ## Complete PostgreSQL mirror
 
@@ -52,3 +52,9 @@ node scripts/catalog/sync_osu_catalog.mjs --new-run
 ```
 
 `--max-pages` deliberately leaves the run checkpointed and incomplete. Omit it to resume to completion. To keep the outage backup close to current, run this sync on an hourly scheduler in the deployment environment; no external schedule is created by the application itself.
+
+## Live-only enrollment
+
+Course responses include `availability: { source: "official" | "unavailable", fetchedAt: string | null }`. Only successful official reads populate enrollment status, enrollment totals, and waitlist totals. Mirror normalization always clears these fields, even if an old archived JSON row still contains them. New snapshot pages exclude volatile enrollment fields before writing to PostgreSQL.
+
+Saved courses and sections retain static metadata but clear enrollment values. An idempotent browser-storage migration also scrubs existing favorites without losing their identities. Clients must expire live availability after 30 seconds and must not infer remaining seats from enrollment totals or room capacity.

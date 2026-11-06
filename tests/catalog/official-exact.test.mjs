@@ -17,10 +17,11 @@ const adapterSource = source
       new URL("../../src/lib/catalog/exact-search.ts", import.meta.url).href,
     ),
   );
-const { searchOfficialCatalog, getOfficialCourse } = await import(
-  "data:text/javascript;base64," +
-    Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
-);
+const { searchOfficialCatalog, getOfficialCourse, normalizeOfficialCourse } =
+  await import(
+    "data:text/javascript;base64," +
+      Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
+  );
 
 function course(catalogNumber, campusCode, classNumber, component = "Lecture") {
   return {
@@ -143,6 +144,58 @@ describe("exact course upstream reconciliation", () => {
       assert.deepEqual(result.courses, []);
       assert.equal(result.totalCourses, 0);
       assert.equal(result.matchedSections, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe("official availability provenance", () => {
+  it("never exposes archived enrollment through the default normalizer", () => {
+    const entry = course("1151", "COL", "1");
+    Object.assign(entry.sections[0], {
+      enrollmentStatus: "Open",
+      enrollmentTotal: 25,
+      waitlistTotal: 2,
+    });
+    const snapshot = normalizeOfficialCourse(entry, "1272");
+    assert.equal(snapshot.availability.source, "unavailable");
+    assert.equal(snapshot.sections[0].enrollmentStatus, "");
+    assert.equal(snapshot.sections[0].enrollmentTotal, null);
+    assert.equal(snapshot.sections[0].waitlistTotal, null);
+  });
+  it("fetches official enrollment again on every completed request", async () => {
+    const originalFetch = globalThis.fetch;
+    let searches = 0;
+    globalThis.fetch = async (url, options) => {
+      assert.equal(options.cache, "no-store");
+      if (new URL(url).pathname.endsWith("searchableTermsV2"))
+        return Response.json({
+          data: {
+            data: [{ classSearch: "Y", strm: "1272", descr: "Spring 2027" }],
+          },
+        });
+      const entry = course("1151", "COL", "1");
+      Object.assign(entry.sections[0], {
+        enrollmentStatus: ++searches === 1 ? "Open" : "Closed",
+        enrollmentTotal: searches,
+        waitlistTotal: 0,
+      });
+      return Response.json({
+        data: { totalPages: 1, totalItems: 1, courses: [entry] },
+      });
+    };
+    try {
+      const input = { subject: "MATH", catalog: "1151", term: "1272" };
+      assert.equal(
+        (await getOfficialCourse(input)).course.sections[0].enrollmentStatus,
+        "Open",
+      );
+      const next = await getOfficialCourse(input);
+      assert.equal(next.course.sections[0].enrollmentStatus, "Closed");
+      assert.equal(next.course.availability.source, "official");
+      assert.ok(next.course.availability.fetchedAt);
+      assert.equal(searches, 2);
     } finally {
       globalThis.fetch = originalFetch;
     }

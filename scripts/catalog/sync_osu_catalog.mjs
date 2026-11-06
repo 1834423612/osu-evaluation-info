@@ -9,6 +9,7 @@ import {
   withPageTransaction,
 } from "./database.mjs";
 
+import { stripEnrollmentFields } from "../../src/lib/catalog/availability.ts";
 import { publishCatalogSnapshot } from "./snapshots.mjs";
 
 loadCatalogEnvironment();
@@ -274,7 +275,7 @@ try {
           campus_code: String(s.secCampus ?? c.campusCode ?? ""),
           subject: c.subject,
           catalog_number: String(c.catalogNumber),
-          data: s,
+          data: stripEnrollmentFields(s),
         })),
       );
       const sections = [

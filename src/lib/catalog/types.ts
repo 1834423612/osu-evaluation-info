@@ -23,7 +23,12 @@ export type CatalogSection = {
   instructors: CatalogInstructor[];
   meetings: CatalogMeeting[];
 };
+export type CatalogAvailability = {
+  source: "official" | "unavailable";
+  fetchedAt: string | null;
+};
 export type CatalogCourse = {
+  availability?: CatalogAvailability;
   id: string;
   subject: string;
   subjectName: string;
