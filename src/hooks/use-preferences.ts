@@ -10,20 +10,38 @@ import {
   withoutSectionAvailability,
 } from "@/lib/catalog/availability";
 import { migrateSavedAvailability } from "@/lib/catalog/saved-storage";
+import {
+  createLocalePreferenceStore,
+  detectLocale,
+  LOCALE_KEY,
+  PREFERENCES_EVENT as EVENT,
+} from "@/lib/preferences/locale";
 let storageMigrated = false;
 
-const LOCALE_KEY = "course-atlas:locale:v1";
 const ENROLLMENT_WATCH_KEY = "course-atlas:enrollment-watch:v1";
 const ENROLLMENT_WATCH_INTERVAL_KEY =
   "course-atlas:enrollment-watch-interval:v1";
 const SAVED_KEY = "course-atlas:saved:v1";
 const SAVED_SECTIONS_KEY = "course-atlas:saved-sections:v1";
 const SAVED_INSTRUCTORS_KEY = "course-atlas:saved-instructors:v1";
-const EVENT = "course-atlas:preferences";
 const TOAST_EVENT = "course-atlas:toast";
 const EMPTY: CatalogCourse[] = [];
 const EMPTY_SECTIONS: SavedSection[] = [];
 const EMPTY_INSTRUCTORS: SavedInstructor[] = [];
+const localePreference = createLocalePreferenceStore({
+  read: () => localStorage.getItem(LOCALE_KEY),
+  write: (locale) => localStorage.setItem(LOCALE_KEY, locale),
+  detect: () =>
+    detectLocale({
+      languages: [...(navigator.languages ?? []), navigator.language],
+      systemLocale: Intl.DateTimeFormat().resolvedOptions().locale,
+      userAgent: navigator.userAgent,
+    }),
+  changed: () => window.dispatchEvent(new Event(EVENT)),
+  apply: (locale) => {
+    document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+  },
+});
 export const ENROLLMENT_WATCH_INTERVALS = [30, 20, 15, 10] as const;
 export type EnrollmentWatchInterval =
   (typeof ENROLLMENT_WATCH_INTERVALS)[number];
@@ -66,11 +84,7 @@ function subscribe(callback: () => void) {
   };
 }
 function getLocale(): Locale {
-  try {
-    return localStorage.getItem(LOCALE_KEY) === "zh" ? "zh" : "en";
-  } catch {
-    return "en";
-  }
+  return localePreference.getLocale();
 }
 function getEnrollmentWatch() {
   try {
@@ -165,6 +179,7 @@ function instructorKey(identity: string) {
 }
 export function usePreferences() {
   useEffect(() => {
+    localePreference.initialize();
     if (storageMigrated) return;
     storageMigrated = true;
     try {
@@ -202,13 +217,7 @@ export function usePreferences() {
     () => EMPTY_INSTRUCTORS,
   );
   function setLocale(value: Locale) {
-    try {
-      localStorage.setItem(LOCALE_KEY, value);
-    } catch {
-      /* Storage may be disabled. */
-    }
-    document.documentElement.lang = value === "zh" ? "zh-CN" : "en";
-    window.dispatchEvent(new Event(EVENT));
+    localePreference.setLocale(value);
   }
   function setEnrollmentWatch(value: boolean) {
     try {
@@ -434,5 +443,19 @@ export function usePreferences() {
     toggleSaved,
     toggleSection,
     toggleInstructor,
+  };
+}
+
+export function useLocaleNotice() {
+  useEffect(() => localePreference.initialize(), []);
+  const locale = useSyncExternalStore(
+    subscribe,
+    localePreference.getNotice,
+    () => null,
+  );
+  return {
+    locale,
+    dismiss: localePreference.dismissNotice,
+    switchTo: localePreference.setLocale,
   };
 }

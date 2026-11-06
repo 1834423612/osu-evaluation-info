@@ -759,7 +759,9 @@ export function CourseCard({
               const target = event.detail.originalEvent.target;
               if (
                 target instanceof Element &&
-                target.closest(".action-toast, [data-translation-popover]")
+                target.closest(
+                  ".action-toast, [data-language-notice], [data-translation-popover]",
+                )
               )
                 event.preventDefault();
             }}
@@ -821,7 +823,9 @@ export function CourseCard({
               const target = event.detail.originalEvent.target;
               if (
                 target instanceof Element &&
-                target.closest(".action-toast, [data-translation-popover]")
+                target.closest(
+                  ".action-toast, [data-language-notice], [data-translation-popover]",
+                )
               )
                 event.preventDefault();
             }}

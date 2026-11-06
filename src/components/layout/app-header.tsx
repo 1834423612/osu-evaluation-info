@@ -8,6 +8,8 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { ActionToast } from "./action-toast";
+import { LanguageNotice } from "./language-notice";
+import styles from "./language-controls.module.css";
 
 export function AppHeader({
   active = "explore",
@@ -24,6 +26,7 @@ export function AppHeader({
   return (
     <>
       <ActionToast />
+      <LanguageNotice />
       <header className="app-header">
         <div className="header-inner">
           <Link
@@ -74,14 +77,29 @@ export function AppHeader({
               <ArrowUpRight size={13} />
             </Link>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
+              className={styles.switch}
               data-analytics-action="locale_switch"
               onClick={() => setLocale(locale === "en" ? "zh" : "en")}
               aria-label={text(locale, "Switch to Chinese", "切换到英文")}
+              aria-pressed={locale === "zh"}
             >
-              <Languages data-icon="inline-start" />
-              {locale === "en" ? "中文" : "EN"}
+              <Languages data-icon="inline-start" aria-hidden="true" />
+              <span
+                className={styles.option}
+                data-active={locale === "en"}
+                lang="en"
+              >
+                EN
+              </span>
+              <span
+                className={styles.option}
+                data-active={locale === "zh"}
+                lang="zh-CN"
+              >
+                中文
+              </span>
             </Button>
           </div>
         </div>
