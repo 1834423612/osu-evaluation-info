@@ -32,14 +32,16 @@ pnpm start
 
 ## Refresh the complete catalog
 
+Run `pnpm catalog:migrate` once when provisioning or upgrading the catalog database. See the [operations guide](docs/catalog/operations.md) for publication, retention, locking, and enrollment freshness.
+
 ```sh
 pnpm catalog:discover
 pnpm catalog:sync
 ```
 
-The synchronizer discovers current searchable terms and all campuses, then imports the complete official catalog into a separate `osu_catalog` schema. It pages by subject, reconciles counts, deduplicates class numbers, retries failures, and resumes an interrupted run. A completed run is required for the unrestricted catalog mirror. `--new-run` creates a new refresh instead of resuming an unfinished run. No recurring automation has been installed.
+The synchronizer discovers current searchable terms and all campuses, then imports the complete official catalog into a separate `osu_catalog` schema. It pages by subject, reconciles counts, deduplicates class numbers, retries failures, and resumes an interrupted run. A completed run is required for the unrestricted catalog mirror. `--new-run` creates a new refresh instead of resuming an unfinished run. The GitHub workflow runs only on its four-hour schedule (America/New_York), with no push, PR, or manual trigger. Run `pnpm catalog:migrate` explicitly before enabling it on a database; the scheduled job never performs schema migrations.
 
-Official search is queried live with a short cache for text searches and detailed filters. Broad queries that exceed the official 10,000-hit ceiling use a verified complete database snapshot; the interface labels the source and sync time. Expanding a course retrieves fresh official sections. Historical SEI and SSLE evaluations come from `osu_eval`, retain source metadata, and are never combined across instruments. Existing evaluation import commands remain available as `db:validate` / `db:import`.
+Official search is queried live with a short cache for text searches and detailed filters. Broad browsing can use a verified published database snapshot when the official service is unavailable; the interface labels the source and sync time. Enrollment status and counts come only from fresh official reads and are hidden for snapshots or expired responses. Expanding a course retrieves fresh official sections. Historical SEI and SSLE evaluations come from `osu_eval`, retain source metadata, and are never combined across instruments. Existing evaluation import commands remain available as `db:validate` / `db:import`.
 
 ## Project layout
 
@@ -54,7 +56,7 @@ Official search is queried live with a short cache for text searches and detaile
 - `public/brand`: the images actively served by the app; paths are centralized in `src/lib/brand.ts`.
 - `assets/brand`: original artwork and unused variants, with duplicate image copies removed.
 - `scripts/{catalog,evaluations,people,rmp}`: maintenance tools grouped by data source; `scripts/dev.mjs` starts development.
-- `db/schemas`: versioned SQL schema definitions. Existing ignored local database archives remain in `db/`.
+- `db/schemas` and `db/migrations`: SQL definitions and explicit additive migrations. Existing ignored local database archives remain in `db/`.
 - `tests/{catalog,evaluations,people,rmp,translation}`: JavaScript and Python tests grouped by feature.
 - `docs`: [guides organized by area](docs/README.md).
 

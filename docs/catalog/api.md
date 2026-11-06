@@ -18,7 +18,7 @@ For more results, send the returned `nextCursor` in `cursor`. A live cursor comp
 
 When `sourceMode="mirror"`, pagination uses a bound `m:` keyset cursor, `snapshotAt` is the completed sync time, and every returned course has its complete snapshot sections (`sectionsPartial=false`). `totalItems` and `matchedSections` are distinct mirrored section counts. If official facets were unavailable, the backup returns subject and campus facets derived from its snapshot. Use `nextCursor` instead of arithmetic on `page`/`totalPages`.
 
-Only the newest complete sync covering the selected term is eligible. A newer unfinished sync disables older snapshots because the current tables are updated incrementally. Mirror queries run in one repeatable-read transaction and select rows seen in that complete run. Cursor filters, ordering and snapshot identity are checked; expired/mismatched cursors return 400 and require restarting the search. If no eligible database snapshot exists, the endpoint returns the original official API error; it never claims full coverage. Snapshot data is grouped in PostgreSQL and only a 12–24 course window is serialized to Node, using indexed predicates and keyset pagination.
+Only published, complete generations covering the selected term are eligible. New and failed builds write separate rows and never disable an existing publication. Mirror queries run in one repeatable-read transaction. Existing cursors stay pinned to their published generation until retention retires it; expired/mismatched cursors return 400 and require restarting the search. If no eligible database snapshot exists, the endpoint returns the original official API error; it never claims full coverage. Snapshot data is grouped in PostgreSQL and only a 12–24 course window is serialized to Node, using indexed predicates and keyset pagination.
 
 `sectionsPartial=true` means the list entry contains only the current official page's matching sections. To expand all sections in place:
 
@@ -36,11 +36,11 @@ The server keeps at most 48 in-flight requests for deduplication; completed offi
 node scripts/catalog/sync_osu_catalog.mjs
 ```
 
-Requires Node 20.12+ and `DATABASE_URL` (reads `.env.local` / `.env`). The script creates only the separate `osu_catalog` schema using `db/schemas/catalog.sql`. Original SEI/SSLE scripts and `osu_eval` data remain intact.
+Requires Node 20.12+ and `DATABASE_URL` (reads `.env.local` / `.env`). Provision the separate `osu_catalog` schema explicitly with `pnpm catalog:migrate`; the synchronizer checks its version without executing DDL. Original SEI/SSLE scripts and `osu_eval` data remain intact.
 
-All currently searchable terms and all campuses are included. The script discovers subjects across all searchable terms, reconciles each term's subject counts against the official term hit count, and repairs term facets that omit valid subjects. For example, the Summer 2026 facet omitted ART and GENED even though those courses were searchable. Each term/subject partition is fetched separately. Oversized partitions are subdivided by campus, component, level and career; any remaining cap is an explicit failure. Pages are written using bulk JSON recordsets; only one 200-section page is in memory at a time. Original course and section JSON is retained alongside queryable identity fields. Exact term/class-number keys upsert current records.
+All currently searchable terms and all campuses are included. The script discovers subjects across all searchable terms, reconciles each term's subject counts against the official term hit count, and repairs term facets that omit valid subjects. For example, the Summer 2026 facet omitted ART and GENED even though those courses were searchable. Each term/subject partition is fetched separately. Oversized partitions are subdivided by campus, component, level and career; any remaining cap is an explicit failure. Pages are written using bulk JSON recordsets; only one 200-section page is in memory at a time. Original course and section JSON is retained alongside queryable identity fields. Exact run/term/class-number keys upsert the unpublished generation without changing older publications.
 
-Page writes and checkpoints commit in one transaction. HTTP requests retry up to five times. An advisory lock prevents simultaneous syncs. Interrupted and failed runs resume automatically; `--new-run` starts a new snapshot. Historical snapshot membership is recorded via `last_seen_run`; old rows are not silently deleted. Only fully traversed runs whose fetched hit counts match every partition and the complete official term counts exactly are marked complete. Official duplicate hits are deduplicated by term/class-number; both `fetched_hits` and `distinct_sections` are stored and printed. A live index change causing mismatches requires investigation or a new run rather than being reported as complete.
+Page writes and checkpoints commit in one transaction. HTTP requests retry up to five times. An advisory lock prevents simultaneous syncs. Interrupted and failed runs resume automatically; `--new-run` starts a new snapshot. Historical snapshot membership is recorded via `last_seen_run` as part of the primary key. Successful validation atomically publishes the completed generation; bounded retention preserves recent versions before reclaiming old rows. Only fully traversed runs whose fetched hit counts match every partition and the complete official term counts exactly are marked complete. Official duplicate hits are deduplicated by term/class-number; both `fetched_hits` and `distinct_sections` are stored and printed. A live index change causing mismatches requires investigation or a new run rather than being reported as complete.
 
 Useful flags:
 
@@ -51,7 +51,7 @@ node scripts/catalog/sync_osu_catalog.mjs --max-pages 5
 node scripts/catalog/sync_osu_catalog.mjs --new-run
 ```
 
-`--max-pages` deliberately leaves the run checkpointed and incomplete. Omit it to resume to completion. To keep the outage backup close to current, run this sync on an hourly scheduler in the deployment environment; no external schedule is created by the application itself.
+`--max-pages` deliberately leaves the run checkpointed and incomplete. Omit it to resume to completion. The repository workflow runs every four hours in America/New_York, exclusively on scheduled events; it then performs bounded snapshot cleanup. See [catalog operations](operations.md).
 
 ## Live-only enrollment
 

@@ -28,3 +28,15 @@ CATALOG_DATABASE_TEST=1 node --test tests/catalog/snapshots.integration.test.mjs
 ```
 
 The test bootstraps legacy data, holds a concurrent read transaction through publication, checks old cursors, rejects incomplete publication, and drops all fixture tables.
+
+## Bounded retention
+
+`pnpm catalog:prune` uses the same advisory lock and timeouts as synchronization. It preserves at least the latest three published generations for every term and all generations published less than 24 hours ago. One eligible old generation is unpublished, then reclaimed in 500-row transactions with pauses and a 60-second budget. An interrupted cleanup resumes in a later invocation; current generations, original legacy tables, and sync-run audit records are preserved. Pruning never touches an unpublished running or failed build. Review abandoned failed builds separately instead of deleting resumable checkpoints automatically.
+
+## Scheduled automation
+
+The GitHub workflow accepts only `schedule`, with an additional job guard for `github.event_name == 'schedule'`. Pushes, pull requests, manual dispatch, reusable-workflow calls, and repository dispatch do not trigger it. It runs at 00:17, 04:17, 08:17, 12:17, 16:17, and 20:17 in `America/New_York`; GitHub may delay scheduled starts. Synchronization runs first, followed by bounded retention only on success. Schema migrations never run in the scheduled job. The database referenced by the Actions `DATABASE_URL` secret must have been explicitly migrated before the schedule is enabled.
+
+## Enrollment freshness in the browser
+
+Opening or reopening details performs a new official read. Visible section details refresh every 30 seconds and on window focus or visibility restoration. Hidden/closed details cancel their request and stop background polling. Only one read can be in flight, and cancelled/late responses cannot restore older enrollment values. A failed read clears availability immediately; values also expire after 30 seconds even if a refresh hangs. Lists and favorites hide expired/archived availability. The shared freshness clock only rerenders a card when freshness changes. Users can refresh manually and see the last official fetch time.
