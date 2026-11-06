@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import type { MascotExpression } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { BrandMascot } from "./brand-mascot";
@@ -15,16 +16,24 @@ const pools = {
 type MascotScene = keyof typeof pools;
 
 function chooseExpression(scene: MascotScene): MascotExpression {
-  const key = `course-atlas:mascot:${scene}:v1`;
+  const key = `course-atlas:mascot:${scene}:v2`;
   const pool: readonly MascotExpression[] = pools[scene];
   let previous: string | null = null;
   try {
-    previous = sessionStorage.getItem(key);
+    previous =
+      sessionStorage.getItem(key) ??
+      sessionStorage.getItem(`course-atlas:mascot:${scene}:v1`);
   } catch {
     // Artwork still works when browser storage is disabled.
   }
   const choices = pool.filter((expression) => expression !== previous);
-  const selected = choices[Math.floor(Math.random() * choices.length)];
+  let random = Math.random();
+  try {
+    random = crypto.getRandomValues(new Uint32Array(1))[0] / 0x1_0000_0000;
+  } catch {
+    // Math.random remains available when Web Crypto is restricted.
+  }
+  const selected = choices[Math.floor(random * choices.length)];
   try {
     sessionStorage.setItem(key, selected);
   } catch {
@@ -33,29 +42,23 @@ function chooseExpression(scene: MascotScene): MascotExpression {
   return selected;
 }
 
-function createSceneStore(scene: MascotScene) {
-  let expression: MascotExpression | undefined;
+function createSceneStore() {
+  let current: MascotExpression | null = null;
+  let signature = "";
   return {
-    getSnapshot: () => expression,
-    subscribe(onChange: () => void) {
-      // Subscribe runs after hydration; never draw or touch storage in render.
-      // One choice per document also keeps language switches and retries stable.
-      if (!expression) {
-        expression = chooseExpression(scene);
+    getSnapshot: () => current,
+    getServerSnapshot: () => null,
+    subscribe(scene: MascotScene, pathname: string, onChange: () => void) {
+      const nextSignature = `${scene}:${pathname}`;
+      if (signature !== nextSignature) {
+        signature = nextSignature;
+        current = chooseExpression(scene);
         onChange();
       }
       return () => {};
     },
   };
 }
-
-const stores = {
-  "not-found": createSceneStore("not-found"),
-  error: createSceneStore("error"),
-  "no-results": createSceneStore("no-results"),
-  "rmp-empty": createSceneStore("rmp-empty"),
-};
-const getServerSnapshot = () => undefined;
 
 export function SceneMascot({
   scene,
@@ -66,11 +69,16 @@ export function SceneMascot({
   size?: number;
   className?: string;
 }) {
-  const store = stores[scene];
+  const pathname = usePathname();
+  const [store] = useState(() => createSceneStore());
+  const subscribe = useCallback(
+    (onChange: () => void) => store.subscribe(scene, pathname, onChange),
+    [pathname, scene, store],
+  );
   const expression = useSyncExternalStore(
-    store.subscribe,
+    subscribe,
     store.getSnapshot,
-    getServerSnapshot,
+    store.getServerSnapshot,
   );
 
   if (!expression) {

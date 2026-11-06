@@ -18,15 +18,17 @@ export function AppFooter() {
           aria-label={text(locale, `${brand.name} home`, `${brand.name} 首页`)}
         >
           <BrandMascot portrait size={28} />
-          <strong>{brand.name}</strong>
+          <span className="footer-brand-copy">
+            <strong>{brand.name}</strong>
+            <span className="footer-description">
+              {text(
+                locale,
+                "Independent OSU course & professor guide",
+                "独立的 OSU 课程与教授评价指南",
+              )}
+            </span>
+          </span>
         </Link>
-        <span className="footer-description">
-          {text(
-            locale,
-            "Independent OSU course & professor guide",
-            "独立的 OSU 课程与教授评价指南",
-          )}
-        </span>
       </div>
       <div className="footer-links">
         <Link href="/methodology">
