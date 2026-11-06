@@ -1,17 +1,19 @@
 # Thinking campus mascot artwork
 
-Imported from the supplied `OSU-MilkyFrog-Thinking_Web-Logo-Kit` and `OSU_Frog_Expression_Assets`. All 44 distinct images from the original kit are preserved across this archive, `public/brand`, and the Next.js metadata icon files. Duplicate copies and aliases from that kit have been removed. All 29 expression images and both supplied expression README files are also preserved without changes.
+The original artwork and unused variants described below remain here. The latest hand-drawn vectors and action illustrations are available as standalone published assets under public/brand/mascot, alongside the existing source archive.
 
 - `source/mascot-original-1254px.png`: original 1254×1254 RGBA artwork.
 - `source/expressions/{salute,belly-laugh,pointing-laugh,tired-typing}.png`: the four native transparent expression originals.
 - `variants/`: alternative sizes, backgrounds, PNG/WebP formats, and photo favicons that the app does not currently request.
 - `variants/expressions/`: 21 supplied expression image variants and the two original README files.
-- `public/brand/mascot/expressions/` in the project root: four active WebP expression images. Together with the original seven runtime images, `public/brand/` contains eleven active images.
+- `public/brand/mascot/portrait.webp` and `public/brand/mascot/full.webp`: the active compact and full thinking mascot images.
+- `public/brand/mascot/variants/`: five hand-drawn SVG variants and their PNG/WebP exports, retained for optional use.
+- `public/brand/mascot/expressions/<pose>/`: all PNG/WebP sizes for four action illustrations. The app selects one WebP per pose.
 - Active images and update instructions: [branding guide](../../docs/design/branding.md).
 
-The original design is the thinking mascot in Ohio State scarlet and gray with a graduation cap and Block O. Images contain no text. PNG files are lossless; WebP versions use high-quality compression. The SVG favicon is a separately simplified vector illustration; the main character remains raster artwork. Image contents were not modified during consolidation.
+The original web kit depicts the thinking mascot in Ohio State scarlet and gray with a graduation cap and Block O. Its original artwork remains available in this folder. The active portrait, full thinking mascot, and action poses use raster artwork; hand-drawn SVG alternatives remain available separately.
 
-The expression set adds a two-finger salute, belly laugh, pointing laugh, and tired typing at a laptop. Native PNG dimensions are 711×723, 537×721, 620×724, and 1242×1182 respectively. The app uses the supplied 512×512 WebP files for the first three poses and the 256×256 WebP file for tired typing. Every one of the 31 supplied files was retained exactly once and checked against its original SHA256 before the temporary directory was removed.
+The expression set adds a two-finger salute, belly laugh, pointing laugh, and tired typing at a laptop. Native PNG dimensions are 711×723, 537×721, 620×724, and 1242×1182 respectively. The app uses the 512-pixel WebP exports for the first three poses and the 256-pixel WebP export for tired typing. All 29 supplied image exports are included in the public pose directories.
 
 The original README files under `variants/expressions/` remain byte-for-byte source documentation. Their `/assets/` examples describe the supplied pack, not the app's current URLs. Use `src/lib/brand.ts` and the linked branding guide for canonical paths, scene assignments, and refresh randomization behavior.
 
