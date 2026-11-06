@@ -1,19 +1,15 @@
 #!/usr/bin/env node
 /** Official OSU class search -> PostgreSQL; bounded pages, retries, atomic checkpoints. */
-import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import pg from "pg";
+import {
+  CATALOG_LOCK,
+  createCatalogClient,
+  loadCatalogEnvironment,
+  requireCatalogSchema,
+  withPageTransaction,
+} from "./database.mjs";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-for (const name of [".env.local", ".env"]) {
-  try {
-    process.loadEnvFile(resolve(root, name));
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-}
+loadCatalogEnvironment();
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
   console.log(
@@ -88,23 +84,18 @@ if (args.includes("--discover-only")) {
   }
   process.exit(0);
 }
-if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-const client = new pg.Client({
-  connectionString: process.env.DATABASE_URL,
-  application_name: "osu-catalog-sync",
-  connectionTimeoutMillis: 5000,
-});
+const client = createCatalogClient("osu-catalog-sync");
 let runId;
 let locked = false;
 try {
   await client.connect();
   locked = (
-    await client.query("SELECT pg_try_advisory_lock(674120201) AS locked")
+    await client.query("SELECT pg_try_advisory_lock($1) AS locked", [
+      CATALOG_LOCK,
+    ])
   ).rows[0].locked;
   if (!locked) throw new Error("Another OSU catalog sync is already running.");
-  await client.query(
-    await readFile(resolve(root, "db/schemas/catalog.sql"), "utf8"),
-  );
+  await requireCatalogSchema(client);
   const termCodes = terms.map((t) => t.strm).sort();
   if (!args.includes("--new-run")) {
     const previous = await client.query(
@@ -243,58 +234,72 @@ try {
           "Unexpected empty official results page; checkpoint preserved.",
         );
       const fetchedAt = new Date().toISOString();
-      await client.query("BEGIN");
-      try {
-        // Bulk JSON recordsets keep a page to two data queries instead of one query per row.
-        const rawCourses = data.courses.map(({ course: c, sections }) => ({
-          term_code: sections[0]?.termCode ?? partition.query.term,
-          course_id: String(c.courseId),
-          offering_number: String(c.offeringNumber),
-          campus_code: String(c.campusCode ?? ""),
+
+      // Bulk JSON recordsets keep a page to two data queries instead of one query per row.
+      const rawCourses = data.courses.map(({ course: c, sections }) => ({
+        term_code: sections[0]?.termCode ?? partition.query.term,
+        course_id: String(c.courseId),
+        offering_number: String(c.offeringNumber),
+        campus_code: String(c.campusCode ?? ""),
+        subject: c.subject,
+        catalog_number: String(c.catalogNumber),
+        title: c.title ?? "",
+        description: c.description ?? "",
+        data: c,
+      }));
+      const courses = [
+        ...new Map(
+          rawCourses.map((c) => [
+            [c.term_code, c.course_id, c.offering_number, c.campus_code].join(
+              ":",
+            ),
+            c,
+          ]),
+        ).values(),
+      ];
+      const rawSections = data.courses.flatMap(({ course: c, sections }) =>
+        sections.map((s) => ({
+          term_code: String(s.termCode ?? partition.query.term),
+          class_number: String(s.classNumber),
+          course_id: String(s.courseId ?? c.courseId),
+          offering_number: String(s.courseOfferingNumber ?? c.offeringNumber),
+          campus_code: String(s.secCampus ?? c.campusCode ?? ""),
           subject: c.subject,
           catalog_number: String(c.catalogNumber),
-          title: c.title ?? "",
-          description: c.description ?? "",
-          data: c,
-        }));
-        const courses = [
-          ...new Map(
-            rawCourses.map((c) => [
-              [c.term_code, c.course_id, c.offering_number, c.campus_code].join(
-                ":",
-              ),
-              c,
-            ]),
-          ).values(),
-        ];
-        const rawSections = data.courses.flatMap(({ course: c, sections }) =>
-          sections.map((s) => ({
-            term_code: String(s.termCode ?? partition.query.term),
-            class_number: String(s.classNumber),
-            course_id: String(s.courseId ?? c.courseId),
-            offering_number: String(s.courseOfferingNumber ?? c.offeringNumber),
-            campus_code: String(s.secCampus ?? c.campusCode ?? ""),
-            subject: c.subject,
-            catalog_number: String(c.catalogNumber),
-            data: s,
-          })),
-        );
-        const sections = [
-          ...new Map(
-            rawSections.map((s) => [`${s.term_code}:${s.class_number}`, s]),
-          ).values(),
-        ];
+          data: s,
+        })),
+      );
+      const sections = [
+        ...new Map(
+          rawSections.map((s) => [`${s.term_code}:${s.class_number}`, s]),
+        ).values(),
+      ];
+      courses.sort((a, b) =>
+        compareKeys(
+          [a.term_code, a.course_id, a.offering_number, a.campus_code],
+          [b.term_code, b.course_id, b.offering_number, b.campus_code],
+        ),
+      );
+      sections.sort((a, b) =>
+        compareKeys(
+          [a.term_code, a.class_number],
+          [b.term_code, b.class_number],
+        ),
+      );
+      const coursesJson = JSON.stringify(courses);
+      const sectionsJson = JSON.stringify(sections);
+      await withPageTransaction(client, async () => {
         await client.query(
           `INSERT INTO osu_catalog.courses (term_code,course_id,offering_number,campus_code,subject,catalog_number,title,description,data,fetched_at,last_seen_run)
           SELECT x.*, $2::timestamptz, $3::uuid FROM jsonb_to_recordset($1::jsonb) AS x(term_code text,course_id text,offering_number text,campus_code text,subject text,catalog_number text,title text,description text,data jsonb)
           ON CONFLICT (term_code,course_id,offering_number,campus_code) DO UPDATE SET subject=EXCLUDED.subject,catalog_number=EXCLUDED.catalog_number,title=EXCLUDED.title,description=EXCLUDED.description,data=EXCLUDED.data,fetched_at=EXCLUDED.fetched_at,last_seen_run=EXCLUDED.last_seen_run`,
-          [JSON.stringify(courses), fetchedAt, runId],
+          [coursesJson, fetchedAt, runId],
         );
         await client.query(
           `INSERT INTO osu_catalog.sections (term_code,class_number,course_id,offering_number,campus_code,subject,catalog_number,data,fetched_at,last_seen_run)
           SELECT x.*, $2::timestamptz, $3::uuid FROM jsonb_to_recordset($1::jsonb) AS x(term_code text,class_number text,course_id text,offering_number text,campus_code text,subject text,catalog_number text,data jsonb)
           ON CONFLICT (term_code,class_number) DO UPDATE SET course_id=EXCLUDED.course_id,offering_number=EXCLUDED.offering_number,campus_code=EXCLUDED.campus_code,subject=EXCLUDED.subject,catalog_number=EXCLUDED.catalog_number,data=EXCLUDED.data,fetched_at=EXCLUDED.fetched_at,last_seen_run=EXCLUDED.last_seen_run`,
-          [JSON.stringify(sections), fetchedAt, runId],
+          [sectionsJson, fetchedAt, runId],
         );
         await client.query(
           "UPDATE osu_catalog.sync_partitions SET next_page=$3,complete=$4,fetched_sections=fetched_sections+$5 WHERE run_id=$1 AND partition_key=$2",
@@ -306,11 +311,7 @@ try {
             sectionCount,
           ],
         );
-        await client.query("COMMIT");
-      } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-      }
+      });
       pagesProcessed++;
       console.log(
         `${partition.partition_key} page ${page}/${data.totalPages}: ${sectionCount} sections`,
@@ -376,6 +377,16 @@ try {
   process.exitCode = 1;
 } finally {
   if (locked)
-    await client.query("SELECT pg_advisory_unlock(674120201)").catch(() => {});
+    await client
+      .query("SELECT pg_advisory_unlock($1)", [CATALOG_LOCK])
+      .catch(() => {});
   await client.end().catch(() => {});
+}
+
+function compareKeys(left, right) {
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] < right[i]) return -1;
+    if (left[i] > right[i]) return 1;
+  }
+  return 0;
 }
