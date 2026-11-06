@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import type { ElementType, MouseEvent } from "react";
+import { Popover } from "radix-ui";
 import {
   Check,
   Languages,
@@ -24,6 +25,7 @@ import {
   type TranslationTarget,
 } from "@/lib/translation/service";
 import styles from "./translate-text.module.css";
+import { createTranslationScheduler } from "@/lib/translation/scheduler";
 
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus = "idle" | "loading" | "downloading" | "error";
@@ -52,9 +54,11 @@ declare global {
 }
 
 const MODE_KEY = "course-atlas:translation-mode:v1";
+const AUTO_KEY = "course-atlas:translation-auto:v1";
 const MODE_EVENT = "course-atlas:translation-mode";
-const memoryCache = new Map<string, string>();
+const scheduler = createTranslationScheduler();
 let memoryMode: DisplayMode | null = null;
+let memoryAuto: boolean | null = null;
 
 function isDisplayMode(value: unknown): value is DisplayMode {
   return value === "bilingual" || value === "replace";
@@ -70,9 +74,19 @@ function getStoredMode(): DisplayMode {
   }
 }
 
+function getStoredAuto() {
+  if (memoryAuto !== null) return memoryAuto;
+  try {
+    return localStorage.getItem(AUTO_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 function subscribeToMode(callback: () => void) {
   const onStorage = () => {
     memoryMode = null;
+    memoryAuto = null;
     callback();
   };
   window.addEventListener(MODE_EVENT, callback);
@@ -96,6 +110,7 @@ async function translateInBrowser(
   sourceLanguage: "en" | "zh",
   targetLanguage: TranslationTarget,
   onDownload: () => void,
+  allowDownload: boolean,
 ) {
   const translator = window.Translator;
   if (!translator) return null;
@@ -114,6 +129,11 @@ async function translateInBrowser(
       sourceLanguage,
       targetLanguage: target,
     });
+    if (!allowDownload) {
+      const availability = await Promise.race([availabilityRequest, deadline]);
+      // Automatic translation must never initiate a language-model download.
+      if (availability !== "available") return null;
+    }
     const instanceRequest = translator.create({
       sourceLanguage,
       targetLanguage: target,
@@ -188,13 +208,25 @@ export function TranslateText({
   preview?: boolean;
 }) {
   const Container = as as ElementType;
-  const controlsRef = useRef<HTMLSpanElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+  const settingsRef = useRef<HTMLButtonElement>(null);
+  const autoAttemptRef = useRef<string | null>(null);
+  const isIntersectingRef = useRef(false);
+  const automaticRef = useRef(false);
   const mode = useSyncExternalStore(
     subscribeToMode,
     getStoredMode,
     getServerMode,
   );
+  const automatic = useSyncExternalStore(
+    subscribeToMode,
+    getStoredAuto,
+    () => false,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  );
   const [translationState, setTranslationState] = useState<{
     key: string;
     value: string;
@@ -205,66 +237,72 @@ export function TranslateText({
   const key = cacheKey(text, pair.targetLanguage);
 
   useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !controlsRef.current?.contains(event.target)
-      )
-        setMenuOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
+    automaticRef.current = automatic;
+  }, [automatic]);
 
-  const translate = useCallback(async () => {
-    const cached = memoryCache.get(key);
-    if (cached) {
-      setTranslationState({ key, value: cached });
-      setVisible(true);
-      return;
-    }
-    if (!text.trim() || text.length > MAX_TRANSLATION_LENGTH) {
-      setStatus("error");
-      return;
-    }
-    setStatus("loading");
-    try {
-      let result: string | null = null;
+  const translate = useCallback(
+    async (manual = true) => {
+      if (!text.trim() || text.length > MAX_TRANSLATION_LENGTH) {
+        setStatus("error");
+        return;
+      }
+      setStatus("loading");
       try {
-        result = await translateInBrowser(
-          text,
-          pair.sourceLanguage,
-          pair.targetLanguage,
-          () => setStatus("downloading"),
-        );
+        const result = await scheduler.request(key, async () => {
+          if (!manual && (!isIntersectingRef.current || !automaticRef.current))
+            throw new DOMException("Auto translation paused.", "AbortError");
+          let result: string | null = null;
+          try {
+            result = await translateInBrowser(
+              text,
+              pair.sourceLanguage,
+              pair.targetLanguage,
+              () => setStatus("downloading"),
+              manual && navigator.userActivation.isActive,
+            );
+          } catch {
+            result = null;
+          }
+          if (!result) {
+            setStatus("loading");
+            result = await translateRemotely(text, pair.targetLanguage);
+          }
+          return result;
+        });
+        setTranslationState({ key, value: result });
+        setVisible(true);
+        setStatus("idle");
       } catch {
-        result = null;
+        if (!manual && (!isIntersectingRef.current || !automaticRef.current)) {
+          autoAttemptRef.current = null;
+          setStatus("idle");
+        } else setStatus("error");
       }
-      if (!result) {
-        setStatus("loading");
-        result = await translateRemotely(text, pair.targetLanguage);
+    },
+    [key, pair.sourceLanguage, pair.targetLanguage, text],
+  );
+
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content || !automatic) return;
+    const observer = new IntersectionObserver((entries) => {
+      const shown = entries.some((entry) => entry.isIntersecting);
+      isIntersectingRef.current = shown;
+      if (shown && autoAttemptRef.current !== key) {
+        autoAttemptRef.current = key;
+        void translate(false);
       }
-      memoryCache.set(key, result);
-      if (memoryCache.size > 300)
-        memoryCache.delete(memoryCache.keys().next().value!);
-      setTranslationState({ key, value: result });
-      setVisible(true);
-      setStatus("idle");
-    } catch {
-      setStatus("error");
-    }
-  }, [key, pair.sourceLanguage, pair.targetLanguage, text]);
+    });
+    observer.observe(content);
+    return () => {
+      isIntersectingRef.current = false;
+      observer.disconnect();
+    };
+  }, [automatic, key, translate]);
 
   function chooseMode(next: DisplayMode, event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
+    event.stopPropagation();
     setMenuOpen(false);
     memoryMode = next;
     try {
@@ -272,6 +310,19 @@ export function TranslateText({
     } catch {
       // In-memory preference still applies for this page view.
     }
+    window.dispatchEvent(new Event(MODE_EVENT));
+  }
+
+  function toggleAutomatic(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    memoryAuto = !automatic;
+    try {
+      localStorage.setItem(AUTO_KEY, String(memoryAuto));
+    } catch {
+      // The current browser session still uses the selected preference.
+    }
+    setMenuOpen(false);
     window.dispatchEvent(new Event(MODE_EVENT));
   }
 
@@ -288,6 +339,8 @@ export function TranslateText({
           unavailable: "翻译暂不可用，原文已保留。",
           loading: "正在翻译…",
           downloading: "正在准备语言模型…",
+          auto: "自动翻译",
+          autoHint: "自动翻译当前可见内容",
         }
       : {
           translate: "Translate",
@@ -301,6 +354,8 @@ export function TranslateText({
             "Translation is unavailable. The original text is unchanged.",
           loading: "Translating…",
           downloading: "Preparing the language model…",
+          auto: "Translate automatically",
+          autoHint: "Translate visible content automatically",
         };
   const translation =
     translationState?.key === key ? translationState.value : null;
@@ -323,6 +378,7 @@ export function TranslateText({
     <Container
       className={[className, styles.content].filter(Boolean).join(" ")}
       data-translation-content
+      ref={contentRef}
       data-preview={preview ? "true" : undefined}
       style={{
         display: "block",
@@ -343,7 +399,10 @@ export function TranslateText({
           {translation}
         </span>
       ) : null}
-      <span className={styles.actions} ref={controlsRef}>
+      <span
+        className={styles.actions}
+        onClick={(event) => event.stopPropagation()}
+      >
         <button
           type="button"
           className={styles.actionButton}
@@ -374,50 +433,87 @@ export function TranslateText({
               : actionLabel}
           </span>
         </button>
-        <button
-          type="button"
-          className={styles.settingsButton}
-          aria-label={labels.settings}
-          title={labels.settings}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
+        <Popover.Root
+          open={menuOpen}
+          onOpenChange={(open) => {
+            if (open)
+              setPortalContainer(
+                settingsRef.current?.closest<HTMLElement>('[role="dialog"]') ??
+                  null,
+              );
+            setMenuOpen(open);
+          }}
         >
-          <Settings2 size={13} aria-hidden="true" />
-        </button>
-        {menuOpen ? (
-          <span
-            className={styles.modeMenu}
-            role="group"
-            aria-label={labels.settings}
-          >
+          <Popover.Trigger asChild>
             <button
               type="button"
-              className={styles.modeChoice}
-              aria-pressed={mode === "bilingual"}
-              onClick={(event) => chooseMode("bilingual", event)}
+              className={styles.settingsButton}
+              ref={settingsRef}
+              aria-label={labels.settings}
+              title={labels.settings}
+              data-auto={automatic ? "true" : undefined}
             >
-              {mode === "bilingual" ? (
-                <Check size={13} aria-hidden="true" />
-              ) : (
-                <WholeWord size={13} aria-hidden="true" />
-              )}
-              {labels.bilingual}
+              <Settings2 size={13} aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              className={styles.modeChoice}
-              aria-pressed={mode === "replace"}
-              onClick={(event) => chooseMode("replace", event)}
+          </Popover.Trigger>
+          <Popover.Portal container={portalContainer}>
+            <Popover.Content
+              className={styles.modeMenu}
+              role="group"
+              aria-label={labels.settings}
+              data-translation-popover
+              align="start"
+              side="bottom"
+              sideOffset={6}
+              collisionPadding={10}
+              sticky="always"
+              onClick={(event) => event.stopPropagation()}
+              onOpenAutoFocus={(event) => event.preventDefault()}
             >
-              {mode === "replace" ? (
-                <Check size={13} aria-hidden="true" />
-              ) : (
-                <Languages size={13} aria-hidden="true" />
-              )}
-              {labels.replace}
-            </button>
-          </span>
-        ) : null}
+              <button
+                type="button"
+                className={styles.autoChoice}
+                role="switch"
+                aria-label={labels.auto}
+                aria-checked={automatic}
+                onClick={toggleAutomatic}
+              >
+                <span>{labels.auto}</span>
+                <span className={styles.switchTrack} data-checked={automatic}>
+                  <span />
+                </span>
+              </button>
+              <span className={styles.menuHint}>{labels.autoHint}</span>
+              <div className={styles.menuDivider} />
+              <button
+                type="button"
+                className={styles.modeChoice}
+                aria-pressed={mode === "bilingual"}
+                onClick={(event) => chooseMode("bilingual", event)}
+              >
+                {mode === "bilingual" ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <WholeWord size={13} aria-hidden="true" />
+                )}
+                {labels.bilingual}
+              </button>
+              <button
+                type="button"
+                className={styles.modeChoice}
+                aria-pressed={mode === "replace"}
+                onClick={(event) => chooseMode("replace", event)}
+              >
+                {mode === "replace" ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <Languages size={13} aria-hidden="true" />
+                )}
+                {labels.replace}
+              </button>
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
         {status === "error" ? (
           <span className={`${styles.status} ${styles.error}`} role="status">
             {labels.unavailable}

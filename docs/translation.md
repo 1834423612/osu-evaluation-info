@@ -23,7 +23,19 @@ may be sent to Google only after the user requests translation in a browser
 that cannot translate locally. The application does not persist translation
 text in its database or browser storage.
 
-The display preference (`bilingual` or `replace`) is stored locally in the
-browser. A preference selected on any translation control becomes the default
-for other content on that page and later visits. A failed translation leaves
-the original text unchanged and displays a concise unavailable message.
+The display preference (`bilingual` or `replace`) and automatic-translation
+switch are stored locally in the browser. A preference selected on any
+translation control becomes the default for other content on that page and
+later visits. Automatic translation processes only snippets intersecting the
+visible viewport, with at most two requests running at once. Duplicate course
+previews/details share the same work and cache. A snippet leaving the viewport
+before queued work starts is skipped. Failed requests are held for 30 seconds;
+three consecutive failures also pause new work for 30 seconds.
+
+Automatic mode only uses a Chrome model whose availability is already
+`available`; it cannot initiate a model download. When a model is unavailable
+or needs downloading, automatic requests use the server fallback. A direct
+manual translation click may prepare a model, with a bounded timeout.
+Settings render through a collision-aware Radix portal, so card and review
+scroll containers do not crop them. A failed translation leaves the original
+text unchanged and displays a concise unavailable message.

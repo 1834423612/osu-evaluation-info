@@ -49,6 +49,11 @@
   cursor: pointer;
 }
 
+.settingsButton[data-auto="true"] {
+  color: #315bd6;
+  background: #edf3ff;
+}
+
 .actionButton {
   padding: 3px 5px;
   font-size: 10px;
@@ -80,13 +85,11 @@
 }
 
 .modeMenu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 4px);
-  right: 0;
   display: grid;
   width: max-content;
-  max-width: min(245px, calc(100vw - 32px));
+  max-width: min(270px, calc(100vw - 20px));
+  max-height: var(--radix-popover-content-available-height);
+  overflow-y: auto;
   gap: 3px;
   border: 1px solid #d5e0eb;
   border-radius: 6px;
@@ -108,7 +111,73 @@
   text-align: left;
   cursor: pointer;
   font-size: 11px;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.autoChoice {
+  display: flex;
+  min-height: 35px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 6px 7px;
+  color: #2f455c;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.autoChoice:hover {
+  background: #f3f7fb;
+}
+
+.autoChoice:focus-visible {
+  outline: 2px solid #7598ed;
+  outline-offset: 2px;
+}
+
+.switchTrack {
+  display: flex;
+  width: 29px;
+  height: 17px;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid #bac9d8;
+  border-radius: 999px;
+  background: #dbe4ee;
+  padding: 2px;
+}
+
+.switchTrack > span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px #193c5a33;
+  transition: transform 160ms ease;
+}
+
+.switchTrack[data-checked="true"] {
+  border-color: #315bd6;
+  background: #315bd6;
+}
+
+.switchTrack[data-checked="true"] > span {
+  transform: translateX(11px);
+}
+
+.menuHint {
+  padding: 0 7px 4px;
+  color: #78889c;
+  font-size: 10px;
+}
+
+.menuDivider {
+  height: 1px;
+  margin: 2px 3px;
+  background: #e6edf5;
 }
 
 .modeChoice:hover,
@@ -142,5 +211,8 @@
 @media (prefers-reduced-motion: reduce) {
   .busyIcon {
     animation: none;
+  }
+  .switchTrack > span {
+    transition: none;
   }
 }
