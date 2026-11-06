@@ -1,0 +1,606 @@
+{
+  "startedAt": "2026-11-06T04:06:04.984Z",
+  "schema": "osu_catalog_bench_1793937964982_9c592bbd",
+  "method": {
+    "sourceSectionLimit": 8000,
+    "phaseSeconds": 20,
+    "readProbeIntervalMs": 400,
+    "httpProbeIntervalMs": 500,
+    "writerConnections": 1,
+    "readConnections": 1,
+    "monitorConnections": 1,
+    "formalDataWrites": false,
+    "indexedRunIdChanges": true,
+    "writeModel": "A fresh run ID per sample pass changes the indexed last_seen_run field on every section upsert, matching full refresh index maintenance",
+    "tables": "Regular WAL-logged isolated tables with the production DDL and indexes; not PostgreSQL temporary/unlogged tables",
+    "source": "Stratified samples from every term in the last completed production snapshot",
+    "timingScope": "Local client to configured remote PostgreSQL; not the GitHub-hosted runner"
+  },
+  "phases": [
+    {
+      "name": "baseline",
+      "writeDelayMs": null,
+      "startedAt": "2026-11-06T04:06:27.633Z",
+      "errors": [],
+      "http": {
+        "catalog": {
+          "count": 29,
+          "p50Ms": 190.67,
+          "p95Ms": 318.33,
+          "p99Ms": 349.52,
+          "maxMs": 349.52,
+          "meanMs": 201.05,
+          "outcomes": {
+            "200": 29,
+            "source:official": 29
+          }
+        },
+        "evaluations": {
+          "count": 40,
+          "p50Ms": 7.71,
+          "p95Ms": 12.38,
+          "p99Ms": 16.55,
+          "maxMs": 16.55,
+          "meanMs": 8.56,
+          "outcomes": {
+            "200": 40
+          }
+        }
+      },
+      "sql": {
+        "evaluation": {
+          "count": 35,
+          "p50Ms": 92.46,
+          "p95Ms": 139.16,
+          "p99Ms": 145.92,
+          "maxMs": 145.92,
+          "meanMs": 98.05
+        },
+        "catalogBrowse": {
+          "count": 35,
+          "p50Ms": 33.62,
+          "p95Ms": 79.2,
+          "p99Ms": 89.56,
+          "maxMs": 89.56,
+          "meanMs": 39.15
+        },
+        "sameTableRead": {
+          "count": 35,
+          "p50Ms": 32.83,
+          "p95Ms": 51.96,
+          "p99Ms": 66.55,
+          "maxMs": 66.55,
+          "meanMs": 34.93
+        }
+      },
+      "writes": {
+        "transactions": 0,
+        "sectionRows": 0,
+        "courseRows": 0,
+        "latency": {
+          "count": 0,
+          "p50Ms": null,
+          "p95Ms": null,
+          "p99Ms": null,
+          "maxMs": null,
+          "meanMs": null
+        },
+        "transactionsPerSecond": 0,
+        "sectionRowsPerSecond": 0
+      },
+      "monitor": {
+        "samples": 20,
+        "maxAppConnections": 0,
+        "maxAppActive": 0,
+        "maxAppLockWaiters": 0,
+        "maxBenchmarkLockWaiters": 0,
+        "maxBlockedAppSessions": 0
+      },
+      "elapsedSeconds": 20.8,
+      "databaseCounterDelta": {
+        "xact_commit": 136,
+        "xact_rollback": 0,
+        "blks_read": 1,
+        "blks_hit": 115916,
+        "tup_inserted": 71,
+        "tup_updated": 0,
+        "temp_bytes": 0,
+        "deadlocks": 0,
+        "wal_bytes": 916923
+      }
+    },
+    {
+      "name": "paced-writes",
+      "writeDelayMs": 100,
+      "startedAt": "2026-11-06T04:06:48.962Z",
+      "errors": [],
+      "http": {
+        "evaluations": {
+          "count": 40,
+          "p50Ms": 7.73,
+          "p95Ms": 9.75,
+          "p99Ms": 17.07,
+          "maxMs": 17.07,
+          "meanMs": 8.09,
+          "outcomes": {
+            "200": 40
+          }
+        },
+        "catalog": {
+          "count": 29,
+          "p50Ms": 190.95,
+          "p95Ms": 388.6,
+          "p99Ms": 463.98,
+          "maxMs": 463.98,
+          "meanMs": 211.5,
+          "outcomes": {
+            "200": 29,
+            "source:official": 29
+          }
+        }
+      },
+      "sql": {
+        "evaluation": {
+          "count": 34,
+          "p50Ms": 97.6,
+          "p95Ms": 152.36,
+          "p99Ms": 866.61,
+          "maxMs": 866.61,
+          "meanMs": 124.01
+        },
+        "catalogBrowse": {
+          "count": 34,
+          "p50Ms": 33.52,
+          "p95Ms": 90.17,
+          "p99Ms": 127.68,
+          "maxMs": 127.68,
+          "meanMs": 38.77
+        },
+        "sameTableRead": {
+          "count": 34,
+          "p50Ms": 32.16,
+          "p95Ms": 51.04,
+          "p99Ms": 57.3,
+          "maxMs": 57.3,
+          "meanMs": 34.34
+        }
+      },
+      "writes": {
+        "transactions": 43,
+        "sectionRows": 8598,
+        "courseRows": 3171,
+        "latency": {
+          "count": 43,
+          "p50Ms": 339.15,
+          "p95Ms": 452.53,
+          "p99Ms": 1463.04,
+          "maxMs": 1463.04,
+          "meanMs": 371.6
+        },
+        "transactionsPerSecond": 2.08,
+        "sectionRowsPerSecond": 416.57
+      },
+      "monitor": {
+        "samples": 19,
+        "maxAppConnections": 0,
+        "maxAppActive": 0,
+        "maxAppLockWaiters": 0,
+        "maxBenchmarkLockWaiters": 0,
+        "maxBlockedAppSessions": 0
+      },
+      "elapsedSeconds": 20.64,
+      "databaseCounterDelta": {
+        "xact_commit": 174,
+        "xact_rollback": 0,
+        "blks_read": 0,
+        "blks_hit": 324798,
+        "tup_inserted": 246,
+        "tup_updated": 11320,
+        "temp_bytes": 0,
+        "deadlocks": 0,
+        "wal_bytes": 21648448
+      }
+    },
+    {
+      "name": "unpaced-writes",
+      "writeDelayMs": 0,
+      "startedAt": "2026-11-06T04:07:10.139Z",
+      "errors": [],
+      "http": {
+        "evaluations": {
+          "count": 40,
+          "p50Ms": 7.47,
+          "p95Ms": 9.13,
+          "p99Ms": 15.81,
+          "maxMs": 15.81,
+          "meanMs": 7.65,
+          "outcomes": {
+            "200": 40
+          }
+        },
+        "catalog": {
+          "count": 30,
+          "p50Ms": 182.07,
+          "p95Ms": 219.44,
+          "p99Ms": 242.13,
+          "maxMs": 242.13,
+          "meanMs": 188.01,
+          "outcomes": {
+            "200": 30,
+            "source:official": 30
+          }
+        }
+      },
+      "sql": {
+        "evaluation": {
+          "count": 36,
+          "p50Ms": 91.32,
+          "p95Ms": 121.14,
+          "p99Ms": 173.09,
+          "maxMs": 173.09,
+          "meanMs": 96.08
+        },
+        "catalogBrowse": {
+          "count": 36,
+          "p50Ms": 32.85,
+          "p95Ms": 60.8,
+          "p99Ms": 72.32,
+          "maxMs": 72.32,
+          "meanMs": 37.16
+        },
+        "sameTableRead": {
+          "count": 36,
+          "p50Ms": 33.71,
+          "p95Ms": 47.37,
+          "p99Ms": 79.23,
+          "maxMs": 79.23,
+          "meanMs": 36.7
+        }
+      },
+      "writes": {
+        "transactions": 52,
+        "sectionRows": 10398,
+        "courseRows": 3455,
+        "latency": {
+          "count": 52,
+          "p50Ms": 344.74,
+          "p95Ms": 576.28,
+          "p99Ms": 1536.62,
+          "maxMs": 1536.62,
+          "meanMs": 389.45
+        },
+        "transactionsPerSecond": 2.5,
+        "sectionRowsPerSecond": 500.14
+      },
+      "monitor": {
+        "samples": 20,
+        "maxAppConnections": 0,
+        "maxAppActive": 0,
+        "maxAppLockWaiters": 0,
+        "maxBenchmarkLockWaiters": 0,
+        "maxBlockedAppSessions": 0
+      },
+      "elapsedSeconds": 20.79,
+      "databaseCounterDelta": {
+        "xact_commit": 199,
+        "xact_rollback": 0,
+        "blks_read": 4,
+        "blks_hit": 374926,
+        "tup_inserted": 264,
+        "tup_updated": 13672,
+        "temp_bytes": 0,
+        "deadlocks": 0,
+        "wal_bytes": 24132248
+      }
+    },
+    {
+      "name": "recovery",
+      "writeDelayMs": null,
+      "startedAt": "2026-11-06T04:07:31.062Z",
+      "errors": [],
+      "http": {
+        "evaluations": {
+          "count": 40,
+          "p50Ms": 7.42,
+          "p95Ms": 9.4,
+          "p99Ms": 9.95,
+          "maxMs": 9.95,
+          "meanMs": 7.65,
+          "outcomes": {
+            "200": 40
+          }
+        },
+        "catalog": {
+          "count": 27,
+          "p50Ms": 189.74,
+          "p95Ms": 755.32,
+          "p99Ms": 1290.36,
+          "maxMs": 1290.36,
+          "meanMs": 258.9,
+          "outcomes": {
+            "200": 27,
+            "source:official": 27
+          }
+        }
+      },
+      "sql": {
+        "evaluation": {
+          "count": 35,
+          "p50Ms": 94.92,
+          "p95Ms": 140.94,
+          "p99Ms": 147.48,
+          "maxMs": 147.48,
+          "meanMs": 99.76
+        },
+        "catalogBrowse": {
+          "count": 35,
+          "p50Ms": 34.81,
+          "p95Ms": 68.17,
+          "p99Ms": 70.11,
+          "maxMs": 70.11,
+          "meanMs": 39.03
+        },
+        "sameTableRead": {
+          "count": 35,
+          "p50Ms": 32.72,
+          "p95Ms": 72.83,
+          "p99Ms": 77.3,
+          "maxMs": 77.3,
+          "meanMs": 38.86
+        }
+      },
+      "writes": {
+        "transactions": 0,
+        "sectionRows": 0,
+        "courseRows": 0,
+        "latency": {
+          "count": 0,
+          "p50Ms": null,
+          "p95Ms": null,
+          "p99Ms": null,
+          "maxMs": null,
+          "meanMs": null
+        },
+        "transactionsPerSecond": 0,
+        "sectionRowsPerSecond": 0
+      },
+      "monitor": {
+        "samples": 20,
+        "maxAppConnections": 0,
+        "maxAppActive": 0,
+        "maxAppLockWaiters": 0,
+        "maxBenchmarkLockWaiters": 0,
+        "maxBlockedAppSessions": 0
+      },
+      "elapsedSeconds": 20.85,
+      "databaseCounterDelta": {
+        "xact_commit": 157,
+        "xact_rollback": 0,
+        "blks_read": 5,
+        "blks_hit": 143566,
+        "tup_inserted": 33,
+        "tup_updated": 262,
+        "temp_bytes": 0,
+        "deadlocks": 0,
+        "wal_bytes": 1952054
+      }
+    }
+  ],
+  "upstream": [
+    {
+      "query": {
+        "term": "1268",
+        "subject": "ece"
+      },
+      "expectedSections": 1260,
+      "latencyMs": 157.4,
+      "bytes": 414336,
+      "currentTotalItems": 1260,
+      "sectionRows": 200
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "ece"
+      },
+      "expectedSections": 1160,
+      "latencyMs": 146.07,
+      "bytes": 412176,
+      "currentTotalItems": 1160,
+      "sectionRows": 200
+    },
+    {
+      "query": {
+        "term": "1268",
+        "subject": "cse"
+      },
+      "expectedSections": 1084,
+      "latencyMs": 148.44,
+      "bytes": 512830,
+      "currentTotalItems": 1084,
+      "sectionRows": 200
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "enveng"
+      },
+      "expectedSections": 112,
+      "latencyMs": 105.12,
+      "bytes": 255294,
+      "currentTotalItems": 112,
+      "sectionRows": 112
+    },
+    {
+      "query": {
+        "term": "1264",
+        "subject": "psych"
+      },
+      "expectedSections": 33,
+      "latencyMs": 76.36,
+      "bytes": 111426,
+      "currentTotalItems": 33,
+      "sectionRows": 33
+    },
+    {
+      "query": {
+        "term": "1264",
+        "subject": "anmltec"
+      },
+      "expectedSections": 8,
+      "latencyMs": 67.62,
+      "bytes": 30239,
+      "currentTotalItems": 8,
+      "sectionRows": 8
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "meddiet"
+      },
+      "expectedSections": 1,
+      "latencyMs": 67.45,
+      "bytes": 8477,
+      "currentTotalItems": 1,
+      "sectionRows": 1
+    }
+  ],
+  "warnings": [],
+  "environment": {
+    "version": "PostgreSQL 18.0 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-5), 64-bit",
+    "database": "osu_eval",
+    "size_bytes": "580294335",
+    "max_connections": "100",
+    "shared_buffers": "128MB",
+    "track_io_timing": "off"
+  },
+  "formalBefore": {
+    "courses": 17726,
+    "sections": 70435,
+    "runs": 1,
+    "partitions": 713,
+    "courses_max_fetched": "2026-11-03T05:56:17.082Z",
+    "sections_max_fetched": "2026-11-03T05:56:17.082Z",
+    "run_state": "8dcd3c2957d5b8639c871292f099ba13"
+  },
+  "lastProductionRun": {
+    "id": "089a68f2-8d69-4287-8cbe-638e62460410",
+    "started_at": "2026-11-03T05:45:13.232Z",
+    "completed_at": "2026-11-03T05:56:16.777Z",
+    "status": "complete",
+    "terms": ["1264", "1268", "1272"],
+    "expected_sections": 70454,
+    "error": null,
+    "fetched_hits": 70454,
+    "distinct_sections": 70435,
+    "duration_seconds": 663.544515
+  },
+  "partitionDistribution": {
+    "partitions": 713,
+    "estimated_pages": 893,
+    "one_page_partitions": 610,
+    "expected_hits": 70454
+  },
+  "upstreamTerms": {
+    "latencyMs": 227.47,
+    "available": ["1264", "1272", "1268"]
+  },
+  "sample": {
+    "sections": 7998,
+    "courses": 2497,
+    "pages": 40,
+    "sourceBytes": 21802012,
+    "terms": ["1264", "1268", "1272"],
+    "tableBytes": 19144704
+  },
+  "evaluationBatch": [
+    {
+      "subject": "CSE",
+      "catalog": "1110"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "1111"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "1211"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "1222"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "1223"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "1224"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "2111"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "2112"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "2122"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "2123"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "2124"
+    },
+    {
+      "subject": "CSE",
+      "catalog": "2133"
+    }
+  ],
+  "initialInsert": {
+    "elapsedSeconds": 14.6,
+    "transactions": 40,
+    "sections": 7998,
+    "courses": 2497,
+    "latency": {
+      "count": 40,
+      "p50Ms": 352.61,
+      "p95Ms": 472.21,
+      "p99Ms": 667.11,
+      "maxMs": 667.11,
+      "meanMs": 364.99
+    }
+  },
+  "snapshotEligibility": {
+    "term": "1264",
+    "before": 1,
+    "whileRunning": 0,
+    "afterFailure": 0,
+    "afterRemovingTestRun": 1
+  },
+  "startupDdl": {
+    "blocked": true,
+    "elapsedMs": 1034.11,
+    "code": "55P03",
+    "message": "canceling statement due to lock timeout"
+  },
+  "formalAfter": {
+    "courses": 17726,
+    "sections": 70435,
+    "runs": 1,
+    "partitions": 713,
+    "courses_max_fetched": "2026-11-03T05:56:17.082Z",
+    "sections_max_fetched": "2026-11-03T05:56:17.082Z",
+    "run_state": "8dcd3c2957d5b8639c871292f099ba13"
+  },
+  "formalStateUnchanged": true,
+  "success": true,
+  "cleanedUp": true,
+  "finishedAt": "2026-11-06T04:07:53.843Z"
+}
