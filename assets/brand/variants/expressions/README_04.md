@@ -22,7 +22,12 @@ Single transparent-background asset featuring the tired OSU-themed frog typing o
 ## Recommended usage
 
 ```html
-<img src="/assets/04-tired-typing-512.webp" alt="Tired OSU-themed frog mascot typing on a laptop" width="256" height="256" />
+<img
+  src="/assets/04-tired-typing-512.webp"
+  alt="Tired OSU-themed frog mascot typing on a laptop"
+  width="256"
+  height="256"
+/>
 ```
 
 ## Branding / rights
