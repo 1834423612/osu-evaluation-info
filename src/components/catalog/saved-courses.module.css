@@ -129,12 +129,6 @@
   min-width: 0;
 }
 
-.peopleIdentity > div {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-}
-
 .peopleIdentity strong,
 .peopleIdentity span {
   overflow-wrap: anywhere;

@@ -52,6 +52,10 @@
   border-radius: 8px;
   padding: 13px 15px;
   margin-top: 14px;
+  cursor: pointer;
+}
+.instructor > [data-rmp-review-content] {
+  cursor: auto;
 }
 .instructorToggle {
   display: flex;

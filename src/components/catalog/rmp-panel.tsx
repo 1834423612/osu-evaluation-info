@@ -215,6 +215,7 @@ function InstructorReviews({
   courseQuery: string;
   subject: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [pages, setPages] = useState<Record<number, typeof instructor.reviews>>(
     {},
@@ -279,6 +280,28 @@ function InstructorReviews({
   return (
     <Collapsible
       className={styles.instructor}
+      data-rmp-card
+      open={expanded}
+      onOpenChange={setExpanded}
+      onClick={(event) => {
+        if (event.defaultPrevented || !(event.target instanceof Element))
+          return;
+        if (
+          event.target.closest(
+            "button, a, input, select, textarea, [role=button], [role=switch], [contenteditable=true], [data-directory-popover], [data-translation-popover], [data-rmp-review-content]",
+          )
+        )
+          return;
+        const selection = window.getSelection();
+        if (
+          selection &&
+          !selection.isCollapsed &&
+          selection.anchorNode &&
+          event.currentTarget.contains(selection.anchorNode)
+        )
+          return;
+        setExpanded((value) => !value);
+      }}
       role="group"
       aria-label={text(
         locale,
@@ -300,8 +323,8 @@ function InstructorReviews({
           className={styles.instructorToggle}
           aria-label={text(
             locale,
-            `View ${instructor.name}'s reviews`,
-            `查看 ${instructor.name} 的评论`,
+            `${expanded ? "Hide" : "View"} ${instructor.name}'s reviews`,
+            `${expanded ? "收起" : "查看"} ${instructor.name} 的评论`,
           )}
         >
           <span className={styles.summaryScore}>
@@ -358,7 +381,7 @@ function InstructorReviews({
           ))}
         </ul>
       ) : null}
-      <CollapsibleContent>
+      <CollapsibleContent data-rmp-review-content>
         <dl className={styles.stats}>
           <div>
             <dt>{text(locale, "Recent quality", "近期教学评价")}</dt>

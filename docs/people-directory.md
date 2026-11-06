@@ -1,6 +1,14 @@
 # OSU people directory lookup
 
-Instructor lists display specific appointment titles beside the avatar / name.
+Instructor lists display a short role category beside the avatar / name.
+Professor rank and contract variants are grouped as Professor; lecturer variants
+as Lecturer; teaching assistants as TA; research and student assistants as
+Assistant. Other supported labels are Instructor, Student, and Staff. The
+original official appointment titles remain available in the details popover.
+Only the compact role badge, marked with a small information icon, opens that
+popover. On RMP cards, the name, avatar, summary tags, and card background toggle
+the review preview; links, action controls, and expanded review content keep
+their own interactions.
 Only visible instructor rows initiate lookup: a shared queue permits at most two
 requests at once, spaces starts by 350 ms, deduplicates duplicate identities,
 and applies a 250 ms visibility delay. Cached records render immediately;
@@ -81,8 +89,9 @@ before publishing cache updates, leaving the information icon visible.
 
 Role tags follow explicit appointment titles and affiliation labels. Professor,
 Lecturer, other teaching faculty, graduate / undergraduate teaching assistants,
-and student assistants remain distinct. The trigger prefers the actual official
-appointment title. Student and employee tags are suppressed when redundant
+and student assistants remain distinct in the source data. The badge uses a
+compact category, while its popover keeps the official appointment title and
+department. Student and employee tags are suppressed when redundant
 with an explicit TA / student-assistant title. A role does not establish
 full-time or tenure status. Missing evaluations and teaching Recitation never
 establish TA status.

@@ -18,6 +18,7 @@ import type {
   DirectoryRole,
 } from "@/lib/people/directory";
 import {
+  compactDirectoryRole,
   distinctDirectoryAppointments,
   instructorDirectoryQuery,
   selectDirectoryCandidate,
@@ -487,12 +488,8 @@ export function InstructorDirectoryIdentity({
   }, [term, fallbackName, subject, identity, cached, name, email]);
 
   const roles = person ? visibleDirectoryRoles(person.roles) : [];
-  const roleCaption =
-    person?.appointments[0]?.title ||
-    roles
-      .slice(0, 2)
-      .map((role) => roleLabel(role, person!, props.locale))
-      .join(" · ");
+  const compactRole = person ? compactDirectoryRole(person) : null;
+  const roleCaption = compactRole?.label[props.locale];
   const checked = Boolean(person && effectiveResult?.status === "available");
 
   return (
@@ -508,48 +505,34 @@ export function InstructorDirectoryIdentity({
         }
       }}
     >
-      <Popover.Trigger asChild>
-        <button
-          className={styles.identityButton}
-          ref={triggerRef}
-          type="button"
-          aria-label={
-            props.locale === "zh"
-              ? `${checked ? "查看" : "核验"}${props.name}的身份信息`
-              : `${checked ? "View" : "Verify"} ${props.name}'s OSU identity`
-          }
-          aria-expanded={open}
-        >
-          <InstructorAvatar name={props.name} email={props.email} size={size} />
-          <span className={styles.identityName}>
-            <span>{props.name}</span>
-            {checked && roleCaption ? (
-              <span className={styles.role} data-role={roles[0]}>
-                {roleCaption}
-              </span>
-            ) : (
-              <span
-                className={styles.unknown}
-                aria-label={
-                  loading
-                    ? props.locale === "zh"
-                      ? "正在读取身份"
-                      : "Loading identity"
-                    : props.locale === "zh"
-                      ? "身份信息暂缺"
-                      : "Role information unavailable"
-                }
-              >
-                {loading ? (
-                  <LoaderCircle size={12} className="spin" aria-hidden="true" />
-                ) : (
-                  <Info size={12} aria-hidden="true" />
-                )}
-              </span>
-            )}
-          </span>
-        </button>
-      </Popover.Trigger>
+      <div className={styles.identity} data-directory-identity>
+        <InstructorAvatar name={props.name} email={props.email} size={size} />
+        <span className={styles.identityName}>
+          <span>{props.name}</span>
+          <Popover.Trigger asChild>
+            <button
+              className={`${styles.roleTrigger} ${checked && roleCaption ? styles.role : styles.unknown}`}
+              data-directory-role-trigger
+              data-role={compactRole?.category}
+              ref={triggerRef}
+              type="button"
+              aria-label={
+                props.locale === "zh"
+                  ? `${checked ? "查看" : "核验"}${props.name}的身份信息`
+                  : `${checked ? "View" : "Verify"} ${props.name}'s OSU identity`
+              }
+              aria-expanded={open}
+            >
+              {checked && roleCaption ? roleCaption : null}
+              {loading ? (
+                <LoaderCircle size={11} className="spin" aria-hidden="true" />
+              ) : (
+                <Info size={11} aria-hidden="true" />
+              )}
+            </button>
+          </Popover.Trigger>
+        </span>
+      </div>
       <Popover.Portal container={portalContainer}>
         <Popover.Content
           className={styles.popover}

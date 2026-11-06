@@ -1,4 +1,4 @@
-.identityButton {
+.identity {
   display: flex;
   width: 100%;
   min-width: 0;
@@ -10,14 +10,9 @@
   color: inherit;
   background: transparent;
   text-align: left;
-  cursor: pointer;
 }
 
-.identityButton:hover .identityName > span:first-child {
-  color: #225e83;
-}
-
-.identityButton:focus-visible {
+.roleTrigger:focus-visible {
   outline: 3px solid #8ab3cf;
   outline-offset: 3px;
 }
@@ -49,7 +44,28 @@
   font-size: 0.64rem;
   font-weight: 650;
   line-height: 1.35;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+}
+
+.roleTrigger {
+  gap: 4px;
+  min-height: 20px;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast, 120ms) ease,
+    border-color var(--motion-fast, 120ms) ease;
+}
+
+.roleTrigger:hover,
+.roleTrigger[aria-expanded="true"] {
+  border-color: #9bb6c7;
+  background: #e6f0f6;
+}
+
+.roleTrigger svg {
+  flex: 0 0 auto;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .role[data-role="professor"],
@@ -61,7 +77,7 @@
 }
 
 .role[data-role="teaching-assistant"],
-.role[data-role="student-assistant"] {
+.role[data-role="assistant"] {
   color: #76500b;
   border-color: #ead6a7;
   background: #fbf5e5;

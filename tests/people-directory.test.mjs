@@ -13,11 +13,69 @@ import {
   DIRECTORY_SOURCE_BUDGET_MS,
 } from "../src/lib/people/directory.ts";
 import {
+  compactDirectoryRole,
   distinctDirectoryAppointments,
   instructorDirectoryQuery,
   selectDirectoryCandidate,
   visibleDirectoryRoles,
 } from "../src/lib/people/identity.ts";
+
+test("compact badges group academic rank and contract variants without changing appointments", () => {
+  const cases = [
+    ["Professor (9M)", "professor", "Professor", "教授"],
+    ["Associate Professor", "professor", "Professor", "教授"],
+    [
+      "Assistant Professor - Clinical (9M) · Assistant Professor of Teaching Practice",
+      "professor",
+      "Professor",
+      "教授",
+    ],
+    ["Senior Lecturer (9M)", "lecturer", "Lecturer", "讲师"],
+    ["Graduate Teaching Associate", "teaching-assistant", "TA", "助教"],
+    ["Undergraduate Teaching Assistant", "teaching-assistant", "TA", "助教"],
+    ["Graduate Research Associate", "assistant", "Assistant", "助理"],
+    ["Research Assistant", "assistant", "Assistant", "助理"],
+    ["Student Assistant", "assistant", "Assistant", "助理"],
+    ["Instructor", "faculty", "Instructor", "教师"],
+    ["Assistant Director", "employee", "Staff", "职员"],
+  ];
+  for (const [title, category, en, zh] of cases) {
+    const person = {
+      name: "Badge Fixture",
+      roles: inferRoles([{ title, organization: "Department" }], [], false),
+      appointments: [{ title, organization: "Department" }],
+    };
+    const before = structuredClone(person);
+    assert.deepEqual(compactDirectoryRole(person), {
+      category,
+      label: { en, zh },
+    });
+    assert.deepEqual(person, before);
+  }
+});
+
+test("compact badges choose one supported role and leave absent evidence unknown", () => {
+  assert.deepEqual(
+    compactDirectoryRole({
+      name: "Badge Fixture",
+      roles: ["student", "teaching-assistant", "employee"],
+      appointments: [],
+    }),
+    { category: "teaching-assistant", label: { en: "TA", zh: "助教" } },
+  );
+  assert.deepEqual(
+    compactDirectoryRole({
+      name: "Student",
+      roles: ["student"],
+      appointments: [],
+    }),
+    { category: "student", label: { en: "Student", zh: "学生" } },
+  );
+  assert.equal(
+    compactDirectoryRole({ name: "Unknown", roles: [], appointments: [] }),
+    null,
+  );
+});
 
 test("appointment highlights collapse duplicate contract and college labels while keeping distinct jobs", () => {
   const preferred = {
