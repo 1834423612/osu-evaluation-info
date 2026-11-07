@@ -90,6 +90,7 @@ if (args.includes("--discover-only")) {
 const client = createCatalogClient("osu-catalog-sync");
 let runId;
 let locked = false;
+let resumed = false;
 try {
   await client.connect();
   locked = (
@@ -108,6 +109,7 @@ try {
     runId = previous.rows[0]?.id;
   }
   if (runId) {
+    resumed = true;
     await client.query(
       "UPDATE osu_catalog.sync_runs SET status='running', error=NULL WHERE id=$1",
       [runId],
@@ -210,10 +212,78 @@ try {
       `${term.descr}: ${expected} official hits, ${subjects.size} subjects (reconciled)`,
     );
   }
+  const rebuildPartitionsForRun = async () => {
+    for (const term of terms) {
+      const data = discoveries.get(term.strm);
+      const subjects = new Map(
+        facet(data, "subject").map((subject) => [subject.term, subject]),
+      );
+      let discovered = [...subjects.values()].reduce(
+        (n, subject) => n + subject.count,
+        0,
+      );
+      const expected = actualCount(data);
+      if (discovered < expected) {
+        const candidates = [...subjectUniverse.keys()]
+          .filter((subject) => !subjects.has(subject))
+          .sort();
+        for (const subject of candidates) {
+          const extra = await search({ term: term.strm, subject });
+          const count = actualCount(extra);
+          if (count) {
+            subjects.set(subject, { term: subject, count });
+            discovered += count;
+          }
+          if (discovered >= expected) break;
+        }
+      }
+      for (const subject of subjects.values())
+        await addPartition(
+          { term: term.strm, subject: subject.term },
+          subject.count,
+        );
+    }
+  };
   await client.query(
     "UPDATE osu_catalog.sync_runs SET expected_sections=$2 WHERE id=$1",
     [runId, expectedTotal],
   );
+  if (
+    resumed &&
+    Number(
+      (
+        await client.query(
+          "SELECT COALESCE(sum(expected_sections),0)::int AS expected FROM osu_catalog.sync_partitions WHERE run_id=$1",
+          [runId],
+        )
+      ).rows[0].expected,
+    ) !== expectedTotal
+  ) {
+    const staleRunId = runId;
+    await client.query(
+      "UPDATE osu_catalog.sync_runs SET status='failed',error=$2 WHERE id=$1",
+      [
+        staleRunId,
+        `Discarded stale checkpoint: official coverage changed from the saved partition plan to ${expectedTotal} sections.`,
+      ],
+    );
+    runId = randomUUID();
+    resumed = false;
+    await withPageTransaction(client, async () => {
+      await client.query(
+        "INSERT INTO osu_catalog.sync_runs (id,status,terms,expected_sections) VALUES ($1,'running',$2::jsonb,$3)",
+        [runId, JSON.stringify(termCodes), expectedTotal],
+      );
+      await client.query(
+        "INSERT INTO osu_catalog.snapshot_versions(run_id) VALUES($1)",
+        [runId],
+      );
+    });
+    await rebuildPartitionsForRun();
+    console.log(
+      `Discarded stale run ${staleRunId}; started run ${runId} with the current official partition plan.`,
+    );
+  }
 
   const partitions = (
     await client.query(
