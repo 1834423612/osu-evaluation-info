@@ -154,7 +154,14 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+# Next.js generated files
+/.next/
+/next-env.d.ts
+
+# OSU evaluation database exports are large and distribute raw data was not appropriate for public sharing. Keep them out of Git.
 db/osu_eval_export_SU26.sql
+db/osu_eval_export_*.sql
+db/osu_eval_export_SU26.sqlite*
 
 # Local RMP datasets contain third-party review content and stay off Git.
 db/osu_rmp.sql
