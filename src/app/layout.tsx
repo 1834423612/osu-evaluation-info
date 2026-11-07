@@ -27,6 +27,8 @@ function metadataBase(): URL {
   return new URL("http://localhost:3000");
 }
 
+const socialImageAlt = `${brand.name} — ${brand.slogan.en.join(" ")} ${brand.slogan.zh.join("")}`;
+
 export const metadata: Metadata = {
   metadataBase: metadataBase(),
   applicationName: brand.name,
@@ -47,7 +49,7 @@ export const metadata: Metadata = {
         url: brand.assets.social,
         width: 1200,
         height: 630,
-        alt: "Course Atlas thinking campus mascot in Ohio State scarlet and gray",
+        alt: socialImageAlt,
       },
     ],
   },
@@ -58,7 +60,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: brand.assets.social,
-        alt: "Course Atlas thinking campus mascot in Ohio State scarlet and gray",
+        alt: socialImageAlt,
       },
     ],
   },

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { Bookmark, ArrowUpRight, Languages } from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { brand } from "@/lib/brand";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
@@ -34,13 +35,13 @@ export function AppHeader({
             className="brand"
             aria-label={text(
               locale,
-              `${brand.name} home`,
-              `${brand.name} 首页`,
+              `${brand.names.en} home`,
+              `${brand.names.zh} 首页`,
             )}
           >
             <BrandMascot portrait size={48} className="brand-mark" eager />
             <span>
-              course<span className="brand-light">atlas</span>
+              <BrandWordmark locale={locale} />
               <span className="brand-school">
                 {text(locale, "OSU COURSES & RATINGS", "OSU 课程与教授评分")}
               </span>

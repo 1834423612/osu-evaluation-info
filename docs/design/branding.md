@@ -1,6 +1,21 @@
-# Course Atlas branding
+# WahO! / 蛙O！ branding
 
-Course Atlas uses the thinking campus mascot and four expression illustrations across navigation, status messages, browser icons, and sharing previews. `src/lib/brand.ts` is the shared source for the product name, description, scarlet theme color (`#BA0C2F`), warm background (`#FAF8F6`), and public asset paths. `src/components/brand/brand-mascot.tsx` renders the portrait, thinking artwork, and named expressions; `scene-mascot.tsx` selects artwork for random scenes.
+WahO! / 蛙O！ uses the thinking campus mascot and four expression illustrations across navigation, status messages, browser icons, and sharing previews. `src/lib/brand.ts` is the shared source for the product name, description, scarlet theme color (`#BA0C2F`), warm background (`#FAF8F6`), and public asset paths. `src/components/brand/brand-mascot.tsx` renders the portrait, thinking artwork, and named expressions; `scene-mascot.tsx` selects artwork for random scenes.
+
+## Confirmed identity and typography
+
+- Chinese name: **蛙O！** (Latin uppercase O, full-width exclamation mark).
+- English name: **WahO!** (uppercase W and O).
+- Chinese slogan: **选课不迷路，毕业有蛙助。**
+- English slogan: **Hop into better classes. Leap toward your degree.**
+
+`brand.names`, `brand.slogan`, and `brand.context` supply localized copy. Navigation and the footer show the current language's name; browser metadata and the install manifest use the bilingual name. The short install name is WahO!.
+
+`brand-wordmark.tsx` renders a bold, compact wordmark with the O and exclamation mark in scarlet. The homepage uses a two-line slogan, with the second sentence in scarlet, responsive type sizes, and a smaller course-search description below. Styles live in `brand-identity.module.css`; no external font download is required. The footer repeats the exact slogan in a compact layout.
+
+The sharing card includes both names, both slogans, and the existing mascot. Rebuild the committed PNG with `node scripts/brand/generate-social.mjs` after changing brand copy. The renderer uses local fonts; a Chinese-capable system font is required to regenerate the Chinese text correctly.
+
+Existing `course-atlas:*` browser-storage keys and events are retained so saved courses, preferences, and other device-local state survive the rename.
 
 ## Asset locations
 
@@ -8,22 +23,22 @@ The app's active image paths are centralized in `src/lib/brand.ts`. Runtime imag
 
 | Location                 | Purpose                                                           |
 | ------------------------ | ----------------------------------------------------------------- |
-| `public/brand/`          | Active mascot, expression, app icon, and sharing images            |
+| `public/brand/`          | Active mascot, expression, app icon, and sharing images           |
 | `src/app/`               | Next.js browser and Apple icon convention files                   |
 | `assets/brand/source/`   | Original thinking artwork and four native expression PNGs         |
 | `assets/brand/variants/` | Unused sizes, formats, and alternate artwork, outside public URLs |
 
-| Surface                             | Canonical asset                                                                   |
-| ----------------------------------- | --------------------------------------------------------------------------------- |
-| Navigation and compact identity     | `/brand/mascot/portrait.webp` |
-| Page illustrations and empty states | `/brand/mascot/full.webp` |
+| Surface                             | Canonical asset                                          |
+| ----------------------------------- | -------------------------------------------------------- |
+| Navigation and compact identity     | `/brand/mascot/portrait.webp`                            |
+| Page illustrations and empty states | `/brand/mascot/full.webp`                                |
 | Expression illustrations            | `/brand/mascot/expressions/<pose>/<pose>-{512,256}.webp` |
-| Browser tab, scalable icon          | `src/app/icon.svg`                                                                |
-| Browser tab, ICO fallback           | `src/app/favicon.ico`                                                             |
-| Apple home-screen icon              | `src/app/apple-icon.png` (180×180)                                                |
-| Application icons                   | `/brand/icons/app-{192,512}.png`                                                  |
-| Maskable application icons          | `/brand/icons/maskable-{192,512}.png`                                             |
-| Open Graph and Twitter sharing      | `/brand/social/og-image.png`                                                      |
+| Browser tab, scalable icon          | `src/app/icon.svg`                                       |
+| Browser tab, ICO fallback           | `src/app/favicon.ico`                                    |
+| Apple home-screen icon              | `src/app/apple-icon.png` (180×180)                       |
+| Application icons                   | `/brand/icons/app-{192,512}.png`                         |
+| Maskable application icons          | `/brand/icons/maskable-{192,512}.png`                    |
+| Open Graph and Twitter sharing      | `/brand/social/og-image.png`                             |
 
 Next.js automatically emits the browser and Apple icon links from `src/app`. These filenames must remain there. `src/app/manifest.ts` generates `/manifest.webmanifest`, using the shared brand paths and separate `any`/`maskable` icons. `src/app/layout.tsx` sets titles, social metadata, the application name, and theme color. The kit's unused HTML head snippet and template manifest have been removed.
 

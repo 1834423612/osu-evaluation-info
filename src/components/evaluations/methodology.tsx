@@ -3,13 +3,16 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
+import { brand } from "@/lib/brand";
 export function Methodology() {
   const { locale } = usePreferences();
   return (
     <>
       <AppHeader active="methodology" />
       <main className="methodology-shell">
-        <span className="brand-eyebrow">OHIO STATE · COURSE ATLAS</span>
+        <span className="brand-eyebrow">
+          OHIO STATE · {brand.names[locale]}
+        </span>
         <h1>{text(locale, "Behind the data", "数据从哪里来，分数怎么算")}</h1>
         <article>
           <h2>{text(locale, "Current classes", "当前开课信息")}</h2>
@@ -93,8 +96,8 @@ export function Methodology() {
           <p>
             {text(
               locale,
-              "Course Atlas is an independent explorer. Use Buckeye Link and official university advising to confirm registration, requirements, and degree applicability.",
-              "Course Atlas 是独立的课程查询工具，注册选课、先修要求与学位适用性请以 Buckeye Link 和学校官方学业指导为准。",
+              `${brand.names.en} is an independent explorer. Use Buckeye Link and official university advising to confirm registration, requirements, and degree applicability.`,
+              `${brand.names.zh} 是独立的课程查询工具，注册选课、先修要求与学位适用性请以 Buckeye Link 和学校官方学业指导为准。`,
             )}
           </p>
         </article>

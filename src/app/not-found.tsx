@@ -7,6 +7,7 @@ import { SceneMascot } from "@/components/brand/scene-mascot";
 import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
+import { brand } from "@/lib/brand";
 
 export default function NotFound() {
   const { locale } = usePreferences();
@@ -16,7 +17,7 @@ export default function NotFound() {
       <main className="saved-shell">
         <div className="empty-results">
           <SceneMascot scene="not-found" />
-          <span className="brand-eyebrow">404 · COURSE ATLAS</span>
+          <span className="brand-eyebrow">404 · {brand.names[locale]}</span>
           <h1 className="status-heading">
             {text(
               locale,

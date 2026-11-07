@@ -1,4 +1,6 @@
-# Course Atlas / OSU Eval
+# WahO! / 蛙O！
+
+**选课不迷路，毕业有蛙助。** / Hop into better classes. Leap toward your degree.
 
 A responsive, bilingual course explorer built with Next.js App Router, React, TypeScript, Tailwind CSS, and shadcn/ui primitives. The previous application and API were replaced. Existing SEI/SSLE collection and import scripts, raw data, database export, and database contents are retained.
 

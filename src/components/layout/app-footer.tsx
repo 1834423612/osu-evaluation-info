@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { usePreferences } from "@/hooks/use-preferences";
 import { brand } from "@/lib/brand";
 import { text } from "@/lib/i18n";
@@ -15,17 +16,17 @@ export function AppFooter() {
         <Link
           href="/"
           className="footer-brand"
-          aria-label={text(locale, `${brand.name} home`, `${brand.name} 首页`)}
+          aria-label={text(
+            locale,
+            `${brand.names.en} home`,
+            `${brand.names.zh} 首页`,
+          )}
         >
           <BrandMascot portrait size={28} />
           <span className="footer-brand-copy">
-            <strong>{brand.name}</strong>
+            <BrandWordmark locale={locale} />
             <span className="footer-description">
-              {text(
-                locale,
-                "Independent OSU course & professor guide",
-                "独立的 OSU 课程与教授评价指南",
-              )}
+              {brand.slogan[locale].join(locale === "zh" ? "" : " ")}
             </span>
           </span>
         </Link>

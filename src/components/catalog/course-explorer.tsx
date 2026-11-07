@@ -23,6 +23,8 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
+import { brand } from "@/lib/brand";
+import brandStyles from "@/components/brand/brand-identity.module.css";
 import { FilterPanel } from "./filter-panel";
 import { CourseCard } from "./course-card";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
@@ -357,15 +359,24 @@ export function CourseExplorer() {
     <>
       <AppHeader />
       <main className="explorer-shell">
-        <div className="page-heading">
-          <div>
-            <span className="brand-eyebrow">OHIO STATE · COURSE ATLAS</span>
-            <h1>{text(locale, "Explore courses", "课程查询")}</h1>
-            <p>
+        <div className={`page-heading ${brandStyles.hero}`}>
+          <div className={brandStyles.heroCopy}>
+            <span className={brandStyles.heroEyebrow}>
+              {brand.context[locale]}
+            </span>
+            <h1
+              className={brandStyles.slogan}
+              lang={locale === "zh" ? "zh-CN" : "en"}
+            >
+              <span>{brand.slogan[locale][0]}</span>
+              {locale === "en" ? " " : null}
+              <span>{brand.slogan[locale][1]}</span>
+            </h1>
+            <p className={brandStyles.heroDescription}>
               {text(
                 locale,
-                "Courses, schedules, and professor evaluations. Think through your next semester.",
-                "课程、课表与教授评价，为下一学期多想一步。",
+                "Explore Ohio State courses, compare schedules, and get to know your professors.",
+                "查课程、看课表、了解教授，为下一学期做好准备。",
               )}
             </p>
           </div>

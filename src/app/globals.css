@@ -135,10 +135,6 @@ select {
   height: 48px;
 }
 
-.brand-light {
-  font-weight: 400;
-  color: var(--primary);
-}
 .brand-school {
   display: block;
   font-size: 8px;
@@ -1564,10 +1560,18 @@ h1 {
 @media (max-width: 360px) {
   .header-inner {
     padding: 0 12px;
-    gap: 12px;
+    gap: 8px;
   }
   .brand {
     font-size: 17px;
+    gap: 5px;
+  }
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .brand-school {
+    display: none;
   }
   .main-nav {
     gap: 11px;
