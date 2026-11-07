@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
+    "brand:icons": "node scripts/brand/generate-icons.mjs",
+    "brand:social": "node scripts/brand/generate-social.mjs",
     "db:validate": "python3 scripts/evaluations/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --validate-only --expected-rows 68729",
     "db:import": "python3 scripts/evaluations/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --dsn \"$DATABASE_URL\" --init-schema --expected-rows 68729",
     "db:people:init": "node --env-file-if-exists=.env.local scripts/people/setup_people_directory.mjs",

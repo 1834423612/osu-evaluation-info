@@ -55,8 +55,8 @@ Official search is queried live with a short cache for text searches and detaile
 - `src/hooks/use-preferences.ts`: versioned device-local language and saved-course snapshots.
 - `src/lib/catalog`: official service adapter, typed data contracts, and bounded snapshot browsing.
 - `src/lib/evaluations`: database aggregates, exact faculty identity matching, and versioned scoring policy.
-- `public/brand`: the images actively served by the app; paths are centralized in `src/lib/brand.ts`.
-- `assets/brand`: original artwork and unused variants, with duplicate image copies removed.
+- `public/brand`: only the images actively served by the app; paths are centralized in `src/lib/brand.ts`. Next.js browser and Apple icon entry files live in `src/app`.
+- `scripts/brand`: favicon/ICO conversion and social-card generation. Complete source artwork and unused exports live in the separate `../OSU_MilkyFrog_Assets` master kit; they are not needed to run or build the website.
 - `scripts/{catalog,evaluations,people,rmp}`: maintenance tools grouped by data source; `scripts/dev.mjs` starts development.
 - `db/schemas` and `db/migrations`: SQL definitions and explicit additive migrations. Existing ignored local database archives remain in `db/`.
 - `tests/{catalog,evaluations,people,rmp,translation}`: JavaScript and Python tests grouped by feature.
