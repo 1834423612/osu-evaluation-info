@@ -270,8 +270,8 @@ try {
         sections.map((s) => ({
           term_code: String(s.termCode ?? partition.query.term),
           class_number: String(s.classNumber),
-          course_id: String(s.courseId ?? c.courseId),
-          offering_number: String(s.courseOfferingNumber ?? c.offeringNumber),
+          course_id: String(c.courseId),
+          offering_number: String(c.offeringNumber),
           campus_code: String(s.secCampus ?? c.campusCode ?? ""),
           subject: c.subject,
           catalog_number: String(c.catalogNumber),

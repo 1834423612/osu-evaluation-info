@@ -62,7 +62,7 @@ it(
         const parsed=new URL(url);
         if(parsed.pathname.endsWith('searchableTermsV2')) return Response.json({data:{data:[{classSearch:'Y',strm:'1272',descr:'Spring 2027'}]}});
         const bad=process.env.CATALOG_CLI_TEST_INCOMPLETE==='1'&&parsed.searchParams.has('p');
-        const sections=Array.from({length:bad?1:2},(_,i)=>({termCode:'1272',classNumber:String(i+1),courseId:'1',courseOfferingNumber:'1',secCampus:'COL',enrollmentStatus:'Open',enrollmentTotal:29,waitlistTotal:3}));
+        const sections=Array.from({length:bad?1:2},(_,i)=>({termCode:'1272',classNumber:String(i+1),courseId:'section-identity',courseOfferingNumber:'section-offering',secCampus:'COL',enrollmentStatus:'Open',enrollmentTotal:29,waitlistTotal:3}));
         return Response.json({data:{totalItems:2,totalPages:1,filters:[{slug:'subject',items:[{term:'math',title:'Mathematics',count:2,selected:false}]}],courses:[{course:{courseId:'1',offeringNumber:'1',campusCode:'COL',subject:'MATH',catalogNumber:'1151',title:'Calculus',description:'Test fixture'},sections}]}});
       };
     `,
