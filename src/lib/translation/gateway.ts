@@ -7,14 +7,12 @@ import {
   type TranslationItem,
   type TranslationResult,
   type TranslationTarget,
+  type TranslationProvider,
 } from "./service.ts";
-import type {
-  TranslationNode,
-  ServerTranslationProvider,
-} from "./providers.ts";
+import type { TranslationNode } from "./providers.ts";
 
 export type TranslationObservation = {
-  provider: ServerTranslationProvider | "gateway";
+  provider: Exclude<TranslationProvider, "chrome"> | "gateway";
   target: TranslationTarget;
   outcome:
     | "success"
@@ -53,6 +51,12 @@ export function createTranslationGateway(
     for (const state of states) {
       const { node } = state;
       const started = now();
+      // An upstream that ignores abort must never disable the node indefinitely.
+      // Reclaim orphaned permits after the deadline and one draining cooldown.
+      for (const [ticket, time] of state.active) {
+        if (started - time >= node.timeoutMs + node.cooldownMs)
+          state.active.delete(ticket);
+      }
       const report = (outcome: TranslationObservation["outcome"]) =>
         observe({
           provider: node.id,
@@ -83,7 +87,7 @@ export function createTranslationGateway(
             const operation = Promise.resolve().then(() =>
               node.translate(item, signal),
             );
-            // Keep the permit until the actual upstream work settles, even if it ignores abort.
+            // Keep the permit until settlement or its bounded draining lease expires.
             void operation.then(
               () => state.active.delete(ticket),
               () => state.active.delete(ticket),
@@ -105,7 +109,20 @@ export function createTranslationGateway(
         report(timeout ? "timeout" : "failure");
       }
     }
-    throw new TranslationUnavailableError();
+    const retryAfterMs = states.length
+      ? Math.min(
+          ...states.map(({ node, blockedUntil, active }) =>
+            Math.max(
+              1000,
+              blockedUntil - now(),
+              ...[...active.values()].map(
+                (time) => time + node.timeoutMs + node.cooldownMs - now(),
+              ),
+            ),
+          ),
+        )
+      : 30_000;
+    throw new TranslationUnavailableError(retryAfterMs);
   }
 
   async function translate(item: TranslationItem): Promise<TranslationResult> {
@@ -164,11 +181,15 @@ export function createTranslationGateway(
         cache: shared ? "shared" : "miss",
         durationMs: Math.max(0, now() - started),
       };
-    } catch {
+    } catch (error) {
       report("unavailable");
       return {
         ...metadata,
         status: "unavailable",
+        retryAfterMs:
+          error instanceof TranslationUnavailableError
+            ? error.retryAfterMs
+            : 5000,
         durationMs: Math.max(0, now() - started),
       };
     }

@@ -13,6 +13,19 @@ export const MAX_TRANSLATION_BATCH_SIZE = 8;
 export const MAX_TRANSLATION_BATCH_LENGTH = 12_000;
 export const TRANSLATION_DEADLINE_MS = 16_000;
 
+/** Public routing metadata only. Google fetches are performed by the browser. */
+export const BROWSER_TRANSLATION_PROVIDERS = [
+  {
+    id: "dict-chrome-ex",
+    endpoint: "https://translate.googleapis.com/translate_a/t",
+  },
+  { id: "clients5", endpoint: "https://clients5.google.com/translate_a/t" },
+  {
+    id: "gtx",
+    endpoint: "https://translate.googleapis.com/translate_a/single",
+  },
+] as const;
+
 export type TranslationItem = {
   id: string;
   text: string;
@@ -29,7 +42,7 @@ export type TranslationResult = {
       provider: TranslationProvider;
       cache: "miss" | "hit" | "shared";
     }
-  | { status: "unavailable" }
+  | { status: "unavailable"; retryAfterMs?: number }
 );
 
 export function parseTranslationBatch(
@@ -69,9 +82,11 @@ export function parseTranslationBatch(
 }
 
 export class TranslationUnavailableError extends Error {
-  constructor() {
+  retryAfterMs: number;
+  constructor(retryAfterMs = 5000) {
     super("Translation is temporarily unavailable.");
     this.name = "TranslationUnavailableError";
+    this.retryAfterMs = Math.min(60_000, Math.max(1000, retryAfterMs));
   }
 }
 
