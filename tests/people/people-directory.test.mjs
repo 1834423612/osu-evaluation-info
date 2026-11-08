@@ -14,30 +14,71 @@ import {
 } from "../../src/lib/people/directory.ts";
 import {
   compactDirectoryRole,
+  compactDirectoryRoles,
   distinctDirectoryAppointments,
   instructorDirectoryQuery,
   selectDirectoryCandidate,
   visibleDirectoryRoles,
 } from "../../src/lib/people/identity.ts";
 
-test("compact badges group academic rank and contract variants without changing appointments", () => {
+test("compact badges preserve academic ranks, research jobs and qualified assistants", () => {
   const cases = [
     ["Professor (9M)", "professor", "Professor", "教授"],
-    ["Associate Professor", "professor", "Professor", "教授"],
+    [
+      "Associate Professor",
+      "associate-professor",
+      "Associate Professor",
+      "副教授",
+    ],
     [
       "Assistant Professor - Clinical (9M) · Assistant Professor of Teaching Practice",
-      "professor",
-      "Professor",
-      "教授",
+      "assistant-professor",
+      "Clinical Assistant Professor",
+      "临床助理教授",
     ],
-    ["Senior Lecturer (9M)", "lecturer", "Lecturer", "讲师"],
-    ["Graduate Teaching Associate", "teaching-assistant", "TA", "助教"],
-    ["Undergraduate Teaching Assistant", "teaching-assistant", "TA", "助教"],
-    ["Graduate Research Associate", "assistant", "Assistant", "助理"],
-    ["Research Assistant", "assistant", "Assistant", "助理"],
-    ["Student Assistant", "assistant", "Assistant", "助理"],
+    ["Senior Lecturer (9M)", "senior-lecturer", "Senior Lecturer", "高级讲师"],
+    [
+      "Graduate Teaching Associate",
+      "teaching-assistant",
+      "Graduate TA",
+      "研究生助教",
+    ],
+    [
+      "Undergraduate Teaching Assistant",
+      "teaching-assistant",
+      "Undergraduate TA",
+      "本科生助教",
+    ],
+    [
+      "Graduate Research Associate",
+      "research-assistant",
+      "Graduate Research Associate",
+      "研究生研究助理",
+    ],
+    [
+      "Research Assistant",
+      "research-assistant",
+      "Research Assistant",
+      "研究助理",
+    ],
+    ["Student Assistant", "assistant", "Student Assistant", "学生助理"],
     ["Instructor", "faculty", "Instructor", "教师"],
-    ["Assistant Director", "employee", "Staff", "职员"],
+    ["Assistant Director", "director", "Assistant Director", "助理主任"],
+    ["Office Assistant", "assistant", "Office Assistant", "办公室助理"],
+    ["Emeritus", "emeritus", "Emeritus", "荣休"],
+    ["Professor Emeritus", "emeritus", "Professor Emeritus", "荣休教授"],
+    [
+      "Visiting Assistant Professor (9M)",
+      "assistant-professor",
+      "Visiting Assistant Professor",
+      "访问助理教授",
+    ],
+    [
+      "Researcher 3 · Senior Researcher",
+      "researcher",
+      "Senior Researcher",
+      "高级研究员",
+    ],
   ];
   for (const [title, category, en, zh] of cases) {
     const person = {
@@ -52,6 +93,60 @@ test("compact badges group academic rank and contract variants without changing 
     });
     assert.deepEqual(person, before);
   }
+});
+
+test("multiple appointments and unfamiliar explicit jobs survive compact display", () => {
+  const person = {
+    name: "Directory Fixture",
+    roles: ["lecturer", "employee"],
+    appointments: [
+      { title: "Researcher 3 · Senior Researcher", organization: "Design" },
+      { title: "Lecturer (SEM)", organization: "Design" },
+    ],
+  };
+  assert.deepEqual(
+    compactDirectoryRoles(person).map((value) => value.label.zh),
+    ["高级研究员", "讲师"],
+  );
+  assert.deepEqual(
+    compactDirectoryRoles({
+      ...person,
+      appointments: [{ title: "Researcher and Lecturer", organization: null }],
+    }).map((value) => value.label.zh),
+    ["研究员", "讲师"],
+  );
+  assert.deepEqual(
+    compactDirectoryRoles({
+      ...person,
+      appointments: [
+        { title: "Associate Professor & Director", organization: null },
+      ],
+    }).map((value) => value.label.zh),
+    ["副教授", "主任"],
+  );
+  assert.deepEqual(
+    compactDirectoryRoles({
+      ...person,
+      appointments: [{ title: "Archives Coordinator", organization: null }],
+    }),
+    [
+      {
+        category: "appointment",
+        label: { en: "Archives Coordinator", zh: "Archives Coordinator" },
+      },
+    ],
+  );
+  assert.deepEqual(
+    inferRoles(
+      [
+        { title: "Associate Professor", organization: null },
+        { title: "Lecturer", organization: null },
+      ],
+      [],
+      false,
+    ),
+    ["professor", "lecturer", "employee"],
+  );
 });
 
 test("compact badges choose one supported role and leave absent evidence unknown", () => {

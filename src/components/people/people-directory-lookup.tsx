@@ -18,7 +18,8 @@ import type {
   DirectoryRole,
 } from "@/lib/people/directory";
 import {
-  compactDirectoryRole,
+  compactDirectoryRoles,
+  directoryRoleTone,
   distinctDirectoryAppointments,
   instructorDirectoryQuery,
   selectDirectoryCandidate,
@@ -351,9 +352,7 @@ function detailRows(
     }));
   for (const [index, appointment] of distinctDirectoryAppointments(
     person.appointments,
-  )
-    .slice(0, 2)
-    .entries()) {
+  ).entries()) {
     rows.push({
       key: `appointment-${index}`,
       icon: "appointment",
@@ -373,7 +372,7 @@ function detailRows(
       label:
         locale === "zh" ? "目录未列出任职信息" : "No appointment is listed",
     });
-  return rows.slice(0, 4);
+  return rows;
 }
 
 export function InstructorDirectoryIdentity({
@@ -488,8 +487,12 @@ export function InstructorDirectoryIdentity({
   }, [term, fallbackName, subject, identity, cached, name, email]);
 
   const roles = person ? visibleDirectoryRoles(person.roles) : [];
-  const compactRole = person ? compactDirectoryRole(person) : null;
-  const roleCaption = compactRole?.label[props.locale];
+  const compactRoles = person ? compactDirectoryRoles(person) : [];
+  const roleCaption = compactRoles
+    .map((role) => role.label[props.locale])
+    .join(" · ");
+  const visibleRoles = compactRoles.slice(0, 2);
+  const additionalRoles = compactRoles.length - visibleRoles.length;
   const checked = Boolean(person && effectiveResult?.status === "available");
 
   return (
@@ -514,7 +517,9 @@ export function InstructorDirectoryIdentity({
               className={`${styles.roleTrigger} ${checked && roleCaption ? styles.role : styles.unknown}`}
               data-directory-role-trigger
               data-analytics-action="directory_identity_check"
-              data-role={compactRole?.category}
+              data-role={compactRoles[0]?.category}
+              data-role-tone={directoryRoleTone(compactRoles[0]?.category)}
+              title={roleCaption || undefined}
               ref={triggerRef}
               type="button"
               aria-label={
@@ -524,7 +529,16 @@ export function InstructorDirectoryIdentity({
               }
               aria-expanded={open}
             >
-              {checked && roleCaption ? roleCaption : null}
+              {checked && roleCaption ? (
+                <span className={styles.roleLabels}>
+                  {visibleRoles.map((role) => (
+                    <span key={role.label.en}>{role.label[props.locale]}</span>
+                  ))}
+                </span>
+              ) : null}
+              {additionalRoles > 0 ? (
+                <span className={styles.moreRoles}>+{additionalRoles}</span>
+              ) : null}
               {loading ? (
                 <LoaderCircle size={11} className="spin" aria-hidden="true" />
               ) : (

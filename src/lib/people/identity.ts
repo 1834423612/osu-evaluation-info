@@ -10,85 +10,13 @@ export type DirectoryInstructor = {
   subject?: string;
 };
 
-export type CompactDirectoryRoleCategory =
-  | "professor"
-  | "lecturer"
-  | "teaching-assistant"
-  | "assistant"
-  | "faculty"
-  | "student"
-  | "employee";
-
-export type CompactDirectoryRole = {
-  category: CompactDirectoryRoleCategory;
-  label: { en: string; zh: string };
-};
-
-const COMPACT_DIRECTORY_ROLES: Record<
-  CompactDirectoryRoleCategory,
-  CompactDirectoryRole
-> = {
-  professor: {
-    category: "professor",
-    label: { en: "Professor", zh: "教授" },
-  },
-  lecturer: {
-    category: "lecturer",
-    label: { en: "Lecturer", zh: "讲师" },
-  },
-  "teaching-assistant": {
-    category: "teaching-assistant",
-    label: { en: "TA", zh: "助教" },
-  },
-  assistant: {
-    category: "assistant",
-    label: { en: "Assistant", zh: "助理" },
-  },
-  faculty: {
-    category: "faculty",
-    label: { en: "Instructor", zh: "教师" },
-  },
-  student: {
-    category: "student",
-    label: { en: "Student", zh: "学生" },
-  },
-  employee: {
-    category: "employee",
-    label: { en: "Staff", zh: "职员" },
-  },
-};
-
-/** Short presentation categories; the full official appointment stays intact. */
-export function compactDirectoryRole(
-  person: DirectoryCandidate,
-): CompactDirectoryRole | null {
-  const titles = person.appointments.map((appointment) => appointment.title);
-  const hasTitle = (pattern: RegExp) =>
-    titles.some((title) => pattern.test(title));
-  // Academic rank modifiers do not turn a professor into a generic assistant.
-  if (person.roles.includes("professor") || hasTitle(/\bprofessor\b/i))
-    return COMPACT_DIRECTORY_ROLES.professor;
-  if (person.roles.includes("lecturer") || hasTitle(/\blecturer\b/i))
-    return COMPACT_DIRECTORY_ROLES.lecturer;
-  if (
-    person.roles.includes("teaching-assistant") ||
-    hasTitle(/\bteaching\s+(?:assistant|associate)\b/i)
-  )
-    return COMPACT_DIRECTORY_ROLES["teaching-assistant"];
-  if (
-    person.roles.includes("student-assistant") ||
-    hasTitle(
-      /\b(?:research|student|graduate|undergraduate|office|lab|laboratory)\s+(?:assistant|associate)\b/i,
-    )
-  )
-    return COMPACT_DIRECTORY_ROLES.assistant;
-  if (person.roles.includes("faculty") || hasTitle(/\binstructor\b/i))
-    return COMPACT_DIRECTORY_ROLES.faculty;
-  if (person.roles.includes("student")) return COMPACT_DIRECTORY_ROLES.student;
-  if (person.roles.includes("employee"))
-    return COMPACT_DIRECTORY_ROLES.employee;
-  return null;
-}
+export {
+  compactDirectoryRole,
+  compactDirectoryRoles,
+  directoryRoleTone,
+  type CompactDirectoryRole,
+  type CompactDirectoryRoleCategory,
+} from "./role-labels.ts";
 
 /** OSU can list one appointment both with and without college or contract suffixes. */
 export function distinctDirectoryAppointments(
@@ -96,15 +24,23 @@ export function distinctDirectoryAppointments(
 ) {
   const titleKey = (title: string) =>
     title
-      .replace(/\([^)]*\)/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
+      .split(/\s*·\s*/)
+      .map((part) =>
+        part
+          .replace(/\((?:\d+\s*M|SEM)\)/gi, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase(),
+      )
+      .filter((part, index, parts) => parts.indexOf(part) === index)
+      .sort()
+      .join(" · ");
   const departmentKey = (organization: string | null) =>
     organization
       ?.split(/\s+-\s+/)
       .at(-1)
       ?.trim()
+      .replace(/_/g, " ")
       .toLowerCase() ?? "";
   const distinct = new Map<string, DirectoryAppointment>();
   for (const appointment of appointments) {

@@ -1,10 +1,20 @@
 # OSU people directory lookup
 
-Instructor lists display a short role category beside the avatar / name.
-Professor rank and contract variants are grouped as Professor; lecturer variants
-as Lecturer; teaching assistants as TA; research and student assistants as
-Assistant. Other supported labels are Instructor, Student, and Staff. The
-original official appointment titles remain available in the details popover.
+Instructor lists derive compact roles from all saved official appointment titles
+beside the avatar / name. Professor, Associate Professor, Assistant Professor,
+clinical / practice / visiting appointments, Lecturer, Senior Lecturer, emeritus
+appointments, research roles, and qualified assistant positions retain their
+distinctions. An emeritus title without an explicit professor rank is shown as
+Emeritus, without inventing a rank. Multiple jobs such as Researcher and Lecturer
+appear together. A row shows up to two positions and an explicit +N indicator
+for further positions; the full caption is also available on hover. Contract
+markers and duplicate aliases collapse; unfamiliar
+explicit titles remain visible in their original language instead of becoming
+Staff or Professor. Coarse directory affiliation roles are a fallback only when
+no appointment title is available. Existing database and browser caches already
+contain these titles and do not need to be repopulated for this presentation change.
+All distinct original appointment titles and departments remain available in a
+scrollable details popover, including jobs beyond the first two appointments.
 Only the compact role badge, marked with a small information icon, opens that
 popover. On RMP cards, the name, avatar, summary tags, and card background toggle
 the review preview; links, action controls, and expanded review content keep
@@ -14,7 +24,7 @@ requests at once, spaces starts by 350 ms, deduplicates duplicate identities,
 and applies a 250 ms visibility delay. Cached records render immediately;
 background course cards never mount instructor lists. A click opens a compact
 popover with appointment / department facts without changing the section row's
-height. The same trigger and outside dismissal close it. Missing role evidence
+layout. The same trigger and outside dismissal close it. Missing role evidence
 uses an information icon and never a generic verified-person label.
 
 ## Identity and providers
@@ -90,8 +100,8 @@ before publishing cache updates, leaving the information icon visible.
 Role tags follow explicit appointment titles and affiliation labels. Professor,
 Lecturer, other teaching faculty, graduate / undergraduate teaching assistants,
 and student assistants remain distinct in the source data. The badge uses a
-compact category, while its popover keeps the official appointment title and
-department. Student and employee tags are suppressed when redundant
+specific title or combination of titles, while its popover keeps every distinct
+official appointment title and department. Student and employee tags are suppressed when redundant
 with an explicit TA / student-assistant title. A role does not establish
 full-time or tenure status. Missing evaluations and teaching Recitation never
 establish TA status.
@@ -106,7 +116,7 @@ establish TA status.
   requests allow 30 seconds, beginning only when their queued network task
   starts; queue wait time does not consume the request deadline.
 - At most 15 candidates and eight normalized appointments are retained; the
-  popover shows only a few distinct appointment / department highlights.
+  popover shows all distinct appointment / department highlights with bounded scrolling.
 - Provider failures return 503; confirmed empty results return an empty
   successful response. No contact or directory payload is written to logs or
   source-control fixtures.

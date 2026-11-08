@@ -43,7 +43,9 @@
   font-size: 0.64rem;
   font-weight: 650;
   line-height: 1.35;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .roleTrigger {
@@ -66,20 +68,37 @@
   opacity: 0.7;
   pointer-events: none;
 }
+.roleLabels {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.moreRoles {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
 
-.role[data-role="professor"],
-.role[data-role="lecturer"],
-.role[data-role="faculty"] {
+.role[data-role-tone="faculty"] {
   color: #285c42;
   border-color: #bde3cc;
   background: #eef9f1;
 }
 
-.role[data-role="teaching-assistant"],
-.role[data-role="assistant"] {
+.role[data-role-tone="assistant"] {
   color: #76500b;
   border-color: #ead6a7;
   background: #fbf5e5;
+}
+.role[data-role-tone="research"] {
+  color: #5b4482;
+  border-color: #d9cbea;
+  background: #f5effb;
+}
+.role[data-role-tone="emeritus"] {
+  color: #555f73;
+  border-color: #d1d9e5;
+  background: #f0f4f9;
 }
 
 .unknown {
@@ -113,6 +132,9 @@
   position: relative;
   z-index: 90;
   width: min(310px, calc(100vw - 24px));
+  max-height: min(440px, var(--radix-popover-content-available-height, 440px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 13px 34px 12px 13px;
   border: 1px solid var(--line);
   border-radius: 8px;

@@ -198,9 +198,15 @@ export function inferRoles(
   }
   if (/\bprofessor\b/.test(roleEvidence)) {
     roles.add("professor");
-  } else if (/\blecturer\b/.test(roleEvidence)) {
+  }
+  if (/\blecturer\b/.test(roleEvidence)) {
     roles.add("lecturer");
-  } else if (/\b(instructor|faculty)\b/.test(roleEvidence)) {
+  }
+  if (
+    !roles.has("professor") &&
+    !roles.has("lecturer") &&
+    /\b(instructor|faculty)\b/.test(roleEvidence)
+  ) {
     roles.add("faculty");
   }
   if (hasMajor || /\bstudent\b/.test(roleEvidence)) roles.add("student");
