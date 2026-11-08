@@ -11,8 +11,10 @@ The flow is:
 TranslateText → Chrome Translator API when available
               → batch POST /api/translate
                   → bounded memory cache / shared in-flight work
-                  → NAS Ollama → Google dict-chrome-ex → clients5 → gtx
-              ← per-item normalized results, matched by ID
+                  → NAS Ollama
+              ← NAS result or public Google endpoint metadata, matched by ID
+              → browser directly fetches Google dict-chrome-ex → clients5 → gtx
+              ← browser validates and normalizes the Google result
 ```
 
 ## Configure the NAS node
@@ -38,6 +40,12 @@ browser. Both credentials may be omitted for a private endpoint without Access;
 configuring just one disables the NAS adapter. Missing or malformed URLs also
 skip NAS. Cloudflare-protected endpoints require both real credentials.
 See [Cloudflare's service token headers](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/).
+
+A 302 redirect to a Cloudflare Access login page is an authentication problem,
+not model overload. Verify that the Access application has a Service Auth policy
+permitting the configured, valid service token. Following that redirect can
+produce an HTTP 200 HTML login page; this is not a successful translation.
+The NAS adapter rejects redirects and never forwards credentials to a login URL.
 
 Requests use [Ollama's generate API](https://docs.ollama.com/api/generate):
 
@@ -68,33 +76,55 @@ There are no speculative model generations or extra health requests.
 
 | Setting                            | Default | Accepted range | Effect                                                                       |
 | ---------------------------------- | ------- | -------------- | ---------------------------------------------------------------------------- |
-| `KJCH_AI_SERVICES_TIMEOUT_MS`      | 6000    | 500–8000       | Abort the NAS attempt and continue to Google                                 |
+| `KJCH_AI_SERVICES_TIMEOUT_MS`      | 6000    | 500–8000       | Abort NAS and return browser fallback metadata                               |
 | `KJCH_AI_SERVICES_SLOW_MS`         | 2500    | 250–8000       | Divert new requests while an active attempt is slow, or after a slow success |
-| `KJCH_AI_SERVICES_MAX_CONCURRENCY` | 1       | 1–8            | Send overflow directly to the next provider                                  |
+| `KJCH_AI_SERVICES_MAX_CONCURRENCY` | 1       | 1–8            | Return browser fallback metadata for overflow                                |
 | `KJCH_AI_SERVICES_COOLDOWN_MS`     | 30000   | 1000–300000    | Pause attempts after a timeout, two consecutive failures, or a slow success  |
 
 Invalid numeric settings use their defaults. After a cooldown, one real request
 probes the node. A fast success restores normal routing; another slow result or
 failure keeps it in cooldown. The request that receives a slow but valid result
 can use it; subsequent requests divert. A still-running attempt retains its
-concurrency permit until upstream work settles, even if it ignores cancellation.
+concurrency permit while draining, until it settles or its original timeout plus
+one cooldown expires. The next request reclaims an orphaned permit and admits
+one recovery probe; an upstream that ignores abort cannot block NAS forever.
+Failed translations are never cached on the server. Database failure counters
+are historical measurements, never a persistent provider blacklist.
 
-Each Google provider has a 2.5-second timeout and the same load/failure circuit
-logic. The complete server fallback has a 16-second budget. Google endpoints are
-undocumented best-effort services and may become unavailable or rate-limit
-requests. Non-JSON, HTTP errors, empty/unchanged text, wrong-language output,
-invalid structures, oversized bodies, and stream timeouts all cause fallback.
-The route returns a generic unavailable result after exhausting the candidates.
+Google is called **only by the user's browser**, using that device's network
+connection and public egress IP. The website server never requests Google or
+proxies its translation payloads. The API returns the fixed public endpoint list;
+the browser only accepts endpoints matching its built-in allowlist. It adds the
+text and language parameters locally and uses `mode: "cors"`,
+`credentials: "omit"`, and `referrerPolicy: "no-referrer"`. NAS Access headers
+never reach Google. See [Fetch's CORS and credential behavior](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
+
+Each Google provider has a 2.5-second timeout and independent browser-local
+cooldown. Network, CORS, HTTP, malformed, empty, unchanged, oversized, or
+wrong-language results fall through to the next endpoint. Transient failures
+start at five seconds and back off to at most 40 seconds; HTTP 429 also respects
+an exposed `Retry-After` header, capped at 60 seconds (30 seconds when absent).
+After the interval, one request probes that provider again. Failure on one
+device or one Google endpoint cannot disable NAS or other users' providers.
+These are undocumented best-effort services; CORS and availability may change.
+A site's CSP must permit `connect-src` to `https://translate.googleapis.com` and
+`https://clients5.google.com` if it defines this policy.
+
+An API network error, 429, 503, or unusable response also allows the browser to
+attempt Google directly. The browser never sends those requests back through a
+website proxy. After every provider fails, the source remains visible and the
+error includes a bounded retry hint. A later request always considers NAS first.
 
 State is shared per Node process, including development reloads: at most 32
 unique pending translations, 512 cached translations, and 2048 rate-limit keys.
-Cached translations expire after seven days. Duplicate texts with the same
-target share inference. Each trusted client address is limited to 30 snippets
+Only successful NAS translations are cached on the server, for seven days.
+Duplicate texts with the same target share inference. Each trusted client address is limited to 30 snippets
 per minute; batching does not multiply this allowance. Deployment proxies must
 overwrite forwarded client-IP headers. With multiple server replicas, caches,
 permits, and rate limits are independent per replica; start with one process or
 size NAS concurrency for the total replica count. The limits do not inspect
-Ollama traffic from other applications.
+Ollama traffic from other applications. Google permits and cooldowns live only
+in the browser, so they never share a server egress quota.
 
 ## HTTP contract
 
@@ -131,9 +161,13 @@ Content-Type: application/json
 ```
 
 This is a contract example, not a measurement of the NAS. Server `provider` is
-`ollama`, `dict-chrome-ex`, `clients5`, or `gtx`; `cache` is `miss`, `hit`, or
-`shared`. An unavailable item contains only `id`, `target`,
-`status: "unavailable"`, and `durationMs`. Batch HTTP status remains 200 for
+`ollama`; `cache` is `miss`, `hit`, or `shared`. The batch also contains
+`browserFallback: [{ "id": "dict-chrome-ex", "endpoint": "https://translate.googleapis.com/translate_a/t" }, ...]`
+listing all three fixed Google endpoints. An unavailable NAS item contains
+`id`, `target`, `status: "unavailable"`, `durationMs`, and `retryAfterMs`.
+The browser fetches Google itself for these items and returns the same normalized
+success shape locally, with the corresponding Google `provider`. It never uploads
+the Google translation to the website. Batch HTTP status remains 200 for
 partial or complete item failures so each item's outcome is usable. Invalid
 requests return 400, rate limits 429 with `Retry-After: 60`, and unexpected service
 failures 503. All responses use `Cache-Control: no-store`; translation caching
@@ -141,8 +175,9 @@ is managed inside the application.
 
 The legacy `{ "text": "Hello", "target": "zh-CN" }` request remains supported.
 It returns one normalized result, including the existing `translation` field,
-or a generic 503 error. Texts are translated separately upstream, preserving
-item boundaries rather than asking the model to reconstruct a batch JSON schema.
+or a generic 503 error with the public fallback metadata. Legacy API callers
+must follow that metadata on their own devices; no server Google proxy exists.
+Texts are translated separately upstream, preserving item boundaries rather than asking the model to reconstruct a batch JSON schema.
 
 ## Chrome and display behavior
 
@@ -159,8 +194,13 @@ Whitespace and paragraphs are preserved. The `bilingual` / `replace` preference
 and automatic switch remain device-local. Automatic translation only processes
 visible snippets, with at most two running at once; duplicate previews/details
 share work. Leaving the viewport before queued work starts skips that work.
-Failures back off for 30 seconds, with a 30-second circuit pause after three
-consecutive failures. The settings popover continues to use its Radix portal.
+Successful browser scheduler entries expire after 30 seconds, allowing later
+requests to reconsider a recovered NAS rather than pinning Google forever.
+Failed snippets use the bounded retry hint, with no global scheduler circuit
+that blocks unrelated snippets. Manual clicks can retry a failed snippet
+immediately. In automatic mode, a failed visible snippet retries after at least
+five seconds; disabling automatic mode, leaving the viewport, or unmounting the
+snippet cancels this retry. No independent health-polling process is started. The settings popover continues to use its Radix portal.
 
 ## Lightweight usage statistics
 
@@ -174,7 +214,13 @@ pnpm db:translation:init
 outcome. Each row holds request count, input-character count, total duration,
 and maximum duration. There is no translation text, prompt, IP, user ID, model
 output, URL, raw error, or per-request row in the table. Local Chrome translations
-are not reported to the server, keeping their text and activity local.
+are not reported to the server, keeping their text and activity local. Browser
+Google attempts report only the five numeric/enum fields through
+`POST /api/translate/usage`, in batches of at most 32 counters and at most 120
+counters per client per minute. The endpoint rejects text, URLs, model names,
+unknown fields, and forged NAS events. Its body is capped at 8 KiB. Reports are
+best-effort and untrusted: they are aggregated for analysis but never affect
+routing health. No new database migration is needed for browser reports.
 
 Outcomes `success`, `failure`, and `timeout` count actual upstream attempts.
 `busy` and `circuit` count routing skips. Provider `gateway` records cache hits,
@@ -218,6 +264,6 @@ TRANSLATION_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test --test-i
 
 The database test creates an isolated schema in a transaction and rolls it back.
 Deterministic transport tests exercise browser batching → HTTP validation →
-provider selection → normalized results without sending content to real services.
+NAS routing → browser-direct Google fallback → normalized results without sending content to real services.
 An authenticated NAS smoke test additionally requires the real Access credentials
 and the model name from your running Ollama installation.
