@@ -2305,6 +2305,22 @@ h1 {
 .availability-refresh > .enrollment-watch-control .enrollment-watch-toggle {
   flex-basis: 240px;
 }
+.course-fee-preview {
+  padding: 0 24px 10px;
+}
+.course-fee-preview:empty {
+  display: none;
+}
+.preview-waitlist {
+  border-radius: 5px;
+  background: #fff0cd;
+  padding: 3px 7px;
+  color: #805c1b;
+}
+.preview-availability > small {
+  color: var(--muted);
+  font-size: 9px;
+}
 @media (min-width: 1500px) {
   .header-inner {
     padding: 0 40px;

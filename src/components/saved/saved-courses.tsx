@@ -7,31 +7,35 @@ import { BrandMascot } from "@/components/brand/brand-mascot";
 import { CourseCard } from "@/components/catalog/course-card";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
 import { MeetingStrip } from "@/components/catalog/meeting-strip";
-import { usePreferences } from "@/hooks/use-preferences";
-import { text } from "@/lib/i18n";
+import {
+  usePreferences,
+  type SavedSection,
+  type SavedInstructor,
+} from "@/hooks/use-preferences";
+import { useCourseDetails } from "@/hooks/use-course-details";
+import { useCourseVisible } from "@/hooks/use-section-availability";
+import { CourseIdentityFacts } from "@/components/catalog/course-facts";
+import { text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import styles from "./saved-courses.module.css";
 
-function relatedCourse(snapshot: {
-  id: string;
-  label: string;
-  title: string;
-  term: string;
-  termCode?: string;
-  campusCode?: string;
-}): CatalogCourse {
+type SavedCourseSummary = SavedInstructor["courses"][number];
+
+function relatedCourse(snapshot: SavedCourseSummary): CatalogCourse {
   const [subject = "", catalogNumber = ""] = snapshot.label.split(/\s+/, 2);
   return {
     id: snapshot.id,
+    courseId: snapshot.officialCourseId,
+    courseIds: snapshot.courseIds,
     subject,
     subjectName: subject,
     catalogNumber,
     title: snapshot.title,
     description: "",
-    creditsMin: 0,
-    creditsMax: 0,
+    creditsMin: snapshot.creditsMin ?? 0,
+    creditsMax: snapshot.creditsMax ?? snapshot.creditsMin ?? 0,
     campus: "",
     campusCode: snapshot.campusCode ?? snapshot.id.split("-").at(-1) ?? "",
     term: snapshot.term,
@@ -67,6 +71,64 @@ function courseHref(
       ...(focusSection ? { focusSection } : {}),
     },
   };
+}
+
+function SavedSectionFacts({
+  item,
+  locale,
+}: {
+  item: SavedSection;
+  locale: Locale;
+}) {
+  return (
+    <SavedCourseFacts
+      snapshot={{
+        id: item.courseId,
+        label: item.courseLabel,
+        title: item.courseTitle,
+        term: item.term,
+        termCode: item.termCode,
+        campusCode: item.campusCode,
+        officialCourseId: item.officialCourseId || item.section.courseId,
+        creditsMin: item.creditsMin,
+        creditsMax: item.creditsMax,
+      }}
+      locale={locale}
+    />
+  );
+}
+
+function SavedCourseFacts({
+  snapshot,
+  locale,
+}: {
+  snapshot: SavedCourseSummary;
+  locale: Locale;
+}) {
+  const { ref, visible } = useCourseVisible();
+  const metadata = relatedCourse(snapshot);
+  const { course, source, error } = useCourseDetails(
+    metadata,
+    visible && (!metadata.courseId || snapshot.creditsMin === undefined),
+  );
+  const resolved = source && course ? course : null;
+  return (
+    <section ref={ref}>
+      {resolved || (metadata.courseId && snapshot.creditsMin !== undefined) ? (
+        <CourseIdentityFacts course={resolved ?? metadata} locale={locale} />
+      ) : (
+        <small className={styles.muted}>
+          {text(
+            locale,
+            error
+              ? "courseId and credits unavailable"
+              : "Loading courseId and credits…",
+            error ? "courseId 与学分暂不可用" : "正在读取 courseId 与学分…",
+          )}
+        </small>
+      )}
+    </section>
+  );
 }
 
 export function SavedCourses() {
@@ -191,6 +253,7 @@ export function SavedCourses() {
                               {item.campus}
                             </span>
                           </Link>
+                          <SavedSectionFacts item={item} locale={locale} />
                         </div>
                         <Button
                           variant="ghost"
@@ -289,13 +352,19 @@ export function SavedCourses() {
                       <div className={styles.relations}>
                         {instructor.courses.map((course) => (
                           <div className={styles.relation} key={course.id}>
-                            <Link href={courseHref(course)}>
-                              <span className={styles.courseCode}>
-                                {course.label}
-                              </span>
-                              <span>{course.title}</span>
-                              <small>{course.term}</small>
-                            </Link>
+                            <div className={styles.relationInfo}>
+                              <Link href={courseHref(course)}>
+                                <span className={styles.courseCode}>
+                                  {course.label}
+                                </span>
+                                <span>{course.title}</span>
+                                <small>{course.term}</small>
+                              </Link>
+                              <SavedCourseFacts
+                                snapshot={course}
+                                locale={locale}
+                              />
+                            </div>
                             <Button
                               variant="ghost"
                               size="icon-sm"

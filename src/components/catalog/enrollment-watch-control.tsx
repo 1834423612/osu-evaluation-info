@@ -48,8 +48,8 @@ export function EnrollmentWatchControl({
             {enabled
               ? text(
                   locale,
-                  "Refreshes while course details are open",
-                  "详情打开期间持续刷新",
+                  "Select sections in details, then start watching",
+                  "在详情勾选班次后，点击开始监控",
                 )
               : text(
                   locale,

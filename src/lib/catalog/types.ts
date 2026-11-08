@@ -9,6 +9,30 @@ export type CatalogMeeting = {
   endDate: string | null;
   location: string | null;
 };
+export type CatalogAttribute = {
+  name: string;
+  value: string;
+  description: string;
+};
+export type CatalogFee = {
+  kind: "course" | "textbook" | "other";
+  amount: number | null;
+  description: string;
+  campusCodes: string[];
+};
+export type SectionAvailability = {
+  source: "official-availability";
+  fetchedAt: string;
+  isOpen: boolean | null;
+  enrollmentStatus: string;
+  enrollmentCapacity: number | null;
+  enrollmentTotal: number | null;
+  availableSeats: number | null;
+  waitlistCapacity: number | null;
+  waitlistTotal: number | null;
+};
+export type AvailabilityState =
+  "idle" | "queued" | "loading" | "ready" | "error";
 export type CatalogSection = {
   id: string;
   classNumber: string;
@@ -22,6 +46,14 @@ export type CatalogSection = {
   sessionCode: string;
   instructors: CatalogInstructor[];
   meetings: CatalogMeeting[];
+  courseId?: string;
+  courseOfferingNumber?: string;
+  termCode?: string;
+  campusCode?: string;
+  attributes?: CatalogAttribute[];
+  fees?: CatalogFee[];
+  availability?: SectionAvailability;
+  availabilityState?: AvailabilityState;
 };
 export type CatalogAvailability = {
   source: "official" | "unavailable";
@@ -30,6 +62,8 @@ export type CatalogAvailability = {
 export type CatalogCourse = {
   availability?: CatalogAvailability;
   id: string;
+  courseId?: string;
+  courseIds?: string[];
   subject: string;
   subjectName: string;
   catalogNumber: string;
@@ -44,6 +78,7 @@ export type CatalogCourse = {
   academicCareer: string;
   academicCareers?: string[];
   attributes: string[];
+  fees?: CatalogFee[];
   sections: CatalogSection[];
   sectionsPartial: boolean;
   evaluation?: CourseEvaluationSummary;

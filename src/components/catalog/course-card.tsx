@@ -14,11 +14,11 @@ import {
   X,
 } from "lucide-react";
 import { useCourseDetails } from "@/hooks/use-course-details";
-import { useAvailabilityVisible } from "@/hooks/use-availability";
 import {
-  hasOfficialAvailability,
-  withoutCourseAvailability,
-} from "@/lib/catalog/availability";
+  useCourseVisible,
+  useSectionAvailability,
+} from "@/hooks/use-section-availability";
+import { hasOfficialAvailability } from "@/lib/catalog/availability";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import {
   courseAcademicCareerLabel,
@@ -48,6 +48,8 @@ import SectionsPanel from "./sections-panel";
 import { TranslateText } from "@/components/translation/translate-text";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
+import { CourseFees, CourseIdentityFacts } from "./course-facts";
+import { SeatWatchPanel } from "./seat-watch-panel";
 import type { EnrollmentWatchInterval } from "@/hooks/use-preferences";
 
 const EvaluationPanel = dynamic(
@@ -101,9 +103,11 @@ function courseDetailEyeline(course: CatalogCourse, locale: Locale) {
 function CoursePreview({
   course,
   locale,
+  paused,
 }: {
   course: CatalogCourse;
   locale: Locale;
+  paused: boolean;
 }) {
   const available = hasOfficialAvailability(course);
   const instructors = new Map<string, { name: string; email: string | null }>();
@@ -129,9 +133,26 @@ function CoursePreview({
         ];
   let open = 0;
   let closed = 0;
+  let waiting = 0;
+  const checked = course.sections.filter(
+    (section) => section.availability,
+  ).length;
+  const checking = course.sections.some(
+    (section) =>
+      section.availabilityState === "loading" ||
+      section.availabilityState === "queued",
+  );
+  const failed = course.sections.some(
+    (section) => section.availabilityState === "error",
+  );
   for (const section of course.sections) {
-    if (available && /open|^o$/i.test(section.enrollmentStatus)) open++;
-    if (available && /closed|^c$/i.test(section.enrollmentStatus)) closed++;
+    if (
+      section.availability &&
+      /wait/i.test(section.availability.enrollmentStatus)
+    )
+      waiting++;
+    else if (section.availability?.isOpen === true) open++;
+    else if (section.availability?.isOpen === false) closed++;
     for (const instructor of section.instructors)
       instructors.set(
         instructor.email?.toLowerCase() ?? instructor.name.toLowerCase(),
@@ -254,7 +275,7 @@ function CoursePreview({
       <div className="preview-sections">
         <strong>
           {course.sections.length}
-          {course.sectionsPartial ? "+" : ""}
+          {course.sectionsPartial && course.sections.length > 2 ? "+" : ""}
         </strong>
         <span>{text(locale, "class sections", "个班次")}</span>
       </div>
@@ -264,7 +285,11 @@ function CoursePreview({
       >
         {!available ? (
           <span>
-            {text(locale, "Availability unavailable", "选课状态暂不可用")}
+            {paused
+              ? text(locale, "Checks paused", "空位查询已暂停")
+              : checking
+                ? text(locale, "Checking seats…", "正在查询空位…")
+                : text(locale, "Seats not checked", "空位待查询")}
           </span>
         ) : null}
         {open ? (
@@ -276,6 +301,24 @@ function CoursePreview({
           <span className="preview-closed">
             {closed} {text(locale, "full", "已满")}
           </span>
+        ) : null}
+        {waiting ? (
+          <span className="preview-waitlist">
+            {waiting} {text(locale, "waitlisted", "候补")}
+          </span>
+        ) : null}
+        {checked ? (
+          <small>
+            {text(
+              locale,
+              `${checked}/${course.sections.length} checked`,
+              `${checked}/${course.sections.length} 已核验`,
+            )}
+            {paused ? text(locale, " · paused", " · 已暂停") : ""}
+            {failed
+              ? text(locale, " · some checks failed", " · 部分更新失败")
+              : ""}
+          </small>
         ) : null}
       </div>
     </div>
@@ -302,6 +345,7 @@ export function CourseCard({
   onEnrollmentWatchIntervalChange: (seconds: EnrollmentWatchInterval) => void;
 }) {
   const searchParams = useSearchParams();
+  const { ref: cardRef, visible } = useCourseVisible();
   const isMobile = useMobileViewport();
   const detailId = useId();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -324,22 +368,16 @@ export function CourseCard({
     loading,
     error,
     refresh: loadDetail,
-  } = useCourseDetails(
-    course,
-    isSelected,
-    requestedTab === "sections" && enrollmentWatch,
-    enrollmentWatchInterval,
-  );
+  } = useCourseDetails(course, isSelected || (visible && !course.courseId));
   const loaded = detail ?? course;
-  const available = useAvailabilityVisible(
-    loaded,
-    isSelected && requestedTab === "sections" && enrollmentWatch,
-  );
-  const current = available ? loaded : withoutCourseAvailability(loaded);
-  const credit =
-    course.creditsMin === course.creditsMax
-      ? String(course.creditsMin)
-      : `${course.creditsMin}–${course.creditsMax}`;
+  const seatChecks = useSectionAvailability(loaded, {
+    visible,
+    open: isSelected && requestedTab === "sections",
+    focused: isSelected,
+    watch: enrollmentWatch,
+    intervalSeconds: enrollmentWatchInterval,
+  });
+  const current = seatChecks.course;
 
   useEffect(() => {
     if (!isSelected) return;
@@ -510,39 +548,17 @@ export function CourseCard({
               locale={locale}
               className="full-description"
             />
-            {course.attributes.length ? (
+            <CourseFees course={current} locale={locale} />
+            {current.attributes.length ? (
               <div className="attribute-list">
-                {course.attributes.map((attribute) => (
+                {current.attributes.map((attribute) => (
                   <Badge variant="outline" key={attribute}>
                     {attribute}
                   </Badge>
                 ))}
               </div>
             ) : null}
-            <div className="availability-refresh" aria-live="polite">
-              <span>
-                {available
-                  ? text(
-                      locale,
-                      `Availability checked at ${new Date(loaded.availability!.fetchedAt!).toLocaleTimeString("en-US")}`,
-                      `选课状态获取于 ${new Date(loaded.availability!.fetchedAt!).toLocaleTimeString("zh-CN")}`,
-                    )
-                  : text(
-                      locale,
-                      "Live availability is currently unavailable. Check the official search before enrolling.",
-                      "实时选课状态暂不可用，请以官方选课系统为准。",
-                    )}
-              </span>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                data-analytics-action="enrollment_refresh"
-                disabled={loading}
-                onClick={() => void loadDetail()}
-              >
-                {text(locale, "Refresh availability", "刷新选课状态")}
-              </Button>
+            <div className="availability-refresh">
               <EnrollmentWatchControl
                 enabled={enrollmentWatch}
                 intervalSeconds={enrollmentWatchInterval}
@@ -551,6 +567,20 @@ export function CourseCard({
                 onIntervalChange={onEnrollmentWatchIntervalChange}
               />
             </div>
+            <SeatWatchPanel
+              course={current}
+              locale={locale}
+              selected={seatChecks.selected}
+              onSelect={seatChecks.select}
+              running={seatChecks.running}
+              onStart={seatChecks.start}
+              onStop={seatChecks.stop}
+              onRefresh={() => void seatChecks.refresh()}
+              loading={seatChecks.loading}
+              countdown={seatChecks.countdown}
+              intervalSeconds={seatChecks.intervalSeconds}
+              enabled={enrollmentWatch}
+            />
             {loading ? (
               <div className="inline-loading">
                 <LoaderCircle className="spin" size={17} />
@@ -561,8 +591,8 @@ export function CourseCard({
               <div className="inline-error">
                 {text(
                   locale,
-                  "Couldn't refresh official data. Enrollment availability is hidden.",
-                  "暂无法刷新官方信息，选课状态和人数已隐藏。",
+                  "Course details could not be refreshed. Seat checks are shown separately.",
+                  "课程资料暂无法刷新；空位查询结果单独展示。",
                 )}{" "}
                 <button
                   data-analytics-action="enrollment_retry"
@@ -576,6 +606,12 @@ export function CourseCard({
               course={current}
               locale={locale}
               focusClassNumber={focusSection}
+              watch={enrollmentWatch}
+              selected={seatChecks.selected}
+              onSelect={seatChecks.select}
+              onRefreshSection={(classNumber) =>
+                void seatChecks.refreshSection(classNumber)
+              }
             />
           </div>
         </TabsContent>
@@ -649,6 +685,7 @@ export function CourseCard({
 
   return (
     <article
+      ref={cardRef}
       className="course-card"
       data-analytics-label="course_card"
       data-analytics-value={`${course.subject} ${course.catalogNumber}`}
@@ -678,9 +715,7 @@ export function CourseCard({
             <span className="course-code">
               {course.subject} {course.catalogNumber}
             </span>
-            <span className="course-credits">
-              {credit} {text(locale, "credits", "学分")}
-            </span>
+            <CourseIdentityFacts course={current} locale={locale} />
             <Button
               variant="ghost"
               size="icon-sm"
@@ -752,7 +787,14 @@ export function CourseCard({
           </span>
         </button>
       </div>
-      <CoursePreview course={current} locale={locale} />
+      <div className="course-fee-preview">
+        <CourseFees course={current} locale={locale} compact />
+      </div>
+      <CoursePreview
+        course={current}
+        locale={locale}
+        paused={seatChecks.paused}
+      />
       {isMobile ? (
         <Drawer
           open={Boolean(tab)}
@@ -804,6 +846,7 @@ export function CourseCard({
                     "查看班次时间、教师、选课人数与历史评价。",
                   )}
                 </DrawerDescription>
+                <CourseIdentityFacts course={current} locale={locale} />
               </div>
               <Button
                 type="button"
@@ -868,6 +911,7 @@ export function CourseCard({
                     "查看班次时间、教师、选课人数与历史评价。",
                   )}
                 </SheetDescription>
+                <CourseIdentityFacts course={current} locale={locale} />
               </div>
               <Button
                 type="button"

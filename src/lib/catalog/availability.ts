@@ -1,7 +1,5 @@
 import type { CatalogCourse, CatalogSection } from "./types";
 
-export const AVAILABILITY_TTL_MS = 30_000;
-export const MIN_AVAILABILITY_POLL_MS = 10_000;
 export const UNAVAILABLE_ENROLLMENT = {
   enrollmentStatus: "",
   enrollmentTotal: null,
@@ -12,7 +10,12 @@ export const UNAVAILABLE_ENROLLMENT = {
 export function withoutSectionAvailability(
   section: CatalogSection,
 ): CatalogSection {
-  return { ...section, ...UNAVAILABLE_ENROLLMENT };
+  return {
+    ...section,
+    ...UNAVAILABLE_ENROLLMENT,
+    availability: undefined,
+    availabilityState: "idle",
+  };
 }
 export function withoutCourseAvailability(
   course: CatalogCourse,
@@ -28,17 +31,11 @@ export function hasOfficialAvailability(course: CatalogCourse): boolean {
   return (
     course.availability?.source === "official" &&
     typeof course.availability.fetchedAt === "string" &&
-    Number.isFinite(Date.parse(course.availability.fetchedAt))
+    Number.isFinite(Date.parse(course.availability.fetchedAt)) &&
+    course.sections.some(
+      (section) => section.availability?.source === "official-availability",
+    )
   );
-}
-
-export function isAvailabilityFresh(
-  course: CatalogCourse,
-  now = Date.now(),
-): boolean {
-  if (!hasOfficialAvailability(course)) return false;
-  const age = now - Date.parse(course.availability!.fetchedAt!);
-  return Number.isFinite(age) && age >= -5000 && age < AVAILABILITY_TTL_MS;
 }
 
 /** Remove volatile fields before writing the static catalog snapshot. */
@@ -55,6 +52,9 @@ export function stripEnrollmentFields(
     "availableSeats",
     "seatsAvailable",
     "seatsRemaining",
+    "availability",
+    "availabilityState",
+    "isOpen",
   ])
     delete copy[key];
   return copy;

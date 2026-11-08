@@ -61,4 +61,23 @@ On November 6, 2026, [run 42284068119](https://github.com/1834423612/osu-evaluat
 
 ## Enrollment freshness in the browser
 
-Opening or reopening details performs one official read by default. Ordinary search results and one-time detail reads retain their successful official availability until another query or refresh replaces it, including while the tab is idle or hidden. The device-local Seat Watch setting enables polling while the sections view is open; its interval defaults to 30 seconds and can be set as low as 10 seconds. Polling also refreshes on window focus or visibility restoration, and its displayed values expire after 30 seconds. Hiding the tab cancels the in-flight watch request and clears watch availability; closing details cancels its request in either mode. Only one read can be in flight, and cancelled/late responses cannot restore older enrollment values. A failed refresh clears availability immediately. Favorites and database snapshots continue to exclude archived enrollment values. Users can refresh manually and see the last official fetch time.
+Only the official per-section `/classes/availability` endpoint supplies counts;
+`/classes/search` enrollment fields are placeholders. List entries query gradually
+as they become visible, and normal details query each section once on open. A
+successful result remains visible while idle. A failed refresh retains and labels
+the last verified read. Counts are not stored in favorites or database snapshots.
+
+Seat Watch requires selected sections and an explicit start. Choices persist per
+course/term/campus, but running state does not survive a reload. More than eight
+selected sections requires confirmation. Each completed round waits at least the
+configured interval or one second per selected section (minimum ten seconds).
+Details pause other courses' unfinished list queries. Hidden tabs cancel the watch
+round, then resume on visibility restoration. Cancelling a subscriber cannot cancel
+another subscriber's shared read; obsolete responses are ignored.
+
+Upstream admission is bounded per process to two requests and one start per 500 ms,
+with 120 queued jobs and two-second result coalescing. Browser admission is bounded
+to two requests and one start per 400 ms, with 80 queued jobs. Upstream 429 responses
+back off the server queue. Multiple server processes have independent queues; a
+future multi-instance deployment needing a global quota requires shared admission
+storage. See [the API contract](api.md#live-only-enrollment).

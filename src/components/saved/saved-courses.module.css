@@ -169,6 +169,11 @@
   text-decoration: none;
 }
 
+.relationInfo {
+  min-width: 0;
+  flex: 1;
+}
+
 .relation a > span:nth-child(2) {
   color: var(--ink);
   font-size: 11px;

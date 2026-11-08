@@ -16,16 +16,18 @@ const adapterSource = source
     JSON.stringify(
       new URL("../../src/lib/catalog/exact-search.ts", import.meta.url).href,
     ),
+  )
+  .replace(
+    '"./fees"',
+    JSON.stringify(
+      new URL("../../src/lib/catalog/fees.ts", import.meta.url).href,
+    ),
   );
-const {
-  searchOfficialCatalog,
-  getOfficialCourse,
-  normalizeOfficialCourse,
-  mergeCatalogCourse,
-} = await import(
-  "data:text/javascript;base64," +
-    Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
-);
+const { searchOfficialCatalog, getOfficialCourse, normalizeOfficialCourse } =
+  await import(
+    "data:text/javascript;base64," +
+      Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
+  );
 
 function course(catalogNumber, campusCode, classNumber, component = "Lecture") {
   return {
@@ -155,49 +157,36 @@ describe("exact course upstream reconciliation", () => {
 });
 
 describe("official availability provenance", () => {
-  it("preserves each section's own totals, including zero and repeated official values", () => {
+  it("never presents search placeholders as verified seat counts", () => {
     const entry = course("2200", "COL", "1");
+    entry.course.courseId = "151332";
     entry.course.enrollmentTotal = 999;
     entry.sections = [21, 37, 0].map((enrollmentTotal, index) => ({
       ...entry.sections[0],
       classNumber: String(index + 1),
+      section: `00${index}0`,
       enrollmentTotal,
       waitlistTotal: index,
-      enrollmentStatus: index === 1 ? "Closed" : "Open",
+      courseId: "151332",
+      courseOfferingNumber: 1,
+      sessionCode: "1",
     }));
-    const provenance = {
+    const normalized = normalizeOfficialCourse(entry, "1272", {
       source: "official",
       fetchedAt: new Date().toISOString(),
-    };
-    const normalized = normalizeOfficialCourse(entry, "1272", provenance);
-    assert.deepEqual(
-      normalized.sections.map((section) => section.enrollmentTotal),
-      [21, 37, 0],
-    );
-    assert.deepEqual(
-      normalized.sections.map((section) => section.waitlistTotal),
-      [0, 1, 2],
-    );
-    const next = normalizeOfficialCourse(
-      { ...entry, sections: [{ ...entry.sections[0], enrollmentTotal: 22 }] },
-      "1272",
-      provenance,
-    );
-    assert.deepEqual(
-      mergeCatalogCourse(normalized, next).sections.map(
-        (section) => section.enrollmentTotal,
-      ),
-      [22, 37, 0],
-    );
-    entry.sections.forEach((section) => {
-      section.enrollmentTotal = 42;
     });
     assert.deepEqual(
-      normalizeOfficialCourse(entry, "1272", provenance).sections.map(
-        (section) => section.enrollmentTotal,
-      ),
-      [42, 42, 42],
+      normalized.sections.map((s) => s.enrollmentTotal),
+      [null, null, null],
     );
+    assert.deepEqual(
+      normalized.sections.map((s) => s.enrollmentStatus),
+      ["", "", ""],
+    );
+    assert.equal(normalized.availability.source, "unavailable");
+    assert.equal(normalized.courseId, "151332");
+    assert.equal(normalized.sections[0].courseOfferingNumber, "1");
+    assert.equal(normalized.sections[0].section, "0000");
   });
   it("never exposes archived enrollment through the default normalizer", () => {
     const entry = course("1151", "COL", "1");
@@ -237,12 +226,12 @@ describe("official availability provenance", () => {
       const input = { subject: "MATH", catalog: "1151", term: "1272" };
       assert.equal(
         (await getOfficialCourse(input)).course.sections[0].enrollmentStatus,
-        "Open",
+        "",
       );
       const next = await getOfficialCourse(input);
-      assert.equal(next.course.sections[0].enrollmentStatus, "Closed");
-      assert.equal(next.course.availability.source, "official");
-      assert.ok(next.course.availability.fetchedAt);
+      assert.equal(next.course.sections[0].enrollmentStatus, "");
+      assert.equal(next.course.availability.source, "unavailable");
+      assert.equal(next.course.availability.fetchedAt, null);
       assert.equal(searches, 2);
     } finally {
       globalThis.fetch = originalFetch;

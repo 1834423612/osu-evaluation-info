@@ -54,6 +54,9 @@ export type SavedSection = {
   campus: string;
   termCode?: string;
   campusCode?: string;
+  officialCourseId?: string;
+  creditsMin?: number;
+  creditsMax?: number;
   section: CatalogSection;
 };
 export type SavedInstructor = {
@@ -67,6 +70,10 @@ export type SavedInstructor = {
     term: string;
     termCode?: string;
     campusCode?: string;
+    officialCourseId?: string;
+    courseIds?: string[];
+    creditsMin?: number;
+    creditsMax?: number;
   }[];
 };
 let savedRaw: string | null = null;
@@ -285,6 +292,9 @@ export function usePreferences() {
             campus: course.campus,
             termCode: course.termCode,
             campusCode: course.campusCode,
+            officialCourseId: value.courseId || course.courseId,
+            creditsMin: course.creditsMin,
+            creditsMax: course.creditsMax,
             section,
           },
         ].slice(-200);
@@ -313,6 +323,9 @@ export function usePreferences() {
                   campus: course.campus,
                   termCode: course.termCode,
                   campusCode: course.campusCode,
+                  officialCourseId: value.courseId || course.courseId,
+                  creditsMin: course.creditsMin,
+                  creditsMax: course.creditsMax,
                   section,
                 },
               ].slice(-200);
@@ -340,6 +353,10 @@ export function usePreferences() {
       term: course.term,
       termCode: course.termCode,
       campusCode: course.campusCode,
+      officialCourseId: course.courseId,
+      courseIds: course.courseIds,
+      creditsMin: course.creditsMin,
+      creditsMax: course.creditsMax,
     };
     const next = existing
       ? existing.courses.some((item) => item.id === course.id)

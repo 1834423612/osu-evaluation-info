@@ -36,6 +36,7 @@ import {
 import { MeetingStrip } from "./meeting-strip";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
 import styles from "./sections-panel.module.css";
+import { SectionAvailabilityView } from "./section-availability";
 
 const DAYS = {
   en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -141,6 +142,10 @@ function SectionRow({
   savedInstructors,
   onSave,
   onSaveInstructor,
+  watch,
+  watched,
+  onToggleWatch,
+  onRefresh,
 }: {
   section: CatalogSection;
   locale: Locale;
@@ -152,16 +157,13 @@ function SectionRow({
   savedInstructors: ReadonlySet<string>;
   onSave: () => void;
   onSaveInstructor: (instructor: CatalogInstructor) => void;
+  watch: boolean;
+  watched: boolean;
+  onToggleWatch: () => void;
+  onRefresh: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const detailId = useId();
-  const isOpen = /open|^o$/i.test(section.enrollmentStatus);
-  const isClosed = /closed|^c$/i.test(section.enrollmentStatus);
-  const status = isOpen
-    ? text(locale, "Open", "可选")
-    : isClosed
-      ? text(locale, "Full", "已满")
-      : section.enrollmentStatus || text(locale, "Unavailable", "暂不可用");
 
   return (
     <li
@@ -171,28 +173,43 @@ function SectionRow({
       data-saved-focus={savedFocus ? "true" : undefined}
     >
       <div className={styles.rowMain}>
-        <button
-          className={styles.identity}
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          aria-expanded={expanded}
-          aria-controls={detailId}
-          aria-label={text(
-            locale,
-            `${expanded ? "Collapse" : "Expand"} ${section.component} ${section.section} details`,
-            `${expanded ? "收起" : "展开"}${componentLabel(section.component, locale)} ${section.section}详情`,
-          )}
-        >
-          {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-          <span>
-            <strong>
-              {componentLabel(section.component, locale)} {section.section}
-            </strong>
-            <span className={styles.muted}>
-              #{section.classNumber} · {section.instructionMode}
+        <div className={styles.sectionIdentity}>
+          {watch ? (
+            <input
+              className={styles.watchChoice}
+              type="checkbox"
+              checked={watched}
+              onChange={onToggleWatch}
+              aria-label={text(
+                locale,
+                `Watch section ${section.section} (#${section.classNumber})`,
+                `监控班次 ${section.section}（#${section.classNumber}）`,
+              )}
+            />
+          ) : null}
+          <button
+            className={styles.identity}
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+            aria-controls={detailId}
+            aria-label={text(
+              locale,
+              `${expanded ? "Collapse" : "Expand"} ${section.component} ${section.section} details`,
+              `${expanded ? "收起" : "展开"}${componentLabel(section.component, locale)} ${section.section}详情`,
+            )}
+          >
+            {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            <span>
+              <strong>
+                {componentLabel(section.component, locale)} {section.section}
+              </strong>
+              <span className={styles.muted}>
+                #{section.classNumber} · {section.instructionMode}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        </div>
         <div className={styles.instructors}>
           {section.instructors.length ? (
             section.instructors.map((instructor) => {
@@ -278,22 +295,11 @@ function SectionRow({
           )}
         </div>
         <div className={styles.availability}>
-          <span
-            className={`${styles.status}${isOpen ? ` ${styles.open}` : isClosed ? ` ${styles.closed}` : ""}`}
-          >
-            <i />
-            {status}
-          </span>
-          <span className={styles.enrollment}>
-            {text(locale, "Enrolled", "已选")}{" "}
-            <strong>{section.enrollmentTotal ?? "—"}</strong>
-            {section.waitlistTotal ? (
-              <span>
-                {" "}
-                · {text(locale, "Waitlist", "候补")} {section.waitlistTotal}
-              </span>
-            ) : null}
-          </span>
+          <SectionAvailabilityView
+            section={section}
+            locale={locale}
+            onRefresh={onRefresh}
+          />
         </div>
         <button
           className={`${styles.iconButton} ${styles.sectionSave}${saved ? ` ${styles.saved}` : ""}`}
@@ -317,6 +323,13 @@ function SectionRow({
           <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
         </button>
       </div>
+      {section.fees?.length ? (
+        <ul className={styles.feeList}>
+          {section.fees.map((fee) => (
+            <li key={fee.description}>{fee.description}</li>
+          ))}
+        </ul>
+      ) : null}
       {expanded ? (
         <div id={detailId} className={styles.rowDetails}>
           <dl className={styles.metadata}>
@@ -341,7 +354,14 @@ function SectionRow({
             </div>
             <div>
               <dt>{text(locale, "Waitlist", "候补")}</dt>
-              <dd>{section.waitlistTotal ?? "—"}</dd>
+              <dd>
+                {section.availability?.waitlistTotal ?? "—"} /{" "}
+                {section.availability?.waitlistCapacity ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>courseId</dt>
+              <dd>{section.courseId || "—"}</dd>
             </div>
           </dl>
           {section.meetings.length ? (
@@ -376,10 +396,18 @@ export default function SectionsPanel({
   course,
   locale,
   focusClassNumber = null,
+  watch = false,
+  selected = [],
+  onSelect = () => {},
+  onRefreshSection = () => {},
 }: {
   course: CatalogCourse;
   locale: Locale;
   focusClassNumber?: string | null;
+  watch?: boolean;
+  selected?: readonly string[];
+  onSelect?: (ids: string[]) => void;
+  onRefreshSection?: (classNumber: string) => void;
 }) {
   const [filters, setFilters] = useState<SectionFilterState>(emptyFilters);
   const listRef = useRef<HTMLUListElement>(null);
@@ -673,6 +701,16 @@ export default function SectionsPanel({
               savedFocus={focusClassNumber === section.classNumber}
               saved={savedSectionIds.has(`${course.id}:${section.classNumber}`)}
               savedInstructors={savedInstructorIds}
+              watch={watch}
+              watched={selected.includes(section.classNumber)}
+              onToggleWatch={() =>
+                onSelect(
+                  selected.includes(section.classNumber)
+                    ? selected.filter((id) => id !== section.classNumber)
+                    : [...selected, section.classNumber],
+                )
+              }
+              onRefresh={() => onRefreshSection(section.classNumber)}
               onSave={() => {
                 toggleSection(course, section);
               }}

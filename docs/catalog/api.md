@@ -55,8 +55,52 @@ node scripts/catalog/sync_osu_catalog.mjs --new-run
 
 ## Live-only enrollment
 
-Course responses include `availability: { source: "official" | "unavailable", fetchedAt: string | null }`. Only successful official reads populate enrollment status, enrollment totals, and waitlist totals. Mirror normalization always clears these fields, even if an old archived JSON row still contains them. New snapshot pages exclude volatile enrollment fields before writing to PostgreSQL.
+Search and detail endpoints return **metadata only**. Their raw enrollment fields
+are placeholders; normalization always clears them, even for a successful official
+search. Snapshots and saved courses also exclude volatile counts and provenance.
+`courseId` is the official numeric catalog identifier, separate from the composite
+application ID and the enrollment `classNumber`. Credits preserve min/max units.
 
-Saved courses and sections retain static metadata but clear enrollment values. An idempotent browser-storage migration also scrubs existing favorites without losing their identities. A successful one-time official read remains visible in the current view until another query or refresh replaces it; elapsed time or tab visibility alone does not clear it. Clients must not infer remaining seats from enrollment totals or room capacity.
+`GET /api/catalog/availability?courseId=151332&courseOfferingNumber=1&classSection=0040&sessionCode=1&termCode=1268`
 
-Course details request official data on every open/reopen. Device-local Seat Watch can enable polling every 10–30 seconds, plus refreshes on window focus and visibility restoration. Only an open sections view with Seat Watch enabled uses the 30-second freshness clock; ordinary search results and one-time detail reads retain their last successful values. Failed refreshes clear availability immediately. Closing details aborts its request; hiding the tab also aborts the request and clears availability while Seat Watch is enabled. Request generations prevent cancelled or late responses from restoring older values. The UI provides manual refresh and interval controls and shows the official fetch timestamp.
+The server validates all five identifiers and queries only the fixed official
+`https://content.osu.edu/v2/classes/availability` endpoint. Section codes preserve
+leading zeros. Returns `{availability}` with `source:"official-availability"`,
+`fetchedAt`, `isOpen`, `enrollmentStatus`, `enrollmentCapacity`, `enrollmentTotal`,
+`availableSeats`, `waitlistCapacity`, and `waitlistTotal`. Missing numeric fields
+remain null; zero is meaningful. Remaining seats come from `availableSeats`, never
+from room capacity. Waitlist remaining is explicitly capacity minus total.
+
+A shared queue within each server process allows at most two upstream reads with
+at least 500 ms between starts, 120 queued jobs, a 15-second request timeout, shared
+in-flight reads and a two-second result coalescing window. It backs off on upstream
+429 responses. This is a per-process bound, not a distributed account-wide quota.
+The browser adds its own two-read limit, 400 ms start spacing, 80-job bound and
+20-second timeout. Saturation returns 429 with Retry-After; failed upstream reads
+return 502. API/browser responses use no-store. Counts exist only in session memory.
+
+Visible list entries receive gradual one-time section checks. Opening/reopening
+normal details performs a fresh one-time check per section. Successful results
+remain visible while idle or hidden, until another query or refresh replaces them.
+Failed refreshes retain the last verified counts with an explicit failure and
+last-read label; unqueried rows never display search placeholders. Each row has a
+manual retry and fetch timestamp. Closing/unmounting cancels unneeded work; shared
+readers do not cancel each other and late responses cannot overwrite newer reads.
+
+Seat Watch remembers **selected class numbers only**, scoped to course, term and
+campus. It requires an explicit start, refreshes selected sections only, and pauses
+when choices change. Selecting more than eight sections requires a second
+confirmation before starting. The next round begins after the previous round
+finishes, waiting at least max(10 seconds, configured interval, selected count in
+seconds); queued starts are still spaced. The UI displays progress and a countdown.
+Hiding the tab cancels the current watch round; visibility restoration resumes it.
+Entering course details while Seat Watch is enabled pauses other list queries,
+retaining their previous results. Closing details resumes unfinished visible list
+checks. No background courses are polled. Reloading remembers choices but requires
+starting the watch again.
+
+Course and section attributes preserve fee descriptions. Campus-qualified `CRSF`
+fees are filtered by section campus, with ATI mapped to Wooster; `ALX` digital
+textbook fees are shown on applicable sections. Course lists summarize published
+fees, while details show the original descriptions. The UI never sums alternative
+campus or section fees into a total.

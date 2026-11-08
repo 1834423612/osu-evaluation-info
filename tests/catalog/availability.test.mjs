@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  AVAILABILITY_TTL_MS,
   hasOfficialAvailability,
-  isAvailabilityFresh,
   stripEnrollmentFields,
   withoutCourseAvailability,
 } from "../../src/lib/catalog/availability.ts";
@@ -24,16 +22,33 @@ function fixture() {
         enrollmentStatus: "Open",
         enrollmentTotal: 29,
         waitlistTotal: 4,
+        availability: {
+          source: "official-availability",
+          fetchedAt: new Date(now).toISOString(),
+          isOpen: true,
+          enrollmentStatus: "Open",
+          enrollmentCapacity: 30,
+          enrollmentTotal: 29,
+          availableSeats: 1,
+          waitlistCapacity: 10,
+          waitlistTotal: 4,
+        },
       },
     ],
   };
 }
 
 describe("live-only enrollment availability", () => {
-  it("retains a successful one-time read after its watch freshness window", () => {
+  it("retains a successful one-time read without an automatic expiration clock", () => {
     const course = fixture();
+    assert.equal(
+      hasOfficialAvailability({
+        ...course,
+        sections: [{ ...course.sections[0], availability: undefined }],
+      }),
+      false,
+    );
     assert.equal(hasOfficialAvailability(course), true);
-    assert.equal(isAvailabilityFresh(course, now + 60 * 60 * 1000), false);
     assert.equal(hasOfficialAvailability(course), true);
     assert.equal(
       hasOfficialAvailability(withoutCourseAvailability(course)),
@@ -48,29 +63,6 @@ describe("live-only enrollment availability", () => {
         false,
       );
     }
-  });
-  it("expires official values and rejects snapshots, invalid timestamps, and clock skew", () => {
-    const course = fixture();
-    assert.equal(
-      isAvailabilityFresh(course, now + AVAILABILITY_TTL_MS - 1),
-      true,
-    );
-    assert.equal(isAvailabilityFresh(course, now + AVAILABILITY_TTL_MS), false);
-    assert.equal(
-      isAvailabilityFresh(withoutCourseAvailability(course), now),
-      false,
-    );
-    assert.equal(
-      isAvailabilityFresh(
-        {
-          ...course,
-          availability: { source: "official", fetchedAt: "invalid" },
-        },
-        now,
-      ),
-      false,
-    );
-    assert.equal(isAvailabilityFresh(course, now - 6000), false);
   });
   it("removes enrollment from archived JSON without mutating live input", () => {
     const data = {

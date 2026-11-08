@@ -9,6 +9,7 @@ import type {
   CatalogTerm,
 } from "./types";
 import { parseExactCourseQuery } from "./exact-search";
+import { feesForCampus, isFeeAttribute } from "./fees";
 
 const BASE = "https://content.osu.edu/v2/classes/";
 const MAX_CACHE_ENTRIES = 48;
@@ -57,6 +58,15 @@ function nullable(value: unknown): string | null {
 }
 function num(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+function attributes(value: unknown) {
+  return list(value)
+    .map((a) => ({
+      name: str(a.name),
+      value: str(a.value),
+      description: str(a.description),
+    }))
+    .filter((a) => a.description);
 }
 
 async function request(path: string): Promise<unknown> {
@@ -109,7 +119,7 @@ export async function getSearchableTerms(): Promise<CatalogTerm[]> {
 function normalizeSection(
   input: JsonObject,
   termCode: string,
-  available: boolean,
+  course: JsonObject,
 ): CatalogSection {
   const instructors = new Map<string, { name: string; email: string | null }>();
   const meetings = list(input.meetings).map((meeting) => {
@@ -138,13 +148,24 @@ function normalizeSection(
     section: str(input.section),
     component: str(input.component),
     instructionMode: str(input.instructionMode),
-    enrollmentStatus: available ? str(input.enrollmentStatus) : "",
-    enrollmentTotal: available ? num(input.enrollmentTotal) : null,
-    waitlistTotal: available ? num(input.waitlistTotal) : null,
+    // Search results contain placeholders. Only /classes/availability supplies seats.
+    enrollmentStatus: "",
+    enrollmentTotal: null,
+    waitlistTotal: null,
     session: str(input.sessionDescription),
     sessionCode: str(input.sessionCode),
     instructors: [...instructors.values()],
     meetings,
+    courseId: str(input.courseId) || str(course.courseId),
+    courseOfferingNumber:
+      str(input.courseOfferingNumber) || str(course.offeringNumber),
+    termCode,
+    campusCode: str(input.secCampus) || str(course.campusCode),
+    attributes: attributes(input.attributes),
+    fees: feesForCampus(
+      [...attributes(course.courseAttributes), ...attributes(input.attributes)],
+      str(input.secCampus) || str(course.campusCode),
+    ),
   };
 }
 
@@ -156,13 +177,16 @@ export function normalizeOfficialCourse(
     fetchedAt: null,
   },
 ): CatalogCourse {
+  void availability; // Search provenance never establishes actual seat availability.
   const c = object(item.course);
   const sections = list(item.sections);
   const termCode = str(sections[0]?.termCode) || requestedTerm;
   const campusCode = str(c.campusCode);
   return {
-    availability,
+    availability: { source: "unavailable", fetchedAt: null },
     id: `${termCode}-${str(c.subject)}-${str(c.catalogNumber)}-${campusCode}`,
+    courseId: str(c.courseId),
+    courseIds: str(c.courseId) ? [str(c.courseId)] : [],
     subject: str(c.subject),
     subjectName: str(c.subjectDesc),
     catalogNumber: str(c.catalogNumber),
@@ -178,14 +202,14 @@ export function normalizeOfficialCourse(
     academicCareers: str(c.academicCareer) ? [str(c.academicCareer)] : [],
     attributes: [
       ...new Set(
-        list(c.courseAttributes)
-          .map((a) => str(a.description))
+        attributes(c.courseAttributes)
+          .filter((a) => !isFeeAttribute(a))
+          .map((a) => a.description)
           .filter(Boolean),
       ),
     ],
-    sections: sections.map((s) =>
-      normalizeSection(s, termCode, availability.source === "official"),
-    ),
+    fees: feesForCampus(attributes(c.courseAttributes), campusCode),
+    sections: sections.map((s) => normalizeSection(s, termCode, c)),
     // The official endpoint groups only the sections in this 200-hit page.
     sectionsPartial: true,
   };
@@ -202,11 +226,29 @@ export function mergeCatalogCourse(
   for (const section of incoming.sections) sections.set(section.id, section);
   return {
     ...existing,
+    courseIds: [
+      ...new Set(
+        [
+          ...(existing.courseIds ?? []),
+          ...(incoming.courseIds ?? []),
+          existing.courseId,
+          incoming.courseId,
+        ].filter((id): id is string => Boolean(id)),
+      ),
+    ],
     title: existing.title || incoming.title,
     description: existing.description || incoming.description,
     creditsMin: Math.min(existing.creditsMin, incoming.creditsMin),
     creditsMax: Math.max(existing.creditsMax, incoming.creditsMax),
     attributes: [...new Set([...existing.attributes, ...incoming.attributes])],
+    fees: [
+      ...new Map(
+        [...(existing.fees ?? []), ...(incoming.fees ?? [])].map((fee) => [
+          fee.description,
+          fee,
+        ]),
+      ).values(),
+    ],
     academicCareers: [
       ...new Set(
         [
