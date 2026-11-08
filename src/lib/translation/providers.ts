@@ -1,0 +1,169 @@
+import {
+  MAX_TRANSLATION_RESPONSE_BYTES,
+  parseTranslationResponse,
+  validTranslationResult,
+  TranslationUnavailableError,
+  type TranslationItem,
+  type TranslationProvider,
+} from "./service.ts";
+import { readJsonLimited } from "./http.ts";
+
+export type ServerTranslationProvider = Exclude<TranslationProvider, "chrome">;
+export type TranslationNode = {
+  id: ServerTranslationProvider;
+  timeoutMs: number;
+  slowMs: number;
+  concurrency: number;
+  cooldownMs: number;
+  translate: (item: TranslationItem, signal: AbortSignal) => Promise<string>;
+};
+
+function integer(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const parsed = Number(value);
+  return value && Number.isInteger(parsed) && parsed >= min && parsed <= max
+    ? parsed
+    : fallback;
+}
+
+export function translationPrompt(
+  text: string,
+  target: TranslationItem["target"],
+) {
+  return `将以下文本翻译为${target === "en" ? "英文" : "简体中文"}，注意只需要输出翻译后的结果，不要额外解释：\n\n${text}`;
+}
+
+/** Only this server-side adapter reads NAS configuration or attaches Access credentials. */
+export function createTranslationProviders(
+  environment: NodeJS.ProcessEnv = process.env,
+  fetcher: typeof fetch = fetch,
+): TranslationNode[] {
+  const nodes: TranslationNode[] = [];
+  const base = environment.KJCH_AI_SERVICES_API_URL?.trim();
+  const clientId = environment.KJCH_AI_SERVICES_CF_CLIENT_ID?.trim();
+  const clientSecret = environment.KJCH_AI_SERVICES_CF_CLIENT_SECRET?.trim();
+  if (base && Boolean(clientId) === Boolean(clientSecret)) {
+    try {
+      const url = new URL(base);
+      if (
+        !["https:", "http:"].includes(url.protocol) ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+      )
+        throw new Error("Invalid translation endpoint.");
+      url.pathname = `${url.pathname.replace(/\/$/, "").replace(/\/api\/generate$/, "")}/api/generate`;
+      nodes.push({
+        id: "ollama",
+        timeoutMs: integer(
+          environment.KJCH_AI_SERVICES_TIMEOUT_MS,
+          6000,
+          500,
+          8000,
+        ),
+        slowMs: integer(environment.KJCH_AI_SERVICES_SLOW_MS, 2500, 250, 8000),
+        concurrency: integer(
+          environment.KJCH_AI_SERVICES_MAX_CONCURRENCY,
+          1,
+          1,
+          8,
+        ),
+        cooldownMs: integer(
+          environment.KJCH_AI_SERVICES_COOLDOWN_MS,
+          30000,
+          1000,
+          300000,
+        ),
+        async translate(item, signal) {
+          const response = await fetcher(url, {
+            method: "POST",
+            cache: "no-store",
+            redirect: "error",
+            signal,
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              ...(clientId && clientSecret
+                ? {
+                    "CF-Access-Client-Id": clientId,
+                    "CF-Access-Client-Secret": clientSecret,
+                  }
+                : {}),
+            },
+            body: JSON.stringify({
+              model:
+                environment.KJCH_AI_SERVICES_MODEL?.trim() ||
+                "HY-MT1.5-1.8B-GGUF:Q4_K_M",
+              prompt: translationPrompt(item.text, item.target),
+              stream: false,
+              keep_alive: "10m",
+              options: { temperature: 0.2, num_predict: 2048 },
+            }),
+          });
+          return parseResponse(response, "ollama", item, signal);
+        },
+      });
+    } catch {
+      // Missing/invalid configuration disables only the NAS node; Google remains usable.
+    }
+  }
+
+  for (const id of ["dict-chrome-ex", "clients5", "gtx"] as const) {
+    nodes.push({
+      id,
+      timeoutMs: 2500,
+      slowMs: 2000,
+      concurrency: 8,
+      cooldownMs: 30000,
+      async translate(item, signal) {
+        const url = new URL(
+          id === "clients5"
+            ? "https://clients5.google.com/translate_a/t"
+            : id === "gtx"
+              ? "https://translate.googleapis.com/translate_a/single"
+              : "https://translate.googleapis.com/translate_a/t",
+        );
+        url.searchParams.set("client", id === "gtx" ? "gtx" : "dict-chrome-ex");
+        url.searchParams.set("sl", "auto");
+        url.searchParams.set("tl", item.target);
+        url.searchParams.set("q", item.text);
+        if (id === "gtx") url.searchParams.set("dt", "t");
+        const response = await fetcher(url, {
+          method: "GET",
+          cache: "no-store",
+          redirect: "error",
+          signal,
+          headers: { Accept: "application/json" },
+        });
+        return parseResponse(response, id, item, signal);
+      },
+    });
+  }
+  return nodes;
+}
+
+async function parseResponse(
+  response: Response,
+  provider: ServerTranslationProvider,
+  item: TranslationItem,
+  signal: AbortSignal,
+) {
+  if (!response.ok) {
+    void response.body?.cancel().catch(() => undefined);
+    throw new TranslationUnavailableError();
+  }
+  const payload = await readJsonLimited(
+    response,
+    MAX_TRANSLATION_RESPONSE_BYTES,
+    signal,
+  );
+  const result = parseTranslationResponse(payload, provider, item.text);
+  if (!result || !validTranslationResult(result, item.text, item.target))
+    throw new TranslationUnavailableError();
+  return result;
+}

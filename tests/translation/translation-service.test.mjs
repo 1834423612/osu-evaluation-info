@@ -8,8 +8,18 @@ import {
   translationAction,
   translationLanguagePair,
   validTranslationResult,
-  translateWithFallback,
 } from "../../src/lib/translation/service.ts";
+import { createTranslationProviders } from "../../src/lib/translation/providers.ts";
+import { createTranslationGateway } from "../../src/lib/translation/gateway.ts";
+
+async function translateWithFallback(text, target, fetcher) {
+  const gateway = createTranslationGateway(
+    createTranslationProviders({}, fetcher),
+  );
+  const result = await gateway.translate({ id: "test", text, target });
+  if (result.status !== "translated") throw new TranslationUnavailableError();
+  return result.translation;
+}
 
 test("translation actions distinguish bilingual hiding from replaced text", () => {
   assert.equal(translationAction("bilingual", true, true), "hide-translation");
