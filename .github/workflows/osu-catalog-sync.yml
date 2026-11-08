@@ -17,10 +17,10 @@ jobs:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 55
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - name: Validate database configuration
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         shell: bash
         run: |
           if [[ -z "${DATABASE_URL//[[:space:]]/}" ]]; then
@@ -44,7 +44,25 @@ jobs:
         run: pnpm install --prod --frozen-lockfile
 
       - name: Sync the official OSU catalog
-        run: pnpm catalog:sync
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
+        run: pnpm catalog:sync 2>&1 | tee "$RUNNER_TEMP/catalog-sync.log"
 
       - name: Reclaim retired catalog snapshots
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm catalog:prune
+
+      - name: Summarize catalog failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo 'Catalog synchronization or maintenance failed. The previous publication is preserved.'
+            if [[ -f "$RUNNER_TEMP/catalog-sync.log" ]]; then
+              echo '```text'
+              tail -n 20 "$RUNNER_TEMP/catalog-sync.log"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
