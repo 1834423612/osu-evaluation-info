@@ -1,29 +1,44 @@
 # OSU course and faculty services
 
-The catalog already uses `https://content.osu.edu/v2/classes/` for official terms,
-courses, sections, meetings, and instructor email identities. Search results can
-include a course because its prerequisite mentions the search string, so course
-details filter subject and catalog number exactly and follow pagination.
+The catalog uses the public OSU content endpoints discovered through the existing
+application routes. Browsers fetch official course/section data directly; see
+[the catalog transport contract](api.md). Subject/catalog checks and pagination
+remain exact, including queries where a prerequisite mentions another course.
 
-Faculty photos use `https://opic.osu.edu/<name.number>?width=96`, following the
-pattern in [BuckeyeRatings photo.ts](https://github.com/IvanKuria/buckeye-ratings/blob/0f0d5bec292c30c2563337c3cff4689e59ef543a/src/lib/photo.ts).
-The local `/api/instructors/photo?identity=<name.number>` endpoint loads them
-server-side. `InstructorAvatar` derives the identity only from an OSU email,
-loads photos lazily, and displays initials when no photo is available.
+Faculty photos use the same discovery pattern. `GET /api/instructors/photo`
+returns a public, cacheable dictionary:
 
-The proxy accepts only numbered identities and follows at most three redirects
-within the fixed OPIC HTTPS origin. A redirect into `/assets/leaf/` means the
-default Buckeye image and is treated as missing. PNG alone does not mean missing:
-real JPEG, PNG, and WebP responses are accepted. HTML responses are rejected.
-Requests time out after five seconds and streamed bodies are limited to 2 MiB.
+```json
+{
+  "delivery": "osu-direct",
+  "version": 1,
+  "resource": "instructor-photo",
+  "endpoints": { "photo": "https://opic.osu.edu/" },
+  "width": 96
+}
+```
 
-Each server process deduplicates concurrent requests and limits them to twelve.
-An LRU cache is bounded to 256 entries and 16 MiB: real photos last 24 hours,
-missing photos six hours, and transient errors thirty seconds. Successful HTTP
-responses cache for 24 hours; missing responses cache for six hours. Errors do
-not receive public HTTP caching. No photos are stored in the repository or
-database.
+This endpoint never fetches, caches or forwards image bytes. The client shares
+in-flight discovery across avatars and retains the configuration for one hour;
+HTTP caching uses max-age 3600 and stale-while-revalidate 86400. Teacher identities
+are not sent to the discovery endpoint. Invalid discovery is rejected and can be
+retried on the next load.
 
-Live checks on 2026-11-05: `blanas.2` returned a JPEG photo; `bucci.2` redirected
-to the default leaf asset. Photo availability is independent of rating coverage
-and does not establish an RMP identity match.
+`InstructorAvatar` derives `name.number` only from an OSU email and builds the
+photo URL from the approved OPIC endpoint. Its native image loads directly from
+`https://opic.osu.edu/<name.number>?width=96` with lazy loading, async decoding and
+no referrer. The browser handles official image caching and redirects. No Next
+image optimizer or application image proxy participates. A changed identity never
+keeps displaying the previous teacher's photo. Missing email identities, failed
+discovery, and image load errors leave the initials avatar visible.
+
+OPIC does not provide fetch CORS headers, so photos are displayed through a native
+image element rather than fetched into JavaScript. The official default Buckeye
+leaf redirect is displayed as the official fallback image. The former server-side
+leaf detection, byte cache and redirect proxy have been removed. No photos are
+stored in this repository or database. Photo availability does not establish an
+RMP identity match.
+
+The November 8 live check returned a JPEG for `blanas.2` and an official leaf
+redirect for `bucci.2`. Browser checks cover direct image loads, failed-image
+initials, shared discovery and both desktop and phone views.

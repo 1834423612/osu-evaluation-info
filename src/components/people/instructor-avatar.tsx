@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
+import { instructorPhotos } from "@/lib/people/photo-client";
 import styles from "./instructor-avatar.module.css";
 
 export function InstructorAvatar({
@@ -15,6 +16,24 @@ export function InstructorAvatar({
 }) {
   const identity = nameDotNumberFromEmail(email);
   const [failedIdentity, setFailedIdentity] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<{ identity: string; url: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!identity) return;
+    let alive = true;
+    void instructorPhotos
+      .url(identity)
+      .then((url) => {
+        if (alive && url) setPhoto({ identity, url });
+      })
+      .catch(() => {
+        /* Initials remain visible when discovery is unavailable. */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [identity]);
   let colorHash = 0;
   for (const character of name.trim().toLowerCase())
     colorHash = (colorHash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
@@ -42,17 +61,20 @@ export function InstructorAvatar({
       aria-hidden="true"
     >
       {initials}
-      {identity && failedIdentity !== identity ? (
-        // The endpoint validates and caches OPIC photos; Next image optimization adds no value here.
+      {identity &&
+      photo?.identity === identity &&
+      failedIdentity !== identity ? (
+        // OPIC does not expose CORS. Native images load directly without a fetch or optimizer proxy.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           className={styles.photo}
-          src={`/api/instructors/photo?identity=${encodeURIComponent(identity)}`}
+          src={photo.url}
           width={size}
           height={size}
           alt=""
           loading="lazy"
           decoding="async"
+          referrerPolicy="no-referrer"
           onError={() => setFailedIdentity(identity)}
         />
       ) : null}

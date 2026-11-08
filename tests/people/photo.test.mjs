@@ -1,126 +1,124 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
-import { getInstructorPhoto } from "../../src/lib/people/photo.ts";
+import {
+  instructorPhotoPlan,
+  instructorPhotoUrl,
+} from "../../src/lib/people/photo.ts";
+import { createInstructorPhotoClient } from "../../src/lib/people/photo-client.ts";
 
-describe("OPIC photo proxy", { concurrency: false }, () => {
-  const withFetch = async (fetcher, action) => {
+const source = (
+  await readFile(
+    new URL("../../src/app/api/instructors/photo/route.ts", import.meta.url),
+    "utf8",
+  )
+).replace(
+  '"@/lib/people/photo"',
+  JSON.stringify(
+    new URL("../../src/lib/people/photo.ts", import.meta.url).href,
+  ),
+);
+const { GET } = await import(
+  "data:text/javascript;base64," + Buffer.from(source).toString("base64")
+);
+
+describe("direct official instructor photos", { concurrency: false }, () => {
+  it("serves only a cacheable endpoint dictionary, without fetching image bytes", async () => {
     const original = globalThis.fetch;
-    globalThis.fetch = fetcher;
+    globalThis.fetch = () => {
+      throw new Error("Server must not fetch photos");
+    };
     try {
-      await action();
+      const response = GET();
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("Content-Type"), /application\/json/);
+      assert.match(response.headers.get("Cache-Control"), /max-age=3600/);
+      assert.deepEqual(await response.json(), instructorPhotoPlan());
     } finally {
       globalThis.fetch = original;
     }
-  };
-
-  it("rejects invalid identities without network access", async () => {
-    await withFetch(
-      () => {
-        throw new Error("must not fetch");
-      },
-      async () => {
-        assert.equal((await getInstructorPhoto("../secret")).status, "missing");
-        assert.equal(
-          (await getInstructorPhoto("https://example.com")).status,
-          "missing",
-        );
-      },
+  });
+  it("builds direct official URLs while rejecting invalid identities and destinations", () => {
+    const plan = instructorPhotoPlan();
+    assert.equal(
+      instructorPhotoUrl(plan, "blanas.2"),
+      "https://opic.osu.edu/blanas.2?width=96",
+    );
+    for (const identity of [
+      "../secret",
+      "https://other.example",
+      "name@osu.edu",
+      "missing-number",
+    ])
+      assert.equal(instructorPhotoUrl(plan, identity), null);
+    assert.equal(
+      instructorPhotoUrl(
+        { ...plan, endpoints: { photo: "https://other.example/" } },
+        "blanas.2",
+      ),
+      null,
+    );
+    assert.equal(
+      instructorPhotoUrl({ ...plan, width: 5000 }, "blanas.2"),
+      null,
     );
   });
-
-  it("recognizes and caches the official default leaf redirect", async () => {
+  it("shares one discovery for concurrent avatars and caches it without sending teacher identities", async () => {
+    const seen = [];
+    const client = createInstructorPhotoClient(async (url) => {
+      seen.push(String(url));
+      return Response.json(instructorPhotoPlan());
+    });
+    const urls = await Promise.all(
+      ["first.1", "second.2", "third.3"].map((identity) =>
+        client.url(identity),
+      ),
+    );
+    assert.deepEqual(urls, [
+      "https://opic.osu.edu/first.1?width=96",
+      "https://opic.osu.edu/second.2?width=96",
+      "https://opic.osu.edu/third.3?width=96",
+    ]);
+    assert.deepEqual(seen, ["/api/instructors/photo"]);
+    await client.url("fourth.4");
+    assert.equal(seen.length, 1);
+    assert.equal(await client.url("../secret"), null);
+    assert.equal(seen.length, 1);
+  });
+  it("does not keep a failed or unsafe discovery as a permanent cached result", async () => {
     let calls = 0;
-    await withFetch(
-      async () => {
+    const client = createInstructorPhotoClient(async () => {
+      calls++;
+      return calls === 1
+        ? Response.json({
+            ...instructorPhotoPlan(),
+            endpoints: { photo: "https://other.example/" },
+          })
+        : Response.json(instructorPhotoPlan());
+    });
+    await assert.rejects(client.url("first.1"), /Invalid photo endpoint/);
+    assert.equal(
+      await client.url("first.1"),
+      "https://opic.osu.edu/first.1?width=96",
+    );
+    assert.equal(calls, 2);
+  });
+  it("refreshes expired endpoint configuration without a per-identity server request", async () => {
+    const now = Date.now;
+    let time = now(),
+      calls = 0;
+    Date.now = () => time;
+    try {
+      const client = createInstructorPhotoClient(async () => {
         calls++;
-        return new Response(null, {
-          status: 302,
-          headers: { location: "/assets/leaf/default.png" },
-        });
-      },
-      async () => {
-        assert.equal(
-          (await getInstructorPhoto("missingtest.1")).status,
-          "missing",
-        );
-        assert.equal(
-          (await getInstructorPhoto("missingtest.1")).status,
-          "missing",
-        );
-        assert.equal(calls, 1);
-      },
-    );
-  });
-
-  it("rejects redirects outside the fixed OPIC origin", async () => {
-    let calls = 0;
-    await withFetch(
-      async () => {
-        calls++;
-        return new Response(null, {
-          status: 302,
-          headers: { location: "https://example.com/photo.jpg" },
-        });
-      },
-      async () => {
-        assert.equal(
-          (await getInstructorPhoto("redirecttest.1")).status,
-          "unavailable",
-        );
-        assert.equal(calls, 1);
-      },
-    );
-  });
-
-  it("allows real PNG photos and deduplicates concurrent loads", async () => {
-    let calls = 0;
-    await withFetch(
-      async (url) => {
-        calls++;
-        assert.equal(new URL(url).origin, "https://opic.osu.edu");
-        return new Response(new Uint8Array([137, 80, 78, 71]), {
-          headers: { "content-type": "image/png" },
-        });
-      },
-      async () => {
-        const [first, second] = await Promise.all([
-          getInstructorPhoto("phototest.1"),
-          getInstructorPhoto("phototest.1"),
-        ]);
-        assert.equal(first.status, "available");
-        assert.equal(second.status, "available");
-        assert.equal(calls, 1);
-      },
-    );
-  });
-
-  it("rejects HTML masquerading as a successful photo response", async () => {
-    await withFetch(
-      async () =>
-        new Response("<html>Sign in</html>", {
-          headers: { "content-type": "text/html" },
-        }),
-      async () => {
-        assert.equal(
-          (await getInstructorPhoto("htmltest.1")).status,
-          "unavailable",
-        );
-      },
-    );
-  });
-
-  it("enforces a streaming size limit even without content-length", async () => {
-    await withFetch(
-      async () =>
-        new Response(new Uint8Array(2 * 1024 * 1024 + 1), {
-          headers: { "content-type": "image/jpeg" },
-        }),
-      async () => {
-        assert.equal(
-          (await getInstructorPhoto("sizetest.1")).status,
-          "unavailable",
-        );
-      },
-    );
+        return Response.json(instructorPhotoPlan());
+      });
+      await client.url("first.1");
+      time += 3_600_001;
+      await client.url("second.2");
+      assert.equal(calls, 2);
+    } finally {
+      Date.now = now;
+    }
   });
 });
