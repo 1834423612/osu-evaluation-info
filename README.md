@@ -57,6 +57,7 @@ Official search is queried live with a short cache for text searches and detaile
 - `src/hooks/use-preferences.ts`: versioned device-local language and saved-course snapshots.
 - `src/lib/catalog`: official service adapter, typed data contracts, and bounded snapshot browsing.
 - `src/lib/evaluations`: database aggregates, exact faculty identity matching, and versioned scoring policy.
+- `src/lib/translation`: on-demand Chrome/NAS/Google adapters, batch transport, load-aware fallback, and daily usage aggregates; no separate process is required.
 - `public/brand`: only the images actively served by the app; paths are centralized in `src/lib/brand.ts`. Next.js browser and Apple icon entry files live in `src/app`.
 - `scripts/brand`: favicon/ICO conversion and social-card generation. Complete source artwork and unused exports live in the separate `../OSU_MilkyFrog_Assets` master kit; they are not needed to run or build the website.
 - `scripts/{catalog,evaluations,people,rmp}`: maintenance tools grouped by data source; `scripts/dev.mjs` starts development.
@@ -76,5 +77,6 @@ Search and filters are stored in the URL. Heavy evaluation charts load on demand
 - [Legacy SQLite supplements](docs/rmp/supplement.md)
 - [Umami analytics, replays, and heatmaps](docs/analytics/umami.md)
 - [Official course content and instructor photos](docs/catalog/content-and-photos.md)
+- [Translation configuration, fallback, and usage statistics](docs/translation.md)
 
 The verified November 3, 2026 import covered Summer 2026, Autumn 2026 and Spring 2027: 713 partitions, 70,454 official hits and 70,435 distinct term/class-number sections. The 19 duplicate official hits were preserved in audit counts and removed from section identity. These are import-time facts, not hardcoded UI counts.
