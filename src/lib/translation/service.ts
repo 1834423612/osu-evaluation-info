@@ -2,6 +2,7 @@ export type TranslationTarget = "zh-CN" | "en";
 export type GoogleTranslationProvider = "dict-chrome-ex" | "clients5" | "gtx";
 export type TranslationProvider =
   "chrome" | "ollama" | GoogleTranslationProvider;
+export type TranslationModel = "auto" | "chrome" | "ollama" | "google";
 export type TranslationDisplayMode = "bilingual" | "replace";
 export type TranslationAction =
   "translate" | "show-translation" | "hide-translation" | "show-original";

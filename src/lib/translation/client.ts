@@ -8,6 +8,7 @@ import {
   TranslationUnavailableError,
   validTranslationResult,
   type TranslationItem,
+  type TranslationModel,
   type TranslationResult,
   type TranslationTarget,
 } from "./service.ts";
@@ -15,6 +16,7 @@ import {
 type Success = Extract<TranslationResult, { status: "translated" }>;
 type Queued = {
   item: TranslationItem;
+  model: "auto" | "ollama";
   resolve: (result: Success) => void;
   reject: (reason: unknown) => void;
 };
@@ -121,6 +123,17 @@ export function createRemoteTranslationClient(
               queued.resolve(value as Success);
               continue;
             }
+            if (queued.model === "ollama") {
+              queued.reject(
+                new TranslationUnavailableError(
+                  typeof value?.retryAfterMs === "number" &&
+                    Number.isFinite(value.retryAfterMs)
+                    ? value.retryAfterMs
+                    : 5000,
+                ),
+              );
+              continue;
+            }
             try {
               queued.resolve(
                 await googleFallback(queued.item, body?.browserFallback),
@@ -153,16 +166,28 @@ export function createRemoteTranslationClient(
     }
   }
 
-  function request(text: string, target: TranslationTarget): Promise<Success> {
-    const key = `${target}\0${text}`;
+  function request(
+    text: string,
+    target: TranslationTarget,
+    model: Exclude<TranslationModel, "chrome"> = "auto",
+  ): Promise<Success> {
+    const key = `${model}\0${target}\0${text}`;
     const existing = pending.get(key);
     if (existing) return existing;
     const item = { id: String(nextId++), text, target };
-    if (!parseTranslationBatch({ items: [item] }) || queue.length >= 200)
+    if (
+      !["auto", "ollama", "google"].includes(model) ||
+      !parseTranslationBatch({ items: [item] }) ||
+      queue.length >= 200
+    )
       return Promise.reject(new TranslationUnavailableError());
-    const operation = new Promise<Success>((resolve, reject) => {
-      queue.push({ item, resolve, reject });
-    }).finally(() => pending.delete(key));
+    const operation = (
+      model === "google"
+        ? googleFallback(item)
+        : new Promise<Success>((resolve, reject) => {
+            queue.push({ item, model, resolve, reject });
+          })
+    ).finally(() => pending.delete(key));
     pending.set(key, operation);
     schedule();
     return operation;
