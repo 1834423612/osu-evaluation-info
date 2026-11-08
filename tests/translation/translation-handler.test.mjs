@@ -164,11 +164,15 @@ test("browser transport → HTTP validation → busy NAS fallback → normalized
     ),
   );
   const handler = createTranslationHandler(gateway.translateBatch);
-  const client = createRemoteTranslationClient(
-    (_url, init) =>
-      handler(new Request("http://localhost/api/translate", init)),
-    1,
-  );
+  const client = createRemoteTranslationClient((url, init) => {
+    if (url === "/api/translate")
+      return handler(new Request("http://localhost/api/translate", init));
+    assert.ok(String(url).startsWith("https://translate.googleapis.com/"));
+    assert.equal(init.mode, "cors");
+    assert.equal(init.credentials, "omit");
+    assert.equal(init.headers["CF-Access-Client-Id"], undefined);
+    return Response.json(["备用译文"]);
+  }, 1);
   const results = await Promise.all([
     client.request("First", "zh-CN"),
     client.request("Second", "zh-CN"),

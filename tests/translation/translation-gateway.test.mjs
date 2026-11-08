@@ -64,7 +64,7 @@ test("NAS requests use configured model, target prompt, Access headers and non-s
   assert.match(calls[1].body.prompt, /^将以下文本翻译为英文.*\n\n你好$/);
 });
 
-test("defaults to HY-MT and never attaches NAS credentials to Google fallbacks", async () => {
+test("server defaults to HY-MT and never requests Google after NAS failure", async () => {
   const calls = [];
   const gateway = createTranslationGateway(
     createTranslationProviders(
@@ -81,12 +81,13 @@ test("defaults to HY-MT and never attaches NAS credentials to Google fallbacks",
       },
     ),
   );
-  assert.equal((await gateway.translate(item())).provider, "dict-chrome-ex");
+  assert.equal((await gateway.translate(item())).status, "unavailable");
   assert.equal(
     JSON.parse(calls[0].init.body).model,
     "HY-MT1.5-1.8B-GGUF:Q4_K_M",
   );
-  assert.equal(calls[1].init.headers["CF-Access-Client-Id"], undefined);
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0].url).hostname, "nas.example");
 });
 
 test("unconfigured, invalid URLs and incomplete credentials disable only NAS", () => {
@@ -100,7 +101,7 @@ test("unconfigured, invalid URLs and incomplete credentials disable only NAS", (
   ]) {
     assert.deepEqual(
       createTranslationProviders(env).map(({ id }) => id),
-      ["dict-chrome-ex", "clients5", "gtx"],
+      [],
     );
   }
 });
@@ -277,7 +278,7 @@ test("upstream body size and slow streamed bodies are bounded through fallback",
   );
   providers[0].timeoutMs = 10;
   const result = await createTranslationGateway(providers).translate(item());
-  assert.equal(result.provider, "dict-chrome-ex");
+  assert.equal(result.status, "unavailable");
   assert.equal(cancelled, true);
   const large = createTranslationGateway(
     createTranslationProviders(

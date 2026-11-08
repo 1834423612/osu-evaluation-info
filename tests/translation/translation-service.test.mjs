@@ -9,15 +9,14 @@ import {
   translationLanguagePair,
   validTranslationResult,
 } from "../../src/lib/translation/service.ts";
-import { createTranslationProviders } from "../../src/lib/translation/providers.ts";
-import { createTranslationGateway } from "../../src/lib/translation/gateway.ts";
+import { createBrowserGoogleFallback } from "../../src/lib/translation/google.ts";
 
 async function translateWithFallback(text, target, fetcher) {
-  const gateway = createTranslationGateway(
-    createTranslationProviders({}, fetcher),
-  );
-  const result = await gateway.translate({ id: "test", text, target });
-  if (result.status !== "translated") throw new TranslationUnavailableError();
+  const result = await createBrowserGoogleFallback(fetcher)({
+    id: "test",
+    text,
+    target,
+  });
   return result.translation;
 }
 

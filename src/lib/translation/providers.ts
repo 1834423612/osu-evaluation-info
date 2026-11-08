@@ -4,11 +4,10 @@ import {
   validTranslationResult,
   TranslationUnavailableError,
   type TranslationItem,
-  type TranslationProvider,
 } from "./service.ts";
 import { readJsonLimited } from "./http.ts";
 
-export type ServerTranslationProvider = Exclude<TranslationProvider, "chrome">;
+export type ServerTranslationProvider = "ollama";
 export type TranslationNode = {
   id: ServerTranslationProvider;
   timeoutMs: number;
@@ -109,41 +108,10 @@ export function createTranslationProviders(
         },
       });
     } catch {
-      // Missing/invalid configuration disables only the NAS node; Google remains usable.
+      // Missing/invalid NAS configuration leaves browser fallback available.
     }
   }
 
-  for (const id of ["dict-chrome-ex", "clients5", "gtx"] as const) {
-    nodes.push({
-      id,
-      timeoutMs: 2500,
-      slowMs: 2000,
-      concurrency: 8,
-      cooldownMs: 30000,
-      async translate(item, signal) {
-        const url = new URL(
-          id === "clients5"
-            ? "https://clients5.google.com/translate_a/t"
-            : id === "gtx"
-              ? "https://translate.googleapis.com/translate_a/single"
-              : "https://translate.googleapis.com/translate_a/t",
-        );
-        url.searchParams.set("client", id === "gtx" ? "gtx" : "dict-chrome-ex");
-        url.searchParams.set("sl", "auto");
-        url.searchParams.set("tl", item.target);
-        url.searchParams.set("q", item.text);
-        if (id === "gtx") url.searchParams.set("dt", "t");
-        const response = await fetcher(url, {
-          method: "GET",
-          cache: "no-store",
-          redirect: "error",
-          signal,
-          headers: { Accept: "application/json" },
-        });
-        return parseResponse(response, id, item, signal);
-      },
-    });
-  }
   return nodes;
 }
 

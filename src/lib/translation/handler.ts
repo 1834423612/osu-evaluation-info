@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readJsonLimited, withDeadline } from "./http.ts";
 import {
   parseTranslationBatch,
+  BROWSER_TRANSLATION_PROVIDERS,
   type TranslationItem,
   type TranslationResult,
 } from "./service.ts";
@@ -78,10 +79,21 @@ export function createTranslationHandler(
         const result = results[0];
         return result?.status === "translated"
           ? response(result)
-          : response({ error: "Translation is temporarily unavailable." }, 503);
+          : response(
+              {
+                ...result,
+                error: "Translation is temporarily unavailable.",
+                browserFallback: BROWSER_TRANSLATION_PROVIDERS,
+              },
+              503,
+            );
       }
       // Item failures remain independent; a failed NAS request cannot discard good siblings.
-      return response({ version: 1, results });
+      return response({
+        version: 1,
+        results,
+        browserFallback: BROWSER_TRANSLATION_PROVIDERS,
+      });
     } catch {
       return response(
         { error: "Translation is temporarily unavailable." },

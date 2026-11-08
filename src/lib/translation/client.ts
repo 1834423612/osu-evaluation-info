@@ -1,4 +1,6 @@
 import { readJsonLimited, withDeadline } from "./http.ts";
+import { createBrowserGoogleFallback } from "./google.ts";
+import type { TranslationObservation } from "./gateway.ts";
 import {
   MAX_TRANSLATION_BATCH_LENGTH,
   MAX_TRANSLATION_BATCH_SIZE,
@@ -21,7 +23,13 @@ type Queued = {
 export function createRemoteTranslationClient(
   fetcher: typeof fetch = fetch,
   delayMs = 25,
+  onGoogleAttempt?: (event: TranslationObservation) => void,
 ) {
+  const googleFallback = createBrowserGoogleFallback(
+    fetcher,
+    Date.now,
+    onGoogleAttempt,
+  );
   const queue: Queued[] = [];
   const pending = new Map<string, Promise<Success>>();
   let nextId = 0;
@@ -51,8 +59,9 @@ export function createRemoteTranslationClient(
     }
     running++;
     schedule();
+    let payload: unknown = null;
     try {
-      const payload = await withDeadline(async (signal) => {
+      payload = await withDeadline(async (signal) => {
         const response = await fetcher("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -66,44 +75,76 @@ export function createRemoteTranslationClient(
         }
         return readJsonLimited(response, 256 * 1024, signal);
       }, 20_000);
-      if (
-        !payload ||
-        typeof payload !== "object" ||
-        (payload as { version?: unknown }).version !== 1 ||
-        !Array.isArray((payload as { results?: unknown }).results)
-      )
-        throw new TranslationUnavailableError();
-      const results = (payload as { results: unknown[] }).results;
-      for (const queued of batch) {
-        const matches = results.filter(
-          (result) =>
-            result &&
-            typeof result === "object" &&
-            (result as { id?: unknown }).id === queued.item.id,
-        );
-        const value = matches[0] as Partial<Success> | undefined;
-        if (
-          matches.length !== 1 ||
-          !value ||
-          value.status !== "translated" ||
-          value.target !== queued.item.target ||
-          typeof value.translation !== "string" ||
-          !["ollama", "dict-chrome-ex", "clients5", "gtx"].includes(
-            value.provider ?? "",
-          ) ||
-          !["miss", "hit", "shared"].includes(value.cache ?? "") ||
-          typeof value.durationMs !== "number" ||
-          !Number.isFinite(value.durationMs) ||
-          value.durationMs < 0 ||
-          !validTranslationResult(
-            value.translation,
-            queued.item.text,
-            queued.item.target,
-          )
-        ) {
-          queued.reject(new TranslationUnavailableError());
-        } else queued.resolve(value as Success);
-      }
+    } catch {
+      // NAS/API failures cannot prevent this device from using Google directly.
+    }
+    try {
+      const body =
+        payload && typeof payload === "object"
+          ? (payload as {
+              version?: unknown;
+              results?: unknown;
+              browserFallback?: unknown;
+            })
+          : null;
+      const results =
+        body?.version === 1 && Array.isArray(body.results) ? body.results : [];
+      let cursor = 0;
+      await Promise.all(
+        Array.from({ length: Math.min(2, batch.length) }, async () => {
+          while (cursor < batch.length) {
+            const queued = batch[cursor++];
+            const matches = results.filter(
+              (result) =>
+                result &&
+                typeof result === "object" &&
+                result.id === queued.item.id,
+            );
+            const value = matches[0] as
+              (Partial<Success> & { retryAfterMs?: number }) | undefined;
+            if (
+              matches.length === 1 &&
+              value?.status === "translated" &&
+              value.target === queued.item.target &&
+              typeof value.translation === "string" &&
+              value.provider === "ollama" &&
+              ["miss", "hit", "shared"].includes(value.cache ?? "") &&
+              typeof value.durationMs === "number" &&
+              Number.isFinite(value.durationMs) &&
+              value.durationMs >= 0 &&
+              validTranslationResult(
+                value.translation,
+                queued.item.text,
+                queued.item.target,
+              )
+            ) {
+              queued.resolve(value as Success);
+              continue;
+            }
+            try {
+              queued.resolve(
+                await googleFallback(queued.item, body?.browserFallback),
+              );
+            } catch (error) {
+              const googleRetry =
+                error instanceof TranslationUnavailableError
+                  ? error.retryAfterMs
+                  : 5000;
+              // Reconsider either tier as soon as one may recover. Never negative-cache NAS globally.
+              const nasRetry =
+                typeof value?.retryAfterMs === "number" &&
+                Number.isFinite(value.retryAfterMs)
+                  ? value.retryAfterMs
+                  : 5000;
+              queued.reject(
+                new TranslationUnavailableError(
+                  Math.min(googleRetry, nasRetry),
+                ),
+              );
+            }
+          }
+        }),
+      );
     } catch (error) {
       for (const queued of batch) queued.reject(error);
     } finally {

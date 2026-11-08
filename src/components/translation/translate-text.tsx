@@ -25,6 +25,7 @@ import {
 } from "@/lib/translation/service";
 import { translateInBrowser } from "@/lib/translation/browser";
 import { createRemoteTranslationClient } from "@/lib/translation/client";
+import { createBrowserUsageReporter } from "@/lib/translation/browser-usage";
 import styles from "./translate-text.module.css";
 import { createTranslationScheduler } from "@/lib/translation/scheduler";
 
@@ -35,7 +36,11 @@ const MODE_KEY = "course-atlas:translation-mode:v1";
 const AUTO_KEY = "course-atlas:translation-auto:v1";
 const MODE_EVENT = "course-atlas:translation-mode";
 const scheduler = createTranslationScheduler();
-const remoteTranslation = createRemoteTranslationClient();
+const remoteTranslation = createRemoteTranslationClient(
+  fetch,
+  25,
+  createBrowserUsageReporter(),
+);
 let memoryMode: DisplayMode | null = null;
 let memoryAuto: boolean | null = null;
 
@@ -103,6 +108,7 @@ export function TranslateText({
   const autoAttemptRef = useRef<string | null>(null);
   const isIntersectingRef = useRef(false);
   const automaticRef = useRef(false);
+  const retryDelayRef = useRef(5000);
   const mode = useSyncExternalStore(
     subscribeToMode,
     getStoredMode,
@@ -138,33 +144,48 @@ export function TranslateText({
       }
       setStatus("loading");
       try {
-        const result = await scheduler.request(key, async () => {
-          if (!manual && (!isIntersectingRef.current || !automaticRef.current))
-            throw new DOMException("Auto translation paused.", "AbortError");
-          let result: string | null = null;
-          try {
-            result = await translateInBrowser(
-              text,
-              pair.sourceLanguage,
-              pair.targetLanguage,
-              () => setStatus("downloading"),
-              manual && Boolean(navigator.userActivation?.isActive),
-            );
-          } catch {
-            result = null;
-          }
-          if (!result) {
-            setStatus("loading");
-            result = (
-              await remoteTranslation.request(text, pair.targetLanguage)
-            ).translation;
-          }
-          return result;
-        });
+        const result = await scheduler.request(
+          key,
+          async () => {
+            if (
+              !manual &&
+              (!isIntersectingRef.current || !automaticRef.current)
+            )
+              throw new DOMException("Auto translation paused.", "AbortError");
+            let result: string | null = null;
+            try {
+              result = await translateInBrowser(
+                text,
+                pair.sourceLanguage,
+                pair.targetLanguage,
+                () => setStatus("downloading"),
+                manual && Boolean(navigator.userActivation?.isActive),
+              );
+            } catch {
+              result = null;
+            }
+            if (!result) {
+              setStatus("loading");
+              result = (
+                await remoteTranslation.request(text, pair.targetLanguage)
+              ).translation;
+            }
+            return result;
+          },
+          manual,
+        );
         setTranslationState({ key, value: result });
         setVisible(true);
         setStatus("idle");
-      } catch {
+      } catch (error) {
+        const retryAfter =
+          error instanceof Error && "retryAfterMs" in error
+            ? Number(error.retryAfterMs)
+            : 5000;
+        retryDelayRef.current = Math.min(
+          60_000,
+          Math.max(5000, Number.isFinite(retryAfter) ? retryAfter : 5000),
+        );
         if (!manual && (!isIntersectingRef.current || !automaticRef.current)) {
           autoAttemptRef.current = null;
           setStatus("idle");
@@ -175,11 +196,21 @@ export function TranslateText({
   );
 
   useEffect(() => {
+    if (!automatic || status !== "error") return;
+    const timer = setTimeout(() => {
+      if (isIntersectingRef.current && automaticRef.current)
+        void translate(false);
+    }, retryDelayRef.current);
+    return () => clearTimeout(timer);
+  }, [automatic, status, translate]);
+
+  useEffect(() => {
     const content = contentRef.current;
     if (!content || !automatic) return;
     const observer = new IntersectionObserver((entries) => {
       const shown = entries.some((entry) => entry.isIntersecting);
       isIntersectingRef.current = shown;
+      if (!shown) autoAttemptRef.current = null;
       if (shown && autoAttemptRef.current !== key) {
         autoAttemptRef.current = key;
         void translate(false);
