@@ -17,11 +17,15 @@ const adapterSource = source
       new URL("../../src/lib/catalog/exact-search.ts", import.meta.url).href,
     ),
   );
-const { searchOfficialCatalog, getOfficialCourse, normalizeOfficialCourse } =
-  await import(
-    "data:text/javascript;base64," +
-      Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
-  );
+const {
+  searchOfficialCatalog,
+  getOfficialCourse,
+  normalizeOfficialCourse,
+  mergeCatalogCourse,
+} = await import(
+  "data:text/javascript;base64," +
+    Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
+);
 
 function course(catalogNumber, campusCode, classNumber, component = "Lecture") {
   return {
@@ -151,6 +155,50 @@ describe("exact course upstream reconciliation", () => {
 });
 
 describe("official availability provenance", () => {
+  it("preserves each section's own totals, including zero and repeated official values", () => {
+    const entry = course("2200", "COL", "1");
+    entry.course.enrollmentTotal = 999;
+    entry.sections = [21, 37, 0].map((enrollmentTotal, index) => ({
+      ...entry.sections[0],
+      classNumber: String(index + 1),
+      enrollmentTotal,
+      waitlistTotal: index,
+      enrollmentStatus: index === 1 ? "Closed" : "Open",
+    }));
+    const provenance = {
+      source: "official",
+      fetchedAt: new Date().toISOString(),
+    };
+    const normalized = normalizeOfficialCourse(entry, "1272", provenance);
+    assert.deepEqual(
+      normalized.sections.map((section) => section.enrollmentTotal),
+      [21, 37, 0],
+    );
+    assert.deepEqual(
+      normalized.sections.map((section) => section.waitlistTotal),
+      [0, 1, 2],
+    );
+    const next = normalizeOfficialCourse(
+      { ...entry, sections: [{ ...entry.sections[0], enrollmentTotal: 22 }] },
+      "1272",
+      provenance,
+    );
+    assert.deepEqual(
+      mergeCatalogCourse(normalized, next).sections.map(
+        (section) => section.enrollmentTotal,
+      ),
+      [22, 37, 0],
+    );
+    entry.sections.forEach((section) => {
+      section.enrollmentTotal = 42;
+    });
+    assert.deepEqual(
+      normalizeOfficialCourse(entry, "1272", provenance).sections.map(
+        (section) => section.enrollmentTotal,
+      ),
+      [42, 42, 42],
+    );
+  });
   it("never exposes archived enrollment through the default normalizer", () => {
     const entry = course("1151", "COL", "1");
     Object.assign(entry.sections[0], {
