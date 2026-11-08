@@ -2,6 +2,14 @@ export type PreferredLocale = "en" | "zh";
 export const LOCALE_KEY = "course-atlas:locale:v1";
 export const PREFERENCES_EVENT = "course-atlas:preferences";
 
+export type LocaleNotice =
+  | { kind: "suggestion"; locale: PreferredLocale }
+  | {
+      kind: "changed";
+      locale: PreferredLocale;
+      previousLocale: PreferredLocale;
+    };
+
 function supportedLocale(
   value: string | null | undefined,
 ): PreferredLocale | null {
@@ -40,7 +48,7 @@ export function createLocalePreferenceStore(environment: {
   let initialized = false;
   let memory: PreferredLocale = "en";
   let memoryOnly = false;
-  let notice: PreferredLocale | null = null;
+  let notice: LocaleNotice | null = null;
 
   function read() {
     try {
@@ -70,7 +78,7 @@ export function createLocalePreferenceStore(environment: {
     } else {
       const detected = environment.detect();
       persist(detected);
-      notice = detected;
+      notice = { kind: "suggestion", locale: detected };
     }
     environment.changed();
   }
@@ -78,9 +86,14 @@ export function createLocalePreferenceStore(environment: {
     return (!memoryOnly && read()) || memory;
   }
   function setLocale(locale: PreferredLocale) {
+    const previousLocale = getLocale();
+    if (initialized && previousLocale === locale) return;
     initialized = true;
-    notice = null;
     persist(locale);
+    notice =
+      previousLocale === locale
+        ? null
+        : { kind: "changed", locale, previousLocale };
     environment.changed();
   }
   function dismissNotice() {

@@ -2701,11 +2701,6 @@ h1 {
   .header-actions {
     margin-left: 0;
   }
-  .header-actions button {
-    padding: 0;
-    font-size: 11px;
-    gap: 4px;
-  }
   .explorer-shell {
     padding: 26px 16px 34px;
   }
@@ -2900,10 +2895,6 @@ h1 {
   .main-nav {
     margin-left: auto;
     gap: 15px;
-  }
-  .header-actions button > svg {
-    width: 13px;
-    display: none;
   }
   .term-control .term-select {
     width: 145px;

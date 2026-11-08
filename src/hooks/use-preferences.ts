@@ -448,13 +448,13 @@ export function usePreferences() {
 
 export function useLocaleNotice() {
   useEffect(() => localePreference.initialize(), []);
-  const locale = useSyncExternalStore(
+  const notice = useSyncExternalStore(
     subscribe,
     localePreference.getNotice,
     () => null,
   );
   return {
-    locale,
+    notice,
     dismiss: localePreference.dismissNotice,
     switchTo: localePreference.setLocale,
   };

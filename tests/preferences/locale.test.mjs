@@ -80,13 +80,17 @@ it("detects and persists once, shares the notice, and switches explicitly", () =
   assert.equal(env.detections, 1);
   assert.equal(env.changes, 1);
   assert.equal(env.store.getLocale(), "zh");
-  assert.equal(env.store.getNotice(), "zh");
+  assert.deepEqual(env.store.getNotice(), { kind: "suggestion", locale: "zh" });
   assert.equal(env.stored, "zh");
   env.store.setLocale("en");
   assert.equal(env.store.getLocale(), "en");
   assert.equal(env.stored, "en");
   assert.equal(env.applied, "en");
-  assert.equal(env.store.getNotice(), null);
+  assert.deepEqual(env.store.getNotice(), {
+    kind: "changed",
+    locale: "en",
+    previousLocale: "zh",
+  });
   env.store.initialize();
   assert.equal(env.detections, 1);
 });
@@ -116,5 +120,59 @@ it("keeps detection and manual switching usable when storage is blocked", () => 
   assert.equal(env.store.getLocale(), "zh");
   env.store.setLocale("en");
   assert.equal(env.store.getLocale(), "en");
+  assert.deepEqual(env.store.getNotice(), {
+    kind: "changed",
+    locale: "en",
+    previousLocale: "zh",
+  });
+});
+
+it("keeps a successful switch available across page initialization and allows switching back", () => {
+  const env = environment("en");
+  env.store.initialize();
+  env.store.setLocale("zh");
+  const notice = env.store.getNotice();
+  assert.deepEqual(notice, {
+    kind: "changed",
+    locale: "zh",
+    previousLocale: "en",
+  });
+  env.store.initialize();
+  assert.equal(
+    env.store.getNotice(),
+    notice,
+    "the notice snapshot remains stable",
+  );
+  env.store.setLocale(notice.previousLocale);
+  assert.equal(env.store.getLocale(), "en");
+  assert.equal(env.stored, "en");
+  assert.deepEqual(env.store.getNotice(), {
+    kind: "changed",
+    locale: "en",
+    previousLocale: "zh",
+  });
+  env.store.dismissNotice();
+  assert.equal(env.store.getNotice(), null);
+  assert.equal(env.store.getLocale(), "en");
+});
+
+it("does not replace a success notice or send another change for the same locale", () => {
+  const env = environment("en");
+  env.store.initialize();
+  env.store.setLocale("zh");
+  const notice = env.store.getNotice();
+  const changes = env.changes;
+  env.store.setLocale("zh");
+  assert.equal(env.store.getNotice(), notice);
+  assert.equal(env.changes, changes);
+});
+
+it("persists an explicit initial choice even when it matches the default locale", () => {
+  const env = environment();
+  env.store.setLocale("en");
+  env.store.initialize();
+  assert.equal(env.store.getLocale(), "en");
+  assert.equal(env.stored, "en");
+  assert.equal(env.detections, 0);
   assert.equal(env.store.getNotice(), null);
 });

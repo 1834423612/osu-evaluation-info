@@ -84,22 +84,14 @@ export function AppHeader({
               data-analytics-action="locale_switch"
               onClick={() => setLocale(locale === "en" ? "zh" : "en")}
               aria-label={text(locale, "Switch to Chinese", "切换到英文")}
-              aria-pressed={locale === "zh"}
+              title={text(locale, "Switch to Chinese", "切换到英文")}
             >
               <Languages data-icon="inline-start" aria-hidden="true" />
               <span
                 className={styles.option}
-                data-active={locale === "en"}
-                lang="en"
+                lang={locale === "en" ? "zh-CN" : "en"}
               >
-                EN
-              </span>
-              <span
-                className={styles.option}
-                data-active={locale === "zh"}
-                lang="zh-CN"
-              >
-                中文
+                {locale === "en" ? "中" : "EN"}
               </span>
             </Button>
           </div>
