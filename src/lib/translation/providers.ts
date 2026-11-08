@@ -2,10 +2,10 @@ import {
   MAX_TRANSLATION_RESPONSE_BYTES,
   parseTranslationResponse,
   validTranslationResult,
-  TranslationUnavailableError,
   type TranslationItem,
 } from "./service.ts";
 import { readJsonLimited } from "./http.ts";
+import { TranslationProviderError } from "./provider-error.ts";
 
 export type ServerTranslationProvider = "ollama";
 export type TranslationNode = {
@@ -82,7 +82,7 @@ export function createTranslationProviders(
           const response = await fetcher(url, {
             method: "POST",
             cache: "no-store",
-            redirect: "error",
+            redirect: "manual",
             signal,
             headers: {
               "Content-Type": "application/json",
@@ -123,15 +123,38 @@ async function parseResponse(
 ) {
   if (!response.ok) {
     void response.body?.cancel().catch(() => undefined);
-    throw new TranslationUnavailableError();
+    const location = response.headers.get("location") ?? "";
+    const loginRedirect = /cloudflareaccess\.com|\/cdn-cgi\/access\//i.test(
+      location,
+    );
+    const reason =
+      response.status === 401 || response.status === 403 || loginRedirect
+        ? "auth"
+        : response.status === 429
+          ? "rate_limit"
+          : "http";
+    const retryAfter = Number(response.headers.get("retry-after"));
+    throw new TranslationProviderError(
+      reason,
+      response.status,
+      response.status === 429 && Number.isFinite(retryAfter)
+        ? Math.min(300000, Math.max(1000, retryAfter * 1000))
+        : undefined,
+    );
   }
-  const payload = await readJsonLimited(
-    response,
-    MAX_TRANSLATION_RESPONSE_BYTES,
-    signal,
-  );
+  let payload: unknown;
+  try {
+    payload = await readJsonLimited(
+      response,
+      MAX_TRANSLATION_RESPONSE_BYTES,
+      signal,
+    );
+  } catch {
+    if (signal.aborted) throw signal.reason;
+    throw new TranslationProviderError("invalid_response");
+  }
   const result = parseTranslationResponse(payload, provider, item.text);
   if (!result || !validTranslationResult(result, item.text, item.target))
-    throw new TranslationUnavailableError();
+    throw new TranslationProviderError("invalid_response");
   return result;
 }

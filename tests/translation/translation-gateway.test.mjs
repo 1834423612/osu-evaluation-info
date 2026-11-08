@@ -53,8 +53,9 @@ test("NAS requests use configured model, target prompt, Access headers and non-s
     "Hello",
   );
   assert.equal(calls[0].url, "https://nas.example/api/generate");
+  assert.equal(calls[0].init.headers["CF-Access-Client-Id"], "test-id");
   assert.equal(calls[0].init.headers["CF-Access-Client-Secret"], "test-secret");
-  assert.equal(calls[0].init.redirect, "error");
+  assert.equal(calls[0].init.redirect, "manual");
   assert.equal(calls[0].body.model, "hy-mt-fixed:latest");
   assert.equal(calls[0].body.stream, false);
   assert.match(
@@ -187,7 +188,7 @@ test("times out a hanging NAS and diverts traffic until cooldown ends", async ()
   assert.ok(observations.some(({ outcome }) => outcome === "circuit"));
 });
 
-test("two failures open a circuit, partial batches survive and all-failed results stay structured", async () => {
+test("a failed initial probe cools down while partial batches remain independent", async () => {
   let calls = 0;
   const gateway = createTranslationGateway([
     node("ollama", async () => {
@@ -205,7 +206,7 @@ test("two failures open a circuit, partial batches survive and all-failed result
     item("Good", "zh-CN", "good"),
     item("Broken", "zh-CN", "bad"),
   ]);
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   assert.equal(result[0].status, "translated");
   assert.equal(result[1].status, "unavailable");
   assert.equal(JSON.stringify(result).includes("private"), false);

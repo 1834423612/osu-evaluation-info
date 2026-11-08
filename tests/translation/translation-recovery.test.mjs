@@ -23,7 +23,7 @@ test("temporary NAS failures expire and the same input can probe and recover", a
   const gateway = createTranslationGateway(
     [
       node(async () => {
-        if (++calls <= 2) throw Error("temporary outage");
+        if (++calls <= 1) throw Error("temporary outage");
         return "已恢复";
       }),
     ],
@@ -34,13 +34,13 @@ test("temporary NAS failures expire and the same input can probe and recover", a
   assert.equal((await gateway.translate(item())).status, "unavailable");
   const cooled = await gateway.translate(item());
   assert.equal(cooled.status, "unavailable");
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   assert.equal(cooled.retryAfterMs, 1000);
   time += 1001;
   const recovered = await gateway.translate(item());
   assert.equal(recovered.provider, "ollama");
   assert.equal(recovered.translation, "已恢复");
-  assert.equal(calls, 3);
+  assert.equal(calls, 2);
 });
 
 test("an orphaned request cannot reserve NAS forever and recovery admits one probe", async () => {

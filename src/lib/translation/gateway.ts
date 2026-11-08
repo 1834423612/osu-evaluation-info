@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { withDeadline } from "./http.ts";
 import {
   TRANSLATION_DEADLINE_MS,
@@ -10,6 +10,13 @@ import {
   type TranslationProvider,
 } from "./service.ts";
 import type { TranslationNode } from "./providers.ts";
+import {
+  createMemoryTranslationState,
+  type TranslationStateStore,
+  type ProviderRegistration,
+} from "./state-store.ts";
+import { TranslationProviderError } from "./provider-error.ts";
+import type { HealthPhase, HealthReason } from "./health.ts";
 
 export type TranslationObservation = {
   provider: Exclude<TranslationProvider, "chrome"> | "gateway";
@@ -25,6 +32,14 @@ export type TranslationObservation = {
     | "unavailable";
   characters: number;
   durationMs: number;
+  browser?: {
+    sessionId: string;
+    sequence: number;
+    phase: HealthPhase;
+    reason: HealthReason;
+    consecutiveFailures: number;
+    retryAfterMs: number;
+  };
 };
 
 type Translated = Pick<
@@ -36,27 +51,55 @@ export function createTranslationGateway(
   nodes: TranslationNode[],
   observe: (event: TranslationObservation) => void = () => undefined,
   now = Date.now,
+  stateStore: TranslationStateStore = createMemoryTranslationState(now),
+  registrations: ProviderRegistration[] = nodes.map((node) => ({
+    id: node.id,
+    configured: true,
+    configHash: node.id,
+    policy: node,
+  })),
 ) {
   const cache = new Map<string, { result: Translated; expires: number }>();
   const pending = new Map<string, Promise<Translated>>();
-  const states = nodes.map((node) => ({
-    node,
-    active: new Map<symbol, number>(),
-    failures: 0,
-    blockedUntil: 0,
-  }));
+  let registered: Promise<void> | undefined;
+  function initialize() {
+    registered ??= Promise.all(
+      registrations.map((registration) => stateStore.register(registration)),
+    )
+      .then(() => undefined)
+      .catch((error) => {
+        registered = undefined;
+        throw error;
+      });
+    return registered;
+  }
 
   async function route(item: TranslationItem): Promise<Translated> {
-    const deadline = now() + TRANSLATION_DEADLINE_MS;
-    for (const state of states) {
-      const { node } = state;
-      const started = now();
-      // An upstream that ignores abort must never disable the node indefinitely.
-      // Reclaim orphaned permits after the deadline and one draining cooldown.
-      for (const [ticket, time] of state.active) {
-        if (started - time >= node.timeoutMs + node.cooldownMs)
-          state.active.delete(ticket);
+    await initialize();
+    let retryAfterMs = 30_000;
+    for (const node of nodes) {
+      const attemptId = randomUUID();
+      const decision = await stateStore.claim(
+        node.id,
+        attemptId,
+        item.target,
+        item.text.length,
+        registrations.find((entry) => entry.id === node.id)?.configHash,
+      );
+      if (!decision.allowed) {
+        retryAfterMs = Math.min(retryAfterMs, decision.retryAfterMs);
+        observe({
+          provider: node.id,
+          target: item.target,
+          outcome: decision.availability === "busy" ? "busy" : "circuit",
+          characters: item.text.length,
+          durationMs: 0,
+        });
+        continue;
       }
+      const started = now();
+      let settled = false;
+      let finalized = false;
       const report = (outcome: TranslationObservation["outcome"]) =>
         observe({
           provider: node.id,
@@ -65,63 +108,76 @@ export function createTranslationGateway(
           characters: item.text.length,
           durationMs: Math.max(0, now() - started),
         });
-      if (started >= deadline) break;
-      if (state.blockedUntil > started) {
-        report("circuit");
-        continue;
-      }
-      // Reserve synchronously: concurrent requests must not queue up on the NAS.
-      if (
-        state.active.size >= node.concurrency ||
-        (state.blockedUntil > 0 && state.active.size > 0) ||
-        [...state.active.values()].some((time) => started - time >= node.slowMs)
-      ) {
-        report("busy");
-        continue;
-      }
-      const ticket = Symbol();
-      state.active.set(ticket, started);
+      const onSettled = () => {
+        settled = true;
+        if (finalized)
+          void stateStore.release(node.id, attemptId).catch(() => undefined);
+      };
       try {
         const translation = await withDeadline(
           (signal) => {
             const operation = Promise.resolve().then(() =>
               node.translate(item, signal),
             );
-            // Keep the permit until settlement or its bounded draining lease expires.
-            void operation.then(
-              () => state.active.delete(ticket),
-              () => state.active.delete(ticket),
-            );
+            void operation.then(onSettled, onSettled);
             return operation;
           },
-          Math.min(node.timeoutMs, deadline - started),
+          Math.min(decision.policy.timeoutMs, TRANSLATION_DEADLINE_MS),
         );
-        state.failures = 0;
-        state.blockedUntil =
-          now() - started >= node.slowMs ? now() + node.cooldownMs : 0;
+        const accepted = await stateStore.finish(
+          node.id,
+          attemptId,
+          {
+            success: true,
+            reason: "success",
+            durationMs: Math.max(0, now() - started),
+            httpStatus: 200,
+          },
+          true,
+        );
+        if (!accepted) {
+          retryAfterMs = 1000;
+          continue;
+        }
         report("success");
         return { translation, provider: node.id };
       } catch (error) {
         const timeout = error instanceof Error && error.name === "TimeoutError";
-        state.failures++;
-        if (timeout || state.failures >= 2 || state.blockedUntil > 0)
-          state.blockedUntil = now() + node.cooldownMs;
+        const reason = timeout
+          ? "timeout"
+          : error instanceof TranslationProviderError
+            ? error.kind
+            : "network";
+        const delay =
+          error instanceof TranslationProviderError
+            ? error.retryAfterMs
+            : undefined;
+        await stateStore.finish(
+          node.id,
+          attemptId,
+          {
+            success: false,
+            reason,
+            durationMs: Math.max(0, now() - started),
+            httpStatus:
+              error instanceof TranslationProviderError
+                ? error.httpStatus
+                : undefined,
+            retryAfterMs: delay,
+          },
+          settled,
+        );
+        retryAfterMs = Math.min(
+          retryAfterMs,
+          Math.max(decision.policy.cooldownMs, delay ?? 0),
+        );
         report(timeout ? "timeout" : "failure");
+      } finally {
+        finalized = true;
+        if (settled)
+          await stateStore.release(node.id, attemptId).catch(() => undefined);
       }
     }
-    const retryAfterMs = states.length
-      ? Math.min(
-          ...states.map(({ node, blockedUntil, active }) =>
-            Math.max(
-              1000,
-              blockedUntil - now(),
-              ...[...active.values()].map(
-                (time) => time + node.timeoutMs + node.cooldownMs - now(),
-              ),
-            ),
-          ),
-        )
-      : 30_000;
     throw new TranslationUnavailableError(retryAfterMs);
   }
 
