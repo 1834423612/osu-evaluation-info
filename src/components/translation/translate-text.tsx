@@ -7,15 +7,17 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { ElementType, MouseEvent } from "react";
-import { Popover } from "radix-ui";
+import type { ElementType } from "react";
+import { DropdownMenu } from "radix-ui";
 import {
   Check,
+  ChevronRight,
   Languages,
   LaptopMinimal,
   LoaderCircle,
   Settings2,
   Sparkles,
+  WandSparkles,
   WholeWord,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
@@ -25,6 +27,8 @@ import {
   translationLanguagePair,
   type TranslationTarget,
   type TranslationProvider,
+  type TranslationModel,
+  TranslationUnavailableError,
 } from "@/lib/translation/service";
 import { translateInBrowser } from "@/lib/translation/browser";
 import { createRemoteTranslationClient } from "@/lib/translation/client";
@@ -41,6 +45,8 @@ type DisplayTranslation = {
 
 const MODE_KEY = "course-atlas:translation-mode:v1";
 const AUTO_KEY = "course-atlas:translation-auto:v1";
+const MODEL_KEY = "course-atlas:translation-model:v1";
+const MODELS = ["auto", "chrome", "ollama", "google"] as const;
 const MODE_EVENT = "course-atlas:translation-mode";
 const scheduler = createTranslationScheduler<DisplayTranslation>();
 const remoteTranslation = createRemoteTranslationClient(
@@ -50,6 +56,21 @@ const remoteTranslation = createRemoteTranslationClient(
 );
 let memoryMode: DisplayMode | null = null;
 let memoryAuto: boolean | null = null;
+let memoryModel: TranslationModel | null = null;
+
+function isTranslationModel(value: unknown): value is TranslationModel {
+  return MODELS.some((model) => model === value);
+}
+
+function getStoredModel(): TranslationModel {
+  if (memoryModel) return memoryModel;
+  try {
+    const value = localStorage.getItem(MODEL_KEY);
+    return isTranslationModel(value) ? value : "auto";
+  } catch {
+    return "auto";
+  }
+}
 
 function isDisplayMode(value: unknown): value is DisplayMode {
   return value === "bilingual" || value === "replace";
@@ -78,6 +99,7 @@ function subscribeToMode(callback: () => void) {
   const onStorage = () => {
     memoryMode = null;
     memoryAuto = null;
+    memoryModel = null;
     callback();
   };
   window.addEventListener(MODE_EVENT, callback);
@@ -92,8 +114,22 @@ function getServerMode(): DisplayMode {
   return "bilingual";
 }
 
-function cacheKey(source: string, target: TranslationTarget) {
-  return `${target}\0${source}`;
+function subscribeToCompactMenus(callback: () => void) {
+  const media = window.matchMedia("(max-width: 600px)");
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+
+function getCompactMenus() {
+  return window.matchMedia("(max-width: 600px)").matches;
+}
+
+function cacheKey(
+  source: string,
+  target: TranslationTarget,
+  model: TranslationModel,
+) {
+  return `${model}\0${target}\0${source}`;
 }
 
 export function TranslateText({
@@ -126,6 +162,16 @@ export function TranslateText({
     getStoredAuto,
     () => false,
   );
+  const model = useSyncExternalStore<TranslationModel>(
+    subscribeToMode,
+    getStoredModel,
+    () => "auto",
+  );
+  const compactMenus = useSyncExternalStore(
+    subscribeToCompactMenus,
+    getCompactMenus,
+    () => false,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
     null,
@@ -135,16 +181,30 @@ export function TranslateText({
     value: DisplayTranslation;
   } | null>(null);
   const [visible, setVisible] = useState(false);
-  const [status, setStatus] = useState<TranslationStatus>("idle");
   const pair = translationLanguagePair(text);
-  const key = cacheKey(text, pair.targetLanguage);
+  const key = cacheKey(text, pair.targetLanguage, model);
+  const activeKeyRef = useRef(key);
+  const [statusState, setStatusState] = useState<{
+    key: string;
+    value: TranslationStatus;
+  } | null>(null);
+  const status = statusState?.key === key ? statusState.value : "idle";
+
+  useEffect(() => {
+    activeKeyRef.current = key;
+  }, [key]);
 
   useEffect(() => {
     automaticRef.current = automatic;
   }, [automatic]);
 
   const translate = useCallback(
-    async (manual = true) => {
+    async (manual = true, selectedModel = model) => {
+      const requestKey = cacheKey(text, pair.targetLanguage, selectedModel);
+      const setStatus = (value: TranslationStatus) => {
+        if (activeKeyRef.current === requestKey)
+          setStatusState({ key: requestKey, value });
+      };
       if (!text.trim() || text.length > MAX_TRANSLATION_LENGTH) {
         setStatus("error");
         return;
@@ -152,31 +212,46 @@ export function TranslateText({
       setStatus("loading");
       try {
         const result = await scheduler.request(
-          key,
+          requestKey,
           async () => {
+            if (activeKeyRef.current !== requestKey)
+              throw new DOMException(
+                "Translation model changed.",
+                "AbortError",
+              );
             if (
               !manual &&
               (!isIntersectingRef.current || !automaticRef.current)
             )
               throw new DOMException("Auto translation paused.", "AbortError");
             let result: DisplayTranslation | null = null;
-            try {
-              const local = await translateInBrowser(
-                text,
-                pair.sourceLanguage,
-                pair.targetLanguage,
-                () => setStatus("downloading"),
-                manual && Boolean(navigator.userActivation?.isActive),
-              );
-              if (local) result = { translation: local, provider: "chrome" };
-            } catch {
-              result = null;
+            if (selectedModel === "auto" || selectedModel === "chrome") {
+              try {
+                const local = await translateInBrowser(
+                  text,
+                  pair.sourceLanguage,
+                  pair.targetLanguage,
+                  () => setStatus("downloading"),
+                  manual && Boolean(navigator.userActivation?.isActive),
+                );
+                if (local) result = { translation: local, provider: "chrome" };
+              } catch {
+                result = null;
+              }
             }
+            if (!result && selectedModel === "chrome")
+              throw new TranslationUnavailableError();
             if (!result) {
+              if (activeKeyRef.current !== requestKey)
+                throw new DOMException(
+                  "Translation model changed.",
+                  "AbortError",
+                );
               setStatus("loading");
               result = await remoteTranslation.request(
                 text,
                 pair.targetLanguage,
+                selectedModel === "chrome" ? "auto" : selectedModel,
               );
             }
             return {
@@ -186,10 +261,12 @@ export function TranslateText({
           },
           manual,
         );
-        setTranslationState({ key, value: result });
+        if (activeKeyRef.current !== requestKey) return;
+        setTranslationState({ key: requestKey, value: result });
         setVisible(true);
         setStatus("idle");
       } catch (error) {
+        if (activeKeyRef.current !== requestKey) return;
         const retryAfter =
           error instanceof Error && "retryAfterMs" in error
             ? Number(error.retryAfterMs)
@@ -204,7 +281,7 @@ export function TranslateText({
         } else setStatus("error");
       }
     },
-    [key, pair.sourceLanguage, pair.targetLanguage, text],
+    [model, pair.sourceLanguage, pair.targetLanguage, text],
   );
 
   useEffect(() => {
@@ -235,9 +312,7 @@ export function TranslateText({
     };
   }, [automatic, key, translate]);
 
-  function chooseMode(next: DisplayMode, event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
+  function chooseMode(next: DisplayMode) {
     setMenuOpen(false);
     memoryMode = next;
     try {
@@ -248,9 +323,7 @@ export function TranslateText({
     window.dispatchEvent(new Event(MODE_EVENT));
   }
 
-  function toggleAutomatic(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
+  function toggleAutomatic() {
     memoryAuto = !automatic;
     try {
       localStorage.setItem(AUTO_KEY, String(memoryAuto));
@@ -259,6 +332,20 @@ export function TranslateText({
     }
     setMenuOpen(false);
     window.dispatchEvent(new Event(MODE_EVENT));
+  }
+
+  function chooseModel(value: string) {
+    if (!isTranslationModel(value) || value === model) return;
+    memoryModel = value;
+    try {
+      localStorage.setItem(MODEL_KEY, value);
+    } catch {
+      // Keep the selection for this page when browser storage is unavailable.
+    }
+    activeKeyRef.current = cacheKey(text, pair.targetLanguage, value);
+    window.dispatchEvent(new Event(MODE_EVENT));
+    // Start from the selection gesture so a local model may be downloaded.
+    if (visible || status !== "idle") void translate(true, value);
   }
 
   const labels =
@@ -279,6 +366,12 @@ export function TranslateText({
           provider: "翻译服务",
           localProvider: "本机翻译",
           googleProvider: "Google 翻译",
+          model: "翻译模型",
+          automaticModel: "自动",
+          automaticHint: "按可用性自动选择",
+          localHint: "浏览器内置模型",
+          googleHint: "Google 在线翻译",
+          selectedUnavailable: "所选模型暂不可用，可切换为“自动”。",
         }
       : {
           translate: "Translate",
@@ -297,7 +390,42 @@ export function TranslateText({
           provider: "Translation service",
           localProvider: "On-device",
           googleProvider: "Google Translate",
+          model: "Translation model",
+          automaticModel: "Auto",
+          automaticHint: "Choose by availability",
+          localHint: "Built into your browser",
+          googleHint: "Google online translation",
+          selectedUnavailable: "Selected model unavailable. Try Auto instead.",
         };
+  const modelOptions = [
+    {
+      value: "auto",
+      label: labels.automaticModel,
+      hint: labels.automaticHint,
+      icon: WandSparkles,
+    },
+    {
+      value: "chrome",
+      label: labels.localProvider,
+      hint: labels.localHint,
+      icon: LaptopMinimal,
+    },
+    {
+      value: "ollama",
+      label: "kjch ai service",
+      hint: "HY-MT1.5 · 1.8B",
+      icon: Sparkles,
+    },
+    {
+      value: "google",
+      label: labels.googleProvider,
+      hint: labels.googleHint,
+      icon: Languages,
+    },
+  ];
+  const selectedModelLabel = modelOptions.find(
+    (option) => option.value === model,
+  )!.label;
   const translatedResult =
     translationState?.key === key ? translationState.value : null;
   const translation = translatedResult?.translation ?? null;
@@ -391,7 +519,8 @@ export function TranslateText({
               : actionLabel}
           </span>
         </button>
-        <Popover.Root
+        <DropdownMenu.Root
+          modal={false}
           open={menuOpen}
           onOpenChange={(open) => {
             if (open)
@@ -402,7 +531,7 @@ export function TranslateText({
             setMenuOpen(open);
           }}
         >
-          <Popover.Trigger asChild>
+          <DropdownMenu.Trigger asChild>
             <button
               type="button"
               className={styles.settingsButton}
@@ -414,11 +543,10 @@ export function TranslateText({
             >
               <Settings2 size={13} aria-hidden="true" />
             </button>
-          </Popover.Trigger>
-          <Popover.Portal container={portalContainer}>
-            <Popover.Content
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal container={portalContainer}>
+            <DropdownMenu.Content
               className={styles.modeMenu}
-              role="group"
               aria-label={labels.settings}
               data-translation-popover
               align="start"
@@ -427,55 +555,120 @@ export function TranslateText({
               collisionPadding={10}
               sticky="always"
               onClick={(event) => event.stopPropagation()}
-              onOpenAutoFocus={(event) => event.preventDefault()}
             >
-              <button
-                type="button"
+              <DropdownMenu.CheckboxItem
                 className={styles.autoChoice}
                 data-analytics-action="translation_auto_toggle"
-                role="switch"
                 aria-label={labels.auto}
-                aria-checked={automatic}
-                onClick={toggleAutomatic}
+                checked={automatic}
+                onCheckedChange={toggleAutomatic}
               >
                 <span>{labels.auto}</span>
                 <span className={styles.switchTrack} data-checked={automatic}>
                   <span />
                 </span>
-              </button>
+              </DropdownMenu.CheckboxItem>
               <span className={styles.menuHint}>{labels.autoHint}</span>
-              <div className={styles.menuDivider} />
-              <button
-                type="button"
-                className={styles.modeChoice}
-                data-analytics-action="translation_mode_bilingual"
-                aria-pressed={mode === "bilingual"}
-                onClick={(event) => chooseMode("bilingual", event)}
+              <DropdownMenu.Separator className={styles.menuDivider} />
+              <DropdownMenu.Sub>
+                <DropdownMenu.SubTrigger
+                  className={`${styles.modeChoice} ${styles.modelTrigger}`}
+                >
+                  <WandSparkles size={13} aria-hidden="true" />
+                  <span>{labels.model}</span>
+                  <span className={styles.modelValue}>
+                    {selectedModelLabel}
+                  </span>
+                  <ChevronRight
+                    size={12}
+                    className={styles.submenuArrow}
+                    aria-hidden="true"
+                  />
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.Portal container={portalContainer}>
+                  <DropdownMenu.SubContent
+                    className={`${styles.modeMenu} ${styles.modelMenu}`}
+                    aria-label={labels.model}
+                    data-translation-popover
+                    data-translation-model-menu
+                    // Overlap the parent on phones so every option stays in view.
+                    sideOffset={compactMenus ? -218 : 6}
+                    alignOffset={-5}
+                    collisionPadding={10}
+                    sticky="always"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <DropdownMenu.RadioGroup
+                      value={model}
+                      onValueChange={chooseModel}
+                    >
+                      {modelOptions.map(
+                        ({ value, label, hint, icon: Icon }) => (
+                          <DropdownMenu.RadioItem
+                            key={value}
+                            value={value}
+                            textValue={label}
+                            className={styles.modelChoice}
+                            data-translation-model={value}
+                          >
+                            <Icon
+                              size={15}
+                              className={styles.modelIcon}
+                              data-model={value}
+                              aria-hidden="true"
+                            />
+                            <span className={styles.modelCopy}>
+                              <span>{label}</span>
+                              <span className={styles.modelHint}>{hint}</span>
+                            </span>
+                            <DropdownMenu.ItemIndicator
+                              className={styles.modelCheck}
+                            >
+                              <Check size={13} aria-hidden="true" />
+                            </DropdownMenu.ItemIndicator>
+                          </DropdownMenu.RadioItem>
+                        ),
+                      )}
+                    </DropdownMenu.RadioGroup>
+                  </DropdownMenu.SubContent>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Sub>
+              <DropdownMenu.Separator className={styles.menuDivider} />
+              <DropdownMenu.RadioGroup
+                className={styles.modeChoices}
+                value={mode}
+                onValueChange={(value) => {
+                  if (isDisplayMode(value)) chooseMode(value);
+                }}
               >
-                {mode === "bilingual" ? (
-                  <Check size={13} aria-hidden="true" />
-                ) : (
-                  <WholeWord size={13} aria-hidden="true" />
-                )}
-                {labels.bilingual}
-              </button>
-              <button
-                type="button"
-                className={styles.modeChoice}
-                data-analytics-action="translation_mode_replace"
-                aria-pressed={mode === "replace"}
-                onClick={(event) => chooseMode("replace", event)}
-              >
-                {mode === "replace" ? (
-                  <Check size={13} aria-hidden="true" />
-                ) : (
-                  <Languages size={13} aria-hidden="true" />
-                )}
-                {labels.replace}
-              </button>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+                <DropdownMenu.RadioItem
+                  value="bilingual"
+                  className={styles.modeChoice}
+                  data-analytics-action="translation_mode_bilingual"
+                >
+                  {mode === "bilingual" ? (
+                    <Check size={13} aria-hidden="true" />
+                  ) : (
+                    <WholeWord size={13} aria-hidden="true" />
+                  )}
+                  {labels.bilingual}
+                </DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem
+                  value="replace"
+                  className={styles.modeChoice}
+                  data-analytics-action="translation_mode_replace"
+                >
+                  {mode === "replace" ? (
+                    <Check size={13} aria-hidden="true" />
+                  ) : (
+                    <Languages size={13} aria-hidden="true" />
+                  )}
+                  {labels.replace}
+                </DropdownMenu.RadioItem>
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         {provider ? (
           <span
             className={styles.sourceBadge}
@@ -490,7 +683,7 @@ export function TranslateText({
         ) : null}
         {status === "error" ? (
           <span className={`${styles.status} ${styles.error}`} role="status">
-            {labels.unavailable}
+            {model === "auto" ? labels.unavailable : labels.selectedUnavailable}
           </span>
         ) : null}
       </span>

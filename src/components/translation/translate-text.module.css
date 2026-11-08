@@ -142,8 +142,9 @@
 .modeMenu {
   display: grid;
   width: max-content;
+  min-width: min(238px, calc(100vw - 20px));
   max-width: min(270px, calc(100vw - 20px));
-  max-height: var(--radix-popover-content-available-height);
+  max-height: var(--radix-dropdown-menu-content-available-height);
   overflow-y: auto;
   gap: 3px;
   border: 1px solid var(--line);
@@ -186,6 +187,93 @@
 
 .autoChoice:hover {
   background: var(--accent-soft);
+}
+
+.modeChoices {
+  display: grid;
+  gap: 3px;
+}
+
+.modelTrigger {
+  gap: 7px;
+}
+
+.modelValue {
+  min-width: 0;
+  overflow: hidden;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.submenuArrow {
+  color: var(--muted);
+}
+
+.modelMenu {
+  width: 218px;
+  min-width: 0;
+}
+
+.modelChoice {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 4px;
+  padding: 7px 8px;
+  color: var(--secondary-foreground);
+  cursor: pointer;
+  font-size: 11px;
+  outline: none;
+}
+
+.modelCopy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  line-height: 1.35;
+}
+
+.modelHint {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.modelIcon {
+  flex: 0 0 auto;
+  color: var(--primary);
+}
+
+.modelIcon[data-model="chrome"] {
+  color: #6650a5;
+}
+
+.modelIcon[data-model="ollama"] {
+  color: #166b50;
+}
+
+.modelIcon[data-model="google"] {
+  color: #285ea8;
+}
+
+.modelCheck {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--primary);
+}
+
+.modeChoice[data-highlighted],
+.autoChoice[data-highlighted],
+.modelChoice[data-highlighted],
+.modeChoice[data-state="checked"],
+.modelChoice[data-state="checked"],
+.modelTrigger[data-state="open"] {
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  outline: none;
 }
 
 .autoChoice:focus-visible {
@@ -236,7 +324,7 @@
 }
 
 .modeChoice:hover,
-.modeChoice[aria-pressed="true"] {
+.modelChoice:hover {
   background: var(--accent-soft);
   color: var(--accent-foreground);
 }

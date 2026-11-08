@@ -170,12 +170,27 @@ Texts are translated separately upstream, preserving item boundaries rather than
 
 ## Chrome and display behavior
 
-`TranslateText` first tries the [Chrome Translator API](https://developer.chrome.com/docs/ai/translator-api).
+The settings menu includes a **Translation model** submenu. **Auto** is the
+default and follows the local → NAS → Google order above. Users can instead
+select **On-device**, **kjch ai service**, or **Google Translate**. This preference
+is stored locally and shared by translation controls on the page, independently
+of the automatic-translation switch and bilingual/replace display mode.
+Manual choices use only the selected service; Google still tries its three
+browser-direct endpoints. An unavailable manual choice preserves the original
+and suggests Auto. Manual choices retain the same health, capacity, and retry
+rules; they do not override an operator-disabled NAS node.
+
+Changing a model refreshes the currently displayed translation. Browser caches
+and pending work include the model choice in their keys, so results from another
+selection cannot satisfy the new request. Late results from a previous selection
+cannot overwrite the current content or provider badge.
+
+In Auto or On-device mode, `TranslateText` tries the [Chrome Translator API](https://developer.chrome.com/docs/ai/translator-api).
 Feature and language-pair detection, rather than the browser's name, determine
 availability. Automatic mode only uses a model reported as `available`, so it
 cannot initiate a download. A direct manual click may prepare a model while
 user activation is present. Local attempts have a 12-second deadline; rejected,
-timed-out, or invalid local output proceeds to the server batch.
+timed-out, or invalid local output proceeds to the server batch only in Auto.
 
 The source stays visible until a validated translation arrives. Translation
 failure leaves it intact and displays the existing unavailable message.
