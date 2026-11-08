@@ -1,4 +1,5 @@
 import { createRequestPool } from "./request-pool.ts";
+import { fetchCatalogResource } from "./browser-transport.ts";
 import {
   availabilityKey,
   isVerifiedSectionAvailability,
@@ -20,11 +21,11 @@ type Entry = {
 const EMPTY: Entry = { state: "idle", data: null, revision: 0 };
 
 export function createAvailabilityStore(
-  fetcher: typeof fetch = (...args) => fetch(...args),
+  fetcher: typeof fetch = fetchCatalogResource,
 ) {
   const pool = createRequestPool<SectionAvailability>({
     concurrency: 2,
-    minStartIntervalMs: 400,
+    minStartIntervalMs: 500,
     maxQueued: 80,
     onCancel: (key) => {
       controllers.delete(key);

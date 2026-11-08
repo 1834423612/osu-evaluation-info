@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import {
   Search,
   SlidersHorizontal,
@@ -126,7 +127,7 @@ export function CourseExplorer() {
   useEffect(() => {
     if (!facetTerm) return;
     const controller = new AbortController();
-    void fetch(
+    void fetchCatalogResource(
       `/api/catalog/facets?term=${encodeURIComponent(facetTerm)}&campus=all`,
       { signal: controller.signal },
     )
@@ -184,7 +185,7 @@ export function CourseExplorer() {
       setPageCursors(restoredPage.cursors);
       setLoadingMore(false);
       try {
-        const response = await fetch(`/api/catalog?${params}`, {
+        const response = await fetchCatalogResource(`/api/catalog?${params}`, {
           signal: controller.signal,
         });
         if (!response.ok) throw new Error("Unavailable");
@@ -234,7 +235,7 @@ export function CourseExplorer() {
           : (pageCursors[targetIndex - historyOffset] ?? null);
       if (targetCursor) params.set("cursor", targetCursor);
       try {
-        const response = await fetch(`/api/catalog?${params}`, {
+        const response = await fetchCatalogResource(`/api/catalog?${params}`, {
           signal: requestController.current?.signal,
         });
         if (!response.ok) throw new Error("Unavailable");

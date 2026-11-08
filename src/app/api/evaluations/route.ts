@@ -1,6 +1,43 @@
 import { getCourseEvaluations } from "@/lib/evaluations/repository";
+import {
+  parseEvaluationBatch,
+  readEvaluationBatch,
+} from "@/lib/evaluations/batch-input";
+import type { CourseEvaluationSummary } from "@/lib/evaluations/types";
 
 export const runtime = "nodejs";
+
+// Local database enrichment stays on this service; catalog requests go to OSU.
+export async function POST(request: Request) {
+  let courses: ReturnType<typeof parseEvaluationBatch>;
+  try {
+    courses = await readEvaluationBatch(request);
+  } catch (error) {
+    return Response.json(
+      {
+        error: error instanceof Error ? error.message : "Invalid course batch.",
+      },
+      { status: 400 },
+    );
+  }
+  const summaries: Record<string, CourseEvaluationSummary> =
+    Object.create(null);
+  const groups = Map.groupBy(courses, (c) => c.campusCode);
+  await Promise.all(
+    [...groups].map(async ([campus, group]) => {
+      const result = await getCourseEvaluations(
+        group.map((c) => ({ ...c, campus })),
+      );
+      for (const course of group)
+        summaries[course.id] =
+          result[`${course.subject} ${course.catalogNumber}`];
+    }),
+  );
+  return Response.json(
+    { summaries },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;

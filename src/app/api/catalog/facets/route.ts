@@ -1,51 +1,44 @@
 import {
   CatalogInputError,
   parseCatalogSearch,
-  searchOfficialCatalog,
-} from "@/lib/catalog/official";
-import { searchCatalogMirror } from "@/lib/catalog/mirror";
-import type { CatalogSearch } from "@/lib/catalog/types";
+} from "@/lib/catalog/official-client";
+import { officialPlanResponse } from "@/lib/catalog/official-endpoints";
+import { canUseCatalogMirror, searchCatalogMirror } from "@/lib/catalog/mirror";
 
 export const runtime = "nodejs";
-
 export async function GET(request: Request) {
-  let input: CatalogSearch | undefined;
+  const params = new URL(request.url).searchParams;
+  if (params.get("mode") !== "snapshot") return officialPlanResponse("facets");
   try {
-    input = parseCatalogSearch(new URL(request.url).searchParams);
-    const result = await searchOfficialCatalog({ ...input, limit: 1 });
+    const input = parseCatalogSearch(params);
+    if (!canUseCatalogMirror(input))
+      throw new CatalogInputError("Unsupported snapshot filters.");
+    const result = await searchCatalogMirror(input, null);
+    if (!result)
+      return Response.json(
+        { error: "Snapshot filters unavailable." },
+        { status: 503 },
+      );
     return Response.json(
       {
         filters: result.filters,
         terms: result.terms,
         source: result.source,
+        sourceMode: "mirror",
+        snapshotAt: result.snapshotAt,
         fetchedAt: result.fetchedAt,
       },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    const invalid = error instanceof CatalogInputError;
-    if (!invalid && input) {
-      const mirror = await searchCatalogMirror(input, null);
-      if (mirror)
-        return Response.json(
-          {
-            filters: mirror.filters,
-            terms: mirror.terms,
-            source: mirror.source,
-            sourceMode: "mirror",
-            fetchedAt: mirror.fetchedAt,
-            snapshotAt: mirror.snapshotAt,
-          },
-          { headers: { "Cache-Control": "no-store" } },
-        );
-    }
     return Response.json(
       {
-        error: invalid
-          ? error.message
-          : "Official course filters are temporarily unavailable.",
+        error:
+          error instanceof CatalogInputError
+            ? error.message
+            : "Snapshot filters unavailable.",
       },
-      { status: invalid ? 400 : 502 },
+      { status: error instanceof CatalogInputError ? 400 : 503 },
     );
   }
 }

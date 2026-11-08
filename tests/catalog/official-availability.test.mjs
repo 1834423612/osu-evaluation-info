@@ -1,77 +1,96 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
+import { createCatalogTransport } from "../../src/lib/catalog/browser-transport.ts";
+import {
+  officialEndpointPlan,
+  isOfficialEndpointPlan,
+} from "../../src/lib/catalog/official-endpoints.ts";
 
-const source = (
-  await readFile(
-    new URL("../../src/lib/catalog/official-availability.ts", import.meta.url),
-    "utf8",
-  )
-)
-  .replace('import "server-only";', "")
-  .replace(
-    '"./request-pool"',
-    JSON.stringify(
-      new URL("../../src/lib/catalog/request-pool.ts", import.meta.url).href,
-    ),
-  )
-  .replace(
-    '"./section-availability"',
-    JSON.stringify(
-      new URL("../../src/lib/catalog/section-availability.ts", import.meta.url)
-        .href,
-    ),
-  );
-const { getOfficialSectionAvailability } = await import(
-  "data:text/javascript;base64," +
-    Buffer.from(stripTypeScriptTypes(source)).toString("base64")
-);
-
-test("queries the dedicated official endpoint with exact identifiers and coalesces duplicate requests", async () => {
-  const previous = globalThis.fetch;
+const identifiers =
+  "courseId=151332&courseOfferingNumber=1&classSection=0040&sessionCode=1&termCode=1268";
+const payload = {
+  status: "success",
+  data: {
+    availability: {
+      isOpen: true,
+      enrollmentStatus: "Open",
+      enrollmentCapacity: 70,
+      enrollmentTotal: 44,
+      availableSeats: 26,
+      waitlistCapacity: 999,
+      waitlistTotal: 0,
+    },
+  },
+};
+test("discovers once, then requests each live read directly from OSU without credentials", async () => {
   const seen = [];
-  globalThis.fetch = async (url, options) => {
-    seen.push({ url: new URL(url), options });
-    return Response.json({
-      status: "success",
-      data: {
-        availability: {
-          isOpen: true,
-          enrollmentStatus: "Open",
-          enrollmentCapacity: 70,
-          enrollmentTotal: 44,
-          availableSeats: 26,
-          waitlistCapacity: 999,
-          waitlistTotal: 0,
-        },
-      },
-    });
-  };
-  try {
-    const query = {
-      courseId: "151332",
-      courseOfferingNumber: "1",
-      classSection: "0040",
-      sessionCode: "1",
-      termCode: "1268",
-    };
-    const [first, second] = await Promise.all([
-      getOfficialSectionAvailability(query),
-      getOfficialSectionAvailability(query),
-    ]);
-    assert.equal(seen.length, 1);
-    assert.equal(seen[0].url.origin, "https://content.osu.edu");
-    assert.equal(seen[0].url.pathname, "/v2/classes/availability");
-    assert.deepEqual(Object.fromEntries(seen[0].url.searchParams), query);
-    assert.equal(seen[0].options.cache, "no-store");
-    assert.deepEqual(seen[0].options.headers, { Accept: "application/json" });
-    assert.equal(first, second);
-    assert.equal(first.enrollmentTotal, 44);
-    assert.equal(first.availableSeats, 26);
-    assert.equal(first.waitlistTotal, 0);
-    assert.equal(first.source, "official-availability");
-  } finally {
-    globalThis.fetch = previous;
+  const transport = createCatalogTransport(async (url, options) => {
+    seen.push({ url: String(url), options });
+    return String(url).startsWith("/api/")
+      ? Response.json(officialEndpointPlan("availability"))
+      : Response.json(payload);
+  });
+  for (let i = 0; i < 2; i++) {
+    const response = await transport.request(
+      "/api/catalog/availability?" + identifiers,
+      { cache: "no-store" },
+    );
+    const { availability } = await response.json();
+    assert.equal(availability.enrollmentTotal, 44);
+    assert.equal(availability.availableSeats, 26);
+    assert.equal(availability.waitlistTotal, 0);
   }
+  assert.equal(seen.filter((x) => x.url.startsWith("/api/")).length, 1);
+  const direct = seen.filter((x) => x.url.startsWith("https:"));
+  assert.equal(direct.length, 2);
+  for (const { url, options } of direct) {
+    const u = new URL(url);
+    assert.equal(u.origin, "https://content.osu.edu");
+    assert.equal(u.pathname, "/v2/classes/availability");
+    assert.equal(u.searchParams.get("classSection"), "0040");
+    assert.equal(options.credentials, "omit");
+    assert.equal(options.mode, "cors");
+    assert.equal(options.cache, "no-store");
+  }
+});
+test("rejects unapproved endpoint recipients and retries failed discovery", async () => {
+  let calls = 0;
+  const transport = createCatalogTransport(async () => {
+    calls++;
+    const plan = officialEndpointPlan("availability");
+    if (calls === 1)
+      return Response.json({
+        ...plan,
+        endpoints: {
+          ...plan.endpoints,
+          availability: "https://other.example/seats",
+        },
+      });
+    return Response.json(plan);
+  });
+  await assert.rejects(
+    transport.discover("availability"),
+    /Invalid official endpoint/,
+  );
+  assert.ok(await transport.discover("availability"));
+  assert.equal(calls, 2);
+  assert.equal(
+    isOfficialEndpointPlan(officialEndpointPlan("course"), "catalog"),
+    false,
+  );
+});
+test("propagates upstream throttling rather than silently proxying a second read", async () => {
+  const seen = [];
+  const transport = createCatalogTransport(async (url) => {
+    seen.push(String(url));
+    return String(url).startsWith("/api/")
+      ? Response.json(officialEndpointPlan("availability"))
+      : new Response(null, { status: 429, headers: { "Retry-After": "12" } });
+  });
+  const response = await transport.request(
+    "/api/catalog/availability?" + identifiers,
+  );
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("Retry-After"), "12");
+  assert.equal(seen.length, 2);
 });

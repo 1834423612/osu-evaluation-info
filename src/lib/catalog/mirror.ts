@@ -9,7 +9,7 @@ import {
   CatalogInputError,
   mergeCatalogCourse,
   normalizeOfficialCourse,
-} from "./official";
+} from "./official-client";
 import type {
   CatalogCourse,
   CatalogFacet,

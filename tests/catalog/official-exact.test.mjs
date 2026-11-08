@@ -1,33 +1,12 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
 import { describe, it } from "node:test";
-
-// Exercise the server adapter with controlled upstream responses, without Next's
-// server-only marker or a live network/database dependency.
-const source = await readFile(
-  new URL("../../src/lib/catalog/official.ts", import.meta.url),
-  "utf8",
-);
-const adapterSource = source
-  .replace('import "server-only";', "")
-  .replace(
-    '"./exact-search"',
-    JSON.stringify(
-      new URL("../../src/lib/catalog/exact-search.ts", import.meta.url).href,
-    ),
-  )
-  .replace(
-    '"./fees"',
-    JSON.stringify(
-      new URL("../../src/lib/catalog/fees.ts", import.meta.url).href,
-    ),
-  );
-const { searchOfficialCatalog, getOfficialCourse, normalizeOfficialCourse } =
-  await import(
-    "data:text/javascript;base64," +
-      Buffer.from(stripTypeScriptTypes(adapterSource)).toString("base64")
-  );
+import {
+  createOfficialCatalogClient,
+  normalizeOfficialCourse,
+} from "../../src/lib/catalog/official-client.ts";
+import { OFFICIAL_ENDPOINTS } from "../../src/lib/catalog/official-endpoints.ts";
+const { searchOfficialCatalog, getOfficialCourse } =
+  createOfficialCatalogClient(OFFICIAL_ENDPOINTS);
 
 function course(catalogNumber, campusCode, classNumber, component = "Lecture") {
   return {

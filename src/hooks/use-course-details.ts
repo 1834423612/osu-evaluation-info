@@ -5,6 +5,7 @@ import {
   type CourseDetailState,
 } from "@/lib/catalog/detail-refresh";
 import type { CatalogCourse } from "@/lib/catalog/types";
+import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 
 export function useCourseDetails(course: CatalogCourse, open: boolean) {
   const [state, setState] = useState<CourseDetailState>({
@@ -28,6 +29,7 @@ export function useCourseDetails(course: CatalogCourse, open: boolean) {
       campus: campusCode.toLowerCase(),
     });
     const updater = createDetailRefresh({
+      fetcher: fetchCatalogResource,
       course: courseRef.current,
       url: `/api/catalog/course?${params}`,
       onUpdate: setState,
