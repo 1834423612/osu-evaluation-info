@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { it } from "node:test";
 import pg from "pg";
+import { loadCatalogEnvironment } from "../../scripts/catalog/database.mjs";
 import { pruneCatalogSnapshots } from "../../scripts/catalog/prune_snapshots.mjs";
 import { publishCatalogSnapshot } from "../../scripts/catalog/snapshots.mjs";
 import { FIND_CATALOG_SNAPSHOT_SQL } from "../../src/lib/catalog/snapshot-policy.ts";
@@ -11,7 +12,7 @@ it(
   "isolates staged generations, publishes atomically, preserves old cursors, and rolls back incomplete publication",
   { skip: process.env.CATALOG_DATABASE_TEST !== "1", timeout: 60000 },
   async () => {
-    process.loadEnvFile(".env.local");
+    loadCatalogEnvironment();
     const schema = `catalog_test_${randomUUID().replaceAll("-", "")}`;
     const client = new pg.Client({
       connectionString: process.env.DATABASE_URL,
@@ -166,6 +167,34 @@ it(
         /publication rejected/,
       );
       assert.equal(await find(client), next);
+      await scoped.query(
+        "UPDATE osu_catalog.section_snapshots SET course_id='1',campus_code='MNS' WHERE last_seen_run=$1",
+        [broken],
+      );
+      await scoped.query(
+        "INSERT INTO osu_catalog.course_snapshots SELECT term_code,course_id,offering_number,campus_code,subject,catalog_number,title,description,data,now(),$2 FROM osu_catalog.course_snapshots WHERE last_seen_run=$1",
+        [old, broken],
+      );
+      await assert.rejects(
+        publishCatalogSnapshot(scoped, broken, 1, 1),
+        /publication rejected/,
+        "a parent in another campus is insufficient",
+      );
+      await scoped.query(
+        "UPDATE osu_catalog.section_snapshots SET campus_code='COL',subject='PHYSICS' WHERE last_seen_run=$1",
+        [broken],
+      );
+      await assert.rejects(
+        publishCatalogSnapshot(scoped, broken, 1, 1),
+        /publication rejected/,
+        "subject identity must also agree",
+      );
+      await assert.rejects(
+        publishCatalogSnapshot(scoped, broken, 1, 0),
+        /publication rejected/,
+        "an empty generation cannot publish",
+      );
+      assert.equal(await find(client), next);
       const kept = await pruneCatalogSnapshots(scoped);
       assert.equal(
         kept.deletedRows,
@@ -191,6 +220,65 @@ it(
         ).rows[0].n,
         1,
         "legacy rows remain unchanged",
+      );
+      await scoped.query(
+        "UPDATE osu_catalog.sync_runs SET status='failed',error='CATALOG_CHECKPOINT_INVALID: fixture',started_at=now()-interval '2 days',terms='[\"1272\",\"1282\"]' WHERE id=$1",
+        [broken],
+      );
+      assert.equal(
+        (await pruneCatalogSnapshots(scoped)).deletedRows,
+        0,
+        "failed generations wait until all their terms have newer publications",
+      );
+      await scoped.query(
+        "UPDATE osu_catalog.sync_runs SET terms='[\"1272\"]' WHERE id=$1",
+        [broken],
+      );
+      const partialCleanup = await pruneCatalogSnapshots(scoped, {
+        budgetMs: 0,
+      });
+      assert.equal(partialCleanup.runId, broken);
+      assert.equal(partialCleanup.complete, false);
+      const abandoned = await pruneCatalogSnapshots(scoped, {
+        batchSize: 1,
+        wait: async () => {},
+      });
+      assert.equal(abandoned.runId, broken);
+      assert.equal(abandoned.deletedRows, 2);
+      assert.equal(abandoned.complete, true);
+      assert.equal(await find(client), next);
+      assert.equal(
+        (
+          await scoped.query(
+            "SELECT status FROM osu_catalog.sync_runs WHERE id=$1",
+            [broken],
+          )
+        ).rows[0].status,
+        "failed",
+        "failed-run audit history is retained",
+      );
+      const transient = randomUUID();
+      await scoped.query(
+        "INSERT INTO osu_catalog.sync_runs(id,status,terms,started_at,error) VALUES($1,'failed','[\"1272\"]',now()-interval '2 days','CATALOG_HTTP_ERROR: temporary')",
+        [transient],
+      );
+      await scoped.query(
+        "INSERT INTO osu_catalog.snapshot_versions(run_id) VALUES($1)",
+        [transient],
+      );
+      assert.equal(
+        (await pruneCatalogSnapshots(scoped)).deletedRows,
+        0,
+        "transient/resumable failures are never reclaimed automatically",
+      );
+      assert.equal(
+        (
+          await scoped.query(
+            "SELECT count(*)::int AS n FROM osu_catalog.snapshot_versions WHERE run_id=$1",
+            [transient],
+          )
+        ).rows[0].n,
+        1,
       );
     } finally {
       await reader.query("ROLLBACK").catch(() => {});
