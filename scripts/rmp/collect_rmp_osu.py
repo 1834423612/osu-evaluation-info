@@ -284,7 +284,7 @@ class GraphQLClient:
                     "Content-Type": "application/json",
                     "Origin": "https://www.ratemyprofessors.com",
                     "Referer": SOURCE_PAGE,
-                    "User-Agent": "osu-eval-rmp-collector/1.0 (authorized; 10-second minimum interval)",
+                    "User-Agent": "osu-eval-rmp-collector/1.0 (research analyze; 10-second minimum interval)",
                 },
                 method="POST",
             )

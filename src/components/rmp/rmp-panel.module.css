@@ -1,19 +1,22 @@
 .panel {
   border-top: 1px solid var(--line);
-  margin-top: 28px;
-  padding-top: 22px;
+  padding-top: 12px;
   color: var(--ink);
 }
-.heading,
-.instructorHeading {
+.heading {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-.heading,
-.instructorHeading {
   justify-content: space-between;
   flex-wrap: wrap;
+}
+.headingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
 }
 .heading h3,
 .instructorHeading h4 {
@@ -21,15 +24,14 @@
   font-size: 15px;
   font-weight: 600;
 }
-.heading span,
-.note,
-.footer,
 .stats small {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.7;
 }
 .note {
+  color: var(--muted);
+  line-height: 1.7;
   margin: 10px 0;
   font-size: 12px;
 }
@@ -116,6 +118,8 @@
 .instructorHeading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
 }
 .identity {
   min-width: 0;
@@ -174,9 +178,7 @@
     border-color 160ms ease,
     background 160ms ease;
 }
-.collapseLabel {
-  display: none;
-}
+.collapseLabel,
 .instructorToggle[data-state="open"] .expandLabel {
   display: none;
 }
@@ -241,11 +243,11 @@
   font-weight: 600;
   margin: 0;
 }
-.reviewPreview,
-.reviewViewport {
+.reviewPreview {
   min-width: 0;
 }
 .reviewViewport {
+  min-width: 0;
   max-height: min(52vh, 430px);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -453,14 +455,17 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
-.pageStatus,
-.pageSummary {
+.pageStatus {
   color: var(--muted);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
 .pageSummary {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
   margin: 6px 0 0;
 }
 .viewAll {
@@ -499,9 +504,15 @@
   cursor: pointer;
 }
 .footer {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
   margin-top: 14px;
 }
 @media (max-width: 480px) {
+  .headingMeta {
+    flex-basis: 100%;
+  }
   .emptyCard {
     grid-template-columns: 60px minmax(0, 1fr) 18px;
     gap: 8px;

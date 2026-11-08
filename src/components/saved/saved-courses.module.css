@@ -91,14 +91,16 @@
   font-size: 14px;
 }
 
-.muted,
-.relatedTitle {
+.muted {
   color: var(--muted);
   font-size: 11px;
   overflow-wrap: anywhere;
 }
 
 .relatedTitle {
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
   margin-top: 3px;
 }
 

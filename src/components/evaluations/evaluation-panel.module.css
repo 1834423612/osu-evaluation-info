@@ -68,6 +68,8 @@
   color: var(--muted);
 }
 .panel {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
   font-size: 13px;
   color: var(--ink);
   min-width: 0;
@@ -237,11 +239,6 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.chartPoint {
-  fill: var(--primary);
-  stroke: var(--surface, #fff);
-  stroke-width: 1.5;
-}
 .chartDetails {
   font-size: 11px;
   margin-top: 8px;
@@ -284,13 +281,15 @@
   white-space: nowrap;
   font-size: 12px;
 }
-.tableScroll td,
-.tableScroll th {
+.tableScroll td {
   padding: 6px 8px;
   border-bottom: 1px solid var(--line);
   font-variant-numeric: tabular-nums;
 }
 .tableScroll th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
   font-weight: 550;
 }
 .instructors {
@@ -307,35 +306,8 @@
   font-size: 10px;
   line-height: 1.6;
 }
-.instructorRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-}
 .instructorRow + .instructorRow {
   border-top: 1px solid var(--line);
-}
-.instructorName {
-  font-size: 13px;
-  font-weight: 550;
-  display: block;
-  margin-bottom: 2px;
-}
-.instructorScore {
-  text-align: right;
-  white-space: nowrap;
-}
-.instructorScore strong {
-  font-size: 16px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.instructorScore small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--muted);
 }
 .methodology {
   margin-top: 17px;
@@ -358,13 +330,15 @@
   line-height: 1.7;
   color: var(--muted);
 }
-.source span,
-.source a {
+.source span {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 .source a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -391,49 +365,7 @@
   margin: 5px 0 0;
   max-width: 500px;
 }
-@media (max-width: 480px) {
-  .coverage {
-    font-size: 10px;
-  }
-  .metricHeading {
-    gap: 7px;
-  }
-  .stats {
-    gap: 8px;
-  }
-  .stats dt {
-    font-size: 10px;
-  }
-  .stats dd {
-    font-size: 14px;
-  }
-  .metricOverview {
-    margin-bottom: 15px;
-  }
-  .source {
-    gap: 2px 10px;
-  }
-  .instrumentNote {
-    font-size: 10px;
-  }
-  .compactScore {
-    font-size: 23px;
-  }
-}
 
-.officialBadge {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  gap: 5px;
-  color: #08704a;
-  background: #e4f6ec;
-  border: 1px solid #bde6ce;
-  border-radius: 5px;
-  padding: 4px 7px;
-  font-size: 10px;
-  font-weight: 650;
-}
 .courseTotal {
   margin: 0 0 12px;
   font-size: 11px;
@@ -444,6 +376,8 @@
   border-bottom: 1px solid var(--line);
 }
 .instructorRow {
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
   padding: 12px 0;
   display: grid;
@@ -498,6 +432,9 @@
   font-size: 10px;
 }
 .instructorName {
+  font-weight: 550;
+  display: block;
+  margin-bottom: 2px;
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -532,6 +469,8 @@
   fill: var(--primary);
 }
 .instructorScore {
+  text-align: right;
+  white-space: nowrap;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -542,24 +481,28 @@
   font-size: 9px;
 }
 .instructorScore strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   font-size: 19px;
 }
 .instructorScore small {
+  font-weight: 400;
+  color: var(--muted);
   margin-left: 2px;
   font-size: 9px;
 }
-.instructorScore[data-tone="positive"],
 .instructorMiniMetric strong[data-tone="positive"] {
   color: #087549;
 }
 .instructorScore[data-tone="positive"] {
+  color: #087549;
   background: #e7f6ed;
 }
-.instructorScore[data-tone="caution"],
 .instructorMiniMetric strong[data-tone="caution"] {
   color: #b43d3f;
 }
 .instructorScore[data-tone="caution"] {
+  color: #b43d3f;
   background: #fff0ed;
 }
 .instructorDetail {
@@ -601,6 +544,9 @@
   font-weight: 500;
 }
 .chartPoint {
+  fill: var(--primary);
+  stroke: var(--surface, #fff);
+  stroke-width: 1.5;
   pointer-events: none;
 }
 .chartHitArea {
@@ -620,6 +566,35 @@
   fill: var(--primary);
   stroke: #fff;
   stroke-width: 2;
+}
+@media (max-width: 480px) {
+  .coverage {
+    font-size: 10px;
+  }
+  .metricHeading {
+    gap: 7px;
+  }
+  .stats {
+    gap: 8px;
+  }
+  .stats dt {
+    font-size: 10px;
+  }
+  .stats dd {
+    font-size: 14px;
+  }
+  .metricOverview {
+    margin-bottom: 15px;
+  }
+  .source {
+    gap: 2px 10px;
+  }
+  .instrumentNote {
+    font-size: 10px;
+  }
+  .compactScore {
+    font-size: 23px;
+  }
 }
 @media (max-width: 520px) {
   .instructorRow {
@@ -655,8 +630,5 @@
   }
   .panelHeading {
     gap: 6px;
-  }
-  .officialBadge {
-    font-size: 9px;
   }
 }

@@ -9,6 +9,7 @@ import {
   ChevronRight,
   LoaderCircle,
   Mail,
+  RefreshCw,
   SearchX,
 } from "lucide-react";
 import {
@@ -24,6 +25,7 @@ import { text, type Locale } from "@/lib/i18n";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
 import { TranslateText } from "@/components/translation/translate-text";
 import { SceneMascot } from "@/components/brand/scene-mascot";
+import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import styles from "./rmp-panel.module.css";
 
 function score(value: number | null) {
@@ -105,19 +107,22 @@ export default function RmpPanel({
     >
       <div className={styles.heading}>
         <h3>Rate My Professors</h3>
-        <span>
-          {text(
-            locale,
-            "Student reviews · separate source",
-            "学生自主评论 · 独立来源",
-          )}
-        </span>
+        <div className={styles.headingMeta}>
+          <DataSourceBadge source="unofficial">
+            <AlertTriangle size={14} aria-hidden="true" />
+            {text(locale, "Not official OSU data", "非 OSU 官方数据")}
+          </DataSourceBadge>
+          <DataSourceBadge source="sync">
+            <RefreshCw size={14} aria-hidden="true" />
+            {text(locale, "Periodically synced from RMP", "定期同步自 RMP")}
+          </DataSourceBadge>
+        </div>
       </div>
       <p className={styles.note}>
         {text(
           locale,
-          `Reviews for ${course.subject} ${course.catalogNumber} from teachers identified in current classes or official course history. Recent averages use the past two years; older comments keep their dates. These samples are separate from OSU SEI/SSLE responses.`,
-          `展示当前班次或 OSU 官方课程历史记录中教师的 ${course.subject} ${course.catalogNumber} 评论。近期均分采用近两年样本，较早评论保留原日期；RMP 样本与官方 SEI/SSLE 回答数量分别统计。`,
+          `Reviews for ${course.subject} ${course.catalogNumber} from teachers identified in current courses or official course history. Recent averages use the past two years of data.`,
+          `展示当前科目或 OSU 官方课程历史记录中所有教师的 ${course.subject} ${course.catalogNumber} 评论。近期均分采用近两年样本。`,
         )}
       </p>
       <p className={styles.caution}>
@@ -201,8 +206,8 @@ export default function RmpPanel({
           <footer className={styles.footer}>
             {text(
               locale,
-              "Scores summarize Rate My Professors reviews for this course. Recent averages use up to the last two years; comments are ordered newest first.",
-              "评分汇总了 Rate My Professors 上与本课程相关的评论。近期均分使用近两年样本，评论按日期从新到旧排列。",
+              "Comments are ordered newest first.",
+              "评论按日期从新到旧排列。",
             )}
             {summary.refreshedAt ? (
               <time dateTime={summary.refreshedAt}>

@@ -19,6 +19,7 @@ import {
   EvaluationSignalLabel,
 } from "./rating-summary";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
+import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import styles from "./evaluation-panel.module.css";
 import {
   Collapsible,
@@ -598,10 +599,10 @@ export function EvaluationPanel({
     <section className={styles.panel} aria-label={labels.title}>
       <div className={styles.panelHeading}>
         <h3>{labels.title}</h3>
-        <span className={styles.officialBadge}>
-          <ShieldCheck size={14} />{" "}
+        <DataSourceBadge source="official">
+          <ShieldCheck size={14} aria-hidden="true" />
           {text(locale, "Official OSU data", "OSU 官方数据")}
-        </span>
+        </DataSourceBadge>
       </div>
       <p className={styles.courseTotal}>{labels.courseTotal}</p>
       {!primary ? (

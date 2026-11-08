@@ -8,6 +8,7 @@ import {
   GraduationCap,
   MapPin,
   ArrowUpRight,
+  LucideShieldCheck,
   LoaderCircle,
   X,
 } from "lucide-react";
@@ -607,6 +608,7 @@ export function CourseCard({
                   aria-label={text(locale, "Evaluation source", "评价来源")}
                 >
                   <TabsTrigger value="official">
+                    <LucideShieldCheck size={13} aria-hidden="true" />
                     {text(locale, "OSU official", "OSU 官方评价")}
                   </TabsTrigger>
                   <TabsTrigger value="rmp">

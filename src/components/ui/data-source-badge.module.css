@@ -1,0 +1,39 @@
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--subtle-surface);
+  padding: 4px 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.badge > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.badge[data-source="official"] {
+  border-color: #bde6ce;
+  background: #e4f6ec;
+  color: #08704a;
+}
+
+.badge[data-source="unofficial"] {
+  border-color: #e0b4b9;
+  background: #f8e7e9;
+  color: #b12f43;
+}
+
+@media (max-width: 520px) {
+  .badge {
+    font-size: 9px;
+  }
+}

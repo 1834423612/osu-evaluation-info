@@ -30,8 +30,7 @@
   overflow-wrap: anywhere;
 }
 
-.role,
-.unknown {
+.role {
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
@@ -84,6 +83,16 @@
 }
 
 .unknown {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: 0.64rem;
+  line-height: 1.35;
+  white-space: nowrap;
   color: var(--muted);
   background: var(--muted-surface);
   font-weight: 550;

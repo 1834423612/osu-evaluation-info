@@ -32,6 +32,8 @@ pnpm build
 pnpm start
 ```
 
+CSS is checked by `pnpm lint:css` and included in `pnpm lint`. Keep each selector in a single rule per scope, with one declaration per property. Put base styles before conditional overrides; media queries, interaction states, and keyframes remain separate scopes. CSS Modules isolate component class names, so the same local name in different modules is safe. Reuse shared UI components for repeated visual elements such as data-source badges, and avoid broad descendant rules that override their typography or colors.
+
 ## Refresh the complete catalog
 
 Run `pnpm catalog:migrate` once when provisioning or upgrading the catalog database. See the [operations guide](docs/catalog/operations.md) for publication, retention, locking, and enrollment freshness.

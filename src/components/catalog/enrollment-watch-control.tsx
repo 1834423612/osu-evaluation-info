@@ -53,8 +53,8 @@ export function EnrollmentWatchControl({
                 )
               : text(
                   locale,
-                  "Checks once whenever course details open",
-                  "每次打开课程详情时查询一次",
+                  "When disabled, only checks once for available seats",
+                  "未开启时只自动查询一次是否有空位",
                 )}
           </small>
         </span>
