@@ -46,6 +46,8 @@ test("invalid or oversized inputs never reach upstream and errors conceal privat
     { text: "Hello", target: "ja" },
     { items: [item("same"), item("same")] },
     { text: "x".repeat(50000), target: "en" },
+    { items: [item("a")], mode: "google" },
+    { items: [item("a")], mode: 42 },
   ])
     assert.equal((await handler(request(body))).status, 400);
   assert.equal(calls, 0);
@@ -71,39 +73,45 @@ test("rate limiting counts items, not just HTTP batches, and resets each minute"
   assert.equal((await handler(request(batch))).status, 200);
 });
 
-test("client coalesces text, shares duplicates and matches shuffled IDs with partial failures", async () => {
+test("manual NAS serializes snippets, shares duplicates and matches IDs with partial failures", async () => {
   const calls = [];
   const client = createRemoteTranslationClient(async (_url, init) => {
     const { items } = JSON.parse(init.body);
     calls.push(items);
     return Response.json({
       version: 1,
-      results: items
-        .map((entry) =>
-          entry.text === "Fail"
-            ? {
-                id: entry.id,
-                target: entry.target,
-                status: "unavailable",
-                durationMs: 0,
-              }
-            : {
-                ...success(entry),
-                translation: entry.text === "First" ? "第一" : "第二",
-              },
-        )
-        .reverse(),
+      results: [
+        ...items
+          .map((entry) =>
+            entry.text === "Fail"
+              ? {
+                  id: entry.id,
+                  target: entry.target,
+                  status: "unavailable",
+                  durationMs: 0,
+                }
+              : {
+                  ...success(entry),
+                  translation: entry.text === "First" ? "第一" : "第二",
+                },
+          )
+          .reverse(),
+        {
+          ...success({ id: "unrelated", target: "zh-CN" }),
+          translation: "无关译文",
+        },
+      ].reverse(),
     });
   }, 1);
-  const first = client.request("First", "zh-CN");
-  assert.equal(client.request("First", "zh-CN"), first);
+  const first = client.request("First", "zh-CN", "ollama");
+  assert.equal(client.request("First", "zh-CN", "ollama"), first);
   const results = await Promise.allSettled([
     first,
-    client.request("Second", "zh-CN"),
-    client.request("Fail", "zh-CN"),
+    client.request("Second", "zh-CN", "ollama"),
+    client.request("Fail", "zh-CN", "ollama"),
   ]);
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].length, 3);
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every((items) => items.length === 1));
   assert.equal(results[0].value.translation, "第一");
   assert.equal(results[1].value.translation, "第二");
   assert.equal(results[2].status, "rejected");

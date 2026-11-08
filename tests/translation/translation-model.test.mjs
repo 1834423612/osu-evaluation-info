@@ -47,8 +47,7 @@ test("manual NAS failures never fall back and cannot merge with automatic reques
   assert.equal(nas.reason.retryAfterMs, 1500);
   assert.equal(fallback.value.provider, "dict-chrome-ex");
   assert.equal(batches.length, 1);
-  assert.equal(batches[0].length, 2);
-  assert.notEqual(batches[0][0].id, batches[0][1].id);
+  assert.equal(batches[0].length, 1);
 });
 
 test("manual NAS transport failures stay retryable without contacting Google", async () => {

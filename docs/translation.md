@@ -10,12 +10,12 @@ For database state, recovery, audits, and management commands, start with the
 The flow is:
 
 ```text
-TranslateText → Chrome Translator API when available
-              → batch POST /api/translate
+TranslateText → Chrome Translator API when available (highest priority)
+              → one NAS lane: POST /api/translate
                   → bounded memory cache / shared in-flight work
                   → NAS Ollama
-              ← NAS result or public Google endpoint metadata, matched by ID
-              → browser directly fetches Google dict-chrome-ex → clients5 → gtx
+              → parallel overflow lanes: browser-direct Google
+                  → dict-chrome-ex → clients5 → gtx, according to device health
               ← browser validates and normalizes the Google result
 ```
 
@@ -94,6 +94,27 @@ Translation-result caches and per-client HTTP rate limits remain process-local:
 32 unique pending translations, 512 cached NAS translations, 2048 rate keys,
 and 30 snippets per client per minute. Cache hits are not health probes.
 
+Manual **kjch ai service** requests use a FIFO queue rather than treating a busy
+slot as failure. The browser sends one NAS item at a time. Each server process
+also queues manual work (32 waiting entries, 30-second waiting deadline); only
+the queue head polls for a database-coordinated permit while another worker
+owns the slot. Queue expiry and overflow do not record a provider failure.
+Database leases still enforce the configured concurrency across all processes.
+Queues are in memory and exist only while handling requests; no extra service
+or continuous availability checker runs.
+
+A successful but slow node remains eligible for serialized manual work after
+its previous inference finishes. Auto still diverts from it during its slow
+cooldown. Actual failure cooldowns, disabled nodes, and unconfigured nodes are
+respected in both modes. Manual requests do not fall back to Google.
+
+After local translation fails, Auto reserves at most one NAS lane per device
+and sends overflow to three browser Google lanes immediately. These results
+are displayed independently while NAS is still running. Google endpoint health
+and concurrency limits stay independent, and a later request can use NAS again
+once its lane is free. If every Google endpoint is unavailable, overflow can
+join the NAS queue instead of failing merely because NAS is busy.
+
 Google is called **only by the user's browser**, using that device's network
 connection and public egress IP. The website server never proxies Google text
 or results. The API supplies fixed public endpoint metadata and the browser
@@ -117,13 +138,18 @@ original text remains visible and a bounded retry hint controls the next attempt
 
 ## HTTP contract
 
-The website batches only snippets that could not translate locally, waiting up
-to 25 ms to combine work. Each HTTP batch has at most eight items and 12,000
+The website sends NAS-bound snippets individually inside the batch contract so
+one slow NAS response cannot hold up other providers. The API also accepts
+batches from other callers. Each HTTP batch has at most eight items and 12,000
 input characters; each item has a unique ID, at most 4,000 characters, and a
 supported target. Request bodies are capped at 48 KiB with a three-second read
 deadline. Upstream responses are capped at 64 KiB and each translation at 8,000
 characters. The browser bounds the full normalized response to 256 KiB and
-waits at most 20 seconds for a server batch.
+waits at most 20 seconds for an Auto request, or 51 seconds for a manual NAS
+request (30 seconds waiting, at most 16 seconds inference, and transport margin).
+The optional top-level `mode` is `auto` (default, fail-fast on busy NAS) or
+`ollama` (bounded queued admission). Unknown modes return 400. A manual batch
+queues its items independently without asking Ollama to infer them concurrently.
 
 ```http
 POST /api/translate
@@ -177,8 +203,9 @@ is stored locally and shared by translation controls on the page, independently
 of the automatic-translation switch and bilingual/replace display mode.
 Manual choices use only the selected service; Google still tries its three
 browser-direct endpoints. An unavailable manual choice preserves the original
-and suggests Auto. Manual choices retain the same health, capacity, and retry
-rules; they do not override an operator-disabled NAS node.
+and suggests Auto. Manual choices retain capacity limits and failure cooldowns;
+a slow successful NAS can continue serialized manual work. They do not override
+an operator-disabled NAS node.
 
 Changing a model refreshes the currently displayed translation. Browser caches
 and pending work include the model choice in their keys, so results from another
@@ -196,8 +223,9 @@ The source stays visible until a validated translation arrives. Translation
 failure leaves it intact and displays the existing unavailable message.
 Whitespace and paragraphs are preserved. The `bilingual` / `replace` preference
 and automatic switch remain device-local. Automatic translation only processes
-visible snippets, with at most two running at once; duplicate previews/details
-share work. Leaving the viewport before queued work starts skips that work.
+visible snippets, with at most four running at once; duplicate previews/details
+share work. Queued snippets show a waiting label. Leaving the viewport or
+changing models before queued work starts skips that work.
 Successful browser scheduler entries expire after 30 seconds, allowing later
 requests to reconsider a recovered NAS rather than pinning Google forever.
 Failed snippets use the bounded retry hint, with no global scheduler circuit

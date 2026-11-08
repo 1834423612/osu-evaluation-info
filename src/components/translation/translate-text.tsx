@@ -37,7 +37,8 @@ import styles from "./translate-text.module.css";
 import { createTranslationScheduler } from "@/lib/translation/scheduler";
 
 type DisplayMode = "bilingual" | "replace";
-type TranslationStatus = "idle" | "loading" | "downloading" | "error";
+type TranslationStatus =
+  "idle" | "queued" | "loading" | "downloading" | "error";
 type DisplayTranslation = {
   translation: string;
   provider: TranslationProvider;
@@ -48,7 +49,7 @@ const AUTO_KEY = "course-atlas:translation-auto:v1";
 const MODEL_KEY = "course-atlas:translation-model:v1";
 const MODELS = ["auto", "chrome", "ollama", "google"] as const;
 const MODE_EVENT = "course-atlas:translation-mode";
-const scheduler = createTranslationScheduler<DisplayTranslation>();
+const scheduler = createTranslationScheduler<DisplayTranslation>(4);
 const remoteTranslation = createRemoteTranslationClient(
   fetch,
   25,
@@ -252,6 +253,14 @@ export function TranslateText({
                 text,
                 pair.targetLanguage,
                 selectedModel === "chrome" ? "auto" : selectedModel,
+                {
+                  onQueued: () => setStatus("queued"),
+                  onStarted: () => setStatus("loading"),
+                  canStart: () =>
+                    activeKeyRef.current === requestKey &&
+                    (manual ||
+                      (isIntersectingRef.current && automaticRef.current)),
+                },
               );
             }
             return {
@@ -360,6 +369,7 @@ export function TranslateText({
           replace: "仅显示译文",
           unavailable: "翻译暂不可用，原文已保留。",
           loading: "正在翻译…",
+          queued: "排队翻译…",
           downloading: "正在准备语言模型…",
           auto: "自动翻译",
           autoHint: "自动翻译当前可见内容",
@@ -384,6 +394,7 @@ export function TranslateText({
           unavailable:
             "Translation is unavailable. The original text is unchanged.",
           loading: "Translating…",
+          queued: "Queued…",
           downloading: "Preparing the language model…",
           auto: "Translate automatically",
           autoHint: "Translate visible content automatically",
@@ -458,6 +469,8 @@ export function TranslateText({
         : action === "show-translation"
           ? labels.showTranslation
           : labels.translate;
+  const busy =
+    status === "loading" || status === "downloading" || status === "queued";
 
   return (
     <Container
@@ -497,12 +510,12 @@ export function TranslateText({
             else if (translation !== null) setVisible(true);
             else void translate();
           }}
-          disabled={status === "loading" || status === "downloading"}
-          aria-busy={status === "loading" || status === "downloading"}
+          disabled={busy}
+          aria-busy={busy}
           aria-label={actionLabel}
           title={actionLabel}
         >
-          {status === "loading" || status === "downloading" ? (
+          {busy ? (
             <LoaderCircle
               size={13}
               className={styles.busyIcon}
@@ -512,10 +525,12 @@ export function TranslateText({
             <Languages size={13} aria-hidden="true" />
           )}
           <span>
-            {status === "loading" || status === "downloading"
+            {busy
               ? status === "downloading"
                 ? labels.downloading
-                : labels.loading
+                : status === "queued"
+                  ? labels.queued
+                  : labels.loading
               : actionLabel}
           </span>
         </button>
