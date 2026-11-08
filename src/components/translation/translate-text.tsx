@@ -21,42 +21,21 @@ import {
   MAX_TRANSLATION_LENGTH,
   translationAction,
   translationLanguagePair,
-  validTranslationResult,
   type TranslationTarget,
 } from "@/lib/translation/service";
+import { translateInBrowser } from "@/lib/translation/browser";
+import { createRemoteTranslationClient } from "@/lib/translation/client";
 import styles from "./translate-text.module.css";
 import { createTranslationScheduler } from "@/lib/translation/scheduler";
 
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus = "idle" | "loading" | "downloading" | "error";
 
-type TranslatorInstance = {
-  translate(text: string, options?: { signal?: AbortSignal }): Promise<string>;
-  destroy?: () => void;
-};
-type TranslatorConstructor = {
-  availability(options: {
-    sourceLanguage: string;
-    targetLanguage: string;
-  }): Promise<string>;
-  create(options: {
-    sourceLanguage: string;
-    targetLanguage: string;
-    monitor?: (monitor: EventTarget) => void;
-    signal?: AbortSignal;
-  }): Promise<TranslatorInstance>;
-};
-
-declare global {
-  interface Window {
-    Translator?: TranslatorConstructor;
-  }
-}
-
 const MODE_KEY = "course-atlas:translation-mode:v1";
 const AUTO_KEY = "course-atlas:translation-auto:v1";
 const MODE_EVENT = "course-atlas:translation-mode";
 const scheduler = createTranslationScheduler();
+const remoteTranslation = createRemoteTranslationClient();
 let memoryMode: DisplayMode | null = null;
 let memoryAuto: boolean | null = null;
 
@@ -103,95 +82,6 @@ function getServerMode(): DisplayMode {
 
 function cacheKey(source: string, target: TranslationTarget) {
   return `${target}\0${source}`;
-}
-
-async function translateInBrowser(
-  source: string,
-  sourceLanguage: "en" | "zh",
-  targetLanguage: TranslationTarget,
-  onDownload: () => void,
-  allowDownload: boolean,
-) {
-  const translator = window.Translator;
-  if (!translator) return null;
-  const controller = new AbortController();
-  let instance: TranslatorInstance | null = null;
-  let timer: ReturnType<typeof setTimeout>;
-  const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      controller.abort();
-      reject(new Error("Local translation timed out."));
-    }, 12_000);
-  });
-  const target = targetLanguage === "zh-CN" ? "zh" : "en";
-  try {
-    const availabilityRequest = translator.availability({
-      sourceLanguage,
-      targetLanguage: target,
-    });
-    if (!allowDownload) {
-      const availability = await Promise.race([availabilityRequest, deadline]);
-      // Automatic translation must never initiate a language-model download.
-      if (availability !== "available") return null;
-    }
-    const instanceRequest = translator.create({
-      sourceLanguage,
-      targetLanguage: target,
-      signal: controller.signal,
-      monitor: (monitor) => {
-        monitor.addEventListener("downloadprogress", () => {
-          if (!controller.signal.aborted) onDownload();
-        });
-      },
-    });
-    void instanceRequest.then(
-      (created) => {
-        if (controller.signal.aborted) created.destroy?.();
-      },
-      () => undefined,
-    );
-    const [availability, created] = await Promise.race([
-      Promise.all([availabilityRequest, instanceRequest]),
-      deadline,
-    ]);
-    instance = created;
-    if (availability === "unavailable") return null;
-    const result = (
-      await Promise.race([
-        instance.translate(source, { signal: controller.signal }),
-        deadline,
-      ])
-    ).trim();
-    return validTranslationResult(result, source, targetLanguage)
-      ? result
-      : null;
-  } finally {
-    clearTimeout(timer!);
-    controller.abort();
-    instance?.destroy?.();
-  }
-}
-
-async function translateRemotely(source: string, target: TranslationTarget) {
-  const response = await fetch("/api/translate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify({ text: source, target }),
-    signal: AbortSignal.timeout(18_000),
-  });
-  if (!response.ok) throw new Error("translation unavailable");
-  const value: unknown = await response.json();
-  if (
-    !value ||
-    typeof value !== "object" ||
-    typeof (value as { translation?: unknown }).translation !== "string"
-  )
-    throw new Error("invalid translation response");
-  const translation = (value as { translation: string }).translation.trim();
-  if (!validTranslationResult(translation, source, target))
-    throw new Error("invalid translation response");
-  return translation;
 }
 
 export function TranslateText({
@@ -258,14 +148,16 @@ export function TranslateText({
               pair.sourceLanguage,
               pair.targetLanguage,
               () => setStatus("downloading"),
-              manual && navigator.userActivation.isActive,
+              manual && Boolean(navigator.userActivation?.isActive),
             );
           } catch {
             result = null;
           }
           if (!result) {
             setStatus("loading");
-            result = await translateRemotely(text, pair.targetLanguage);
+            result = (
+              await remoteTranslation.request(text, pair.targetLanguage)
+            ).translation;
           }
           return result;
         });
