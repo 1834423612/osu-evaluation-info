@@ -183,6 +183,39 @@ test(
         2000,
       );
       assert.equal((await two.status())[0].provider, "ollama");
+      const slow = randomUUID();
+      await one.claim("ollama", slow, "en", 10);
+      await one.finish(
+        "ollama",
+        slow,
+        { success: true, reason: "success", durationMs: 1600, httpStatus: 200 },
+        true,
+      );
+      assert.equal(
+        (await two.claim("ollama", randomUUID(), "en", 10)).availability,
+        "waiting_retry",
+      );
+      const manual = randomUUID();
+      assert.equal(
+        (await two.claim("ollama", manual, "en", 10, "initial", true)).allowed,
+        true,
+      );
+      assert.equal(
+        (await one.claim("ollama", randomUUID(), "en", 10, "initial", true))
+          .availability,
+        "busy",
+      );
+      await two.finish(
+        "ollama",
+        manual,
+        { success: false, reason: "auth", durationMs: 10, httpStatus: 403 },
+        true,
+      );
+      assert.equal(
+        (await one.claim("ollama", randomUUID(), "en", 10, "initial", true))
+          .availability,
+        "waiting_retry",
+      );
       await one.manage("ollama", "disable");
       assert.equal(
         (await two.claim("ollama", randomUUID(), "en", 10)).availability,

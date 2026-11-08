@@ -5,6 +5,7 @@ import {
   BROWSER_TRANSLATION_PROVIDERS,
   type TranslationItem,
   type TranslationResult,
+  type TranslationRequestOptions,
 } from "./service.ts";
 
 function response(body: unknown, status = 200) {
@@ -19,7 +20,10 @@ function response(body: unknown, status = 200) {
 }
 
 export function createTranslationHandler(
-  translateBatch: (items: TranslationItem[]) => Promise<TranslationResult[]>,
+  translateBatch: (
+    items: TranslationItem[],
+    options?: TranslationRequestOptions,
+  ) => Promise<TranslationResult[]>,
   now = Date.now,
 ) {
   const requests = new Map<string, { start: number; count: number }>();
@@ -62,7 +66,8 @@ export function createTranslationHandler(
       );
     }
     const items = parseTranslationBatch(payload);
-    if (!items)
+    const mode = (payload as { mode?: unknown } | null)?.mode ?? "auto";
+    if (!items || (mode !== "auto" && mode !== "ollama"))
       return response(
         { error: "Valid text and target languages are required." },
         400,
@@ -73,7 +78,7 @@ export function createTranslationHandler(
         429,
       );
     try {
-      const results = await translateBatch(items);
+      const results = await translateBatch(items, { mode });
       const legacy = !(payload as { items?: unknown }).items;
       if (legacy) {
         const result = results[0];

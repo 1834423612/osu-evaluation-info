@@ -2,12 +2,14 @@ import { createHash, randomUUID } from "node:crypto";
 import { withDeadline } from "./http.ts";
 import {
   TRANSLATION_DEADLINE_MS,
+  TRANSLATION_QUEUE_WAIT_MS,
   parseTranslationBatch,
   TranslationUnavailableError,
   type TranslationItem,
   type TranslationResult,
   type TranslationTarget,
   type TranslationProvider,
+  type TranslationRequestOptions,
 } from "./service.ts";
 import type { TranslationNode } from "./providers.ts";
 import {
@@ -17,6 +19,7 @@ import {
 } from "./state-store.ts";
 import { TranslationProviderError } from "./provider-error.ts";
 import type { HealthPhase, HealthReason } from "./health.ts";
+import { createTranslationQueue } from "./queue.ts";
 
 export type TranslationObservation = {
   provider: Exclude<TranslationProvider, "chrome"> | "gateway";
@@ -56,9 +59,21 @@ export function createTranslationGateway(
     id: node.id,
     configured: true,
     configHash: node.id,
-    policy: node,
+    policy: {
+      timeoutMs: node.timeoutMs,
+      slowMs: node.slowMs,
+      cooldownMs: node.cooldownMs,
+      concurrency: node.concurrency,
+    },
   })),
+  queueOptions: { waitMs?: number; limit?: number; pollMs?: number } = {},
 ) {
+  const queueWaitMs = queueOptions.waitMs ?? TRANSLATION_QUEUE_WAIT_MS;
+  const manualQueue = createTranslationQueue(
+    1,
+    queueOptions.limit ?? 32,
+    queueWaitMs,
+  );
   const cache = new Map<string, { result: Translated; expires: number }>();
   const pending = new Map<string, Promise<Translated>>();
   let registered: Promise<void> | undefined;
@@ -74,18 +89,43 @@ export function createTranslationGateway(
     return registered;
   }
 
-  async function route(item: TranslationItem): Promise<Translated> {
+  async function route(
+    item: TranslationItem,
+    manual = false,
+    deadline = 0,
+  ): Promise<Translated> {
     await initialize();
     let retryAfterMs = 30_000;
     for (const node of nodes) {
       const attemptId = randomUUID();
-      const decision = await stateStore.claim(
-        node.id,
-        attemptId,
-        item.target,
-        item.text.length,
-        registrations.find((entry) => entry.id === node.id)?.configHash,
-      );
+      const claim = () =>
+        stateStore.claim(
+          node.id,
+          attemptId,
+          item.target,
+          item.text.length,
+          registrations.find((entry) => entry.id === node.id)?.configHash,
+          manual,
+        );
+      let decision = await claim();
+      // Only the head of the manual FIFO polls for a cross-worker permit.
+      while (
+        manual &&
+        !decision.allowed &&
+        decision.availability === "busy" &&
+        Date.now() < deadline
+      ) {
+        await new Promise((resolve) =>
+          setTimeout(
+            resolve,
+            Math.min(
+              queueOptions.pollMs ?? 250,
+              Math.max(1, deadline - Date.now()),
+            ),
+          ),
+        );
+        decision = await claim();
+      }
       if (!decision.allowed) {
         retryAfterMs = Math.min(retryAfterMs, decision.retryAfterMs);
         observe({
@@ -181,7 +221,10 @@ export function createTranslationGateway(
     throw new TranslationUnavailableError(retryAfterMs);
   }
 
-  async function translate(item: TranslationItem): Promise<TranslationResult> {
+  async function translate(
+    item: TranslationItem,
+    options: TranslationRequestOptions = {},
+  ): Promise<TranslationResult> {
     const started = now();
     const metadata = { id: item.id, target: item.target };
     if (!parseTranslationBatch({ items: [item] }))
@@ -214,27 +257,46 @@ export function createTranslationGateway(
         durationMs: 0,
       };
     }
-    let operation = pending.get(key);
+    const pendingKey = `${options.mode ?? "auto"}\0${key}`;
+    let operation = pending.get(pendingKey);
     const shared = Boolean(operation);
+    let queuedCacheHit = false;
     if (!operation && pending.size < 32) {
-      operation = route(item)
+      const deadline = Date.now() + queueWaitMs;
+      const work = () => {
+        const current = cache.get(key);
+        if (current && current.expires > now()) {
+          queuedCacheHit = true;
+          return Promise.resolve(current.result);
+        }
+        if (options.mode === "ollama" && Date.now() >= deadline)
+          throw new TranslationUnavailableError(1000);
+        return route(item, options.mode === "ollama", deadline);
+      };
+      operation = (options.mode === "ollama" ? manualQueue.run(work) : work())
         .then((result) => {
-          cache.set(key, { result, expires: now() + 7 * 24 * 60 * 60 * 1000 });
-          while (cache.size > 512) cache.delete(cache.keys().next().value!);
+          if (!queuedCacheHit) {
+            cache.set(key, {
+              result,
+              expires: now() + 7 * 24 * 60 * 60 * 1000,
+            });
+            while (cache.size > 512) cache.delete(cache.keys().next().value!);
+          }
           return result;
         })
-        .finally(() => pending.delete(key));
-      pending.set(key, operation);
+        .finally(() => pending.delete(pendingKey));
+      pending.set(pendingKey, operation);
     }
     try {
       if (!operation) throw new TranslationUnavailableError();
       const result = await operation;
-      if (shared) report("shared");
+      if (queuedCacheHit) report("cache");
+      else if (shared) report("shared");
       return {
         ...metadata,
         ...result,
         status: "translated",
-        cache: shared ? "shared" : "miss",
+        cache: queuedCacheHit ? "hit" : shared ? "shared" : "miss",
         durationMs: Math.max(0, now() - started),
       };
     } catch (error) {
@@ -253,7 +315,9 @@ export function createTranslationGateway(
 
   return {
     translate,
-    translateBatch: (items: TranslationItem[]) =>
-      Promise.all(items.map(translate)),
+    translateBatch: (
+      items: TranslationItem[],
+      options: TranslationRequestOptions = {},
+    ) => Promise.all(items.map((item) => translate(item, options))),
   };
 }

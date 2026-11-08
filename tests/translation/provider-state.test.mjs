@@ -27,6 +27,37 @@ const success = {
 };
 const failure = { success: false, reason: "network", durationMs: 10 };
 
+test("manual slow-node admission keeps capacity limits, real failure cooldowns and operator disable", async () => {
+  const { store } = await fixture();
+  await store.claim("ollama", "initial", "en", 10);
+  await store.finish("ollama", "initial", { ...success, durationMs: 60 }, true);
+  assert.equal(
+    (await store.claim("ollama", "auto", "en", 10)).availability,
+    "waiting_retry",
+  );
+  assert.equal(
+    (await store.claim("ollama", "manual", "en", 10, undefined, true)).allowed,
+    true,
+  );
+  assert.equal(
+    (await store.claim("ollama", "sibling", "en", 10, undefined, true))
+      .availability,
+    "busy",
+  );
+  await store.finish("ollama", "manual", { ...failure, reason: "auth" }, true);
+  assert.equal(
+    (await store.claim("ollama", "failed", "en", 10, undefined, true))
+      .availability,
+    "waiting_retry",
+  );
+  store.reset("ollama", false);
+  assert.equal(
+    (await store.claim("ollama", "disabled", "en", 10, undefined, true))
+      .availability,
+    "disabled",
+  );
+});
+
 test("unknown → single recovering probe → healthy; historical failures survive only as history", async () => {
   const { store, advance } = await fixture();
   assert.equal(store.snapshot("ollama").health.phase, "unknown");

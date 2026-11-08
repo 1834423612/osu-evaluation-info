@@ -24,6 +24,7 @@ export interface TranslationStateStore {
     target: "en" | "zh-CN",
     characters: number,
     configHash?: string,
+    allowSlow?: boolean,
   ): Promise<ProviderDecision>;
   finish(
     id: string,
@@ -74,7 +75,7 @@ export function createMemoryTranslationState(now = Date.now) {
         resetProvider(record, "config_changed", now());
       }
     },
-    async claim(id, attemptId, target, characters, configHash) {
+    async claim(id, attemptId, target, characters, configHash, allowSlow) {
       const record = get(id);
       if (configHash !== undefined && record.configHash !== configHash)
         return {
@@ -88,6 +89,7 @@ export function createMemoryTranslationState(now = Date.now) {
         target,
         characters,
         now(),
+        allowSlow,
       );
       trim(record);
       return result;

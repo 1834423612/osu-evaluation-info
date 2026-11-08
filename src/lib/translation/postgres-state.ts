@@ -223,7 +223,7 @@ export function createPostgresTranslationState(
         undefined,
         "configuration",
       ),
-    claim: (id, attemptId, target, characters, configHash) =>
+    claim: (id, attemptId, target, characters, configHash, allowSlow) =>
       transaction(id, async (record, row, _client, now) =>
         configHash !== undefined && row.config_hash !== configHash
           ? {
@@ -231,7 +231,14 @@ export function createPostgresTranslationState(
               availability: "unconfigured",
               retryAfterMs: 30000,
             }
-          : acquireProvider(record, attemptId, target, characters, now),
+          : acquireProvider(
+              record,
+              attemptId,
+              target,
+              characters,
+              now,
+              allowSlow,
+            ),
       ),
     finish: (id, attemptId, outcome, settled) =>
       transaction(

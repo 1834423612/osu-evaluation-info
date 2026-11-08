@@ -219,6 +219,7 @@ export function acquireProvider(
   target: ProviderAttempt["target"],
   characters: number,
   now: number,
+  allowSlow = false,
 ): ProviderDecision {
   expireProviderLeases(record, now);
   if (!record.enabled)
@@ -230,7 +231,13 @@ export function acquireProvider(
       retryAfterMs: 30_000,
     };
   const health = record.health;
-  if (health.nextRetryAt !== null && health.nextRetryAt > now)
+  // Manual selection may wait for a slow but successful node. Actual failures keep their cooldown.
+  const slowOnly =
+    allowSlow &&
+    health.phase === "degraded" &&
+    health.reason === "slow" &&
+    health.consecutiveFailures === 0;
+  if (health.nextRetryAt !== null && health.nextRetryAt > now && !slowOnly)
     return {
       allowed: false,
       availability: "waiting_retry",
@@ -275,6 +282,7 @@ export function acquireProvider(
   health.lastAttemptAt = now;
   if (probe) {
     health.probeId = id;
+    health.nextRetryAt = null;
     transition(record, "recovering", "probe", now, id);
   }
   return { allowed: true, attempt, policy: { ...record.policy } };

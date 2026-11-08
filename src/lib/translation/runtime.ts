@@ -52,8 +52,8 @@ function createRuntime() {
 }
 
 const shared = globalThis as typeof globalThis & {
-  osuTranslationRuntimeV3?: ReturnType<typeof createRuntime>;
+  osuTranslationRuntimeV4?: ReturnType<typeof createRuntime>;
 };
 /** Share NAS permits, circuit state and bounded caches across requests and dev reloads. */
-export const translationRuntime = (shared.osuTranslationRuntimeV3 ??=
+export const translationRuntime = (shared.osuTranslationRuntimeV4 ??=
   createRuntime());

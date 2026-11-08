@@ -3,6 +3,7 @@ export type GoogleTranslationProvider = "dict-chrome-ex" | "clients5" | "gtx";
 export type TranslationProvider =
   "chrome" | "ollama" | GoogleTranslationProvider;
 export type TranslationModel = "auto" | "chrome" | "ollama" | "google";
+export type TranslationRequestOptions = { mode?: "auto" | "ollama" };
 export type TranslationDisplayMode = "bilingual" | "replace";
 export type TranslationAction =
   "translate" | "show-translation" | "hide-translation" | "show-original";
@@ -13,6 +14,7 @@ export const MAX_TRANSLATION_RESPONSE_BYTES = 64 * 1024;
 export const MAX_TRANSLATION_BATCH_SIZE = 8;
 export const MAX_TRANSLATION_BATCH_LENGTH = 12_000;
 export const TRANSLATION_DEADLINE_MS = 16_000;
+export const TRANSLATION_QUEUE_WAIT_MS = 30_000;
 
 /** Public routing metadata only. Google fetches are performed by the browser. */
 export const BROWSER_TRANSLATION_PROVIDERS = [
