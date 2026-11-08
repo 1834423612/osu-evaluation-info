@@ -38,11 +38,11 @@ describe("direct official instructor photos", { concurrency: false }, () => {
       globalThis.fetch = original;
     }
   });
-  it("builds direct official URLs while rejecting invalid identities and destinations", () => {
+  it("requests 404 for missing photos while keeping official URLs and identity validation", () => {
     const plan = instructorPhotoPlan();
     assert.equal(
       instructorPhotoUrl(plan, "blanas.2"),
-      "https://opic.osu.edu/blanas.2?width=96",
+      "https://opic.osu.edu/blanas.2?width=96&d=404",
     );
     for (const identity of [
       "../secret",
@@ -75,9 +75,9 @@ describe("direct official instructor photos", { concurrency: false }, () => {
       ),
     );
     assert.deepEqual(urls, [
-      "https://opic.osu.edu/first.1?width=96",
-      "https://opic.osu.edu/second.2?width=96",
-      "https://opic.osu.edu/third.3?width=96",
+      "https://opic.osu.edu/first.1?width=96&d=404",
+      "https://opic.osu.edu/second.2?width=96&d=404",
+      "https://opic.osu.edu/third.3?width=96&d=404",
     ]);
     assert.deepEqual(seen, ["/api/instructors/photo"]);
     await client.url("fourth.4");
@@ -99,7 +99,7 @@ describe("direct official instructor photos", { concurrency: false }, () => {
     await assert.rejects(client.url("first.1"), /Invalid photo endpoint/);
     assert.equal(
       await client.url("first.1"),
-      "https://opic.osu.edu/first.1?width=96",
+      "https://opic.osu.edu/first.1?width=96&d=404",
     );
     assert.equal(calls, 2);
   });

@@ -47,5 +47,7 @@ export function instructorPhotoUrl(
     return null;
   const url = new URL(encodeURIComponent(identity), plan.endpoints.photo);
   url.searchParams.set("width", String(plan.width));
+  // OPIC's default leaf loads successfully; request 404 so the initials fallback runs.
+  url.searchParams.set("d", "404");
   return url.href;
 }
