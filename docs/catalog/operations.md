@@ -75,9 +75,11 @@ Details pause other courses' unfinished list queries. Hidden tabs cancel the wat
 round, then resume on visibility restoration. Cancelling a subscriber cannot cancel
 another subscriber's shared read; obsolete responses are ignored.
 
-Upstream admission is bounded per process to two requests and one start per 500 ms,
-with 120 queued jobs and two-second result coalescing. Browser admission is bounded
-to two requests and one start per 400 ms, with 80 queued jobs. Upstream 429 responses
-back off the server queue. Multiple server processes have independent queues; a
-future multi-instance deployment needing a global quota requires shared admission
-storage. See [the API contract](api.md#live-only-enrollment).
+Browser seat admission is bounded to two concurrent requests, one start per 500 ms
+and 80 queued jobs. Metadata admission is bounded to two concurrent requests, one
+start per 250 ms and 48 queued jobs. A 429 backs off the affected browser queue.
+Existing catalog endpoints serve cacheable endpoint discovery; after discovery,
+all live catalog/seat traffic goes straight from the browser to OSU. This backend
+keeps cached evaluation/directory access and explicit database-only backup reads.
+No proxy retry is used when a direct request fails. See
+[the API contract](api.md#discovery-and-browser-transport).

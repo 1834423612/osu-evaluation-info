@@ -26,6 +26,7 @@ import {
   visibleDirectoryRoles,
   type DirectoryInstructor,
 } from "@/lib/people/identity";
+import { directoryRoleBadgeLabel } from "@/lib/people/role-labels";
 import { InstructorAvatar } from "./instructor-avatar";
 import type { Locale } from "@/lib/i18n";
 import styles from "./people-directory-lookup.module.css";
@@ -491,7 +492,7 @@ export function InstructorDirectoryIdentity({
   const roleCaption = compactRoles
     .map((role) => role.label[props.locale])
     .join(" · ");
-  const visibleRoles = compactRoles.slice(0, 2);
+  const visibleRoles = compactRoles.slice(0, 1);
   const additionalRoles = compactRoles.length - visibleRoles.length;
   const checked = Boolean(person && effectiveResult?.status === "available");
 
@@ -532,7 +533,9 @@ export function InstructorDirectoryIdentity({
               {checked && roleCaption ? (
                 <span className={styles.roleLabels}>
                   {visibleRoles.map((role) => (
-                    <span key={role.label.en}>{role.label[props.locale]}</span>
+                    <span key={role.label.en}>
+                      {directoryRoleBadgeLabel(role, props.locale)}
+                    </span>
                   ))}
                 </span>
               ) : null}

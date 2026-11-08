@@ -575,8 +575,6 @@ export function CourseCard({
               running={seatChecks.running}
               onStart={seatChecks.start}
               onStop={seatChecks.stop}
-              onRefresh={() => void seatChecks.refresh()}
-              loading={seatChecks.loading}
               countdown={seatChecks.countdown}
               intervalSeconds={seatChecks.intervalSeconds}
               enabled={enrollmentWatch}
@@ -609,6 +607,8 @@ export function CourseCard({
               watch={enrollmentWatch}
               selected={seatChecks.selected}
               onSelect={seatChecks.select}
+              onRefresh={() => void seatChecks.refresh()}
+              refreshing={seatChecks.loading}
               onRefreshSection={(classNumber) =>
                 void seatChecks.refreshSection(classNumber)
               }

@@ -32,6 +32,30 @@ export type CompactDirectoryRole = {
   label: { en: string; zh: string };
 };
 
+/** One readable line in a course row; the popover retains full appointments. */
+export function directoryRoleBadgeLabel(
+  value: CompactDirectoryRole,
+  locale: "en" | "zh",
+) {
+  const label = value.label[locale];
+  if (locale === "zh")
+    return label
+      .replace("本科生助教", "助教（本科）")
+      .replace("研究生助教", "助教（研究生）")
+      .replace("本科生研究助理", "研究助理（本科）")
+      .replace("研究生研究助理", "研究助理（研）")
+      .replace("博士后研究员", "博士后");
+  return label
+    .replace("Undergraduate TA", "TA (undergrad)")
+    .replace("Graduate TA", "TA (grad)")
+    .replace("Associate Professor", "Assoc. Prof.")
+    .replace("Assistant Professor", "Asst. Prof.")
+    .replace(/\bProfessor\b/, "Prof.")
+    .replace("Postdoctoral researcher", "Postdoc")
+    .replace("Undergraduate Research Assistant", "Research asst. (UG)")
+    .replace("Graduate Research Associate", "Research asst. (grad)");
+}
+
 const TITLE_SEPARATOR =
   /\s*[·;+]\s*|(?:\s+(?:and|&)\s+|[,/]\s*)(?=(?:(?:senior|sr\.?|assistant|associate|visiting|adjunct|clinical|research|graduate|undergraduate|teaching|office|administrative|executive|program|lab|laboratory|student)\s+)*(?:professor|lecturer|researcher|scientist|engineer|director|chair|dean|instructor|assistant|associate|technologist|specialist|manager)\b)/i;
 

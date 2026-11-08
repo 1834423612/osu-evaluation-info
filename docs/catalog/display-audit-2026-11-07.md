@@ -58,3 +58,28 @@ ensuring that live counts are never saved. Browser responses used controlled
 HAR-shaped fixtures; a local API request to the actual official availability
 service independently returned 44 enrolled / 70 capacity and 26 available for
 section `0040`. No database records were changed.
+
+## November 8 layout and delivery follow-up
+
+Course rows now show a one-line primary role (for example 助教（研究生）), with
+additional roles counted and all appointments retained in the popover. Common
+course fees appear in the compact header summary; section-specific charges sit
+with meeting information. Original descriptions remain in expanded section details.
+The standalone verification panel was removed. Refresh controls and progress now
+share the filter result row, with a narrow-phone arrangement for the caption.
+
+Official requests now originate in the browser after cacheable discovery on the
+existing catalog routes. The previous server live-seat proxy and queue were removed.
+Search, detail and facet normalization share a universal adapter. Local evaluation
+summaries are batched separately by campus; backup reads never request OSU.
+
+Verification of this follow-up used real discovery handlers and browser-side
+HAR-shaped official responses in both languages at 320/390/800/1440 pixels.
+Checks covered single-line role badges, full common TA labels, fee placement,
+right-aligned refresh controls, selected-only repeated/manual refresh, one-hour
+retention, partial waitlists and failed-read recovery. Four additional phone
+watch flows verified no overflow. Actual browser CORS reads of official terms and
+section availability both returned readable HTTP 200 JSON. Actual evaluation POSTs
+returned separate available summaries for Columbus and Lima; invalid/oversized
+batches returned 400. Lint, CSS hygiene, TypeScript, automated tests and production
+build passed. No database records were changed.

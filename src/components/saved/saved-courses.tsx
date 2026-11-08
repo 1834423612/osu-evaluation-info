@@ -121,9 +121,9 @@ function SavedCourseFacts({
           {text(
             locale,
             error
-              ? "courseId and credits unavailable"
-              : "Loading courseId and credits…",
-            error ? "courseId 与学分暂不可用" : "正在读取 courseId 与学分…",
+              ? "Course code and credits unavailable"
+              : "Loading course code and credits…",
+            error ? "课程代码与学分暂不可用" : "正在读取课程代码与学分…",
           )}
         </small>
       )}

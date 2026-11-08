@@ -1,34 +1,81 @@
 # Official class catalog
 
-Each browser catalog request is served from the official OSU content service first. Course information is never fabricated and evaluation availability does not determine whether a course is shown. A complete PostgreSQL snapshot is used only when the official service fails, and only for broad browsing without text or extended-facet filters; its `snapshotAt` value makes the backup age visible. Live results remain authoritative even when the upstream endpoint reports its 10,000-section cap.
+Browser requests first discover public OSU endpoint configuration from the existing
+application routes. These discovery handlers return static configuration and never
+request official course data. The browser then builds the official query, fetches
+it directly with CORS and credentials omitted, normalizes the response, and batches
+local historical evaluation summaries separately. Only complete PostgreSQL backup
+snapshots and cached directory/evaluation data are served by this backend.
 
-- `https://content.osu.edu/v2/classes/searchableTermsV2` returns currently searchable terms. The newest numerical term is the default; terms are not hardcoded.
-- `https://content.osu.edu/v2/classes/search` takes `q`, `term`, `campus`, `subject`, `p`, `sort` and dynamic facet slugs.
-- Empty `q` is supported. Sort keys: `subject` (default), `-subject`, `catalogNumber`, `-catalogNumber`.
-- The official search counts **sections**, groups them into courses, fixes pages at **200 sections** and caps broad queries at **10,000 sections**. Its facets expose uncapped filtered section counts. A course can straddle pages.
-- `catalog-number` means catalog **level**, such as `2xxx`. It is not an exact catalog number. Exact course expansion therefore filters by subject/level, searches the catalog number, then checks the returned subject and number strictly.
+## Discovery and browser transport
 
-## Application endpoints
+The existing `GET /api/catalog`, `/api/catalog/course`, `/api/catalog/facets`, and
+`/api/catalog/availability` paths return an `OfficialEndpointPlan`:
 
-`GET /api/catalog?q=&term=1272&campus=col&subject=cse&limit=12`
+```json
+{
+  "delivery": "osu-direct",
+  "version": 1,
+  "resource": "catalog",
+  "endpoints": {
+    "search": "https://content.osu.edu/v2/classes/search",
+    "terms": "https://content.osu.edu/v2/classes/searchableTermsV2",
+    "availability": "https://content.osu.edu/v2/classes/availability"
+  }
+}
+```
 
-Returns `CatalogResponse` from `src/lib/catalog/types.ts`. A course-code query such as `CSE 2221` is parsed into subject `CSE` plus numeric search `2221`, avoiding the official search's broad OR matching of both tokens. The default sort is subject ascending. Default campus is Columbus (`col`); `campus=all` searches every campus. `filters` preserves every official facet, value and count, including general education, instruction mode, academic career, program, component, session, level and attributes. Add facet parameters by their official slug, such as `instruction-mode=dl`.
+`resource` matches the requested category. Responses use public max-age 3600 and
+stale-while-revalidate 86400. Each browser caches discovery for one hour and shares
+an in-flight discovery between subscribers. Closing one view cannot cancel another
+subscriber's configuration read. The client validates the configured URLs against
+the approved public OSU endpoints. No session cookies, API credentials or arbitrary
+third-party destinations are forwarded. OSU returned `Access-Control-Allow-Origin:
+*` during the November 8 check; direct requests use simple GET/Accept headers.
 
-For more results, send the returned `nextCursor` in `cursor`. A live cursor comprises the official page and the offset inside its grouped courses; a backup cursor is bound to its snapshot. Limit defaults to 12 and is capped at 24. `totalItems`, `matchedSections` and `totalPages` describe upstream sections/pages for live results, not unique course counts. `capped` warns when the live official query reaches its 10,000-hit ceiling. Text search and extended facets continue using the live official endpoint and return an error if it is unavailable, since the backup does not contain equivalent search indexes. Course identity is term + subject + catalog number + campus. Internal offering-number variants are combined before pagination; merge same-ID course sections when accumulating multiple result windows. The UI should bound its mounted result window.
+`src/lib/catalog/browser-transport.ts` retains the normalized `CatalogResponse` and
+course-detail response shapes for UI callers. `official-client.ts` shares exact
+matching, grouping, normalization and cursor parsing with database snapshot reads.
+Public term metadata is retained for 30 minutes in browser memory. Search/detail
+metadata reads share a two-request browser queue with at least 250 ms between
+starts, at most 48 queued jobs and 20-second upstream timeouts. Live seat checks use
+a separate queue described below. Failed reads never silently become server-side
+proxies.
 
-When `sourceMode="mirror"`, pagination uses a bound `m:` keyset cursor, `snapshotAt` is the completed sync time, and every returned course has its complete snapshot sections (`sectionsPartial=false`). `totalItems` and `matchedSections` are distinct mirrored section counts. If official facets were unavailable, the backup returns subject and campus facets derived from its snapshot. Use `nextCursor` instead of arithmetic on `page`/`totalPages`.
+The official search accepts `q`, `term`, `campus`, `subject`, `p`, `sort` and dynamic
+facet slugs. It counts sections, fixes pages at 200 sections, caps broad queries at
+10,000 hits and can split a course across pages. The browser preserves all official
+facets. Exact queries such as `CSE 2221` parse into subject and catalog number, check
+both returned fields strictly, combine offering variants per campus, and traverse
+at most 12 pages with a 15-second between-page budget. Incomplete reads remain
+marked partial. `catalog-number` facets represent levels such as `2xxx`, not exact
+catalog numbers. Sort values remain `subject`, `-subject`, `catalogNumber`, and
+`-catalogNumber`. The newest published searchable term is the default.
 
-Only published, complete generations covering the selected term are eligible. New and failed builds write separate rows and never disable an existing publication. Mirror queries run in one repeatable-read transaction. Existing cursors stay pinned to their published generation until retention retires it; expired/mismatched cursors return 400 and require restarting the search. If no eligible database snapshot exists, the endpoint returns the original official API error; it never claims full coverage. Snapshot data is grouped in PostgreSQL and only a 12–24 course window is serialized to Node, using indexed predicates and keyset pagination.
+A live cursor is `page:offset` within grouped courses. Browser windows are bounded
+to 12–24 courses; mounted results remain bounded. Mirror `m:` cursors stay bound to
+their published snapshot and filters. Official `totalItems` counts sections;
+`totalCourses` is exact only for exact searches or complete mirror snapshots.
 
-`sectionsPartial=true` means the list entry contains only the current official page's matching sections. To expand all sections in place:
+## Local evaluation enrichment and database fallback
 
-`GET /api/catalog/course?subject=CSE&catalog=2221&term=1272&campus=col`
+`POST /api/evaluations` accepts `{courses:[{id,subject,catalogNumber,campusCode,
+instructors:[{name,email}]}]}` and returns `{summaries:{[courseId]:summary}}`.
+At most 24 courses, 30 instructors per course and a 64 KiB body are accepted.
+Queries batch by campus to avoid mixing histories for identical course codes at
+different campuses. The repository's row cache still applies. The existing single
+course evaluation GET is unchanged. Evaluation failure leaves official courses
+visible with unavailable evaluation status.
 
-Returns `{course,fetchedAt,complete,source}`; missing exact courses return `course:null`. The endpoint follows up to 12 official pages and a 15-second between-page budget. Any cap, incomplete traversal or later-page error produces `complete:false`, never a claim of completeness. If the official service fails, a complete matching snapshot may supply the course and sections. `sectionsPartial` reflects completeness. Exact OSU email identities connect instructor scores to sections. Enrollment capacity is not inferred from room capacity or enrollment totals.
-
-`GET /api/catalog/facets` accepts the same filters and returns official facets and terms.
-
-The server keeps at most 48 in-flight requests for deduplication; completed official responses have zero cache lifetime. Upstream and API requests use `no-store`. Each upstream request times out after 20 seconds. `fetchedAt` is the original fetch time, including cached responses. Unsupported backup searches and missing snapshots produce explicit 502 responses; malformed inputs produce 400. Evaluation queries are batched per window and return unavailable status on a database failure without removing official courses.
+For an official failure, broad browsing without text or extended facets may read
+`/api/catalog?mode=snapshot&...` or `/api/catalog/facets?mode=snapshot&...`.
+Exact details can read `/api/catalog/course?mode=snapshot&subject=CSE&catalog=2221&...`.
+These explicit fallback handlers read the database only and never call OSU. A
+missing backup returns 503; malformed/unsupported snapshot inputs return 400.
+Complete, published snapshots retain their timestamp, campus identity and bound
+keyset cursor. Expired or mismatched cursors require restarting the search. Failed
+or unpublished sync generations never replace the last successful publication.
+Snapshots do not pretend to support full-text or extended-facet searches.
 
 ## Complete PostgreSQL mirror
 
@@ -55,52 +102,48 @@ node scripts/catalog/sync_osu_catalog.mjs --new-run
 
 ## Live-only enrollment
 
-Search and detail endpoints return **metadata only**. Their raw enrollment fields
-are placeholders; normalization always clears them, even for a successful official
-search. Snapshots and saved courses also exclude volatile counts and provenance.
-`courseId` is the official numeric catalog identifier, separate from the composite
-application ID and the enrollment `classNumber`. Credits preserve min/max units.
+Search enrollment fields are placeholders. Normalization clears them even for
+successful official searches. Snapshots and saved courses exclude volatile counts
+and provenance. Official numeric `courseId` is displayed as Course code / 课程代码,
+separate from the application composite identity and enrollment class number.
+Credits preserve the min/max unit range.
 
-`GET /api/catalog/availability?courseId=151332&courseOfferingNumber=1&classSection=0040&sessionCode=1&termCode=1268`
-
-The server validates all five identifiers and queries only the fixed official
-`https://content.osu.edu/v2/classes/availability` endpoint. Section codes preserve
-leading zeros. Returns `{availability}` with `source:"official-availability"`,
-`fetchedAt`, `isOpen`, `enrollmentStatus`, `enrollmentCapacity`, `enrollmentTotal`,
-`availableSeats`, `waitlistCapacity`, and `waitlistTotal`. Missing numeric fields
-remain null; zero is meaningful. Remaining seats come from `availableSeats`, never
+After one discovery request to `/api/catalog/availability`, the browser constructs
+queries directly against the returned official availability URL using all five
+identifiers: `courseId=151332`, `courseOfferingNumber=1`, `classSection=0040`,
+`sessionCode=1`, `termCode=1268`. Section codes preserve leading zeros. It validates
+`data.availability` and adds `source:"official-availability"` and a fetch timestamp.
+Counts include enrollment total/capacity, available seats and waitlist total/capacity.
+Missing counts remain null; known zeroes remain visible. Waitlist capacity missing
+from the API does not hide a known waitlist total. Remaining seats are never inferred
 from room capacity. Waitlist remaining is explicitly capacity minus total.
 
-A shared queue within each server process allows at most two upstream reads with
-at least 500 ms between starts, 120 queued jobs, a 15-second request timeout, shared
-in-flight reads and a two-second result coalescing window. It backs off on upstream
-429 responses. This is a per-process bound, not a distributed account-wide quota.
-The browser adds its own two-read limit, 400 ms start spacing, 80-job bound and
-20-second timeout. Saturation returns 429 with Retry-After; failed upstream reads
-return 502. API/browser responses use no-store. Counts exist only in session memory.
+The per-browser seat queue allows at most two concurrent reads, one start per
+500 ms, 80 queued jobs, 20-second timeouts and shared in-flight reads. Upstream 429
+responses back off this queue using Retry-After. There is no server live-seat queue
+or per-refresh proxy request. Limits are per browser, so users' upstream connections
+originate from their own networks. Counts exist in session memory only.
 
-Visible list entries receive gradual one-time section checks. Opening/reopening
-normal details performs a fresh one-time check per section. Successful results
-remain visible while idle or hidden, until another query or refresh replaces them.
-Failed refreshes retain the last verified counts with an explicit failure and
-last-read label; unqueried rows never display search placeholders. Each row has a
-manual retry and fetch timestamp. Closing/unmounting cancels unneeded work; shared
-readers do not cancel each other and late responses cannot overwrite newer reads.
+Visible results receive gradual one-time section checks. Normal details perform a
+fresh one-time check on open/reopen. Successes remain while idle or hidden; a failed
+refresh retains and labels the last verified result. Closing a view cancels unneeded
+work, and cancelled/late reads cannot overwrite newer data. The filter result row
+contains a right-aligned refresh button and completed/target count. Narrow phones
+place the small progress caption below the button.
 
-Seat Watch remembers **selected class numbers only**, scoped to course, term and
-campus. It requires an explicit start, refreshes selected sections only, and pauses
-when choices change. Selecting more than eight sections requires a second
-confirmation before starting. The next round begins after the previous round
-finishes, waiting at least max(10 seconds, configured interval, selected count in
-seconds); queued starts are still spaced. The UI displays progress and a countdown.
-Hiding the tab cancels the current watch round; visibility restoration resumes it.
-Entering course details while Seat Watch is enabled pauses other list queries,
-retaining their previous results. Closing details resumes unfinished visible list
-checks. No background courses are polled. Reloading remembers choices but requires
-starting the watch again.
+Seat Watch remembers selected class numbers per course/term/campus and requires an
+explicit start. Only selected sections repeat; changed choices pause the watch.
+More than eight selected sections requires confirmation. Each completed round waits
+at least max(10 seconds, configured interval, selected count in seconds). The UI
+shows a countdown. Hiding a tab cancels its watch round and visibility restoration
+resumes it. Opening details while Seat Watch is enabled pauses other result courses,
+retaining their data. Closing details resumes unfinished visible checks. Reloading
+remembers choices but requires starting again.
 
-Course and section attributes preserve fee descriptions. Campus-qualified `CRSF`
-fees are filtered by section campus, with ATI mapped to Wooster; `ALX` digital
-textbook fees are shown on applicable sections. Course lists summarize published
-fees, while details show the original descriptions. The UI never sums alternative
-campus or section fees into a total.
+Campus-qualified `CRSF` fees are filtered to the section campus (ATI maps to Wooster).
+`ALX` textbook charges stay associated with their sections. Course headers use a
+compact fee summary, while section-specific fee chips sit with schedule information.
+Common course fees are not repeated on every row. Expanding a section retains the
+original fee descriptions. Charges from different campuses or sections are never
+summed. Role badges show one short primary position and an additional-role count;
+the identity popover retains all appointments and their organizations.

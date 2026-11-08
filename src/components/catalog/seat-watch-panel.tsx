@@ -1,5 +1,5 @@
 "use client";
-import { LoaderCircle, Play, RefreshCw, Square } from "lucide-react";
+import { Play, Radar, Square } from "lucide-react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { text, type Locale } from "@/lib/i18n";
 import { LARGE_WATCH_SELECTION } from "@/lib/catalog/watch-selection";
@@ -13,8 +13,6 @@ export function SeatWatchPanel({
   running,
   onStart,
   onStop,
-  onRefresh,
-  loading,
   countdown,
   intervalSeconds,
   enabled,
@@ -26,8 +24,6 @@ export function SeatWatchPanel({
   running: boolean;
   onStart: () => void;
   onStop: () => void;
-  onRefresh: () => void;
-  loading: boolean;
   countdown: number | null;
   intervalSeconds: number;
   enabled: boolean;
@@ -35,9 +31,7 @@ export function SeatWatchPanel({
   const selectedCount = course.sections.filter((section) =>
     selected.includes(section.classNumber),
   ).length;
-  const verified = course.sections.filter(
-    (section) => section.availability,
-  ).length;
+  if (!enabled) return null;
   return (
     <div
       className={styles.panel}
@@ -49,29 +43,19 @@ export function SeatWatchPanel({
     >
       <div className={styles.summary}>
         <strong>
-          {text(
-            locale,
-            `Checked ${verified} / ${course.sections.length} sections`,
-            `已核验 ${verified} / ${course.sections.length} 个班次`,
-          )}
+          <Radar size={13} aria-hidden="true" />
+          {text(locale, "Watch selected sections", "监控所选班次")}
         </strong>
         <span role="status">
-          {loading ? (
-            <>
-              <LoaderCircle size={13} className="spin" aria-hidden="true" />
-              {text(locale, "Checking gradually…", "正在分批查询…")}
-            </>
-          ) : running && countdown !== null ? (
-            text(
-              locale,
-              `Next refresh in ${countdown}s`,
-              `${countdown} 秒后刷新`,
-            )
-          ) : enabled ? (
-            text(locale, "Watch paused", "监控未运行")
-          ) : (
-            text(locale, "One-time checks retained", "保留本次查询结果")
-          )}
+          {running && countdown !== null
+            ? text(
+                locale,
+                `Next refresh in ${countdown}s`,
+                `${countdown} 秒后刷新`,
+              )
+            : running
+              ? text(locale, "Refreshing…", "刷新中…")
+              : text(locale, "Paused", "未运行")}
         </span>
       </div>
       {enabled ? (
@@ -79,8 +63,8 @@ export function SeatWatchPanel({
           <p>
             {text(
               locale,
-              "Choose only the sections you need. Your choices are remembered for this course and term; other courses pause while these details are open.",
-              "请按需勾选真正需要的班次，避免贪选。选择按本课程、学期记忆；详情打开时，其他课程暂停空位查询。",
+              "Choose only what you need · Choices remembered · Other courses pause here",
+              "按需勾选 · 自动记忆 · 其他课程暂停查询",
             )}
           </p>
           <div className={styles.actions}>
@@ -134,29 +118,6 @@ export function SeatWatchPanel({
           </div>
         </>
       ) : null}
-      <div className={styles.footer}>
-        <small>
-          {text(
-            locale,
-            "Only the official per-section availability response supplies these counts. Requests are queued, spaced, and limited to two concurrent reads.",
-            "人数仅来自官方逐班次可用性接口；请求排队错峰，同一时间最多查询两个班次。",
-          )}
-        </small>
-        <button
-          type="button"
-          disabled={loading || (enabled && !selectedCount)}
-          onClick={onRefresh}
-        >
-          <RefreshCw
-            size={12}
-            className={loading ? "spin" : undefined}
-            aria-hidden="true"
-          />
-          {enabled
-            ? text(locale, "Check selected once", "查询已选一次")
-            : text(locale, "Refresh availability", "刷新空位")}
-        </button>
-      </div>
     </div>
   );
 }

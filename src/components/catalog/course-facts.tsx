@@ -1,7 +1,14 @@
 "use client";
 import { useState } from "react";
-import { Check, Copy, ReceiptText } from "lucide-react";
-import type { CatalogCourse } from "@/lib/catalog/types";
+import {
+  BookOpen,
+  Check,
+  Copy,
+  GraduationCap,
+  Hash,
+  ReceiptText,
+} from "lucide-react";
+import type { CatalogCourse, CatalogFee } from "@/lib/catalog/types";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./course-facts.module.css";
 
@@ -26,41 +33,81 @@ export function CourseIdentityFacts({
       : `${course.creditsMin}–${course.creditsMax}`;
   return (
     <span className={styles.identity}>
-      <span>
+      <span className={`${styles.factChip} ${styles.credit}`}>
+        <GraduationCap size={13} aria-hidden="true" />
         {credits} {text(locale, "credits", "学分")}
       </span>
       {ids ? (
-        <span className={styles.identifier}>
-          <span>
-            courseId <code>{ids}</code>
-          </span>
-          <button
-            type="button"
-            title={text(locale, "Copy courseId", "复制 courseId")}
-            aria-label={text(locale, "Copy courseId", "复制 courseId")}
-            onClick={async (event) => {
-              event.stopPropagation();
-              try {
-                await navigator.clipboard.writeText(ids);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1800);
-              } catch {
-                /* The visible code remains selectable. */
-              }
-            }}
-          >
-            {copied ? (
-              <Check size={12} aria-hidden="true" />
-            ) : (
-              <Copy size={12} aria-hidden="true" />
-            )}
-          </button>
-        </span>
+        <button
+          className={`${styles.factChip} ${styles.identifier}`}
+          type="button"
+          title={text(locale, "Copy course code", "复制课程代码")}
+          aria-label={text(
+            locale,
+            `Copy course code ${ids}`,
+            `复制课程代码 ${ids}`,
+          )}
+          onClick={async (event) => {
+            event.stopPropagation();
+            try {
+              await navigator.clipboard.writeText(ids);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1800);
+            } catch {
+              /* Visible identifiers remain selectable. */
+            }
+          }}
+        >
+          <Hash size={12} aria-hidden="true" />
+          <span>{text(locale, "Code", "课程代码")}</span>
+          <code>{ids}</code>
+          {copied ? (
+            <Check size={12} aria-hidden="true" />
+          ) : (
+            <Copy size={12} aria-hidden="true" />
+          )}
+        </button>
       ) : (
         <span className={styles.pending}>
-          {text(locale, "courseId loading…", "courseId 加载中…")}
+          {text(locale, "Code loading…", "课程代码加载中…")}
         </span>
       )}
+    </span>
+  );
+}
+
+function feeAmount(fee: CatalogFee, locale: Locale) {
+  return fee.amount === null
+    ? text(locale, "See fee details", "查看费用")
+    : `$${fee.amount.toLocaleString("en-US", { minimumFractionDigits: fee.amount % 1 ? 2 : 0 })}`;
+}
+
+export function FeePills({
+  fees,
+  locale,
+}: {
+  fees: CatalogFee[];
+  locale: Locale;
+}) {
+  if (!fees.length) return null;
+  return (
+    <span className={styles.feePills}>
+      {fees.map((fee) => {
+        const Icon = fee.kind === "textbook" ? BookOpen : ReceiptText;
+        return (
+          <span
+            className={styles.feePill}
+            key={fee.description}
+            title={fee.description}
+          >
+            <Icon size={11} aria-hidden="true" />
+            {fee.kind === "textbook"
+              ? text(locale, "Textbook", "教材")
+              : text(locale, "Course fee", "课程费")}
+            <strong>{feeAmount(fee, locale)}</strong>
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -74,63 +121,36 @@ export function CourseFees({
   locale: Locale;
   compact?: boolean;
 }) {
-  const courseFees = course.fees ?? [];
   const fees = [
     ...new Map(
       [
-        ...courseFees,
-        ...course.sections.flatMap((section) => section.fees ?? []),
-      ].map((fee) => [fee.description, fee]),
+        ...(course.fees ?? []),
+        ...course.sections.flatMap((s) => s.fees ?? []),
+      ].map((f) => [f.description, f]),
     ).values(),
   ];
   if (!fees.length) return null;
-  if (compact)
-    return (
-      <div className={styles.feeSummary}>
-        <ReceiptText size={13} aria-hidden="true" />
-        {fees.slice(0, 2).map((fee) => (
-          <span key={fee.description} title={fee.description}>
-            {fee.kind === "textbook"
-              ? text(locale, "Textbook", "教材费")
-              : text(locale, "Course fee", "课程费")}{" "}
-            {fee.amount === null
-              ? text(locale, "See details", "见详情")
-              : `$${fee.amount.toLocaleString("en-US", { minimumFractionDigits: fee.amount % 1 ? 2 : 0 })}`}
-          </span>
-        ))}
-        {fees.length > 2 ? <span>+{fees.length - 2}</span> : null}
-        <small>{text(locale, "Varies by section", "以对应班次为准")}</small>
-      </div>
-    );
+  const limit = compact ? 2 : 3;
+  const sectionSpecific = fees.some(
+    (f) => !(course.fees ?? []).some((v) => v.description === f.description),
+  );
   return (
-    <div className={styles.fees}>
-      <strong>
-        <ReceiptText size={14} aria-hidden="true" />
-        {text(
-          locale,
-          "Published course / section fees",
-          "官方标注的课程／班次费用",
-        )}
-      </strong>
-      <ul>
-        {fees.map((fee) => (
-          <li key={fee.description}>
-            {fee.description}
-            {!courseFees.some(
-              (value) => value.description === fee.description,
-            ) ? (
-              <small>{text(locale, "Section-specific", "对应班次收取")}</small>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-      <p>
-        {text(
-          locale,
-          "Campus-qualified fees are filtered for this campus. See each section for its listed charges; no total is inferred.",
-          "已按当前校区筛选费用；各班次收费见对应条目，不将不同班次费用相加。",
-        )}
-      </p>
+    <div
+      className={`${styles.feeContainer}${compact ? "" : ` ${styles.fees}`}`}
+      aria-label={text(locale, "Course fees", "课程费用")}
+    >
+      <FeePills fees={fees.slice(0, limit)} locale={locale} />
+      {fees.length > limit ? (
+        <details className={styles.moreFees}>
+          <summary>
+            +{fees.length - limit} {text(locale, "fees", "项费用")}
+          </summary>
+          <FeePills fees={fees.slice(limit)} locale={locale} />
+        </details>
+      ) : null}
+      {sectionSpecific ? (
+        <small>{text(locale, "Varies by section", "按班次收取")}</small>
+      ) : null}
     </div>
   );
 }

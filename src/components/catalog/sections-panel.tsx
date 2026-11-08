@@ -8,13 +8,16 @@ import {
   SlidersHorizontal,
   Star,
   X,
+  RefreshCw,
 } from "lucide-react";
 import type {
+  CatalogFee,
   CatalogCourse,
   CatalogInstructor,
   CatalogMeeting,
   CatalogSection,
 } from "@/lib/catalog/types";
+import { FeePills } from "./course-facts";
 import {
   getSectionFilterOptions,
   rankSectionsForFilters,
@@ -146,6 +149,7 @@ function SectionRow({
   watched,
   onToggleWatch,
   onRefresh,
+  commonFees,
 }: {
   section: CatalogSection;
   locale: Locale;
@@ -161,6 +165,7 @@ function SectionRow({
   watched: boolean;
   onToggleWatch: () => void;
   onRefresh: () => void;
+  commonFees: CatalogFee[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const detailId = useId();
@@ -275,7 +280,14 @@ function SectionRow({
                   locale={locale}
                   compact
                 />
-                {meeting.location ? (
+                {meeting.location &&
+                !(
+                  isOnlineMeeting(meeting, section.instructionMode) &&
+                  !meeting.startTime &&
+                  /^(?:online|distance learning)$/i.test(
+                    meeting.location.trim(),
+                  )
+                ) ? (
                   <span className={styles.location} title={meeting.location}>
                     {meeting.location}
                   </span>
@@ -293,6 +305,15 @@ function SectionRow({
               {text(locale, "Time not posted", "时间未公布")}
             </span>
           )}
+          <FeePills
+            fees={(section.fees ?? []).filter(
+              (fee) =>
+                !commonFees.some(
+                  (common) => common.description === fee.description,
+                ),
+            )}
+            locale={locale}
+          />
         </div>
         <div className={styles.availability}>
           <SectionAvailabilityView
@@ -323,15 +344,15 @@ function SectionRow({
           <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
         </button>
       </div>
-      {section.fees?.length ? (
-        <ul className={styles.feeList}>
-          {section.fees.map((fee) => (
-            <li key={fee.description}>{fee.description}</li>
-          ))}
-        </ul>
-      ) : null}
       {expanded ? (
         <div id={detailId} className={styles.rowDetails}>
+          {section.fees?.length ? (
+            <ul className={styles.feeList}>
+              {section.fees.map((fee) => (
+                <li key={fee.description}>{fee.description}</li>
+              ))}
+            </ul>
+          ) : null}
           <dl className={styles.metadata}>
             <div>
               <dt>{text(locale, "Session", "学期时段")}</dt>
@@ -360,7 +381,7 @@ function SectionRow({
               </dd>
             </div>
             <div>
-              <dt>courseId</dt>
+              <dt>{text(locale, "Course code", "课程代码")}</dt>
               <dd>{section.courseId || "—"}</dd>
             </div>
           </dl>
@@ -400,6 +421,8 @@ export default function SectionsPanel({
   selected = [],
   onSelect = () => {},
   onRefreshSection = () => {},
+  onRefresh = () => {},
+  refreshing = false,
 }: {
   course: CatalogCourse;
   locale: Locale;
@@ -408,7 +431,15 @@ export default function SectionsPanel({
   selected?: readonly string[];
   onSelect?: (ids: string[]) => void;
   onRefreshSection?: (classNumber: string) => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) {
+  const refreshTargets = course.sections.filter(
+    (s) => !watch || selected.includes(s.classNumber),
+  );
+  const refreshedCount = refreshTargets.filter(
+    (s) => s.availabilityState === "ready",
+  ).length;
   const [filters, setFilters] = useState<SectionFilterState>(emptyFilters);
   const listRef = useRef<HTMLUListElement>(null);
   const id = useId();
@@ -667,26 +698,50 @@ export default function SectionsPanel({
         ) : null}
       </div>
       <div className={styles.listHeading}>
-        <p role="status" aria-live="polite">
+        <p
+          role="status"
+          aria-live="polite"
+          title={
+            course.sectionsPartial
+              ? text(
+                  locale,
+                  "Counts reflect loaded sections",
+                  "仅统计已加载班次",
+                )
+              : undefined
+          }
+        >
           {text(
             locale,
             `${matchCount} match · ${course.sections.length - matchCount} don't match`,
             `${matchCount} 个符合 · ${course.sections.length - matchCount} 个不符合`,
           )}
         </p>
-        {course.sectionsPartial ? (
-          <span>
-            {text(locale, "Counts reflect loaded sections", "仅统计已加载班次")}
-          </span>
-        ) : activeCount ? (
-          <span>
+        <div className={styles.refreshTools} data-section-refresh-controls>
+          <small>
             {text(
               locale,
-              "Matches first · other sections dimmed below",
-              "符合的班次优先 · 其余班次在下方褪色显示",
+              `${refreshedCount}/${refreshTargets.length} updated`,
+              `已刷新 ${refreshedCount}/${refreshTargets.length}`,
             )}
-          </span>
-        ) : null}
+          </small>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing || (watch && !selected.length)}
+          >
+            <RefreshCw
+              size={12}
+              className={refreshing ? "spin" : undefined}
+              aria-hidden="true"
+            />
+            {refreshing
+              ? text(locale, "Refreshing…", "刷新中…")
+              : watch
+                ? text(locale, "Refresh selected", "刷新已选")
+                : text(locale, "Refresh seats", "刷新空位")}
+          </button>
+        </div>
       </div>
       {course.sections.length ? (
         <ul className={styles.list} ref={listRef}>
@@ -711,6 +766,7 @@ export default function SectionsPanel({
                 )
               }
               onRefresh={() => onRefreshSection(section.classNumber)}
+              commonFees={course.fees ?? []}
               onSave={() => {
                 toggleSection(course, section);
               }}

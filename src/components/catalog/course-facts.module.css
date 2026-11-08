@@ -2,78 +2,104 @@
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px 10px;
+  gap: 6px;
   min-width: 0;
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
-.identifier {
+.factChip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  min-height: 26px;
   min-width: 0;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--subtle-surface);
+}
+.credit > svg {
+  color: var(--primary);
+}
+.identifier {
+  cursor: pointer;
 }
 .identifier code {
-  color: var(--secondary-foreground);
+  color: var(--ink);
+  font-family: inherit;
   font-size: 11px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   user-select: text;
   overflow-wrap: anywhere;
 }
-.identifier button {
-  display: inline-grid;
-  min-width: 25px;
-  min-height: 25px;
-  place-items: center;
-  border-radius: 4px;
-  color: var(--muted);
-}
-.identifier button:hover {
+.identifier:hover {
   background: var(--accent-soft);
-  color: var(--primary);
+  border-color: var(--accent-border);
+}
+.identifier:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 .pending {
   font-size: 10px;
 }
-.feeSummary {
+.feeContainer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px 9px;
-  margin-top: 9px;
-  color: #805c1b;
+  gap: 6px 9px;
   font-size: 10px;
+  line-height: 1.5;
 }
-.feeSummary small {
+.fees {
+  margin: 11px 0;
+  padding: 9px 11px;
+  border: 1px solid #eee0c3;
+  border-radius: 7px;
+  background: #fffbf3;
+}
+.feePills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+.feePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid #eee4d1;
+  border-radius: 5px;
+  color: #80612b;
+  background: #fffcf7;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 400;
+}
+.feePill > svg {
+  flex: 0 0 auto;
+}
+.feePill strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.feeContainer small {
   color: var(--muted);
   font-size: 9px;
 }
-.fees {
-  margin: 13px 0;
-  padding: 11px 13px;
-  border: 1px solid #eadab9;
-  border-radius: 7px;
-  background: #fffaf0;
-  font-size: 11px;
-  line-height: 1.7;
-}
-.fees > strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #805c1b;
-}
-.fees ul {
-  margin: 5px 0;
-  padding-left: 18px;
-}
-.fees small {
-  margin-left: 8px;
-  color: var(--muted);
-}
-.fees p {
-  margin: 5px 0 0;
+.moreFees {
   color: var(--muted);
   font-size: 10px;
+}
+.moreFees summary {
+  cursor: pointer;
+}
+.moreFees[open] {
+  flex-basis: 100%;
+}
+.moreFees[open] summary {
+  margin-bottom: 5px;
 }
