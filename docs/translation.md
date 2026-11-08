@@ -4,6 +4,8 @@ Translation runs inside the existing Next.js server when a user requests it.
 There is no additional process, polling job, or background health checker.
 `src/lib/translation` separates the shared contract, browser adapter, server
 provider adapters, scheduler, HTTP validation, and usage aggregation.
+For database state, recovery, audits, and management commands, start with the
+[translation operations guide](translation-operations.md).
 
 The flow is:
 
@@ -69,62 +71,49 @@ back to another provider.
 
 ## Availability and load decisions
 
-Availability is learned from real translation requests. The server considers
-configuration, reserved concurrent requests, the age of active requests, recent
-latency, timeouts, and consecutive failures. It checks these before each attempt.
-There are no speculative model generations or extra health requests.
+NAS health is an explicit state machine persisted in PostgreSQL, with separate
+node configuration, current state, inference attempts/leases, and transition
+history. The first request, a stale health observation, or an elapsed cooldown
+admits one recovery probe. Success returns the node to healthy and clears the
+consecutive-failure streak; old failure history stays historical. Cooldowns are
+finite, capped at five minutes. Expired leases are reclaimed and late results
+from an expired or obsolete generation are ignored. Only an explicit operator
+`disable` can keep a configured node disabled indefinitely.
 
-| Setting                            | Default | Accepted range | Effect                                                                       |
-| ---------------------------------- | ------- | -------------- | ---------------------------------------------------------------------------- |
-| `KJCH_AI_SERVICES_TIMEOUT_MS`      | 6000    | 500–8000       | Abort NAS and return browser fallback metadata                               |
-| `KJCH_AI_SERVICES_SLOW_MS`         | 2500    | 250–8000       | Divert new requests while an active attempt is slow, or after a slow success |
-| `KJCH_AI_SERVICES_MAX_CONCURRENCY` | 1       | 1–8            | Return browser fallback metadata for overflow                                |
-| `KJCH_AI_SERVICES_COOLDOWN_MS`     | 30000   | 1000–300000    | Pause attempts after a timeout, two consecutive failures, or a slow success  |
+Use `pnpm translation:status` or `osu_translation.v_provider_status` to distinguish
+`ready`, `busy`, `waiting_retry`, and `ready_to_probe`. A raw historical `failure`
+counter does not determine availability. The full state definitions, policy
+limits, and retry/enable/disable/probe commands are in the
+[operations guide](translation-operations.md).
 
-Invalid numeric settings use their defaults. After a cooldown, one real request
-probes the node. A fast success restores normal routing; another slow result or
-failure keeps it in cooldown. The request that receives a slow but valid result
-can use it; subsequent requests divert. A still-running attempt retains its
-concurrency permit while draining, until it settles or its original timeout plus
-one cooldown expires. The next request reclaims an orphaned permit and admits
-one recovery probe; an upstream that ignores abort cannot block NAS forever.
-Failed translations are never cached on the server. Database failure counters
-are historical measurements, never a persistent provider blacklist.
+The database coordinates server concurrency and recovery probes across Node
+processes. Inference runs outside database transactions. If a configured database
+is unavailable, NAS admission temporarily stops while the browser can still use
+Google. Installations without a database use the same state machine in memory.
+Translation-result caches and per-client HTTP rate limits remain process-local:
+32 unique pending translations, 512 cached NAS translations, 2048 rate keys,
+and 30 snippets per client per minute. Cache hits are not health probes.
 
 Google is called **only by the user's browser**, using that device's network
-connection and public egress IP. The website server never requests Google or
-proxies its translation payloads. The API returns the fixed public endpoint list;
-the browser only accepts endpoints matching its built-in allowlist. It adds the
-text and language parameters locally and uses `mode: "cors"`,
-`credentials: "omit"`, and `referrerPolicy: "no-referrer"`. NAS Access headers
-never reach Google. See [Fetch's CORS and credential behavior](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
+connection and public egress IP. The website server never proxies Google text
+or results. The API supplies fixed public endpoint metadata and the browser
+validates it against its own allowlist. Requests use `mode: "cors"`,
+`credentials: "omit"`, and `referrerPolicy: "no-referrer"`; NAS Access credentials
+never leave the server. See [Fetch CORS and credentials](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
 
-Each Google provider has a 2.5-second timeout and independent browser-local
-cooldown. Network, CORS, HTTP, malformed, empty, unchanged, oversized, or
-wrong-language results fall through to the next endpoint. Transient failures
-start at five seconds and back off to at most 40 seconds; HTTP 429 also respects
-an exposed `Retry-After` header, capped at 60 seconds (30 seconds when absent).
-After the interval, one request probes that provider again. Failure on one
-device or one Google endpoint cannot disable NAS or other users' providers.
-These are undocumented best-effort services; CORS and availability may change.
-A site's CSP must permit `connect-src` to `https://translate.googleapis.com` and
-`https://clients5.google.com` if it defines this policy.
+Each browser uses the same explicit state machine for its own Google nodes,
+with independent leases, 2.5-second attempt deadlines, and finite cooldowns.
+HTTP 429 respects an exposed `Retry-After`, capped at 60 seconds. Transient
+failures start with five-second cooling and back off to at most 40 seconds.
+The next eligible request probes again. One user's failure cannot disable
+another user's node. Anonymous, sequenced browser state reports are for
+observation only and cannot change server routing.
 
-An API network error, 429, 503, or unusable response also allows the browser to
-attempt Google directly. The browser never sends those requests back through a
-website proxy. After every provider fails, the source remains visible and the
-error includes a bounded retry hint. A later request always considers NAS first.
-
-State is shared per Node process, including development reloads: at most 32
-unique pending translations, 512 cached translations, and 2048 rate-limit keys.
-Only successful NAS translations are cached on the server, for seven days.
-Duplicate texts with the same target share inference. Each trusted client address is limited to 30 snippets
-per minute; batching does not multiply this allowance. Deployment proxies must
-overwrite forwarded client-IP headers. With multiple server replicas, caches,
-permits, and rate limits are independent per replica; start with one process or
-size NAS concurrency for the total replica count. The limits do not inspect
-Ollama traffic from other applications. Google permits and cooldowns live only
-in the browser, so they never share a server egress quota.
+Google endpoints remain undocumented best-effort services; CORS and availability
+may change. A CSP with `connect-src` must allow `https://translate.googleapis.com`
+and `https://clients5.google.com`. API network errors, 429/503, and invalid API
+responses still permit browser-direct fallback. After all candidates fail, the
+original text remains visible and a bounded retry hint controls the next attempt.
 
 ## HTTP contract
 
@@ -202,68 +191,50 @@ immediately. In automatic mode, a failed visible snippet retries after at least
 five seconds; disabling automatic mode, leaving the viewport, or unmounting the
 snippet cancels this retry. No independent health-polling process is started. The settings popover continues to use its Radix portal.
 
-## Lightweight usage statistics
-
-Install the additive table in the existing database:
+## State and statistics management
 
 ```sh
 pnpm db:translation:init
+pnpm translation:status
+pnpm translation:manage history ollama
+pnpm translation:manage attempts ollama
+pnpm translation:manage retry ollama
+pnpm translation:manage probe ollama
 ```
 
-`osu_translation.daily_usage` aggregates UTC day, fixed provider, target, and
-outcome. Each row holds request count, input-character count, total duration,
-and maximum duration. There is no translation text, prompt, IP, user ID, model
-output, URL, raw error, or per-request row in the table. Local Chrome translations
-are not reported to the server, keeping their text and activity local. Browser
-Google attempts report only the five numeric/enum fields through
-`POST /api/translate/usage`, in batches of at most 32 counters and at most 120
-counters per client per minute. The endpoint rejects text, URLs, model names,
-unknown fields, and forged NAS events. Its body is capped at 8 KiB. Reports are
-best-effort and untrusted: they are aggregated for analysis but never affect
-routing health. No new database migration is needed for browser reports.
+Setup is additive and idempotent. Existing `daily_usage` rows remain historical;
+new counters are written to `usage_daily` with an explicit `server`,
+`browser_reported`, or `application` source. Unified views label old data
+`legacy_unknown` rather than guessing whether past Google calls came from
+servers or browsers. Use `v_daily_attempts` for actual reported attempts and
+`v_daily_routing` for cache/shared/busy/cooldown/unavailable decisions.
 
-Outcomes `success`, `failure`, and `timeout` count actual upstream attempts.
-`busy` and `circuit` count routing skips. Provider `gateway` records cache hits,
-shared in-flight results, and unavailable requests. These counters measure
-different stages and should not be summed as unique website translation clicks.
+Current NAS state lives in `provider_state`, actual calls and expiring leases in
+`provider_attempts`, and state-change audit events in `provider_transitions`.
+`browser_provider_state` contains only each anonymous page session's latest
+Google health report. Its monotonically increasing sequence rejects duplicate
+or out-of-order reports. It never drives NAS or other users' Google state.
 
-Statistics accumulate in at most 512 in-memory buckets. Next.js `after()` flushes
-them after a response, at most once every 30 seconds when requests arrive.
-Database failures are swallowed and retained aggregates are retried on later
-requests. No database connection is required to translate. Set
-`TRANSLATION_USAGE_ENABLED=false` to disable statistics.
+No text, prompts, translations, URLs, credentials, IPs, or accounts are stored.
+The usage endpoint accepts at most 32 metadata events and 32 KiB per request,
+with a 120-events-per-client-per-minute limit. Server state remains necessary
+when `TRANSLATION_USAGE_ENABLED=false`; that switch disables only historical
+summary counters. Request-driven maintenance keeps 30 days of attempt details,
+90 days of transitions/counters, and one day of anonymous browser observations.
+No separate process or health-polling job is required.
 
-A request-driven cleanup runs at most once an hour and keeps 90 UTC days.
-After cleanup, the fixed dimensions allow at most 7,200 rows; the interval before
-cleanup can temporarily retain an additional day. No requests means no writes
-or growth. Aggregates are best-effort operational measurements: buffered data
-can be lost on process restart or serverless suspension, so these are not billing
-records. PostgreSQL's normal autovacuum handles space from expired rows.
-
-Example analysis:
-
-```sql
-SELECT day, provider,
-       sum(requests) FILTER (WHERE outcome IN ('success', 'failure', 'timeout')) AS attempts,
-       sum(requests) FILTER (WHERE outcome = 'success') AS successes,
-       sum(requests) FILTER (WHERE outcome = 'timeout') AS timeouts,
-       round(sum(total_duration_ms) FILTER (WHERE outcome IN ('success', 'failure', 'timeout'))::numeric
-         / nullif(sum(requests) FILTER (WHERE outcome IN ('success', 'failure', 'timeout')), 0), 1) AS avg_ms
-FROM osu_translation.daily_usage
-WHERE provider <> 'gateway'
-GROUP BY day, provider
-ORDER BY day DESC, provider;
-```
-
-Run focused checks with:
+See the [operations guide](translation-operations.md) for the schema map, state
+transitions, operator commands, configuration ownership, and common SQL queries.
+Summary counters are best-effort observations; current state and leases are
+transactional controls, not reconstructed from those counters.
 
 ```sh
 node --test --test-isolation=none tests/translation/*.test.mjs
-TRANSLATION_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test --test-isolation=none tests/translation/translation-usage.integration.test.mjs
+TRANSLATION_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test --test-isolation=none tests/translation/provider-state.integration.test.mjs tests/translation/translation-usage.integration.test.mjs
 ```
 
-The database test creates an isolated schema in a transaction and rolls it back.
-Deterministic transport tests exercise browser batching → HTTP validation →
-NAS routing → browser-direct Google fallback → normalized results without sending content to real services.
-An authenticated NAS smoke test additionally requires the real Access credentials
-and the model name from your running Ollama installation.
+The database tests use isolated schemas and clean them up or roll back.
+They verify shared admission, recovery after a crashed worker, generation fencing,
+policy persistence, browser isolation and ordering, and legacy-data preservation.
+An authenticated NAS probe additionally requires valid Access credentials and
+the exact model name registered in your running Ollama installation.
