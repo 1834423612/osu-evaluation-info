@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import type { TranslationObservation } from "./gateway.ts";
 
-type UsageBucket = TranslationObservation & {
+type UsageBucket = Omit<TranslationObservation, "browser"> & {
   day: string;
   count: number;
   maxDurationMs: number;
@@ -32,7 +32,9 @@ export function createTranslationUsage(write: UsageWriter, now = Date.now) {
       current.maxDurationMs = Math.max(current.maxDurationMs, durationMs);
     } else {
       buckets.set(key, {
-        ...event,
+        provider: event.provider,
+        target: event.target,
+        outcome: event.outcome,
         day,
         count: 1,
         characters,
@@ -76,18 +78,18 @@ export function createTranslationUsage(write: UsageWriter, now = Date.now) {
 }
 
 export const UPSERT_TRANSLATION_USAGE_SQL = `
-  INSERT INTO osu_translation.daily_usage
-    (day, provider, target, outcome, requests, input_characters, total_duration_ms, max_duration_ms)
-  SELECT day::date, provider, target, outcome, count, characters, "durationMs", "maxDurationMs"
+  INSERT INTO osu_translation.usage_daily
+    (day, provider, source, target, outcome, requests, input_characters, total_duration_ms, max_duration_ms)
+  SELECT day::date, provider, CASE WHEN provider='ollama' THEN 'server' WHEN provider='gateway' THEN 'application' ELSE 'browser_reported' END, target, outcome, count, characters, "durationMs", "maxDurationMs"
   FROM jsonb_to_recordset($1::jsonb) AS x(
     day text, provider text, target text, outcome text, count bigint,
     characters bigint, "durationMs" bigint, "maxDurationMs" integer)
   WHERE day::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date - 89
-  ON CONFLICT (day, provider, target, outcome) DO UPDATE SET
-    requests = osu_translation.daily_usage.requests + EXCLUDED.requests,
-    input_characters = osu_translation.daily_usage.input_characters + EXCLUDED.input_characters,
-    total_duration_ms = osu_translation.daily_usage.total_duration_ms + EXCLUDED.total_duration_ms,
-    max_duration_ms = GREATEST(osu_translation.daily_usage.max_duration_ms, EXCLUDED.max_duration_ms)`;
+  ON CONFLICT (day, provider, source, target, outcome) DO UPDATE SET
+    requests = osu_translation.usage_daily.requests + EXCLUDED.requests,
+    input_characters = osu_translation.usage_daily.input_characters + EXCLUDED.input_characters,
+    total_duration_ms = osu_translation.usage_daily.total_duration_ms + EXCLUDED.total_duration_ms,
+    max_duration_ms = GREATEST(osu_translation.usage_daily.max_duration_ms, EXCLUDED.max_duration_ms)`;
 
 export function createDatabaseTranslationUsage(
   environment: NodeJS.ProcessEnv = process.env,
@@ -113,6 +115,9 @@ export function createDatabaseTranslationUsage(
     if (Date.now() - lastPrune > 60 * 60 * 1000) {
       await pool.query(
         "DELETE FROM osu_translation.daily_usage WHERE day < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date - 89",
+      );
+      await pool.query(
+        "DELETE FROM osu_translation.usage_daily WHERE day < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date - 89",
       );
       lastPrune = Date.now();
     }

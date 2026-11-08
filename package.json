@@ -16,6 +16,8 @@
     "db:import": "python3 scripts/evaluations/import_osu_sei_ssle_postgres.py --file data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl --dsn \"$DATABASE_URL\" --init-schema --expected-rows 68729",
     "db:people:init": "node --env-file-if-exists=.env.local scripts/people/setup_people_directory.mjs",
     "db:translation:init": "node --env-file-if-exists=.env.local scripts/translation/setup_usage.mjs",
+    "translation:status": "node --env-file-if-exists=.env.local scripts/translation/manage.mjs status",
+    "translation:manage": "node --env-file-if-exists=.env.local scripts/translation/manage.mjs",
     "rmp:collect": "python3 scripts/rmp/collect_rmp_osu.py",
     "rmp:mappings": "python3 scripts/rmp/sync_rmp_mappings.py",
     "rmp:supplement": "python3 scripts/rmp/import_rmp_supplement.py",

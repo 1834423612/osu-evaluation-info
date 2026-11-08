@@ -52,6 +52,37 @@ test("browser counters retain per-client rate limits", async () => {
   );
 });
 
+test("browser state metadata validates its scope, finite retry and sequence without accepting arbitrary fields", async () => {
+  const stored = [];
+  const handle = createTranslationUsageHandler(
+    () => {},
+    Date.now,
+    async (events) => {
+      stored.push(...events);
+    },
+  );
+  const browser = {
+    sessionId: "12345678-1234-4234-8234-123456789abc",
+    sequence: 1,
+    phase: "healthy",
+    reason: "success",
+    consecutiveFailures: 0,
+    retryAfterMs: 0,
+  };
+  assert.equal((await handle(request([{ ...event, browser }]))).status, 204);
+  for (const invalid of [
+    { ...browser, sequence: 0 },
+    { ...browser, retryAfterMs: 300001 },
+    { ...browser, phase: "disabled" },
+    { ...browser, url: "https://private.example" },
+  ])
+    assert.equal(
+      (await handle(request([{ ...event, browser: invalid }]))).status,
+      400,
+    );
+  assert.equal(stored.length, 1);
+});
+
 test("browser reporter coalesces counters into a separate same-origin request", async () => {
   let done;
   const sent = new Promise((resolve) => {

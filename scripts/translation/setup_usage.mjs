@@ -19,13 +19,24 @@ if (!connectionString) {
     await client.connect();
     await client.query("BEGIN");
     await client.query(
+      "SELECT pg_advisory_xact_lock(hashtext('osu_translation_schema'))",
+    );
+    await client.query(
       await readFile(
         new URL("../../db/schemas/translation.sql", import.meta.url),
         "utf8",
       ),
     );
+    await client.query(
+      await readFile(
+        new URL("../../db/schemas/translation-state.sql", import.meta.url),
+        "utf8",
+      ),
+    );
     await client.query("COMMIT");
-    console.log("Installed osu_translation.daily_usage.");
+    console.log(
+      "Installed translation provider state, attempts, transitions, browser observations and management views; existing usage history retained.",
+    );
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     console.error(

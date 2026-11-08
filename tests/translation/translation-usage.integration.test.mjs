@@ -25,6 +25,14 @@ test(
         "utf8",
       );
       await client.query(sql.replaceAll("osu_translation", schema));
+      await client.query(
+        (
+          await readFile(
+            new URL("../../db/schemas/translation-state.sql", import.meta.url),
+            "utf8",
+          )
+        ).replaceAll("osu_translation", schema),
+      );
       const day = new Date().toISOString().slice(0, 10);
       const values = [
         JSON.stringify([
@@ -48,27 +56,27 @@ test(
         UPSERT_TRANSLATION_USAGE_SQL.replaceAll("osu_translation", schema),
         values,
       );
-      const saved = (await client.query(`SELECT * FROM ${schema}.daily_usage`))
+      const saved = (await client.query(`SELECT * FROM ${schema}.usage_daily`))
         .rows[0];
       assert.equal(saved.requests, "4");
       assert.equal(saved.input_characters, "200");
       assert.equal(saved.total_duration_ms, "180");
       assert.equal(saved.max_duration_ms, 50);
       await client.query(
-        `INSERT INTO ${schema}.daily_usage SELECT day - 100, provider, target, outcome, requests, input_characters, total_duration_ms, max_duration_ms FROM ${schema}.daily_usage`,
+        `INSERT INTO ${schema}.usage_daily SELECT day - 100, provider, source, target, outcome, requests, input_characters, total_duration_ms, max_duration_ms FROM ${schema}.usage_daily`,
       );
       await client.query(
-        `DELETE FROM ${schema}.daily_usage WHERE day < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date - 89`,
+        `DELETE FROM ${schema}.usage_daily WHERE day < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date - 89`,
       );
       assert.equal(
-        (await client.query(`SELECT count(*) FROM ${schema}.daily_usage`))
+        (await client.query(`SELECT count(*) FROM ${schema}.usage_daily`))
           .rows[0].count,
         "1",
       );
       await client.query("SAVEPOINT invalid");
       await assert.rejects(
         client.query(
-          `UPDATE ${schema}.daily_usage SET provider='unbounded-user-input'`,
+          `UPDATE ${schema}.usage_daily SET provider='unbounded-user-input'`,
         ),
         { code: "23514" },
       );
