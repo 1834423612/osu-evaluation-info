@@ -84,8 +84,10 @@ export function createDetailRefresh(options: RefreshOptions) {
     }
   }
   function onVisibility() {
+    // A one-time read remains valid for this view, including a background tab.
+    if (!polling) return;
     if (visible()) {
-      if (polling) void refresh();
+      void refresh();
       return;
     }
     generation++;

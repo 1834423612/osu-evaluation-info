@@ -1,11 +1,15 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import { isAvailabilityFresh } from "@/lib/catalog/availability";
+import {
+  hasOfficialAvailability,
+  isAvailabilityFresh,
+} from "@/lib/catalog/availability";
 import type { CatalogCourse } from "@/lib/catalog/types";
 
 let now = Date.now();
 let timer: ReturnType<typeof setInterval> | undefined;
 const listeners = new Set<() => void>();
+const subscribeOnce = () => () => {};
 function subscribe(listener: () => void) {
   listeners.add(listener);
   if (!timer) {
@@ -23,10 +27,13 @@ function subscribe(listener: () => void) {
     }
   };
 }
-export function useAvailabilityFresh(course: CatalogCourse) {
+export function useAvailabilityVisible(course: CatalogCourse, watch: boolean) {
   return useSyncExternalStore(
-    subscribe,
-    () => isAvailabilityFresh(course, now),
+    watch ? subscribe : subscribeOnce,
+    () =>
+      watch
+        ? isAvailabilityFresh(course, now)
+        : hasOfficialAvailability(course),
     () => false,
   );
 }

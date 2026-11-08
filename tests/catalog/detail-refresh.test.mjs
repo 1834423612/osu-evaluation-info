@@ -189,15 +189,40 @@ describe("visible course detail refresh", () => {
 
     env.document.visibilityState = "hidden";
     env.document.dispatchEvent(new Event("visibilitychange"));
+    const loaded = env.updates.at(-1);
+    assert.equal(loaded.course.availability.source, "official");
+    assert.equal(loaded.course.sections[0].enrollmentTotal, 29);
     env.document.visibilityState = "visible";
     env.document.dispatchEvent(new Event("visibilitychange"));
     await flush();
     assert.equal(calls, 1);
+    assert.equal(env.updates.at(-1), loaded);
 
     await env.engine.refresh();
     assert.equal(calls, 2);
     env.engine.stop();
     assert.equal(env.cancelled, false);
+  });
+  it("finishes a one-time read in a background tab without fetching it again", async () => {
+    const reads = [];
+    const env = setup(
+      (_url, options) =>
+        new Promise((resolve) => reads.push({ options, resolve })),
+      false,
+    );
+    env.engine.start();
+    await flush();
+    env.document.visibilityState = "hidden";
+    env.document.dispatchEvent(new Event("visibilitychange"));
+    assert.equal(reads[0].options.signal.aborted, false);
+    reads[0].resolve(response());
+    await flush();
+    assert.equal(env.updates.at(-1).course.sections[0].enrollmentTotal, 29);
+    env.document.visibilityState = "visible";
+    env.document.dispatchEvent(new Event("visibilitychange"));
+    await flush();
+    assert.equal(reads.length, 1);
+    env.engine.stop();
   });
   it("starts aggressive refresh immediately when enabled and stops it without another read", async () => {
     let calls = 0;

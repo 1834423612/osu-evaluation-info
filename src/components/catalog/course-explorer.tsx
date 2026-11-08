@@ -146,6 +146,10 @@ export function CourseExplorer() {
     params.delete(PAGE_HISTORY_PARAM);
     if (value) params.set(key, value);
     else params.delete(key);
+    if (params.toString() === query) {
+      setRetry((value) => value + 1);
+      return;
+    }
     window.history.pushState(null, "", `/?${params}`);
   }
   function resetFilters() {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   AVAILABILITY_TTL_MS,
+  hasOfficialAvailability,
   isAvailabilityFresh,
   stripEnrollmentFields,
   withoutCourseAvailability,
@@ -29,6 +30,25 @@ function fixture() {
 }
 
 describe("live-only enrollment availability", () => {
+  it("retains a successful one-time read after its watch freshness window", () => {
+    const course = fixture();
+    assert.equal(hasOfficialAvailability(course), true);
+    assert.equal(isAvailabilityFresh(course, now + 60 * 60 * 1000), false);
+    assert.equal(hasOfficialAvailability(course), true);
+    assert.equal(
+      hasOfficialAvailability(withoutCourseAvailability(course)),
+      false,
+    );
+    for (const fetchedAt of [null, "", "invalid"]) {
+      assert.equal(
+        hasOfficialAvailability({
+          ...course,
+          availability: { source: "official", fetchedAt },
+        }),
+        false,
+      );
+    }
+  });
   it("expires official values and rejects snapshots, invalid timestamps, and clock skew", () => {
     const course = fixture();
     assert.equal(

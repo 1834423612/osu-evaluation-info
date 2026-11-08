@@ -13,8 +13,11 @@ import {
   X,
 } from "lucide-react";
 import { useCourseDetails } from "@/hooks/use-course-details";
-import { useAvailabilityFresh } from "@/hooks/use-availability";
-import { withoutCourseAvailability } from "@/lib/catalog/availability";
+import { useAvailabilityVisible } from "@/hooks/use-availability";
+import {
+  hasOfficialAvailability,
+  withoutCourseAvailability,
+} from "@/lib/catalog/availability";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { localizedCampus, localizedTerm, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -113,7 +116,7 @@ function CoursePreview({
   course: CatalogCourse;
   locale: Locale;
 }) {
-  const live = useAvailabilityFresh(course);
+  const available = hasOfficialAvailability(course);
   const instructors = new Map<string, { name: string; email: string | null }>();
   const activeDays = new Set<number>();
   const meetingPatterns = new Set<string>();
@@ -137,8 +140,8 @@ function CoursePreview({
   let open = 0;
   let closed = 0;
   for (const section of course.sections) {
-    if (live && /open|^o$/i.test(section.enrollmentStatus)) open++;
-    if (live && /closed|^c$/i.test(section.enrollmentStatus)) closed++;
+    if (available && /open|^o$/i.test(section.enrollmentStatus)) open++;
+    if (available && /closed|^c$/i.test(section.enrollmentStatus)) closed++;
     for (const instructor of section.instructors)
       instructors.set(
         instructor.email?.toLowerCase() ?? instructor.name.toLowerCase(),
@@ -252,7 +255,7 @@ function CoursePreview({
         className="preview-availability"
         aria-label={text(locale, "Enrollment availability", "选课情况")}
       >
-        {!live ? (
+        {!available ? (
           <span>
             {text(locale, "Availability unavailable", "选课状态暂不可用")}
           </span>
@@ -321,8 +324,11 @@ export function CourseCard({
     enrollmentWatchInterval,
   );
   const loaded = detail ?? course;
-  const fresh = useAvailabilityFresh(loaded);
-  const current = fresh ? loaded : withoutCourseAvailability(loaded);
+  const available = useAvailabilityVisible(
+    loaded,
+    isSelected && requestedTab === "sections" && enrollmentWatch,
+  );
+  const current = available ? loaded : withoutCourseAvailability(loaded);
   const credit =
     course.creditsMin === course.creditsMax
       ? String(course.creditsMin)
@@ -508,7 +514,7 @@ export function CourseCard({
             ) : null}
             <div className="availability-refresh" aria-live="polite">
               <span>
-                {fresh
+                {available
                   ? text(
                       locale,
                       `Availability checked at ${new Date(loaded.availability!.fetchedAt!).toLocaleTimeString("en-US")}`,

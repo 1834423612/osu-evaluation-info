@@ -23,16 +23,21 @@ export function withoutCourseAvailability(
     sections: course.sections.map(withoutSectionAvailability),
   };
 }
+/** Keep a successful session read visible until another read replaces it. */
+export function hasOfficialAvailability(course: CatalogCourse): boolean {
+  return (
+    course.availability?.source === "official" &&
+    typeof course.availability.fetchedAt === "string" &&
+    Number.isFinite(Date.parse(course.availability.fetchedAt))
+  );
+}
+
 export function isAvailabilityFresh(
   course: CatalogCourse,
   now = Date.now(),
 ): boolean {
-  if (
-    course.availability?.source !== "official" ||
-    !course.availability.fetchedAt
-  )
-    return false;
-  const age = now - Date.parse(course.availability.fetchedAt);
+  if (!hasOfficialAvailability(course)) return false;
+  const age = now - Date.parse(course.availability!.fetchedAt!);
   return Number.isFinite(age) && age >= -5000 && age < AVAILABILITY_TTL_MS;
 }
 
