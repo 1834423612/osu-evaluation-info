@@ -1,12 +1,12 @@
 /** Share work across duplicate previews, details and review snippets. */
-export function createTranslationScheduler(
+export function createTranslationScheduler<Value = string>(
   concurrency = 2,
   cacheLimit = 300,
   now = Date.now,
 ) {
-  const cache = new Map<string, { value: string; expires: number }>();
+  const cache = new Map<string, { value: Value; expires: number }>();
   const failures = new Map<string, { error: unknown; expires: number }>();
-  const pending = new Map<string, Promise<string>>();
+  const pending = new Map<string, Promise<Value>>();
   const queue: Array<() => void> = [];
   let running = 0;
 
@@ -16,7 +16,7 @@ export function createTranslationScheduler(
 
   function request(
     key: string,
-    operation: () => Promise<string>,
+    operation: () => Promise<Value>,
     retry = false,
   ) {
     const saved = cache.get(key);
@@ -33,10 +33,10 @@ export function createTranslationScheduler(
         new Error("Translation capacity is temporarily full."),
       );
 
-    const result = new Promise<string>((resolve, reject) => {
+    const result = new Promise<Value>((resolve, reject) => {
       queue.push(() => {
         running++;
-        let work: Promise<string>;
+        let work: Promise<Value>;
         try {
           // Start synchronously while a direct click still has user activation.
           work = operation();

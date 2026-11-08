@@ -80,3 +80,21 @@ test("leaving the visible viewport does not count as a provider failure", async 
     "translated",
   );
 });
+
+test("cached translations retain their actual provider until fresh work replaces them", async () => {
+  let time = 1;
+  const scheduler = createTranslationScheduler(2, 300, () => time);
+  const googleResult = { translation: "谷歌译文", provider: "clients5" };
+  await scheduler.request("same-review", async () => googleResult);
+  const reused = await scheduler.request("same-review", async () => {
+    throw Error("A cached translation must retain its original source.");
+  });
+  assert.equal(reused.provider, "clients5");
+  assert.equal(reused.translation, "谷歌译文");
+  time += 30001;
+  const recovered = await scheduler.request("same-review", async () => ({
+    translation: "自建译文",
+    provider: "ollama",
+  }));
+  assert.equal(recovered.provider, "ollama");
+});
