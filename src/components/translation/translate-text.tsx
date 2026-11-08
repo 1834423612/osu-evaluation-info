@@ -12,8 +12,10 @@ import { Popover } from "radix-ui";
 import {
   Check,
   Languages,
+  LaptopMinimal,
   LoaderCircle,
   Settings2,
+  Sparkles,
   WholeWord,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
@@ -22,6 +24,7 @@ import {
   translationAction,
   translationLanguagePair,
   type TranslationTarget,
+  type TranslationProvider,
 } from "@/lib/translation/service";
 import { translateInBrowser } from "@/lib/translation/browser";
 import { createRemoteTranslationClient } from "@/lib/translation/client";
@@ -31,11 +34,15 @@ import { createTranslationScheduler } from "@/lib/translation/scheduler";
 
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus = "idle" | "loading" | "downloading" | "error";
+type DisplayTranslation = {
+  translation: string;
+  provider: TranslationProvider;
+};
 
 const MODE_KEY = "course-atlas:translation-mode:v1";
 const AUTO_KEY = "course-atlas:translation-auto:v1";
 const MODE_EVENT = "course-atlas:translation-mode";
-const scheduler = createTranslationScheduler();
+const scheduler = createTranslationScheduler<DisplayTranslation>();
 const remoteTranslation = createRemoteTranslationClient(
   fetch,
   25,
@@ -125,7 +132,7 @@ export function TranslateText({
   );
   const [translationState, setTranslationState] = useState<{
     key: string;
-    value: string;
+    value: DisplayTranslation;
   } | null>(null);
   const [visible, setVisible] = useState(false);
   const [status, setStatus] = useState<TranslationStatus>("idle");
@@ -152,25 +159,30 @@ export function TranslateText({
               (!isIntersectingRef.current || !automaticRef.current)
             )
               throw new DOMException("Auto translation paused.", "AbortError");
-            let result: string | null = null;
+            let result: DisplayTranslation | null = null;
             try {
-              result = await translateInBrowser(
+              const local = await translateInBrowser(
                 text,
                 pair.sourceLanguage,
                 pair.targetLanguage,
                 () => setStatus("downloading"),
                 manual && Boolean(navigator.userActivation?.isActive),
               );
+              if (local) result = { translation: local, provider: "chrome" };
             } catch {
               result = null;
             }
             if (!result) {
               setStatus("loading");
-              result = (
-                await remoteTranslation.request(text, pair.targetLanguage)
-              ).translation;
+              result = await remoteTranslation.request(
+                text,
+                pair.targetLanguage,
+              );
             }
-            return result;
+            return {
+              translation: result.translation,
+              provider: result.provider,
+            };
           },
           manual,
         );
@@ -264,6 +276,9 @@ export function TranslateText({
           downloading: "正在准备语言模型…",
           auto: "自动翻译",
           autoHint: "自动翻译当前可见内容",
+          provider: "翻译服务",
+          localProvider: "本机翻译",
+          googleProvider: "Google 翻译",
         }
       : {
           translate: "Translate",
@@ -279,10 +294,29 @@ export function TranslateText({
           downloading: "Preparing the language model…",
           auto: "Translate automatically",
           autoHint: "Translate visible content automatically",
+          provider: "Translation service",
+          localProvider: "On-device",
+          googleProvider: "Google Translate",
         };
-  const translation =
+  const translatedResult =
     translationState?.key === key ? translationState.value : null;
+  const translation = translatedResult?.translation ?? null;
   const showingTranslation = visible && translation !== null;
+  const provider = showingTranslation ? translatedResult?.provider : null;
+  const providerKind =
+    provider === "ollama" ? "kjch" : provider === "chrome" ? "local" : "google";
+  const providerLabel =
+    provider === "ollama"
+      ? "kjch ai service"
+      : provider === "chrome"
+        ? labels.localProvider
+        : labels.googleProvider;
+  const ProviderIcon =
+    provider === "ollama"
+      ? Sparkles
+      : provider === "chrome"
+        ? LaptopMinimal
+        : Languages;
   const action = translationAction(
     mode,
     showingTranslation,
@@ -442,6 +476,18 @@ export function TranslateText({
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
+        {provider ? (
+          <span
+            className={styles.sourceBadge}
+            data-translation-provider={provider}
+            data-source={providerKind}
+            title={`${labels.provider}: ${providerLabel}`}
+          >
+            <ProviderIcon size={11} strokeWidth={1.8} aria-hidden="true" />
+            <span className="sr-only">{labels.provider}: </span>
+            <span className={styles.sourceText}>{providerLabel}</span>
+          </span>
+        ) : null}
         {status === "error" ? (
           <span className={`${styles.status} ${styles.error}`} role="status">
             {labels.unavailable}

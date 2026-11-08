@@ -30,7 +30,9 @@
 
 .actions {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: 4px;
   margin-top: 4px;
@@ -44,6 +46,7 @@
 
 .actionButton {
   display: inline-flex;
+  flex: 0 0 auto;
   min-width: 27px;
   min-height: 25px;
   align-items: center;
@@ -61,6 +64,7 @@
 
 .settingsButton {
   display: inline-flex;
+  flex: 0 0 auto;
   min-width: 27px;
   min-height: 25px;
   align-items: center;
@@ -73,6 +77,47 @@
   cursor: pointer;
   width: 27px;
   padding: 0;
+}
+
+.sourceBadge {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  border: 1px solid #d4e2f6;
+  border-radius: 999px;
+  background: #eff5fc;
+  padding: 2px 6px;
+  color: #285ea8;
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sourceBadge[data-source="kjch"] {
+  border-color: #d0e8dd;
+  background: #eff8f4;
+  color: #166b50;
+}
+
+.sourceBadge[data-source="local"] {
+  border-color: #e3daf3;
+  background: #f5f2fb;
+  color: #6650a5;
+}
+
+.sourceBadge > svg {
+  flex: 0 0 auto;
+}
+
+.sourceText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .actionButton:hover,
@@ -202,6 +247,7 @@
 
 .status {
   display: inline-block;
+  min-width: 0;
   margin-left: 4px;
   color: var(--muted);
   font-size: 10px;
