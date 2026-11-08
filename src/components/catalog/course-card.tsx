@@ -7,6 +7,7 @@ import {
   Bookmark,
   GraduationCap,
   MapPin,
+  MonitorPlay,
   ArrowUpRight,
   LucideShieldCheck,
   LoaderCircle,
@@ -19,6 +20,10 @@ import {
   withoutCourseAvailability,
 } from "@/lib/catalog/availability";
 import type { CatalogCourse } from "@/lib/catalog/types";
+import {
+  courseAcademicCareerLabel,
+  isOnlineMeeting,
+} from "@/lib/catalog/presentation";
 import { localizedCampus, localizedTerm, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -84,27 +89,11 @@ function useMobileViewport() {
   );
 }
 
-function localizedCareer(value: string, locale: Locale) {
-  const normalized = value.trim().toLowerCase();
-  if (normalized.includes("undergraduate"))
-    return text(locale, "Undergraduate", "本科生");
-  if (normalized.includes("graduate"))
-    return text(locale, "Graduate", "研究生");
-  if (normalized.includes("professional"))
-    return text(locale, "Professional", "专业课程");
-  if (normalized.includes("non-degree") || normalized.includes("nondegree"))
-    return text(locale, "Non-degree", "非学位课程");
-  return value;
-}
-
 function courseDetailEyeline(course: CatalogCourse, locale: Locale) {
-  const careers = (course.academicCareers ?? [course.academicCareer])
-    .filter(Boolean)
-    .map((career) => localizedCareer(career, locale));
   return [
     `${course.subject} ${course.catalogNumber}`,
     localizedCampus(course.campusCode, locale) || course.campus,
-    ...careers,
+    courseAcademicCareerLabel(course, locale),
     localizedTerm(course.term, locale),
   ].join(" · ");
 }
@@ -121,6 +110,7 @@ function CoursePreview({
   const activeDays = new Set<number>();
   const meetingPatterns = new Set<string>();
   let hasUnscheduledMeeting = false;
+  let hasOnlineMeeting = false;
   const dayLabels =
     locale === "zh"
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
@@ -147,8 +137,15 @@ function CoursePreview({
         instructor.email?.toLowerCase() ?? instructor.name.toLowerCase(),
         instructor,
       );
+    if (!section.meetings.length) {
+      if (isOnlineMeeting(undefined, section.instructionMode))
+        hasOnlineMeeting = true;
+      else hasUnscheduledMeeting = true;
+    }
     for (const meeting of section.meetings) {
-      if (!meeting.days.length) hasUnscheduledMeeting = true;
+      const online = isOnlineMeeting(meeting, section.instructionMode);
+      if (online) hasOnlineMeeting = true;
+      if (!meeting.days.length && !online) hasUnscheduledMeeting = true;
       const time = meeting.startTime
         ? `${meeting.startTime}–${meeting.endTime ?? "?"}`
         : text(locale, "Time TBA", "时间待定");
@@ -203,24 +200,34 @@ function CoursePreview({
         </span>
       </div>
       <div className="preview-schedule">
-        <div
-          className="preview-week"
-          aria-label={text(locale, "Weekly schedule by day", "每周上课日程")}
-        >
-          {dayLabels.map((day, index) => {
-            return (
-              <span
-                className={
-                  activeDays.has(index) ? "preview-day active" : "preview-day"
-                }
-                key={`${day}-${index}`}
-              >
-                <strong>{day}</strong>
-              </span>
-            );
-          })}
-        </div>
+        {activeDays.size || !hasOnlineMeeting ? (
+          <div
+            className="preview-week"
+            aria-label={text(locale, "Weekly schedule by day", "每周上课日程")}
+          >
+            {dayLabels.map((day, index) => {
+              return (
+                <span
+                  className={
+                    activeDays.has(index) ? "preview-day active" : "preview-day"
+                  }
+                  key={`${day}-${index}`}
+                >
+                  <strong>{day}</strong>
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
         <div className="preview-times">
+          {hasOnlineMeeting ? (
+            <span>
+              <MonitorPlay size={12} className="inline" aria-hidden="true" />{" "}
+              {activeDays.size || hasUnscheduledMeeting
+                ? text(locale, "Includes online sections", "含线上班次")
+                : text(locale, "Online class", "线上课")}
+            </span>
+          ) : null}
           {[...meetingPatterns].slice(0, 3).map((pattern) => (
             <span key={pattern}>{pattern}</span>
           ))}
@@ -239,7 +246,7 @@ function CoursePreview({
               {text(locale, "more schedules", "种其他安排")}
             </span>
           ) : null}
-          {!meetingPatterns.size ? (
+          {!meetingPatterns.size && !hasOnlineMeeting ? (
             <span>{text(locale, "Time not posted", "时间未公布")}</span>
           ) : null}
         </div>
@@ -710,9 +717,7 @@ export function CourseCard({
           <div className="course-meta">
             <span>
               <GraduationCap size={13} />
-              {(current.academicCareers ?? [current.academicCareer]).join(
-                " / ",
-              )}
+              {courseAcademicCareerLabel(current, locale)}
             </span>
             <span>
               <MapPin size={13} />
@@ -787,7 +792,7 @@ export function CourseCard({
             <DrawerHeader className="course-detail-header">
               <div>
                 <span className="course-detail-eyeline">
-                  {courseDetailEyeline(course, locale)}
+                  {courseDetailEyeline(current, locale)}
                 </span>
                 <DrawerTitle>
                   {course.title || `${course.subject} ${course.catalogNumber}`}
@@ -851,7 +856,7 @@ export function CourseCard({
             <SheetHeader className="course-detail-header">
               <div>
                 <span className="course-detail-eyeline">
-                  {courseDetailEyeline(course, locale)}
+                  {courseDetailEyeline(current, locale)}
                 </span>
                 <SheetTitle>
                   {course.title || `${course.subject} ${course.catalogNumber}`}

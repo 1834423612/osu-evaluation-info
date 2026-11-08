@@ -23,6 +23,7 @@ import {
 } from "@/lib/catalog/section-filters";
 import { usePreferences } from "@/hooks/use-preferences";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
+import { isOnlineMeeting } from "@/lib/catalog/presentation";
 import { text, type Locale } from "@/lib/i18n";
 import {
   Select,
@@ -107,13 +108,19 @@ function TimeCutoffSelect({
   );
 }
 
-function meetingLabel(meeting: CatalogMeeting, locale: Locale) {
+function meetingLabel(
+  meeting: CatalogMeeting,
+  locale: Locale,
+  instructionMode: string,
+) {
   const days = meeting.days.flatMap((day) =>
     DAYS[locale][day] ? [DAYS[locale][day]] : [],
   );
   const time = meeting.startTime
     ? `${meeting.startTime}–${meeting.endTime ?? "?"}`
-    : text(locale, "Time TBA", "时间待定");
+    : isOnlineMeeting(meeting, instructionMode)
+      ? text(locale, "Online class", "线上课")
+      : text(locale, "Time TBA", "时间待定");
   return `${days.join(locale === "zh" ? "、" : "/")} ${time}`.trim();
 }
 
@@ -245,7 +252,12 @@ function SectionRow({
           {section.meetings.length ? (
             section.meetings.map((meeting, index) => (
               <div className={styles.meeting} key={index}>
-                <MeetingStrip meeting={meeting} locale={locale} compact />
+                <MeetingStrip
+                  meeting={meeting}
+                  instructionMode={section.instructionMode}
+                  locale={locale}
+                  compact
+                />
                 {meeting.location ? (
                   <span className={styles.location} title={meeting.location}>
                     {meeting.location}
@@ -253,6 +265,12 @@ function SectionRow({
                 ) : null}
               </div>
             ))
+          ) : isOnlineMeeting(undefined, section.instructionMode) ? (
+            <MeetingStrip
+              instructionMode={section.instructionMode}
+              locale={locale}
+              compact
+            />
           ) : (
             <span className={styles.muted}>
               {text(locale, "Time not posted", "时间未公布")}
@@ -330,10 +348,14 @@ function SectionRow({
             <div className={styles.meetingDetails}>
               {section.meetings.map((meeting, index) => (
                 <div key={index}>
-                  <strong>{meetingLabel(meeting, locale)}</strong>
+                  <strong>
+                    {meetingLabel(meeting, locale, section.instructionMode)}
+                  </strong>
                   <span>
                     {meeting.location ||
-                      text(locale, "Location not posted", "地点未公布")}
+                      (isOnlineMeeting(meeting, section.instructionMode)
+                        ? text(locale, "Online class", "线上课")
+                        : text(locale, "Location not posted", "地点未公布"))}
                   </span>
                   <span>
                     {meeting.startDate

@@ -244,11 +244,15 @@ export function SavedCourses() {
                             <MeetingStrip
                               key={index}
                               meeting={meeting}
+                              instructionMode={item.section.instructionMode}
                               locale={locale}
                             />
                           ))
                         ) : (
-                          <MeetingStrip locale={locale} />
+                          <MeetingStrip
+                            instructionMode={item.section.instructionMode}
+                            locale={locale}
+                          />
                         )}
                       </div>
                     </article>
