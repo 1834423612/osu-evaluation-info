@@ -19,7 +19,15 @@ The synchronizer sorts courses and sections by their stable database keys, prepa
 
 Migration 2 adds `course_snapshots`, `section_snapshots`, and `snapshot_versions`. It bootstraps only intact completed legacy snapshots; original tables stay unchanged for rollback compatibility. New sync runs write rows keyed by their run ID. Coverage validation, the completed status, and the publication timestamp commit atomically. Running and failed generations never hide a previous publication.
 
-Mirror pagination pins a published run ID, so publishing a new version does not invalidate existing cursors. RMP identity mapping also reads published generations. Resume only selects unpublished runs created by the versioned synchronizer; old in-place checkpoints are never resumed into the new storage.
+Mirror pagination pins a published run ID, so publishing a new version does not invalidate existing cursors. RMP identity mapping also reads published generations. Resume only selects unpublished runs created by the versioned synchronizer; old in-place checkpoints are never resumed into the new storage. The current writer works with schema version 2 and requires no new migration.
+
+Discovery builds one complete plan in memory before writing any run or partition. Resume compares every canonical query key and its individual expected hit count, including additions, removals, and equal-total redistributions. Checkpoints older than six hours, known invalid builds, and staging rows with broken identities are replaced. Retiring a checkpoint, creating its replacement, and inserting the full plan commit together. A discovery failure leaves the saved run untouched.
+
+Course offering and campus identities come from each official section (falling back to the course only when absent), so a course group containing several offerings/campuses creates the matching parents. Missing or malformed required identities, wrong term/subject results, conflicting duplicate class identities, and conflicting static JSON are rejected. Both course and section JSON exclude volatile enrollment fields. Page writes verify their checkpoint has not advanced and roll back entirely on any disagreement. Identical official duplicate hits are counted but stored once.
+
+Each page must still match the planned official count. Before publication the entire plan is rediscovered and compared again; SQL then verifies complete per-partition coverage, valid identities, term membership, and the complete course/section relationship including campus, subject, and catalog number. A moving official index triggers at most one fresh rebuild in the same invocation. Persistent drift or invalid data fails visibly while the previous publication stays readable. HTTP transport errors, 408, 429, and 5xx responses retry up to five times; permanent HTTP failures and invalid envelopes stop immediately. Retry-After is bounded at 30 seconds. Requests have a 30-second timeout and the invocation has a 45-minute request budget. Signals and between-page budget checks defer publication and preserve checkpoints.
+
+The official API provides no snapshot token. Count and plan validation cannot detect every upstream edit that preserves all counts or a stable omission/duplicate swap. Such data is still official, but publication does not claim a transactionally consistent upstream export. Stronger guarantees require an upstream version token or independently enumerable section manifest.
 
 An actual database integration test uses a unique, disposable schema:
 
@@ -27,15 +35,25 @@ An actual database integration test uses a unique, disposable schema:
 CATALOG_DATABASE_TEST=1 node --test tests/catalog/snapshots.integration.test.mjs
 ```
 
-The test bootstraps legacy data, holds a concurrent read transaction through publication, checks old cursors, rejects incomplete publication, and drops all fixture tables.
+The tests bootstrap legacy data, hold a concurrent read transaction through publication, check old cursors, exercise real CLI recovery, reject conflicting/invalid pages, test initialization rollback, and drop all fixture tables. To include CLI and pure validation tests:
+
+```sh
+CATALOG_DATABASE_TEST=1 node --test tests/catalog/*.test.mjs
+```
+
+A separate explicit opt-in runs every currently searchable term against the real upstream API and PostgreSQL, using a random disposable schema. It never writes business tables. It can take several minutes; logs are written under `/tmp/osu-catalog-live-verification.log`.
+
+```sh
+CATALOG_LIVE_TEST=1 node --test tests/catalog/live-sync.integration.test.mjs
+```
 
 ## Bounded retention
 
-`pnpm catalog:prune` uses the same advisory lock and timeouts as synchronization. It preserves at least the latest three published generations for every term and all generations published less than 24 hours ago. One eligible old generation is unpublished, then reclaimed in 500-row transactions with pauses and a 60-second budget. An interrupted cleanup resumes in a later invocation; current generations, original legacy tables, and sync-run audit records are preserved. Pruning never touches an unpublished running or failed build. Review abandoned failed builds separately instead of deleting resumable checkpoints automatically.
+`pnpm catalog:prune` uses the same advisory lock and timeouts as synchronization. It preserves at least the latest three published generations for every term and all generations published less than 24 hours ago. One eligible old generation is unpublished, then reclaimed in 500-row transactions with pauses and a 60-second budget. An interrupted cleanup resumes in a later invocation; current generations, original legacy tables, and sync-run audit records are preserved. When no published version is eligible, cleanup may reclaim one abandoned failed generation: it must be at least 24 hours old, have a known nonresumable validation/drift/supersession error, and have a newer published snapshot for every one of its terms. Running builds, transient failures, recently failed builds, and builds without replacement coverage are protected. Cleanup retains sync-run and partition audit records and resumes incomplete deletion on a later invocation.
 
 ## Scheduled automation
 
-The GitHub workflow accepts only `schedule`, with an additional job guard for `github.event_name == 'schedule'`. Pushes, pull requests, manual dispatch, reusable-workflow calls, and repository dispatch do not trigger it. It runs at 00:17, 04:17, 08:17, 12:17, 16:17, and 20:17 in `America/New_York`; GitHub may delay scheduled starts. Synchronization runs first, followed by bounded retention only on success. Schema migrations never run in the scheduled job. The database referenced by the Actions `DATABASE_URL` secret must have been explicitly migrated before the schedule is enabled.
+The GitHub workflow accepts only `schedule`, with an additional job guard for `github.event_name == 'schedule'`. Pushes, pull requests, manual dispatch, reusable-workflow calls, and repository dispatch do not trigger it. It runs at 00:17, 04:17, 08:17, 12:17, 16:17, and 20:17 in `America/New_York`; GitHub may delay scheduled starts. Synchronization runs first, followed by bounded retention only on success. Database credentials are scoped to configuration, sync, and cleanup steps. The sync step preserves its exit status through `tee`; success records publication counts in the job summary and failure adds the last 20 sync log lines. An advisory-lock conflict is a safe skip. Deliberate page limits or the internal budget may leave a checkpoint without publication; inspect the log to distinguish this from a completed refresh. Schema migrations never run in the scheduled job. The database referenced by the Actions `DATABASE_URL` secret must have been explicitly migrated before the schedule is enabled.
 
 The public repository uses shell steps instead of external Actions to comply with its owner-only Actions policy. Checkout fetches and verifies the exact scheduled commit. Runtime setup selects cached Node 24 (the runner's default may be Node 22), with a checksum-verified official Node 24.18.1 download as a fallback, and installs the project's pinned pnpm 11.18.0. No repository Actions policy changes are required. An unauthenticated checkout is sufficient for this public repository; a future private repository would need authenticated checkout.
 

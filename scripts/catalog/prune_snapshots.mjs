@@ -20,6 +20,18 @@ export const RETIRED_SNAPSHOT_SQL = `
     AND NOT EXISTS(SELECT 1 FROM ranked p WHERE p.run_id=v.run_id AND p.rank<=$1)
   ORDER BY coalesce(v.published_at,r.completed_at),v.run_id LIMIT 1`;
 
+export const ABANDONED_SNAPSHOT_SQL = `
+  SELECT v.run_id FROM osu_catalog.snapshot_versions v JOIN osu_catalog.sync_runs r ON r.id=v.run_id
+  WHERE v.published_at IS NULL AND r.status='failed'
+    AND r.started_at<now()-($1::double precision*interval '1 hour')
+    AND r.error ~ '^CATALOG_(CHECKPOINT_INVALID|DATA_INVALID|IDENTITY_CONFLICT|INDEX_CHANGED):'
+    AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(r.terms) term(code)
+      WHERE NOT EXISTS(SELECT 1 FROM osu_catalog.snapshot_versions newer
+        JOIN osu_catalog.sync_runs complete ON complete.id=newer.run_id
+        WHERE newer.published_at IS NOT NULL AND complete.status='complete'
+          AND complete.started_at>r.started_at AND complete.terms ? term.code))
+  ORDER BY r.started_at,r.id LIMIT 1`;
+
 /** Retire one old generation, then reclaim its rows with small resumable commits. */
 export async function pruneCatalogSnapshots(
   client,
@@ -38,11 +50,16 @@ export async function pruneCatalogSnapshots(
     minAgeHours < 0 ||
     !Number.isInteger(batchSize) ||
     batchSize < 1 ||
-    batchSize > 2000
+    batchSize > 2000 ||
+    !Number.isFinite(budgetMs) ||
+    budgetMs < 0
   )
     throw new Error("Invalid snapshot retention options.");
-  const run = (await client.query(RETIRED_SNAPSHOT_SQL, [keep, minAgeHours]))
-    .rows[0]?.run_id;
+  const run =
+    (await client.query(RETIRED_SNAPSHOT_SQL, [keep, minAgeHours])).rows[0]
+      ?.run_id ??
+    (await client.query(ABANDONED_SNAPSHOT_SQL, [Math.max(24, minAgeHours)]))
+      .rows[0]?.run_id;
   if (!run) return { deletedRows: 0, complete: true };
   await withPageTransaction(client, () =>
     client.query(
