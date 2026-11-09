@@ -43,7 +43,7 @@ test("bounds concurrent snippets and deduplicates duplicate previews and details
   );
 });
 
-test("backs off repeated provider failures and retries only after its deadline", async () => {
+test("backs off failed snippets without globally blocking other snippets or manual retries", async () => {
   let time = 1;
   let calls = 0;
   const scheduler = createTranslationScheduler(2, 300, () => time);
@@ -55,8 +55,12 @@ test("backs off repeated provider failures and retries only after its deadline",
     await assert.rejects(scheduler.request(key, fail));
   await assert.rejects(scheduler.request("a", fail));
   await assert.rejects(scheduler.request("d", fail));
-  assert.equal(calls, 3);
-  time += 30_001;
+  assert.equal(calls, 4);
+  assert.equal(
+    await scheduler.request("a", async () => "manual recovery", true),
+    "manual recovery",
+  );
+  time += 5001;
   assert.equal(
     await scheduler.request("d", async () => "recovered"),
     "recovered",
@@ -75,4 +79,22 @@ test("leaving the visible viewport does not count as a provider failure", async 
     await scheduler.request("visible", async () => "translated"),
     "translated",
   );
+});
+
+test("cached translations retain their actual provider until fresh work replaces them", async () => {
+  let time = 1;
+  const scheduler = createTranslationScheduler(2, 300, () => time);
+  const googleResult = { translation: "谷歌译文", provider: "clients5" };
+  await scheduler.request("same-review", async () => googleResult);
+  const reused = await scheduler.request("same-review", async () => {
+    throw Error("A cached translation must retain its original source.");
+  });
+  assert.equal(reused.provider, "clients5");
+  assert.equal(reused.translation, "谷歌译文");
+  time += 30001;
+  const recovered = await scheduler.request("same-review", async () => ({
+    translation: "自建译文",
+    provider: "ollama",
+  }));
+  assert.equal(recovered.provider, "ollama");
 });

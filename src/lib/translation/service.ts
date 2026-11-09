@@ -1,5 +1,9 @@
 export type TranslationTarget = "zh-CN" | "en";
-export type TranslationProvider = "dict-chrome-ex" | "clients5" | "gtx";
+export type GoogleTranslationProvider = "dict-chrome-ex" | "clients5" | "gtx";
+export type TranslationProvider =
+  "chrome" | "ollama" | GoogleTranslationProvider;
+export type TranslationModel = "auto" | "chrome" | "ollama" | "google";
+export type TranslationRequestOptions = { mode?: "auto" | "ollama" };
 export type TranslationDisplayMode = "bilingual" | "replace";
 export type TranslationAction =
   "translate" | "show-translation" | "hide-translation" | "show-original";
@@ -7,14 +11,93 @@ export type TranslationAction =
 export const MAX_TRANSLATION_LENGTH = 4_000;
 export const MAX_TRANSLATED_LENGTH = 8_000;
 export const MAX_TRANSLATION_RESPONSE_BYTES = 64 * 1024;
+export const MAX_TRANSLATION_BATCH_SIZE = 8;
+export const MAX_TRANSLATION_BATCH_LENGTH = 12_000;
+export const TRANSLATION_DEADLINE_MS = 16_000;
+export const TRANSLATION_QUEUE_WAIT_MS = 30_000;
+
+/** Public routing metadata only. Google fetches are performed by the browser. */
+export const BROWSER_TRANSLATION_PROVIDERS = [
+  {
+    id: "dict-chrome-ex",
+    endpoint: "https://translate.googleapis.com/translate_a/t",
+  },
+  { id: "clients5", endpoint: "https://clients5.google.com/translate_a/t" },
+  {
+    id: "gtx",
+    endpoint: "https://translate.googleapis.com/translate_a/single",
+  },
+] as const;
+
+export type TranslationItem = {
+  id: string;
+  text: string;
+  target: TranslationTarget;
+};
+export type TranslationResult = {
+  id: string;
+  target: TranslationTarget;
+  durationMs: number;
+} & (
+  | {
+      status: "translated";
+      translation: string;
+      provider: TranslationProvider;
+      cache: "miss" | "hit" | "shared";
+    }
+  | { status: "unavailable"; retryAfterMs?: number }
+);
+
+/** Normalize legacy and batch payloads with bounded text and unique caller-owned IDs. */
+export function parseTranslationBatch(
+  value: unknown,
+): TranslationItem[] | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const body = value as { items?: unknown; text?: unknown; target?: unknown };
+  const items = body.items === undefined ? [{ ...body, id: "0" }] : body.items;
+  if (
+    !Array.isArray(items) ||
+    !items.length ||
+    items.length > MAX_TRANSLATION_BATCH_SIZE
+  )
+    return null;
+  const ids = new Set<string>();
+  const result: TranslationItem[] = [];
+  let characters = 0;
+  for (const item of items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const { id, text, target } = item;
+    if (
+      typeof id !== "string" ||
+      !/^[a-zA-Z0-9_-]{1,64}$/.test(id) ||
+      ids.has(id) ||
+      typeof text !== "string" ||
+      !text.trim() ||
+      text.length > MAX_TRANSLATION_LENGTH ||
+      (target !== "en" && target !== "zh" && target !== "zh-CN")
+    )
+      return null;
+    characters += text.length;
+    if (characters > MAX_TRANSLATION_BATCH_LENGTH) return null;
+    ids.add(id);
+    result.push({ id, text, target: target === "zh" ? "zh-CN" : target });
+  }
+  return result;
+}
 
 export class TranslationUnavailableError extends Error {
-  constructor() {
+  retryAfterMs: number;
+  constructor(retryAfterMs = 5000) {
     super("Translation is temporarily unavailable.");
     this.name = "TranslationUnavailableError";
+    this.retryAfterMs = Math.min(
+      300_000,
+      Math.max(1000, Number.isFinite(retryAfterMs) ? retryAfterMs : 5000),
+    );
   }
 }
 
+/** Choose the next control action from display mode and the currently visible result. */
 export function translationAction(
   mode: TranslationDisplayMode,
   visible: boolean,
@@ -25,6 +108,7 @@ export function translationAction(
   return mode === "bilingual" ? "hide-translation" : "show-original";
 }
 
+/** Translate toward the opposite content language, independently of the interface locale. */
 export function translationLanguagePair(source: string): {
   sourceLanguage: "en" | "zh";
   targetLanguage: TranslationTarget;
@@ -36,6 +120,7 @@ export function translationLanguagePair(source: string): {
     : { sourceLanguage: "en", targetLanguage: "zh-CN" };
 }
 
+/** Traverse only bounded translation segments rather than collecting response metadata. */
 function appendTextSegments(value: unknown, output: string[], depth = 0) {
   if (depth > 5 || !Array.isArray(value)) return;
   if (typeof value[0] === "string") {
@@ -51,9 +136,10 @@ function appendTextSegments(value: unknown, output: string[], depth = 0) {
   }
 }
 
+/** Decode the compact Google endpoint formats into one translated string. */
 function translatedTextFromPayload(
   payload: unknown,
-  provider: TranslationProvider,
+  provider: GoogleTranslationProvider,
 ): string | null {
   if (!Array.isArray(payload)) return null;
   const values: string[] = [];
@@ -70,13 +156,32 @@ function translatedTextFromPayload(
   return translation ? translation : null;
 }
 
+/** Extract complete, changed translation text from the selected provider's response format. */
 export function parseTranslationResponse(
   payload: unknown,
-  provider: TranslationProvider,
+  provider: Exclude<TranslationProvider, "chrome">,
   sourceText: string,
 ): string | null {
   if (sourceText.length > MAX_TRANSLATION_LENGTH) return null;
-  const translation = translatedTextFromPayload(payload, provider);
+  let translation: string | null;
+  if (provider === "ollama") {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload))
+      return null;
+    const result = payload as {
+      response?: unknown;
+      done?: unknown;
+      done_reason?: unknown;
+    };
+    if (
+      result.done !== true ||
+      result.done_reason === "length" ||
+      typeof result.response !== "string"
+    )
+      return null;
+    translation = result.response.trim();
+  } else {
+    translation = translatedTextFromPayload(payload, provider);
+  }
   if (
     !translation ||
     translation.length > MAX_TRANSLATED_LENGTH ||
@@ -87,6 +192,7 @@ export function parseTranslationResponse(
   return translation;
 }
 
+/** Reject empty, unchanged or oversized text and require evidence of the target language. */
 export function validTranslationResult(
   value: string,
   source: string,
@@ -98,124 +204,4 @@ export function validTranslationResult(
     value.trim().toLocaleLowerCase() !== source.trim().toLocaleLowerCase() &&
     (target === "zh-CN" ? /\p{Script=Han}/u.test(value) : /[a-z]/i.test(value)),
   );
-}
-
-function endpoint(provider: TranslationProvider) {
-  if (provider === "clients5")
-    return "https://clients5.google.com/translate_a/t";
-  if (provider === "gtx")
-    return "https://translate.googleapis.com/translate_a/single";
-  return "https://translate.googleapis.com/translate_a/t";
-}
-
-function providerUrl(
-  provider: TranslationProvider,
-  target: TranslationTarget,
-  sourceText: string,
-) {
-  const url = new URL(endpoint(provider));
-  if (provider === "gtx") {
-    url.searchParams.set("client", "gtx");
-    url.searchParams.set("sl", "auto");
-    url.searchParams.set("tl", target);
-    url.searchParams.set("dt", "t");
-  } else {
-    url.searchParams.set("client", "dict-chrome-ex");
-    url.searchParams.set("sl", "auto");
-    url.searchParams.set("tl", target);
-  }
-  url.searchParams.set("q", sourceText);
-  return url;
-}
-
-async function readJsonLimited(response: Response): Promise<unknown> {
-  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-  if (!contentType.includes("application/json"))
-    throw new TranslationUnavailableError();
-  const contentLength = Number(response.headers.get("content-length"));
-  if (
-    Number.isFinite(contentLength) &&
-    contentLength > MAX_TRANSLATION_RESPONSE_BYTES
-  )
-    throw new TranslationUnavailableError();
-  const reader = response.body?.getReader();
-  if (!reader) throw new TranslationUnavailableError();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > MAX_TRANSLATION_RESPONSE_BYTES) {
-        await reader.cancel();
-        throw new TranslationUnavailableError();
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  try {
-    return JSON.parse(new TextDecoder().decode(bytes));
-  } catch {
-    throw new TranslationUnavailableError();
-  }
-}
-
-export async function translateWithFallback(
-  sourceText: string,
-  target: TranslationTarget,
-  fetcher: typeof fetch = fetch,
-): Promise<string> {
-  if (
-    !sourceText.trim() ||
-    sourceText.length > MAX_TRANSLATION_LENGTH ||
-    !["en", "zh-CN"].includes(target)
-  )
-    throw new TranslationUnavailableError();
-
-  const providers: TranslationProvider[] = [
-    "dict-chrome-ex",
-    "clients5",
-    "gtx",
-  ];
-  for (const provider of providers) {
-    try {
-      const response = await fetcher(
-        providerUrl(provider, target, sourceText),
-        {
-          method: "GET",
-          cache: "no-store",
-          redirect: "error",
-          headers: { Accept: "application/json" },
-          signal: AbortSignal.timeout(4_000),
-        },
-      );
-      if (!response.ok) {
-        await response.body?.cancel();
-        continue;
-      }
-      const payload = await readJsonLimited(response);
-      const translation = parseTranslationResponse(
-        payload,
-        provider,
-        sourceText,
-      );
-      if (
-        translation &&
-        validTranslationResult(translation, sourceText, target)
-      )
-        return translation;
-    } catch {
-      // Upstream endpoints are best-effort and may reject or rate-limit traffic.
-    }
-  }
-  throw new TranslationUnavailableError();
 }

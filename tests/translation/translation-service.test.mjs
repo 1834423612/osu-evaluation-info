@@ -8,8 +8,17 @@ import {
   translationAction,
   translationLanguagePair,
   validTranslationResult,
-  translateWithFallback,
 } from "../../src/lib/translation/service.ts";
+import { createBrowserGoogleFallback } from "../../src/lib/translation/google.ts";
+
+async function translateWithFallback(text, target, fetcher) {
+  const result = await createBrowserGoogleFallback(fetcher)({
+    id: "test",
+    text,
+    target,
+  });
+  return result.translation;
+}
 
 test("translation actions distinguish bilingual hiding from replaced text", () => {
   assert.equal(translationAction("bilingual", true, true), "hide-translation");

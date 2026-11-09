@@ -9,7 +9,7 @@ All commands run from the repository root unless a guide says otherwise.
 | SEI/SSLE evaluations | [Import instructions](evaluations/import.md), [data model](evaluations/model.md), [scoring methodology](evaluations/methodology.md), [data quality](evaluations/data-quality/profile-report.md)                    |
 | People directory     | [Identity verification and cache](people/directory.md)                                                                                                                                                             |
 | Rate My Professors   | [Collection](rmp/import.md), [identity mappings](rmp/mapping.md), [legacy supplements](rmp/supplement.md)                                                                                                          |
-| Translation          | [Translation providers and scheduling](translation.md)                                                                                                                                                             |
+| Translation          | [Translation providers and scheduling](translation.md), [node states and management](translation-operations.md)                                                                                                    |
 | Analytics            | [Umami setup, events, replays, and heatmaps](analytics/umami.md)                                                                                                                                                   |
 
 The [project README](../README.md) describes startup, checks, and the repository layout.
