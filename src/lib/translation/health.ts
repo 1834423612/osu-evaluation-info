@@ -97,6 +97,7 @@ export type AttemptOutcome = {
   retryAfterMs?: number;
 };
 
+/** New providers require a single successful probe before normal concurrent traffic. */
 export function initialHealth(now: number): ProviderHealth {
   return {
     phase: "unknown",
@@ -115,6 +116,7 @@ export function initialHealth(now: number): ProviderHealth {
   };
 }
 
+/** Advance the state revision and append an audit event when phase or reason changes. */
 function transition(
   record: ProviderRecord,
   phase: HealthPhase,
@@ -138,7 +140,7 @@ function transition(
   previous.revision++;
 }
 
-/** Configuration/operator changes fence off all old work; historical failures stay historical. */
+/** Fence old outcomes while retaining capacity until inferences settle or leases expire. */
 export function resetProvider(
   record: ProviderRecord,
   reason: "config_changed" | "operator_reset" | "operator_disabled",
@@ -147,7 +149,6 @@ export function resetProvider(
   record.health.generation++;
   for (const attempt of record.attempts)
     if (attempt.releasedAt === null) {
-      attempt.releasedAt = now;
       if (attempt.status === "running") {
         attempt.status = "cancelled";
         attempt.finishedAt = now;
@@ -196,7 +197,7 @@ export function expireProviderLeases(record: ProviderRecord, now: number) {
     );
     record.health.lastFailureAt = now;
     record.health.lastFailureKind = "lease_expired";
-    record.health.nextRetryAt = now;
+    record.health.nextRetryAt = Math.max(now, record.health.nextRetryAt ?? 0);
     record.health.probeId = null;
     transition(record, "cooldown", "lease_expired", now, attempt.id);
   }
@@ -213,6 +214,7 @@ export function expireProviderLeases(record: ProviderRecord, now: number) {
   }
 }
 
+/** Admit one recovery probe or healthy traffic, counting draining work across generations. */
 export function acquireProvider(
   record: ProviderRecord,
   id: string,
@@ -244,10 +246,7 @@ export function acquireProvider(
       retryAfterMs: health.nextRetryAt - now,
     };
   const active = record.attempts.filter(
-    (attempt) =>
-      attempt.generation === health.generation &&
-      attempt.releasedAt === null &&
-      attempt.expiresAt > now,
+    (attempt) => attempt.releasedAt === null && attempt.expiresAt > now,
   );
   const probe = health.phase !== "healthy";
   if (
@@ -288,6 +287,7 @@ export function acquireProvider(
   return { allowed: true, attempt, policy: { ...record.policy } };
 }
 
+/** Record outcomes without letting pre-existing siblings clear newer cooldowns. */
 export function finishProvider(
   record: ProviderRecord,
   id: string,
@@ -296,6 +296,7 @@ export function finishProvider(
   now: number,
 ): boolean {
   expireProviderLeases(record, now);
+  if (settled) releaseProvider(record, id, now);
   const attempt = record.attempts.find((entry) => entry.id === id);
   if (
     !attempt ||
@@ -318,8 +319,9 @@ export function finishProvider(
   health.probeId = null;
   health.lastHttpStatus = outcome.httpStatus ?? null;
   if (outcome.success) {
-    health.consecutiveFailures = 0;
     health.lastSuccessAt = now;
+    if (!attempt.isProbe && health.phase !== "healthy") return true;
+    health.consecutiveFailures = 0;
     const slow = outcome.durationMs >= record.policy.slowMs;
     health.nextRetryAt = slow ? now + record.policy.cooldownMs : null;
     transition(
@@ -347,8 +349,10 @@ export function finishProvider(
             2 ** Math.min(health.consecutiveFailures - 1, 3),
         )
       : Math.min(5000, record.policy.cooldownMs);
-    health.nextRetryAt =
-      now + Math.min(300_000, Math.max(duration, outcome.retryAfterMs ?? 0));
+    health.nextRetryAt = Math.max(
+      health.nextRetryAt ?? 0,
+      now + Math.min(300_000, Math.max(duration, outcome.retryAfterMs ?? 0)),
+    );
     transition(
       record,
       cooldown ? "cooldown" : "degraded",
@@ -360,6 +364,7 @@ export function finishProvider(
   return true;
 }
 
+/** Settlement releases fenced or timed-out work without changing current provider health. */
 export function releaseProvider(
   record: ProviderRecord,
   id: string,

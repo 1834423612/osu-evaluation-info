@@ -26,6 +26,7 @@ const date = (value: unknown) =>
       : new Date(String(value)).getTime();
 const instant = (value: number | null) =>
   value === null ? null : new Date(value);
+/** Decode database timestamps and counters into the shared state machine representation. */
 function health(row: Row): ProviderHealth {
   return {
     phase: String(row.phase) as HealthPhase,
@@ -46,6 +47,7 @@ function health(row: Row): ProviderHealth {
     updatedAt: date(row.updated_at)!,
   };
 }
+/** Decode both current and draining leases without dropping previous generations. */
 function attempt(row: Row): ProviderAttempt {
   return {
     id: String(row.id),
@@ -265,10 +267,18 @@ export function createPostgresTranslationState(
       id: string,
       command: "retry" | "enable" | "disable" | "configure",
       policy: Partial<ProviderPolicy> = {},
+      expectedConfigHash?: string,
     ) {
       await transaction(
         id,
-        async (record, _row, client, now) => {
+        async (record, row, client, now) => {
+          if (
+            expectedConfigHash !== undefined &&
+            row.config_hash !== expectedConfigHash
+          )
+            throw Error(
+              "Local provider configuration differs from the website. Use sync-config explicitly to replace it.",
+            );
           if (command === "retry" && (!record.enabled || !record.configured))
             throw Error(
               "Enable and configure the provider before requesting a recovery probe.",
@@ -355,6 +365,7 @@ export function createPostgresTranslationState(
   };
 }
 
+/** Limit database connections and lock waits independently from model inference. */
 export function createTranslationStatePool(
   environment: NodeJS.ProcessEnv = process.env,
 ) {

@@ -224,15 +224,19 @@ failure leaves it intact and displays the existing unavailable message.
 Whitespace and paragraphs are preserved. The `bilingual` / `replace` preference
 and automatic switch remain device-local. Automatic translation only processes
 visible snippets, with at most four running at once; duplicate previews/details
-share work. Queued snippets show a waiting label. Leaving the viewport or
-changing models before queued work starts skips that work.
+share work. Queued snippets show a waiting label. Queued work is skipped only
+when every consumer has left, changed models, or disabled automatic translation;
+a manual detail request keeps shared work alive while its preview scrolls away.
 Successful browser scheduler entries expire after 30 seconds, allowing later
 requests to reconsider a recovered NAS rather than pinning Google forever.
 Failed snippets use the bounded retry hint, with no global scheduler circuit
 that blocks unrelated snippets. Manual clicks can retry a failed snippet
-immediately. In automatic mode, a failed visible snippet retries after at least
-five seconds; disabling automatic mode, leaving the viewport, or unmounting the
-snippet cancels this retry. No independent health-polling process is started. The settings popover continues to use its Radix portal.
+immediately. Consecutive automatic failures back off from five seconds to five
+minutes, respecting longer provider retry hints. Success or a changed snippet
+key resets the backoff. Visibility changes preserve the remaining wait; disabling
+automatic mode or unmounting cancels the timer. Chrome-only mode does not retry
+automatically when the browser has no Translator API. No independent health-polling
+process is started. The settings popover continues to use its Radix portal.
 
 ## State and statistics management
 
@@ -243,7 +247,15 @@ pnpm translation:manage history ollama
 pnpm translation:manage attempts ollama
 pnpm translation:manage retry ollama
 pnpm translation:manage probe ollama
+pnpm translation:manage sync-config ollama
 ```
+
+Inspection commands do not register the shell's environment configuration.
+`sync-config` explicitly replaces the NAS configuration fingerprint; a probe
+requires matching configuration and never replaces it implicitly. Provider resets
+fence old outcomes while keeping their leases occupied until inference settles
+or expires, including in the status view. Concurrent successes cannot clear a
+newer failure's cooldown; an eligible recovery probe must clear it.
 
 Setup is additive and idempotent. Existing `daily_usage` rows remain historical;
 new counters are written to `usage_daily` with an explicit `server`,

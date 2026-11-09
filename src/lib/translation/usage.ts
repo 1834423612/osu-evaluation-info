@@ -13,6 +13,7 @@ export function createTranslationUsage(write: UsageWriter, now = Date.now) {
   const buckets = new Map<string, UsageBucket>();
   let lastFlush = -Infinity;
   let flushing: Promise<void> | null = null;
+  /** Aggregate fixed daily dimensions; never retain source text or browser session IDs. */
   function observe(event: TranslationObservation) {
     const day = new Date(now()).toISOString().slice(0, 10);
     const key = `${day}:${event.provider}:${event.target}:${event.outcome}`;
@@ -44,6 +45,7 @@ export function createTranslationUsage(write: UsageWriter, now = Date.now) {
     }
     while (buckets.size > 512) buckets.delete(buckets.keys().next().value!);
   }
+  /** Coalesce writes and merge failed batches back into a bounded retry buffer. */
   function flush(force = false): Promise<void> {
     if (flushing) return flushing;
     if (!buckets.size || (!force && now() - lastFlush < 30_000))
@@ -91,6 +93,7 @@ export const UPSERT_TRANSLATION_USAGE_SQL = `
     total_duration_ms = osu_translation.usage_daily.total_duration_ms + EXCLUDED.total_duration_ms,
     max_duration_ms = GREATEST(osu_translation.usage_daily.max_duration_ms, EXCLUDED.max_duration_ms)`;
 
+/** Persist best-effort usage independently from transactional provider coordination. */
 export function createDatabaseTranslationUsage(
   environment: NodeJS.ProcessEnv = process.env,
 ) {

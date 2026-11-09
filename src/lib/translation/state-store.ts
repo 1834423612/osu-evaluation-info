@@ -43,6 +43,7 @@ export function createMemoryTranslationState(now = Date.now) {
     if (!record) throw Error("Unknown translation provider.");
     return record;
   };
+  /** Bound history while preserving every inference that still occupies capacity. */
   function trim(record: ProviderRecord) {
     const finished = record.attempts
       .filter((attempt) => attempt.releasedAt !== null)

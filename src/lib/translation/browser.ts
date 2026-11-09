@@ -23,6 +23,7 @@ declare global {
   }
 }
 
+/** Use a ready local model automatically; only an active manual gesture may download one. */
 export async function translateInBrowser(
   source: string,
   sourceLanguage: "en" | "zh",

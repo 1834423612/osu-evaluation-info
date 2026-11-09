@@ -48,6 +48,7 @@ export type TranslationResult = {
   | { status: "unavailable"; retryAfterMs?: number }
 );
 
+/** Normalize legacy and batch payloads with bounded text and unique caller-owned IDs. */
 export function parseTranslationBatch(
   value: unknown,
 ): TranslationItem[] | null {
@@ -89,10 +90,14 @@ export class TranslationUnavailableError extends Error {
   constructor(retryAfterMs = 5000) {
     super("Translation is temporarily unavailable.");
     this.name = "TranslationUnavailableError";
-    this.retryAfterMs = Math.min(60_000, Math.max(1000, retryAfterMs));
+    this.retryAfterMs = Math.min(
+      300_000,
+      Math.max(1000, Number.isFinite(retryAfterMs) ? retryAfterMs : 5000),
+    );
   }
 }
 
+/** Choose the next control action from display mode and the currently visible result. */
 export function translationAction(
   mode: TranslationDisplayMode,
   visible: boolean,
@@ -103,6 +108,7 @@ export function translationAction(
   return mode === "bilingual" ? "hide-translation" : "show-original";
 }
 
+/** Translate toward the opposite content language, independently of the interface locale. */
 export function translationLanguagePair(source: string): {
   sourceLanguage: "en" | "zh";
   targetLanguage: TranslationTarget;
@@ -114,6 +120,7 @@ export function translationLanguagePair(source: string): {
     : { sourceLanguage: "en", targetLanguage: "zh-CN" };
 }
 
+/** Traverse only bounded translation segments rather than collecting response metadata. */
 function appendTextSegments(value: unknown, output: string[], depth = 0) {
   if (depth > 5 || !Array.isArray(value)) return;
   if (typeof value[0] === "string") {
@@ -129,6 +136,7 @@ function appendTextSegments(value: unknown, output: string[], depth = 0) {
   }
 }
 
+/** Decode the compact Google endpoint formats into one translated string. */
 function translatedTextFromPayload(
   payload: unknown,
   provider: GoogleTranslationProvider,
@@ -148,6 +156,7 @@ function translatedTextFromPayload(
   return translation ? translation : null;
 }
 
+/** Extract complete, changed translation text from the selected provider's response format. */
 export function parseTranslationResponse(
   payload: unknown,
   provider: Exclude<TranslationProvider, "chrome">,
@@ -183,6 +192,7 @@ export function parseTranslationResponse(
   return translation;
 }
 
+/** Reject empty, unchanged or oversized text and require evidence of the target language. */
 export function validTranslationResult(
   value: string,
   source: string,

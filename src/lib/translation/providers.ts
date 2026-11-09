@@ -17,6 +17,7 @@ export type TranslationNode = {
   translate: (item: TranslationItem, signal: AbortSignal) => Promise<string>;
 };
 
+/** Fall back to bounded defaults when an optional environment policy is invalid. */
 function integer(
   value: string | undefined,
   fallback: number,
@@ -29,6 +30,7 @@ function integer(
     : fallback;
 }
 
+/** Request translation text only, with an explicit English or Simplified Chinese target. */
 export function translationPrompt(
   text: string,
   target: TranslationItem["target"],
@@ -50,6 +52,7 @@ export function createTranslationProviders(
       const url = new URL(base);
       if (
         !["https:", "http:"].includes(url.protocol) ||
+        (url.protocol === "http:" && Boolean(clientId)) ||
         url.username ||
         url.password ||
         url.search ||
@@ -115,6 +118,7 @@ export function createTranslationProviders(
   return nodes;
 }
 
+/** Classify safe upstream failures and reject incomplete or oversized model output. */
 async function parseResponse(
   response: Response,
   provider: ServerTranslationProvider,
@@ -133,12 +137,18 @@ async function parseResponse(
         : response.status === 429
           ? "rate_limit"
           : "http";
-    const retryAfter = Number(response.headers.get("retry-after"));
+    const header = response.headers.get("retry-after");
+    const seconds = Number(header);
+    const retryAfterMs = header?.trim()
+      ? Number.isFinite(seconds)
+        ? seconds * 1000
+        : Date.parse(header) - Date.now()
+      : NaN;
     throw new TranslationProviderError(
       reason,
       response.status,
-      response.status === 429 && Number.isFinite(retryAfter)
-        ? Math.min(300000, Math.max(1000, retryAfter * 1000))
+      response.status === 429 && Number.isFinite(retryAfterMs)
+        ? Math.min(300000, Math.max(1000, retryAfterMs))
         : undefined,
     );
   }

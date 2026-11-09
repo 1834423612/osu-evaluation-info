@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { TranslationNode } from "./providers.ts";
 import type { ProviderRegistration } from "./state-store.ts";
 
+/** Fingerprint server-only configuration without storing credentials in shared state. */
 export function serverProviderRegistration(
   nodes: TranslationNode[],
   environment: NodeJS.ProcessEnv = process.env,

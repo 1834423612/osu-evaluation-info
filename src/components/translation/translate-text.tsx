@@ -35,6 +35,7 @@ import { createRemoteTranslationClient } from "@/lib/translation/client";
 import { createBrowserUsageReporter } from "@/lib/translation/browser-usage";
 import styles from "./translate-text.module.css";
 import { createTranslationScheduler } from "@/lib/translation/scheduler";
+import { createTranslationRetry } from "@/lib/translation/retry";
 
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus =
@@ -63,6 +64,7 @@ function isTranslationModel(value: unknown): value is TranslationModel {
   return MODELS.some((model) => model === value);
 }
 
+/** Read a validated model preference with an in-memory fallback when storage is blocked. */
 function getStoredModel(): TranslationModel {
   if (memoryModel) return memoryModel;
   try {
@@ -77,6 +79,7 @@ function isDisplayMode(value: unknown): value is DisplayMode {
   return value === "bilingual" || value === "replace";
 }
 
+/** Keep display preferences usable when browser storage is unavailable. */
 function getStoredMode(): DisplayMode {
   if (memoryMode) return memoryMode;
   try {
@@ -87,6 +90,7 @@ function getStoredMode(): DisplayMode {
   }
 }
 
+/** Default automatic translation to off unless this device has explicitly enabled it. */
 function getStoredAuto() {
   if (memoryAuto !== null) return memoryAuto;
   try {
@@ -96,6 +100,7 @@ function getStoredAuto() {
   }
 }
 
+/** Synchronize translation preferences across mounted snippets and browser tabs. */
 function subscribeToMode(callback: () => void) {
   const onStorage = () => {
     memoryMode = null;
@@ -133,6 +138,7 @@ function cacheKey(
   return `${model}\0${target}\0${source}`;
 }
 
+/** Translate a snippet with shared work, per-model results and visibility-aware automatic retries. */
 export function TranslateText({
   text,
   locale,
@@ -152,7 +158,8 @@ export function TranslateText({
   const autoAttemptRef = useRef<string | null>(null);
   const isIntersectingRef = useRef(false);
   const automaticRef = useRef(false);
-  const retryDelayRef = useRef(5000);
+  const retryRef = useRef(createTranslationRetry());
+  const pendingKeysRef = useRef(new Set<string>());
   const mode = useSyncExternalStore(
     subscribeToMode,
     getStoredMode,
@@ -184,7 +191,7 @@ export function TranslateText({
   const [visible, setVisible] = useState(false);
   const pair = translationLanguagePair(text);
   const key = cacheKey(text, pair.targetLanguage, model);
-  const activeKeyRef = useRef(key);
+  const activeKeyRef = useRef<string | null>(key);
   const [statusState, setStatusState] = useState<{
     key: string;
     value: TranslationStatus;
@@ -193,6 +200,11 @@ export function TranslateText({
 
   useEffect(() => {
     activeKeyRef.current = key;
+    retryRef.current.reset();
+    autoAttemptRef.current = null;
+    return () => {
+      activeKeyRef.current = null;
+    };
   }, [key]);
 
   useEffect(() => {
@@ -210,21 +222,13 @@ export function TranslateText({
         setStatus("error");
         return;
       }
+      if (pendingKeysRef.current.has(requestKey)) return;
+      pendingKeysRef.current.add(requestKey);
       setStatus("loading");
       try {
         const result = await scheduler.request(
           requestKey,
-          async () => {
-            if (activeKeyRef.current !== requestKey)
-              throw new DOMException(
-                "Translation model changed.",
-                "AbortError",
-              );
-            if (
-              !manual &&
-              (!isIntersectingRef.current || !automaticRef.current)
-            )
-              throw new DOMException("Auto translation paused.", "AbortError");
+          async (callbacks) => {
             let result: DisplayTranslation | null = null;
             if (selectedModel === "auto" || selectedModel === "chrome") {
               try {
@@ -232,7 +236,7 @@ export function TranslateText({
                   text,
                   pair.sourceLanguage,
                   pair.targetLanguage,
-                  () => setStatus("downloading"),
+                  () => callbacks.onDownload?.(),
                   manual && Boolean(navigator.userActivation?.isActive),
                 );
                 if (local) result = { translation: local, provider: "chrome" };
@@ -243,24 +247,17 @@ export function TranslateText({
             if (!result && selectedModel === "chrome")
               throw new TranslationUnavailableError();
             if (!result) {
-              if (activeKeyRef.current !== requestKey)
+              if (!callbacks.canStart?.())
                 throw new DOMException(
                   "Translation model changed.",
                   "AbortError",
                 );
-              setStatus("loading");
+              callbacks.onStarted?.();
               result = await remoteTranslation.request(
                 text,
                 pair.targetLanguage,
                 selectedModel === "chrome" ? "auto" : selectedModel,
-                {
-                  onQueued: () => setStatus("queued"),
-                  onStarted: () => setStatus("loading"),
-                  canStart: () =>
-                    activeKeyRef.current === requestKey &&
-                    (manual ||
-                      (isIntersectingRef.current && automaticRef.current)),
-                },
+                callbacks,
               );
             }
             return {
@@ -269,57 +266,84 @@ export function TranslateText({
             };
           },
           manual,
+          {
+            onQueued: () => setStatus("queued"),
+            onStarted: () => setStatus("loading"),
+            onDownload: () => setStatus("downloading"),
+            canStart: () =>
+              activeKeyRef.current === requestKey &&
+              (manual || (isIntersectingRef.current && automaticRef.current)),
+          },
         );
         if (activeKeyRef.current !== requestKey) return;
+        retryRef.current.reset();
         setTranslationState({ key: requestKey, value: result });
         setVisible(true);
         setStatus("idle");
       } catch (error) {
         if (activeKeyRef.current !== requestKey) return;
+        if (error instanceof Error && error.name === "AbortError") {
+          autoAttemptRef.current = null;
+          setStatus("idle");
+          return;
+        }
         const retryAfter =
           error instanceof Error && "retryAfterMs" in error
             ? Number(error.retryAfterMs)
             : 5000;
-        retryDelayRef.current = Math.min(
-          60_000,
-          Math.max(5000, Number.isFinite(retryAfter) ? retryAfter : 5000),
-        );
+        retryRef.current.fail(retryAfter);
         if (!manual && (!isIntersectingRef.current || !automaticRef.current)) {
           autoAttemptRef.current = null;
           setStatus("idle");
         } else setStatus("error");
+      } finally {
+        pendingKeysRef.current.delete(requestKey);
       }
     },
     [model, pair.sourceLanguage, pair.targetLanguage, text],
   );
 
   useEffect(() => {
-    if (!automatic || status !== "error") return;
+    if (
+      !automatic ||
+      status !== "error" ||
+      (model === "chrome" && !window.Translator)
+    )
+      return;
     const timer = setTimeout(() => {
       if (isIntersectingRef.current && automaticRef.current)
         void translate(false);
-    }, retryDelayRef.current);
+    }, retryRef.current.remaining());
     return () => clearTimeout(timer);
-  }, [automatic, status, translate]);
+  }, [automatic, model, status, translate]);
 
   useEffect(() => {
     const content = contentRef.current;
     if (!content || !automatic) return;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const observer = new IntersectionObserver((entries) => {
       const shown = entries.some((entry) => entry.isIntersecting);
+      clearTimeout(retryTimer);
       isIntersectingRef.current = shown;
       if (!shown) autoAttemptRef.current = null;
       if (shown && autoAttemptRef.current !== key) {
+        if (model === "chrome" && !window.Translator) return;
         autoAttemptRef.current = key;
-        void translate(false);
+        if (retryRef.current.remaining() > 0) {
+          retryTimer = setTimeout(() => {
+            if (isIntersectingRef.current && automaticRef.current)
+              void translate(false);
+          }, retryRef.current.remaining());
+        } else void translate(false);
       }
     });
     observer.observe(content);
     return () => {
       isIntersectingRef.current = false;
+      clearTimeout(retryTimer);
       observer.disconnect();
     };
-  }, [automatic, key, translate]);
+  }, [automatic, key, model, translate]);
 
   function chooseMode(next: DisplayMode) {
     setMenuOpen(false);

@@ -178,3 +178,111 @@ test("old health becomes unknown and is revalidated instead of claiming indefini
       .transitions.some((event) => event.reason === "stale"),
   );
 });
+
+test("resets fence outcomes while old inferences retain capacity until settlement or expiry", async () => {
+  for (const change of ["retry", "configuration", "disable-enable"]) {
+    const { store, advance } = await fixture();
+    await store.claim("ollama", "old", "en", 10);
+    if (change === "configuration")
+      await store.register({
+        id: "ollama",
+        configured: true,
+        configHash: "new",
+        policy,
+      });
+    else {
+      store.reset("ollama", change !== "disable-enable");
+      if (change === "disable-enable") store.reset("ollama", true);
+    }
+    const old = store.snapshot("ollama").attempts[0];
+    assert.equal(old.status, "cancelled");
+    assert.equal(old.releasedAt, null);
+    assert.equal(
+      (await store.claim("ollama", "overlap", "en", 10)).availability,
+      "busy",
+    );
+    assert.equal(await store.finish("ollama", "old", success, true), false);
+    assert.equal(store.snapshot("ollama").health.phase, "unknown");
+    assert.equal((await store.claim("ollama", "new", "en", 10)).allowed, true);
+    store.reset("ollama");
+    advance(1101);
+    assert.equal(
+      (await store.claim("ollama", "after-expiry", "en", 10)).allowed,
+      true,
+    );
+    assert.equal(store.snapshot("ollama").health.consecutiveFailures, 0);
+  }
+});
+
+test("reset keeps timed-out but unsettled inferences draining", async () => {
+  const { store } = await fixture();
+  await store.claim("ollama", "hanging", "en", 10);
+  await store.finish(
+    "ollama",
+    "hanging",
+    { ...failure, reason: "timeout" },
+    false,
+  );
+  store.reset("ollama");
+  assert.equal(
+    (await store.claim("ollama", "overlap", "en", 10)).availability,
+    "busy",
+  );
+  await store.release("ollama", "hanging");
+  assert.equal(
+    (await store.claim("ollama", "after-settlement", "en", 10)).allowed,
+    true,
+  );
+});
+
+test("concurrent successes and shorter failures preserve the latest cooldown until a recovery probe", async () => {
+  const { store, advance } = await fixture();
+  await store.claim("ollama", "warm", "en", 10);
+  await store.finish("ollama", "warm", success, true);
+  for (const id of ["rate-limited", "successful", "failed"])
+    assert.equal((await store.claim("ollama", id, "en", 10)).allowed, true);
+  await store.finish(
+    "ollama",
+    "rate-limited",
+    { ...failure, reason: "rate_limit", retryAfterMs: 70000 },
+    true,
+  );
+  const cooldown = store.snapshot("ollama").health.nextRetryAt;
+  advance(1);
+  await store.finish("ollama", "successful", success, true);
+  assert.equal(store.snapshot("ollama").health.phase, "cooldown");
+  assert.equal(store.snapshot("ollama").health.consecutiveFailures, 1);
+  await store.finish("ollama", "failed", failure, true);
+  assert.equal(store.snapshot("ollama").health.nextRetryAt, cooldown);
+  assert.equal(
+    (await store.claim("ollama", "early", "en", 10)).availability,
+    "waiting_retry",
+  );
+  advance(70000);
+  const probe = await store.claim("ollama", "recovery", "en", 10);
+  assert.equal(probe.attempt.isProbe, true);
+  await store.finish("ollama", "recovery", success, true);
+  assert.equal(store.snapshot("ollama").health.phase, "healthy");
+  assert.equal(store.snapshot("ollama").health.nextRetryAt, null);
+});
+
+test("an expiring sibling cannot shorten a more recent rate-limit cooldown", async () => {
+  const { store, advance } = await fixture();
+  await store.claim("ollama", "warm", "en", 10);
+  await store.finish("ollama", "warm", success, true);
+  await store.claim("ollama", "lost", "en", 10);
+  await store.claim("ollama", "limited", "en", 10);
+  await store.finish(
+    "ollama",
+    "limited",
+    { ...failure, reason: "rate_limit", retryAfterMs: 70000 },
+    true,
+  );
+  const cooldown = store.snapshot("ollama").health.nextRetryAt;
+  advance(1101);
+  assert.equal(
+    (await store.claim("ollama", "early", "en", 10)).availability,
+    "waiting_retry",
+  );
+  assert.equal(store.snapshot("ollama").health.nextRetryAt, cooldown);
+});

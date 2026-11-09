@@ -23,7 +23,7 @@ Google 始终由用户浏览器直接请求；网站服务器只调用 Ollama。
 
 | `health`       | 中文含义                       | 后续行为                                                         |
 | -------------- | ------------------------------ | ---------------------------------------------------------------- |
-| `unconfigured` | 未配置                         | 完成 URL、模型及必要凭据配置后，下一进程启动或管理命令会同步配置 |
+| `unconfigured` | 未配置                         | 完成 URL、模型及必要凭据配置后，重启网站或显式执行 `sync-config` |
 | `disabled`     | 人工停用                       | 仅人工 `enable` 恢复；普通失败永远不会把节点变成人工停用         |
 | `unknown`      | 待验证                         | 下一次实际请求只允许一个验证请求                                 |
 | `healthy`      | 最近调用正常                   | 按配置的并发上限工作                                             |
@@ -81,6 +81,9 @@ pnpm translation:manage retry ollama
 # 立即进行一次真实恢复探测，不启动常驻进程
 pnpm translation:manage probe ollama
 
+# 显式同步当前 shell 的 URL、模型和凭据配置指纹；会替换网站运行配置
+pnpm translation:manage sync-config ollama
+
 # 人工停用 / 恢复；停用会阻止新的 NAS 调用，已有缓存译文仍可使用
 pnpm translation:manage disable ollama
 pnpm translation:manage enable ollama
@@ -95,9 +98,16 @@ pnpm translation:manage configure ollama --timeout-ms 6000 --slow-ms 2500 --cool
 环境变量继续管理 URL、模型和 Cloudflare 凭据，修改这些内容后重启全部网站进程。
 首次同步时，数据库从原有环境变量取得超时等默认值；之后这四项调度设置以
 `provider_nodes` 和 `configure` 命令为准，重启不会覆盖人工调整。
-配置变化、启停或人工重试会提升 `generation`、取消旧租约并记录操作，旧版本请求的
+`status`、`history`、`attempts` 只读，不会将当前 shell 的环境配置写回网站。
+`retry`、`enable`、`disable`、`configure` 也不会同步环境配置。
+`probe` 要求当前 shell 的配置指纹与网站一致；不一致时先修正环境，或有意执行
+`sync-config` 后重启全部网站进程。缺少 NAS 环境变量的 shell 仍可安全查看状态。
+
+配置变化、启停或人工重试会提升 `generation`、标记旧调用取消并记录操作，旧版本请求的
 迟到结果不能覆盖新状态或进入新译文缓存。仍使用旧凭据配置的进程会被版本检查拒绝，
 直到重启，避免旧进程把新配置再次标成失败。
+已开始的调用继续占用并发名额，直到实际结束或租约到期；总览的 `draining_requests`
+包含这些旧世代调用。并发请求的迟到成功不会清除更新的失败冷却，须由恢复探测解除。
 
 管理命令不提供 Google 的全局失败、重试或禁用开关，因为它们由用户设备执行。
 Google 每个页面使用同一套状态转换规则，恢复探测和冷却互相独立。
@@ -124,6 +134,7 @@ SELECT * FROM osu_translation.v_daily_routing ORDER BY day DESC;
 ```
 
 `v_provider_status` 中的 Google 会话统计只展示近三十分钟的浏览器报告。
+`v_daily_routing.decision = 'circuit'` 表示因冷却、停用或未配置而跳过节点。
 这些数据是客户端自报，不是中心服务器对全球 Google 可用性的判断。
 
 ## 过期、重启与故障

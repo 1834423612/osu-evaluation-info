@@ -96,6 +96,11 @@ test("unconfigured, invalid URLs and incomplete credentials disable only NAS", (
     {},
     { KJCH_AI_SERVICES_API_URL: "file:///tmp/secret" },
     {
+      KJCH_AI_SERVICES_API_URL: "http://nas.example",
+      KJCH_AI_SERVICES_CF_CLIENT_ID: "id",
+      KJCH_AI_SERVICES_CF_CLIENT_SECRET: "secret",
+    },
+    {
       KJCH_AI_SERVICES_API_URL: "https://nas.example",
       KJCH_AI_SERVICES_CF_CLIENT_ID: "id",
     },
@@ -105,6 +110,12 @@ test("unconfigured, invalid URLs and incomplete credentials disable only NAS", (
       [],
     );
   }
+  assert.equal(
+    createTranslationProviders({
+      KJCH_AI_SERVICES_API_URL: "http://nas.lan:11434",
+    }).length,
+    1,
+  );
 });
 
 test("overflow skips a busy NAS while deduplicated callers share one inference", async () => {
@@ -281,14 +292,39 @@ test("upstream body size and slow streamed bodies are bounded through fallback",
   const result = await createTranslationGateway(providers).translate(item());
   assert.equal(result.status, "unavailable");
   assert.equal(cancelled, true);
+  let largeCalls = 0;
   const large = createTranslationGateway(
     createTranslationProviders(
-      {},
-      async () =>
-        new Response("x".repeat(65537), {
-          headers: { "Content-Type": "application/json" },
-        }),
+      { KJCH_AI_SERVICES_API_URL: "https://nas.example" },
+      async () => {
+        largeCalls++;
+        return Response.json({
+          response: "你好",
+          done: true,
+          padding: "x".repeat(65537),
+        });
+      },
     ),
   );
   assert.equal((await large.translate(item())).status, "unavailable");
+  assert.equal(largeCalls, 1);
+});
+
+test("NAS Retry-After dates and long cooldown hints survive the public gateway", async () => {
+  const retryAt = new Date(Date.now() + 120000).toUTCString();
+  const gateway = createTranslationGateway(
+    createTranslationProviders(
+      { KJCH_AI_SERVICES_API_URL: "https://nas.example" },
+      async () =>
+        new Response(null, {
+          status: 429,
+          headers: { "Retry-After": retryAt },
+        }),
+    ),
+  );
+  const first = await gateway.translate(item());
+  assert.equal(first.status, "unavailable");
+  assert.ok(first.retryAfterMs > 110000 && first.retryAfterMs <= 120000);
+  const next = await gateway.translate(item("Other"));
+  assert.ok(next.retryAfterMs > 110000 && next.retryAfterMs <= 120000);
 });

@@ -1,6 +1,10 @@
 import { readJsonLimited, withDeadline } from "./http.ts";
 import { createBrowserGoogleFallback } from "./google.ts";
 import { createTranslationQueue } from "./queue.ts";
+import {
+  createTranslationConsumers,
+  type TranslationCallbacks as RequestCallbacks,
+} from "./consumers.ts";
 import type { TranslationObservation } from "./gateway.ts";
 import {
   TRANSLATION_QUEUE_WAIT_MS,
@@ -15,11 +19,6 @@ import {
 } from "./service.ts";
 
 type Success = Extract<TranslationResult, { status: "translated" }>;
-type RequestCallbacks = {
-  onQueued?: () => void;
-  onStarted?: () => void;
-  canStart?: () => boolean;
-};
 
 /** One NAS lane per device; Google work never waits behind its HTTP response. */
 export function createRemoteTranslationClient(
@@ -34,16 +33,24 @@ export function createRemoteTranslationClient(
   );
   const nasQueue = createTranslationQueue(1, 200, TRANSLATION_QUEUE_WAIT_MS);
   const googleQueue = createTranslationQueue(3, 200, 15_000);
-  const pending = new Map<string, Promise<Success>>();
+  const pending = new Map<
+    string,
+    {
+      promise: Promise<Success>;
+      consumers: ReturnType<typeof createTranslationConsumers>;
+    }
+  >();
   let nextId = 0;
   let nasRunning = 0;
   let manualPending = 0;
 
+  /** Discard queued work only after all of its consumers become irrelevant. */
   function checkCurrent(callbacks: RequestCallbacks) {
     if (callbacks.canStart && !callbacks.canStart())
       throw new DOMException("Translation is no longer needed.", "AbortError");
   }
 
+  /** Keep browser-direct calls in their own bounded lane. */
   function google(
     item: TranslationItem,
     callbacks: RequestCallbacks,
@@ -56,6 +63,7 @@ export function createRemoteTranslationClient(
     }, callbacks.onQueued);
   }
 
+  /** Reserve the device NAS lane and validate the complete server response. */
   async function nas(
     item: TranslationItem,
     manual: boolean,
@@ -83,7 +91,14 @@ export function createRemoteTranslationClient(
           });
           if (!response.ok) {
             void response.body?.cancel().catch(() => undefined);
-            throw new TranslationUnavailableError();
+            const header = response.headers.get("retry-after");
+            const seconds = Number(header);
+            const retryAfterMs = header?.trim()
+              ? Number.isFinite(seconds)
+                ? seconds * 1000
+                : Date.parse(header) - Date.now()
+              : 5000;
+            throw new TranslationUnavailableError(retryAfterMs);
           }
           return readJsonLimited(response, 256 * 1024, signal);
         },
@@ -131,6 +146,7 @@ export function createRemoteTranslationClient(
     }
   }
 
+  /** Spill into browser providers while NAS is occupied, then wait for NAS if needed. */
   async function automatic(
     item: TranslationItem,
     callbacks: RequestCallbacks,
@@ -153,6 +169,8 @@ export function createRemoteTranslationClient(
       plan = result.plan;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
+      if (error instanceof TranslationUnavailableError)
+        retryAfterMs = error.retryAfterMs;
     }
     try {
       return await google(item, callbacks, plan);
@@ -169,6 +187,7 @@ export function createRemoteTranslationClient(
     }
   }
 
+  /** Serialize explicit NAS work without treating queue pressure as provider failure. */
   function manualNas(item: TranslationItem, callbacks: RequestCallbacks) {
     manualPending++;
     return nasQueue
@@ -188,6 +207,7 @@ export function createRemoteTranslationClient(
       });
   }
 
+  /** Deduplicate by model, language and source while retaining every consumer's relevance. */
   function request(
     text: string,
     target: TranslationTarget,
@@ -196,7 +216,10 @@ export function createRemoteTranslationClient(
   ): Promise<Success> {
     const key = `${model}\0${target}\0${text}`;
     const existing = pending.get(key);
-    if (existing) return existing;
+    if (existing) {
+      existing.consumers.add(callbacks);
+      return existing.promise;
+    }
     const item = { id: String(nextId++), text, target };
     if (
       !["auto", "ollama", "google"].includes(model) ||
@@ -204,14 +227,15 @@ export function createRemoteTranslationClient(
       pending.size >= 200
     )
       return Promise.reject(new TranslationUnavailableError());
+    const consumers = createTranslationConsumers(callbacks);
     const operation = (
       model === "google"
-        ? google(item, callbacks)
+        ? google(item, consumers)
         : model === "ollama"
-          ? manualNas(item, callbacks)
-          : automatic(item, callbacks)
+          ? manualNas(item, consumers)
+          : automatic(item, consumers)
     ).finally(() => pending.delete(key));
-    pending.set(key, operation);
+    pending.set(key, { promise: operation, consumers });
     return operation;
   }
   return { request };

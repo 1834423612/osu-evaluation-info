@@ -155,7 +155,7 @@ LEFT JOIN LATERAL (
          count(*) FILTER (WHERE a.status <> 'running') AS draining_requests,
          bool_or(a.started_at + n.slow_ms * interval '1 millisecond' <= now()) AS has_slow_request
   FROM osu_translation.provider_attempts a
-  WHERE a.provider_id=n.id AND a.generation=s.generation AND a.lease_released_at IS NULL AND a.lease_expires_at > now()
+  WHERE a.provider_id=n.id AND a.lease_released_at IS NULL AND a.lease_expires_at > now()
 ) leases ON true
 LEFT JOIN LATERAL (
   SELECT count(*) AS sessions,

@@ -46,6 +46,7 @@ export async function readJsonLimited(
   }
 }
 
+/** Bound total operation time and abort its fetch or reader even if the caller exits early. */
 export async function withDeadline<T>(
   operation: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,

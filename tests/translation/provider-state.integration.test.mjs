@@ -5,6 +5,10 @@ import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { createPostgresTranslationState } from "../../src/lib/translation/postgres-state.ts";
 import { saveBrowserProviderStates } from "../../src/lib/translation/browser-state.ts";
+import {
+  executeManagement,
+  parseManagementArgs,
+} from "../../scripts/translation/manage.mjs";
 
 test(
   "database state coordinates workers, fences late outcomes, survives restart and isolates browser observations",
@@ -72,7 +76,36 @@ test(
       );
       const old = randomUUID();
       await one.claim("ollama", old, "en", 10);
+      const configuration = (
+        await pool.query(
+          `SELECT * FROM ${schema}.provider_nodes WHERE id='ollama'`,
+        )
+      ).rows[0];
+      for (const command of ["status", "history", "attempts"])
+        await executeManagement(parseManagementArgs([command]), two, {});
+      assert.deepEqual(
+        (
+          await pool.query(
+            `SELECT * FROM ${schema}.provider_nodes WHERE id='ollama'`,
+          )
+        ).rows[0],
+        configuration,
+      );
+      const beforeBadProbe = (await one.status())[0];
+      await assert.rejects(
+        two.manage("ollama", "retry", {}, "wrong-shell-config"),
+        /differs from the website/,
+      );
+      assert.deepEqual((await one.status())[0], beforeBadProbe);
       await two.manage("ollama", "retry");
+      const draining = (await two.status())[0];
+      assert.equal(draining.availability, "busy");
+      assert.equal(draining.active_requests, "1");
+      assert.equal(draining.draining_requests, "1");
+      assert.equal(
+        (await two.claim("ollama", randomUUID(), "en", 10)).availability,
+        "busy",
+      );
       assert.equal(
         await one.finish(
           "ollama",
@@ -86,6 +119,7 @@ test(
         (await one.status()).find((row) => row.provider === "ollama").health,
         "unknown",
       );
+      assert.equal((await one.status())[0].active_requests, "0");
       const lost = randomUUID();
       await one.claim("ollama", lost, "en", 10);
       await pool.query(
@@ -165,6 +199,36 @@ test(
         (await one.status()).find((row) => row.provider === "ollama").health,
         "healthy",
       );
+      const siblingFailure = randomUUID(),
+        siblingSuccess = randomUUID();
+      await one.claim("ollama", siblingFailure, "en", 10);
+      await two.claim("ollama", siblingSuccess, "en", 10);
+      await one.finish(
+        "ollama",
+        siblingFailure,
+        {
+          success: false,
+          reason: "rate_limit",
+          retryAfterMs: 120000,
+          durationMs: 10,
+          httpStatus: 429,
+        },
+        true,
+      );
+      const beforeSuccess = (await one.status())[0];
+      await two.finish(
+        "ollama",
+        siblingSuccess,
+        { success: true, reason: "success", durationMs: 10 },
+        true,
+      );
+      const afterSuccess = (await one.status())[0];
+      assert.equal(afterSuccess.health, "cooldown");
+      assert.equal(
+        afterSuccess.next_retry_at.getTime(),
+        beforeSuccess.next_retry_at.getTime(),
+      );
+      await one.manage("ollama", "retry");
       assert.equal(
         (await pool.query(`SELECT source FROM ${schema}.v_daily_attempts`))
           .rows[0].source,

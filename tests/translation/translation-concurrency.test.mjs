@@ -5,6 +5,7 @@ import { createRemoteTranslationClient } from "../../src/lib/translation/client.
 import { createTranslationHandler } from "../../src/lib/translation/handler.ts";
 import { createTranslationQueue } from "../../src/lib/translation/queue.ts";
 import { createMemoryTranslationState } from "../../src/lib/translation/state-store.ts";
+import { createTranslationScheduler } from "../../src/lib/translation/scheduler.ts";
 
 const item = (text) => ({ id: text, text, target: "zh-CN" });
 const deferred = () => {
@@ -268,4 +269,120 @@ test("Google outages let automatic spillover wait for NAS instead of failing due
     ["first", "second", "third"].map((text) => client.request(text, "zh-CN")),
   );
   assert.ok(results.every((result) => result.provider === "ollama"));
+});
+
+test("a manual detail keeps scheduler-shared queued work alive after its preview leaves", async () => {
+  const held = deferred(),
+    started = deferred();
+  const fetched = [];
+  const client = createRemoteTranslationClient(async (_url, init) => {
+    const { items } = JSON.parse(init.body);
+    fetched.push(items[0].text);
+    if (items[0].text === "hold") {
+      started.resolve();
+      await held.promise;
+    }
+    return Response.json({
+      version: 1,
+      results: items.map(({ id, target }) => ({
+        id,
+        target,
+        status: "translated",
+        translation: "共享译文",
+        provider: "ollama",
+        cache: "miss",
+        durationMs: 1,
+      })),
+    });
+  }, 0);
+  const first = client.request("hold", "zh-CN", "ollama");
+  await started.promise;
+  let previewVisible = true;
+  let detailStarted = 0;
+  const scheduler = createTranslationScheduler();
+  const preview = scheduler.request(
+    "shared",
+    (callbacks) => client.request("same text", "zh-CN", "ollama", callbacks),
+    false,
+    { canStart: () => previewVisible },
+  );
+  const detail = scheduler.request(
+    "shared",
+    () => {
+      throw Error("Must reuse queued translation");
+    },
+    true,
+    { canStart: () => true, onStarted: () => detailStarted++ },
+  );
+  previewVisible = false;
+  held.resolve();
+  await first;
+  assert.equal((await detail).translation, "共享译文");
+  assert.equal((await preview).translation, "共享译文");
+  assert.equal(detailStarted, 1);
+  assert.deepEqual(fetched, ["hold", "same text"]);
+});
+
+test("remote deduplication aggregates consumers and cancels only orphaned queued work", async () => {
+  const held = deferred(),
+    started = deferred();
+  const fetched = [];
+  const client = createRemoteTranslationClient(async (_url, init) => {
+    const { items } = JSON.parse(init.body);
+    fetched.push(items[0].text);
+    if (items[0].text === "hold") {
+      started.resolve();
+      await held.promise;
+    }
+    return Response.json({
+      version: 1,
+      results: items.map(({ id, target }) => ({
+        id,
+        target,
+        status: "translated",
+        translation: "共享译文",
+        provider: "ollama",
+        cache: "miss",
+        durationMs: 1,
+      })),
+    });
+  }, 0);
+  const head = client.request("hold", "zh-CN", "ollama");
+  await started.promise;
+  let visible = true,
+    mounted = true;
+  const preview = client.request("shared", "zh-CN", "ollama", {
+    canStart: () => visible,
+  });
+  const detail = client.request("shared", "zh-CN", "ollama", {
+    canStart: () => mounted,
+  });
+  const abandoned = client.request("abandoned", "zh-CN", "ollama", {
+    canStart: () => visible,
+  });
+  client.request("abandoned", "zh-CN", "ollama", { canStart: () => visible });
+  const rejected = assert.rejects(abandoned, { name: "AbortError" });
+  visible = false;
+  held.resolve();
+  await head;
+  assert.equal(preview, detail);
+  assert.equal((await detail).provider, "ollama");
+  await rejected;
+  mounted = false;
+  assert.deepEqual(fetched, ["hold", "shared"]);
+});
+
+test("manual clients preserve HTTP Retry-After hints instead of retrying rate limits early", async () => {
+  const client = createRemoteTranslationClient(
+    async () =>
+      new Response(null, {
+        status: 429,
+        headers: { "Retry-After": "120" },
+      }),
+    0,
+  );
+  await assert.rejects(
+    client.request("Hello", "zh-CN", "ollama"),
+    (error) => error.retryAfterMs === 120000,
+  );
 });

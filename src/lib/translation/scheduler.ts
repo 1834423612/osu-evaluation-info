@@ -1,4 +1,9 @@
-/** Share work across duplicate previews, details and review snippets. */
+import {
+  createTranslationConsumers,
+  type TranslationCallbacks,
+} from "./consumers.ts";
+
+/** Share work and consumer relevance across duplicate previews, details and review snippets. */
 export function createTranslationScheduler<Value = string>(
   concurrency = 2,
   cacheLimit = 300,
@@ -6,7 +11,13 @@ export function createTranslationScheduler<Value = string>(
 ) {
   const cache = new Map<string, { value: Value; expires: number }>();
   const failures = new Map<string, { error: unknown; expires: number }>();
-  const pending = new Map<string, Promise<Value>>();
+  const pending = new Map<
+    string,
+    {
+      promise: Promise<Value>;
+      consumers: ReturnType<typeof createTranslationConsumers>;
+    }
+  >();
   const queue: Array<() => void> = [];
   let running = 0;
 
@@ -14,16 +25,21 @@ export function createTranslationScheduler<Value = string>(
     while (running < concurrency && queue.length) queue.shift()!();
   }
 
+  /** Join shared work or cache entries; manual requests may bypass cached failures. */
   function request(
     key: string,
-    operation: () => Promise<Value>,
+    operation: (callbacks: TranslationCallbacks) => Promise<Value>,
     retry = false,
+    callbacks: TranslationCallbacks = {},
   ) {
     const saved = cache.get(key);
     if (saved && saved.expires > now()) return Promise.resolve(saved.value);
     if (saved) cache.delete(key);
     const active = pending.get(key);
-    if (active) return active;
+    if (active) {
+      active.consumers.add(callbacks);
+      return active.promise;
+    }
     const failure = failures.get(key);
     if (!retry && failure && failure.expires > now())
       return Promise.reject(failure.error);
@@ -33,20 +49,26 @@ export function createTranslationScheduler<Value = string>(
         new Error("Translation capacity is temporarily full."),
       );
 
+    const consumers = createTranslationConsumers(callbacks);
     const result = new Promise<Value>((resolve, reject) => {
       queue.push(() => {
         running++;
         let work: Promise<Value>;
         try {
           // Start synchronously while a direct click still has user activation.
-          work = operation();
+          if (!consumers.canStart())
+            throw new DOMException(
+              "Translation is no longer needed.",
+              "AbortError",
+            );
+          work = operation(consumers);
         } catch (error) {
           work = Promise.reject(error);
         }
         void work
           .then(
             (value) => {
-              if (pending.get(key) === result) pending.delete(key);
+              if (pending.get(key)?.promise === result) pending.delete(key);
               cache.delete(key);
               // A fallback must not pin later requests away from a recovered NAS forever.
               cache.set(key, { value, expires: now() + 30_000 });
@@ -55,7 +77,7 @@ export function createTranslationScheduler<Value = string>(
               resolve(value);
             },
             (error) => {
-              if (pending.get(key) === result) pending.delete(key);
+              if (pending.get(key)?.promise === result) pending.delete(key);
               if (error instanceof Error && error.name === "AbortError") {
                 reject(error);
                 return;
@@ -69,7 +91,7 @@ export function createTranslationScheduler<Value = string>(
                 expires:
                   now() +
                   Math.min(
-                    60_000,
+                    300_000,
                     Math.max(1000, Number.isFinite(hint) ? hint : 5000),
                   ),
               });
@@ -79,13 +101,13 @@ export function createTranslationScheduler<Value = string>(
             },
           )
           .finally(() => {
-            if (pending.get(key) === result) pending.delete(key);
+            if (pending.get(key)?.promise === result) pending.delete(key);
             running--;
             runNext();
           });
       });
     });
-    pending.set(key, result);
+    pending.set(key, { promise: result, consumers });
     runNext();
     return result;
   }

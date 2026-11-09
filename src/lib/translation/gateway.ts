@@ -50,6 +50,7 @@ type Translated = Pick<
   "translation" | "provider"
 >;
 
+/** Route validated server work through shared leases, bounded queues and a result cache. */
 export function createTranslationGateway(
   nodes: TranslationNode[],
   observe: (event: TranslationObservation) => void = () => undefined,
@@ -66,7 +67,12 @@ export function createTranslationGateway(
       concurrency: node.concurrency,
     },
   })),
-  queueOptions: { waitMs?: number; limit?: number; pollMs?: number } = {},
+  queueOptions: {
+    waitMs?: number;
+    limit?: number;
+    pollMs?: number;
+    registerProviders?: boolean;
+  } = {},
 ) {
   const queueWaitMs = queueOptions.waitMs ?? TRANSLATION_QUEUE_WAIT_MS;
   const manualQueue = createTranslationQueue(
@@ -77,9 +83,14 @@ export function createTranslationGateway(
   const cache = new Map<string, { result: Translated; expires: number }>();
   const pending = new Map<string, Promise<Translated>>();
   let registered: Promise<void> | undefined;
+  /** Register once per runtime; operator probes verify existing configuration instead. */
   function initialize() {
     registered ??= Promise.all(
-      registrations.map((registration) => stateStore.register(registration)),
+      queueOptions.registerProviders === false
+        ? []
+        : registrations.map((registration) =>
+            stateStore.register(registration),
+          ),
     )
       .then(() => undefined)
       .catch((error) => {
@@ -89,13 +100,14 @@ export function createTranslationGateway(
     return registered;
   }
 
+  /** Claim capacity before inference and retain unsettled permits after a timeout. */
   async function route(
     item: TranslationItem,
     manual = false,
     deadline = 0,
   ): Promise<Translated> {
     await initialize();
-    let retryAfterMs = 30_000;
+    let retryAfterMs = Infinity;
     for (const node of nodes) {
       const attemptId = randomUUID();
       const claim = () =>
@@ -218,9 +230,12 @@ export function createTranslationGateway(
           await stateStore.release(node.id, attemptId).catch(() => undefined);
       }
     }
-    throw new TranslationUnavailableError(retryAfterMs);
+    throw new TranslationUnavailableError(
+      Number.isFinite(retryAfterMs) ? retryAfterMs : 30_000,
+    );
   }
 
+  /** Return an independent result per item, reusing successful or pending work. */
   async function translate(
     item: TranslationItem,
     options: TranslationRequestOptions = {},

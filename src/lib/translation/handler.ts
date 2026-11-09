@@ -19,6 +19,7 @@ function response(body: unknown, status = 200) {
   });
 }
 
+/** Validate and rate-limit legacy or batch requests before invoking server translation. */
 export function createTranslationHandler(
   translateBatch: (
     items: TranslationItem[],

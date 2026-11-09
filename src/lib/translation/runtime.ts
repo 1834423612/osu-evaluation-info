@@ -11,6 +11,7 @@ import {
 import { serverProviderRegistration } from "./registration.ts";
 import { saveBrowserProviderStates } from "./browser-state.ts";
 
+/** Share provider coordination and usage reporting for both translation API routes. */
 function createRuntime() {
   const usage = createDatabaseTranslationUsage();
   const providers = createTranslationProviders();
