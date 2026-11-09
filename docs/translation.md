@@ -250,11 +250,30 @@ selection cannot satisfy the new request. Late results from a previous selection
 cannot overwrite the current content or provider badge.
 
 In Auto or On-device mode, `TranslateText` tries the [Chrome Translator API](https://developer.chrome.com/docs/ai/translator-api).
-Feature and language-pair detection, rather than the browser's name, determine
-availability. Automatic mode only uses a model reported as `available`, so it
-cannot initiate a download. A direct manual click may prepare a model while
-user activation is present. Local attempts have a 12-second deadline; rejected,
-timed-out, or invalid local output proceeds to the server batch only in Auto.
+Feature and language-pair detection determine availability. The model list
+disables On-device while probing and when the API or language pair is unavailable,
+with a short desktop Chrome 138+ requirement. A saved On-device preference on an
+unsupported device falls back to Auto for the current environment.
+
+Translation only creates sessions for models reported as `available`. Neither
+manual nor automatic requests in Auto download missing models. Explicitly
+selecting On-device with a missing model opens a confirmation before any
+`Translator.create()` call. Only “Download and enable” initiates preparation,
+directly within that user gesture. Cancelling preserves the previous selection;
+failed downloads can be retried explicitly. Confirmation is required again if a
+previously downloaded model is removed. Shared requests use a single dialog.
+
+Chrome does not expose a reliable model size before downloading. The dialog
+states that limitation and shows real byte totals only when provided. Normalized
+`downloadprogress` events (`total: 1`) are percentages, never a one-byte model.
+Downloads have a three-minute deadline and support cancellation; ready-model
+translations retain a 12-second deadline. Rejected, timed-out, or invalid local
+output proceeds to the server batch only in Auto.
+
+With Playwright available, `node tests/translation/local-model.browser.mjs`
+checks compatibility, consent, cancellation, progress, retry, ready models,
+automatic fallback, and nested course dialogs using controlled browser API
+responses. It accepts the same environment overrides as the onboarding check.
 
 The source stays visible until a validated translation arrives. Translation
 failure leaves it intact and displays the existing unavailable message.

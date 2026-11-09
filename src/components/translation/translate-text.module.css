@@ -251,6 +251,16 @@
   outline: none;
 }
 
+.modelChoice[data-disabled] {
+  color: var(--muted);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.modelChoice[data-disabled] .modelIcon {
+  color: var(--muted);
+}
+
 .modelCopy {
   display: grid;
   min-width: 0;

@@ -1,0 +1,165 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  background: rgb(25 18 29 / 22%);
+  animation: fade-in 160ms ease-out;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 161;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 22px;
+  color: var(--ink);
+  box-shadow: 0 16px 60px rgb(25 18 29 / 18%);
+  animation: fade-in 180ms ease-out;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #f5f2fb;
+  color: #6650a5;
+}
+
+.title {
+  margin: 14px 0 8px;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.description {
+  margin: 0;
+  color: var(--secondary-foreground);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.size {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.cancel,
+.confirm {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 8px 12px;
+  color: var(--secondary-foreground);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actions .confirm {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+}
+
+.cancel:hover {
+  background: var(--secondary);
+}
+
+.confirm:hover {
+  background: var(--accent-foreground);
+}
+
+.cancel:focus-visible,
+.confirm:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.progress {
+  margin-top: 18px;
+}
+
+.progress > span {
+  display: block;
+  overflow: hidden;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--secondary);
+}
+
+.progress > span > span {
+  display: block;
+  height: 100%;
+  background: #6650a5;
+  transition: width 180ms ease;
+}
+
+.progress > p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.spinner {
+  animation: spin 900ms linear infinite;
+}
+
+.error {
+  margin: 14px 0 0;
+  color: #9b3c42;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .dialog,
+  .spinner {
+    animation: none;
+  }
+  .progress > span > span {
+    transition: none;
+  }
+}

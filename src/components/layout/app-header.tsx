@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ActionToast } from "./action-toast";
 import { LanguageNotice } from "./language-notice";
 import { TranslationGuide } from "@/components/translation/translation-guide";
+import { BrowserModelDownload } from "@/components/translation/browser-model-download";
 import styles from "./language-controls.module.css";
 
 export function AppHeader({
@@ -30,6 +31,7 @@ export function AppHeader({
       <ActionToast />
       <LanguageNotice />
       <TranslationGuide locale={locale} />
+      <BrowserModelDownload />
       <header className="app-header">
         <div className="header-inner">
           <Link

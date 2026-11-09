@@ -40,6 +40,7 @@ import { createTranslationRetry } from "@/lib/translation/retry";
 import { TRANSLATION_SUCCESS_EVENT } from "@/lib/translation/onboarding";
 import { translationGuide } from "./translation-guide-store";
 import { TranslationSettingsGuide } from "./translation-guide";
+import { browserModel } from "./browser-model-store";
 
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus =
@@ -176,7 +177,7 @@ export function TranslateText({
     getStoredAuto,
     () => false,
   );
-  const model = useSyncExternalStore<TranslationModel>(
+  const storedModel = useSyncExternalStore<TranslationModel>(
     subscribeToMode,
     getStoredModel,
     () => "auto",
@@ -197,6 +198,27 @@ export function TranslateText({
   } | null>(null);
   const [visible, setVisible] = useState(false);
   const pair = translationLanguagePair(text);
+  const localAvailability = useSyncExternalStore(
+    browserModel.subscribe,
+    () => browserModel.availability(pair),
+    () => "checking",
+  );
+  const localDisabled =
+    localAvailability === "checking" ||
+    localAvailability === "unsupported" ||
+    localAvailability === "unavailable";
+  const model =
+    storedModel === "chrome" &&
+    (localAvailability === "unsupported" || localAvailability === "unavailable")
+      ? "auto"
+      : storedModel;
+  const modelSelectionRef = useRef(0);
+  useEffect(() => {
+    void browserModel.check({
+      sourceLanguage: pair.sourceLanguage,
+      targetLanguage: pair.targetLanguage,
+    });
+  }, [pair.sourceLanguage, pair.targetLanguage]);
   const key = cacheKey(text, pair.targetLanguage, model);
   const activeKeyRef = useRef<string | null>(key);
   const [statusState, setStatusState] = useState<{
@@ -233,6 +255,42 @@ export function TranslateText({
       pendingKeysRef.current.add(requestKey);
       setStatus("loading");
       try {
+        if (selectedModel === "chrome" && manual) {
+          await browserModel.check(
+            {
+              sourceLanguage: pair.sourceLanguage,
+              targetLanguage: pair.targetLanguage,
+            },
+            true,
+          );
+          if (activeKeyRef.current !== requestKey) return;
+        }
+        if (
+          selectedModel === "chrome" &&
+          browserModel.availability({
+            sourceLanguage: pair.sourceLanguage,
+            targetLanguage: pair.targetLanguage,
+          }) !== "available"
+        ) {
+          if (!manual) {
+            setStatus("idle");
+            return;
+          }
+          setStatus("downloading");
+          const ready = await browserModel.request(
+            {
+              sourceLanguage: pair.sourceLanguage,
+              targetLanguage: pair.targetLanguage,
+            },
+            locale,
+            contentRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null,
+          );
+          if (!ready) {
+            setStatus("idle");
+            return;
+          }
+          if (activeKeyRef.current !== requestKey) return;
+        }
         const result = await scheduler.request(
           requestKey,
           async (callbacks) => {
@@ -243,8 +301,6 @@ export function TranslateText({
                   text,
                   pair.sourceLanguage,
                   pair.targetLanguage,
-                  () => callbacks.onDownload?.(),
-                  manual && Boolean(navigator.userActivation?.isActive),
                 );
                 if (local) result = { translation: local, provider: "chrome" };
               } catch {
@@ -312,14 +368,14 @@ export function TranslateText({
         pendingKeysRef.current.delete(requestKey);
       }
     },
-    [contentId, model, pair.sourceLanguage, pair.targetLanguage, text],
+    [contentId, locale, model, pair.sourceLanguage, pair.targetLanguage, text],
   );
 
   useEffect(() => {
     if (
       !automatic ||
       status !== "error" ||
-      (model === "chrome" && !window.Translator)
+      (model === "chrome" && localAvailability !== "available")
     )
       return;
     const timer = setTimeout(() => {
@@ -327,7 +383,7 @@ export function TranslateText({
         void translate(false);
     }, retryRef.current.remaining());
     return () => clearTimeout(timer);
-  }, [automatic, model, status, translate]);
+  }, [automatic, localAvailability, model, status, translate]);
 
   useEffect(() => {
     const content = contentRef.current;
@@ -339,7 +395,7 @@ export function TranslateText({
       isIntersectingRef.current = shown;
       if (!shown) autoAttemptRef.current = null;
       if (shown && autoAttemptRef.current !== key) {
-        if (model === "chrome" && !window.Translator) return;
+        if (model === "chrome" && localAvailability !== "available") return;
         autoAttemptRef.current = key;
         if (retryRef.current.remaining() > 0) {
           retryTimer = setTimeout(() => {
@@ -355,7 +411,7 @@ export function TranslateText({
       clearTimeout(retryTimer);
       observer.disconnect();
     };
-  }, [automatic, key, model, translate]);
+  }, [automatic, key, localAvailability, model, translate]);
 
   function chooseMode(next: DisplayMode) {
     if (!translationGuide.isSettingsGuided(contentId)) setMenuOpen(false);
@@ -379,9 +435,34 @@ export function TranslateText({
     window.dispatchEvent(new Event(MODE_EVENT));
   }
 
-  function chooseModel(value: string) {
+  async function chooseModel(value: string) {
     setModelMenuOpen(false);
-    if (!isTranslationModel(value) || value === model) return;
+    if (!isTranslationModel(value)) return;
+    const selection = ++modelSelectionRef.current;
+    if (value === "chrome") {
+      if (localDisabled) return;
+      await browserModel.check(pair, true);
+      if (
+        !contentRef.current?.isConnected ||
+        selection !== modelSelectionRef.current
+      )
+        return;
+      if (browserModel.availability(pair) !== "available") {
+        translationGuide.closeSettings(contentId);
+        setMenuOpen(false);
+        const ready = await browserModel.request(
+          pair,
+          locale,
+          contentRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null,
+        );
+        if (
+          !ready ||
+          !contentRef.current?.isConnected ||
+          selection !== modelSelectionRef.current
+        )
+          return;
+      }
+    } else if (value === storedModel) return;
     memoryModel = value;
     try {
       localStorage.setItem(MODEL_KEY, value);
@@ -390,8 +471,8 @@ export function TranslateText({
     }
     activeKeyRef.current = cacheKey(text, pair.targetLanguage, value);
     window.dispatchEvent(new Event(MODE_EVENT));
-    // Start from the selection gesture so a local model may be downloaded.
-    if (visible || status !== "idle") void translate(true, value);
+    if (visible || status !== "idle" || value === "chrome")
+      void translate(true, value);
   }
 
   const labels =
@@ -417,6 +498,10 @@ export function TranslateText({
           automaticModel: "自动",
           automaticHint: "按可用性自动选择",
           localHint: "浏览器内置模型",
+          localUnsupported: "需电脑端 Chrome 138+；当前环境不支持",
+          localChecking: "正在检测兼容性…",
+          localDownload: "首次需下载 Google 模型",
+          localReady: "已就绪 · 在本机翻译",
           googleHint: "Google 在线翻译",
           selectedUnavailable: "所选模型暂不可用，可切换为“自动”。",
         }
@@ -442,6 +527,10 @@ export function TranslateText({
           automaticModel: "Auto",
           automaticHint: "Choose by availability",
           localHint: "Built into your browser",
+          localUnsupported: "Desktop Chrome 138+ required; unavailable here",
+          localChecking: "Checking compatibility…",
+          localDownload: "Google model download required",
+          localReady: "Ready · Translate on this device",
           googleHint: "Google online translation",
           selectedUnavailable: "Selected model unavailable. Try Auto instead.",
         };
@@ -455,7 +544,14 @@ export function TranslateText({
     {
       value: "chrome",
       label: labels.localProvider,
-      hint: labels.localHint,
+      hint:
+        localAvailability === "checking"
+          ? labels.localChecking
+          : localDisabled
+            ? labels.localUnsupported
+            : localAvailability === "available"
+              ? labels.localReady
+              : labels.localDownload,
       icon: LaptopMinimal,
     },
     {
@@ -646,7 +742,10 @@ export function TranslateText({
               <DropdownMenu.Separator className={styles.menuDivider} />
               <DropdownMenu.Sub
                 open={modelMenuOpen}
-                onOpenChange={setModelMenuOpen}
+                onOpenChange={(open) => {
+                  setModelMenuOpen(open);
+                  if (open) void browserModel.check(pair, true);
+                }}
               >
                 <DropdownMenu.SubTrigger
                   className={`${styles.modeChoice} ${styles.modelTrigger}`}
@@ -687,6 +786,7 @@ export function TranslateText({
                             textValue={label}
                             className={styles.modelChoice}
                             data-translation-model={value}
+                            disabled={value === "chrome" && localDisabled}
                             onSelect={(event) => {
                               if (translationGuide.isSettingsGuided(contentId))
                                 event.preventDefault();
