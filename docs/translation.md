@@ -19,6 +19,43 @@ TranslateText → Chrome Translator API when available (highest priority)
               ← browser validates and normalizes the Google result
 ```
 
+## First-use reading guide
+
+Non-English interfaces show one small coachmark beside a visible translation
+button. A successful manual translation advances the guide to the adjacent
+settings control; failed or automatic translations do not advance it. If the
+translated text pushes that control off a phone's screen, the guide gently
+scrolls it into view. The settings menu briefly explains automatic translation,
+bilingual versus in-place display, and model selection using the real controls.
+
+The first appearance waits for initial scrolling to settle. Once visible, the
+card stays mounted and follows the same control; when that control leaves the
+viewport, the card docks at the screen edge with a button to return to it.
+Scrolling never changes or completes a step. Guided settings remain open while
+changing preferences. Outside taps, Escape, closing details, and rapid toggles
+preserve progress and return to the settings step. Only an explicit “知道了” or
+“跳过” completes the guide; exit controls ignore carried and repeated clicks
+during their first 350 ms.
+
+Progress is stored under `course-atlas:translation-guide:v1`: `settings` resumes
+after a successful translation, and `done` suppresses future prompts after
+completion or skipping. Tabs synchronize progress; blocked storage falls back
+to the current session. The guide follows visible controls inside course sheets
+and drawers, supports Escape and keyboard navigation, and respects reduced
+motion. It does not change translation preferences on the user's behalf.
+
+With Playwright available, run the browser regression check against a running
+development server:
+
+```sh
+GUIDE_TEST_BASE_URL=http://localhost:3000 node tests/translation/onboarding.browser.mjs
+```
+
+`PLAYWRIGHT_MODULE` and `PLAYWRIGHT_CHROMIUM_EXECUTABLE` optionally select an
+existing Playwright installation and Chromium binary. The check uses controlled
+catalog and translation responses, samples animation frames during repeated
+scrolling, and exercises rapid clicks, outside taps, settings, sheets, and drawers.
+
 ## Configure the NAS node
 
 Set these server-only values in `.env.local` or the server's environment, then

@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -36,6 +37,9 @@ import { createBrowserUsageReporter } from "@/lib/translation/browser-usage";
 import styles from "./translate-text.module.css";
 import { createTranslationScheduler } from "@/lib/translation/scheduler";
 import { createTranslationRetry } from "@/lib/translation/retry";
+import { TRANSLATION_SUCCESS_EVENT } from "@/lib/translation/onboarding";
+import { translationGuide } from "./translation-guide-store";
+import { TranslationSettingsGuide } from "./translation-guide";
 
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus =
@@ -153,6 +157,8 @@ export function TranslateText({
   preview?: boolean;
 }) {
   const Container = as as ElementType;
+  const contentId = useId();
+  useEffect(() => () => translationGuide.closeSettings(contentId), [contentId]);
   const contentRef = useRef<HTMLElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
   const autoAttemptRef = useRef<string | null>(null);
@@ -181,6 +187,7 @@ export function TranslateText({
     () => false,
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
     null,
   );
@@ -280,6 +287,11 @@ export function TranslateText({
         setTranslationState({ key: requestKey, value: result });
         setVisible(true);
         setStatus("idle");
+        window.dispatchEvent(
+          new CustomEvent(TRANSLATION_SUCCESS_EVENT, {
+            detail: { contentId, manual },
+          }),
+        );
       } catch (error) {
         if (activeKeyRef.current !== requestKey) return;
         if (error instanceof Error && error.name === "AbortError") {
@@ -300,7 +312,7 @@ export function TranslateText({
         pendingKeysRef.current.delete(requestKey);
       }
     },
-    [model, pair.sourceLanguage, pair.targetLanguage, text],
+    [contentId, model, pair.sourceLanguage, pair.targetLanguage, text],
   );
 
   useEffect(() => {
@@ -346,7 +358,7 @@ export function TranslateText({
   }, [automatic, key, model, translate]);
 
   function chooseMode(next: DisplayMode) {
-    setMenuOpen(false);
+    if (!translationGuide.isSettingsGuided(contentId)) setMenuOpen(false);
     memoryMode = next;
     try {
       localStorage.setItem(MODE_KEY, next);
@@ -363,11 +375,12 @@ export function TranslateText({
     } catch {
       // The current browser session still uses the selected preference.
     }
-    setMenuOpen(false);
+    if (!translationGuide.isSettingsGuided(contentId)) setMenuOpen(false);
     window.dispatchEvent(new Event(MODE_EVENT));
   }
 
   function chooseModel(value: string) {
+    setModelMenuOpen(false);
     if (!isTranslationModel(value) || value === model) return;
     memoryModel = value;
     try {
@@ -500,6 +513,7 @@ export function TranslateText({
     <Container
       className={[className, styles.content].filter(Boolean).join(" ")}
       data-translation-content
+      data-translation-id={contentId}
       ref={contentRef}
       data-preview={preview ? "true" : undefined}
       style={{
@@ -529,10 +543,23 @@ export function TranslateText({
           type="button"
           className={styles.actionButton}
           data-analytics-action="translation_toggle"
-          onClick={() => {
+          data-translation-action={
+            text.trim() && text.length <= MAX_TRANSLATION_LENGTH
+              ? ""
+              : undefined
+          }
+          data-translation-visible={showingTranslation ? "" : undefined}
+          onClick={(event) => {
+            if (event.detail > 1) return;
             if (showingTranslation) setVisible(false);
-            else if (translation !== null) setVisible(true);
-            else void translate();
+            else if (translation !== null) {
+              setVisible(true);
+              window.dispatchEvent(
+                new CustomEvent(TRANSLATION_SUCCESS_EVENT, {
+                  detail: { contentId, manual: true },
+                }),
+              );
+            } else void translate();
           }}
           disabled={busy}
           aria-busy={busy}
@@ -567,6 +594,8 @@ export function TranslateText({
                 settingsRef.current?.closest<HTMLElement>('[role="dialog"]') ??
                   null,
               );
+            if (open) translationGuide.openSettings(contentId);
+            else translationGuide.closeSettings(contentId);
             setMenuOpen(open);
           }}
         >
@@ -575,6 +604,7 @@ export function TranslateText({
               type="button"
               className={styles.settingsButton}
               data-analytics-action="translation_settings_open"
+              data-translation-settings
               ref={settingsRef}
               aria-label={labels.settings}
               title={labels.settings}
@@ -595,11 +625,16 @@ export function TranslateText({
               sticky="always"
               onClick={(event) => event.stopPropagation()}
             >
+              <TranslationSettingsGuide contentId={contentId} />
               <DropdownMenu.CheckboxItem
                 className={styles.autoChoice}
                 data-analytics-action="translation_auto_toggle"
                 aria-label={labels.auto}
                 checked={automatic}
+                onSelect={(event) => {
+                  if (translationGuide.isSettingsGuided(contentId))
+                    event.preventDefault();
+                }}
                 onCheckedChange={toggleAutomatic}
               >
                 <span>{labels.auto}</span>
@@ -609,7 +644,10 @@ export function TranslateText({
               </DropdownMenu.CheckboxItem>
               <span className={styles.menuHint}>{labels.autoHint}</span>
               <DropdownMenu.Separator className={styles.menuDivider} />
-              <DropdownMenu.Sub>
+              <DropdownMenu.Sub
+                open={modelMenuOpen}
+                onOpenChange={setModelMenuOpen}
+              >
                 <DropdownMenu.SubTrigger
                   className={`${styles.modeChoice} ${styles.modelTrigger}`}
                 >
@@ -649,6 +687,10 @@ export function TranslateText({
                             textValue={label}
                             className={styles.modelChoice}
                             data-translation-model={value}
+                            onSelect={(event) => {
+                              if (translationGuide.isSettingsGuided(contentId))
+                                event.preventDefault();
+                            }}
                           >
                             <Icon
                               size={15}
@@ -684,27 +726,53 @@ export function TranslateText({
                   value="bilingual"
                   className={styles.modeChoice}
                   data-analytics-action="translation_mode_bilingual"
+                  onSelect={(event) => {
+                    if (translationGuide.isSettingsGuided(contentId))
+                      event.preventDefault();
+                  }}
                 >
                   {mode === "bilingual" ? (
                     <Check size={13} aria-hidden="true" />
                   ) : (
                     <WholeWord size={13} aria-hidden="true" />
                   )}
-                  {labels.bilingual}
+                  <span className={styles.modeCopy}>
+                    <span>{labels.bilingual}</span>
+                    <span className={styles.guideHint}>
+                      {locale === "zh"
+                        ? "原文和译文一起看，方便对照"
+                        : "Keep both versions for comparison"}
+                    </span>
+                  </span>
                 </DropdownMenu.RadioItem>
                 <DropdownMenu.RadioItem
                   value="replace"
                   className={styles.modeChoice}
                   data-analytics-action="translation_mode_replace"
+                  onSelect={(event) => {
+                    if (translationGuide.isSettingsGuided(contentId))
+                      event.preventDefault();
+                  }}
                 >
                   {mode === "replace" ? (
                     <Check size={13} aria-hidden="true" />
                   ) : (
                     <Languages size={13} aria-hidden="true" />
                   )}
-                  {labels.replace}
+                  <span className={styles.modeCopy}>
+                    <span>{labels.replace}</span>
+                    <span className={styles.guideHint}>
+                      {locale === "zh"
+                        ? "在原处显示译文，阅读更连贯"
+                        : "Read the translation in place"}
+                    </span>
+                  </span>
                 </DropdownMenu.RadioItem>
               </DropdownMenu.RadioGroup>
+              <TranslationSettingsGuide
+                contentId={contentId}
+                onDone={() => setMenuOpen(false)}
+              />
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>

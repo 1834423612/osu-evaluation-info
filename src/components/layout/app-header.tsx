@@ -10,6 +10,7 @@ import { text } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { ActionToast } from "./action-toast";
 import { LanguageNotice } from "./language-notice";
+import { TranslationGuide } from "@/components/translation/translation-guide";
 import styles from "./language-controls.module.css";
 
 export function AppHeader({
@@ -28,6 +29,7 @@ export function AppHeader({
     <>
       <ActionToast />
       <LanguageNotice />
+      <TranslationGuide locale={locale} />
       <header className="app-header">
         <div className="header-inner">
           <Link

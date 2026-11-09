@@ -194,6 +194,27 @@
   gap: 3px;
 }
 
+.modeCopy {
+  display: grid;
+  gap: 3px;
+}
+
+.guideHint {
+  display: none;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.modeMenu:has([data-translation-settings-guide]) .guideHint {
+  display: block;
+}
+
+.modeMenu[data-state="open"] {
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  animation: menu-in 180ms ease-out;
+}
+
 .modelTrigger {
   gap: 7px;
 }
@@ -352,8 +373,35 @@
   }
 }
 
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (pointer: coarse) {
+  .actionButton,
+  .settingsButton {
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .modeChoice,
+  .autoChoice {
+    min-height: 42px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .busyIcon {
+    animation: none;
+  }
+  .modeMenu[data-state="open"] {
     animation: none;
   }
   .switchTrack > span {
