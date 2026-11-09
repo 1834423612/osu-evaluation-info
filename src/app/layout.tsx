@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import { UmamiAnalytics } from "@/components/analytics/umami-analytics";
 import { brand } from "@/lib/brand";
 import "./globals.css";
@@ -105,6 +106,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <Analytics />
         <UmamiAnalytics
           websiteId={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? ""}
           trackerUrl={process.env.NEXT_PUBLIC_UMAMI_TRACKER_URL ?? ""}
