@@ -7,6 +7,7 @@ import { debugTools } from "@/lib/debug/client";
 import { type DebugFlags } from "@/lib/debug/flags";
 import { clearDebugResponses } from "@/lib/debug/services";
 import { buildInfoStore } from "@/lib/layout/build-info-client";
+import { updateNoticeStore } from "@/lib/layout/update-notice-client";
 import { createLogoClickController } from "@/lib/debug/logo-clicks";
 import {
   migrateBrowserStorage,
@@ -359,6 +360,68 @@ export function DebugTools() {
                       </div>
                     </fieldset>
                   ))}
+                  <fieldset className={styles.group}>
+                    <legend>
+                      {text(locale, "Website updates", "网站更新测试")}
+                    </legend>
+                    <p>
+                      {text(
+                        locale,
+                        "Preview the persistent notice without changing version data. Refresh still reloads the page.",
+                        "预览常驻提示，不修改真实版本。提示中的刷新按钮仍会重载页面。",
+                      )}
+                    </p>
+                    <div className={styles.buttons}>
+                      <button
+                        type="button"
+                        onClick={() => updateNoticeStore.preview()}
+                      >
+                        {text(
+                          locale,
+                          "Simulate available update",
+                          "模拟新版本提示",
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateNoticeStore.resetDismissed();
+                          debugTools.notify(
+                            text(
+                              locale,
+                              "Dismissal reset for this tab",
+                              "已重置本标签页的更新提示关闭记录",
+                            ),
+                          );
+                        }}
+                      >
+                        {text(
+                          locale,
+                          "Reset update dismissal",
+                          "重置更新提示关闭记录",
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void buildInfoStore
+                            .refresh()
+                            .then(() =>
+                              debugTools.notify(
+                                text(
+                                  locale,
+                                  "Update check finished · checks are limited to once per 5 seconds",
+                                  "已检查更新 · 最快每 5 秒检查一次",
+                                ),
+                              ),
+                            );
+                        }}
+                      >
+                        <RefreshCw size={12} aria-hidden="true" />
+                        {text(locale, "Check for updates", "立即检查更新")}
+                      </button>
+                    </div>
+                  </fieldset>
                   <label className={styles.delay}>
                     {text(locale, "Request delay", "请求延迟")}
                     <select
