@@ -195,9 +195,12 @@ async function setup({
   touch = false,
   reduced = false,
   loading = false,
+  paging = false,
+  timeZone = "America/New_York",
 } = {}) {
   const context = await browser.newContext({
     viewport: { width, height },
+    timezoneId: timeZone,
     locale: locale === "zh" ? "zh-CN" : "en-US",
     hasTouch: touch,
     isMobile: touch,
@@ -281,7 +284,19 @@ async function setup({
       });
     if (url.pathname === "/api/catalog") {
       if (loading) await new Promise((resolve) => setTimeout(resolve, 900));
-      return route.fulfill({ json: catalog });
+      return route.fulfill({
+        json: paging
+          ? {
+              ...catalog,
+              page: url.searchParams.has("cursor") ? 2 : 1,
+              hasMore: !url.searchParams.has("cursor"),
+              nextCursor: url.searchParams.has("cursor")
+                ? null
+                : "fixture-next",
+              totalPages: 2,
+            }
+          : catalog,
+      });
     }
     if (url.pathname === "/api/catalog/facets")
       return route.fulfill({ json: { filters: [] } });
@@ -375,6 +390,7 @@ try {
       height: 950,
       locale,
       touch: width < 600,
+      timeZone: width === 768 ? "Asia/Tokyo" : "America/New_York",
     });
     await page.locator("[data-rmp-preview] li").first().waitFor();
     assert(summaryBatches.length > 0);
@@ -398,9 +414,81 @@ try {
       "https://github.com/1834423612/osu-evaluation-info/tree/master",
     );
     assert(await release.locator("time").getAttribute("datetime"));
+    assert(
+      await release.locator("time").evaluate((element) => {
+        const date = new Date(element.dateTime);
+        return element.textContent.includes(
+          `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
+        );
+      }),
+      "release timestamp uses browser timezone",
+    );
+    const identityBox = await page
+      .locator("footer .footer-identity")
+      .boundingBox();
+    const releaseBox = await release.boundingBox();
+    if (width > 350)
+      assert(
+        releaseBox.x >= identityBox.x + identityBox.width - 1 &&
+          Math.abs(
+            releaseBox.y +
+              releaseBox.height / 2 -
+              identityBox.y -
+              identityBox.height / 2,
+          ) < 3,
+        "footer identity and release share one row",
+      );
+    const footerLinks = await page
+      .locator("footer .footer-links")
+      .boundingBox();
+    assert(
+      footerLinks.y >=
+        Math.max(
+          identityBox.y + identityBox.height,
+          releaseBox.y + releaseBox.height,
+        ),
+    );
+    const disclaimerWidth = await page
+      .locator("footer .footer-disclaimer")
+      .evaluate((element) => ({
+        width: element.clientWidth,
+        text: element.querySelector("p").clientWidth,
+      }));
+    assert.equal(disclaimerWidth.width, disclaimerWidth.text);
+    assert.equal(
+      await page
+        .locator("footer")
+        .getByRole("link", { name: "kjch", exact: true })
+        .locator("svg")
+        .count(),
+      1,
+    );
+    assert.equal(await page.locator("footer [data-open-source]").count(), 0);
+    assert(
+      await page
+        .locator("[data-open-source]")
+        .evaluate(
+          (element) =>
+            !!(
+              element.compareDocumentPosition(document.querySelector("main")) &
+              Node.DOCUMENT_POSITION_FOLLOWING
+            ),
+        ),
+    );
+    const infoPosition = await page
+      .locator(".official-disclaimer")
+      .evaluate((element) => ({
+        notice: element.getBoundingClientRect().top,
+        card: document.querySelector(".course-card").getBoundingClientRect()
+          .top,
+      }));
+    assert(
+      infoPosition.notice < infoPosition.card,
+      "official-data notice belongs above results",
+    );
     assert((await release.boundingBox()).width <= 279);
     assert.equal(
-      await page.locator("footer [data-open-source]").getAttribute("href"),
+      await page.locator("[data-open-source]").getAttribute("href"),
       "https://github.com/1834423612/osu-evaluation-info",
     );
     assert.equal(
@@ -442,7 +530,7 @@ try {
         })),
       );
     assert.equal(new Set(styles.map((word) => word.color)).size, styles.length);
-    assert(styles[0].size > styles.at(-1).size + 15);
+    assert(styles[0].size > styles.at(-1).size + (width <= 640 ? 11 : 15));
     await cloud.locator("button").evaluate((button) => {
       button.click();
       button.click();
@@ -616,11 +704,110 @@ try {
     await page.waitForTimeout(400);
     await page.locator(".site-footer").scrollIntoViewIfNeeded();
     await noOverflow(page, ".site-footer");
+    await page.waitForFunction(() => {
+      const control = document
+        .querySelector("[data-scroll-top]")
+        ?.getBoundingClientRect();
+      if (!control) return true;
+      return [
+        ...document.querySelectorAll("footer a, .footer-disclaimer"),
+      ].every((element) => {
+        const link = element.getBoundingClientRect();
+        return (
+          control.right <= link.left ||
+          link.right <= control.left ||
+          control.bottom <= link.top ||
+          link.bottom <= control.top
+        );
+      });
+    });
     await page.screenshot({
       path: `/tmp/footer-experience-${width}-${locale}.png`,
     });
     console.log(
       `PASS ${width}px ${locale}: compact facts, alignment, RMP cloud translation, section actions, source badges, live title and footer`,
+    );
+    await context.close();
+  }
+  {
+    const { context, page, errors } = await setup({
+      width: 390,
+      height: 900,
+      touch: true,
+      paging: true,
+      reduced: true,
+    });
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await page.locator("[data-scroll-top]").waitFor();
+    await page.evaluate(() => {
+      const widget = document.createElement("div");
+      widget.id = "foreign-widget";
+      widget.style.cssText =
+        "position:fixed;right:16px;bottom:16px;width:220px;height:110px;z-index:220;background:#eee";
+      document.body.append(widget);
+    });
+    const avoids = () => {
+      const control = document
+        .querySelector("[data-scroll-top]")
+        ?.getBoundingClientRect();
+      const widget = document
+        .querySelector("#foreign-widget")
+        ?.getBoundingClientRect();
+      return (
+        control &&
+        widget &&
+        (control.right <= widget.left ||
+          widget.right <= control.left ||
+          control.bottom <= widget.top ||
+          widget.bottom <= control.top)
+      );
+    };
+    await page.waitForFunction(avoids);
+    await page.evaluate(
+      () => (document.querySelector("#foreign-widget").style.height = "240px"),
+    );
+    await page.waitForFunction(avoids);
+    await page.evaluate(() =>
+      document.querySelector("#foreign-widget").remove(),
+    );
+    await page.evaluate(() => {
+      const mask = document.createElement("div");
+      mask.id = "foreign-mask";
+      mask.style.cssText =
+        "position:fixed;inset:0;z-index:220;background:rgba(0,0,0,.1)";
+      document.body.append(mask);
+    });
+    await page.waitForFunction(
+      () => !document.querySelector("[data-scroll-top]"),
+    );
+    await page.evaluate(() => document.querySelector("#foreign-mask").remove());
+    await page.locator("[data-scroll-top]").waitFor();
+    await page.locator("[data-scroll-top]").click();
+    await page.waitForFunction(() => scrollY < 3);
+    await page.waitForFunction(
+      () => !document.querySelector("[data-scroll-top]"),
+    );
+    for (const [direction, label] of [
+      ["next", "第 2 页"],
+      ["previous", "第 1 页"],
+    ]) {
+      await page.locator(".course-pagination").scrollIntoViewIfNeeded();
+      await page
+        .locator(".course-pagination")
+        .getByRole("button", {
+          name: direction === "next" ? "下一页" : "上一页",
+          exact: true,
+        })
+        .click();
+      await page
+        .locator(".course-pagination")
+        .getByText(label, { exact: true })
+        .waitFor();
+      await page.waitForFunction(() => scrollY < 3);
+    }
+    assert.deepEqual(errors, []);
+    console.log(
+      "PASS floating navigation: detect unknown widget, resize avoidance, backdrop hiding/restoration, return to top and both pagination directions",
     );
     await context.close();
   }
@@ -685,6 +872,19 @@ try {
       .locator('[data-debug-tools] input[type="password"]')
       .fill(process.env.GUIDE_TEST_DEBUG_KEY ?? "local-regression-debug-key");
     await page.getByRole("button", { name: "解锁", exact: true }).click();
+    await page.getByLabel("出厂预览 · 临时数据层").waitFor();
+    await page.getByRole("button", { name: "DEV", exact: true }).click();
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "DEV", exact: true }).waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "DEV", exact: true })
+        .getAttribute("aria-expanded"),
+      "false",
+    );
+    assert.equal(await page.getByLabel("出厂预览 · 临时数据层").count(), 0);
+    await page.getByRole("button", { name: "DEV", exact: true }).click();
+    await page.reload({ waitUntil: "networkidle" });
     await page.getByLabel("出厂预览 · 临时数据层").waitFor();
     const original = await page.evaluate(() =>
       localStorage.getItem("course-atlas:saved:v1"),
