@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   LucideShieldCheck,
   LoaderCircle,
+  FileText,
   X,
 } from "lucide-react";
 import { useCourseDetails } from "@/hooks/use-course-details";
@@ -71,6 +72,17 @@ const RmpPanel = dynamic(() => import("@/components/rmp/rmp-panel"), {
     </div>
   ),
 });
+
+const SyllabusPanel = dynamic(
+  () => import("@/components/syllabus/syllabus-panel"),
+  {
+    loading: () => (
+      <div className="inline-loading">
+        <LoaderCircle size={16} className="spin" />
+      </div>
+    ),
+  },
+);
 
 const MOBILE_VIEWPORT = "(max-width: 800px)";
 
@@ -352,7 +364,11 @@ export function CourseCard({
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const isSelected = searchParams.get("course") === course.id;
   const requestedTab =
-    searchParams.get("detailTab") === "ratings" ? "ratings" : "sections";
+    searchParams.get("detailTab") === "syllabus"
+      ? "syllabus"
+      : searchParams.get("detailTab") === "ratings"
+        ? "ratings"
+        : "sections";
   const focusSectionValue = searchParams.get("focusSection");
   const focusSection =
     isSelected &&
@@ -391,7 +407,10 @@ export function CourseCard({
     }
   }, [course.id, isSelected]);
 
-  function openTab(next: "sections" | "ratings", keepOpen = false) {
+  function openTab(
+    next: "sections" | "ratings" | "syllabus",
+    keepOpen = false,
+  ) {
     const nextTab = keepOpen || tab !== next ? next : null;
     if (!nextTab) {
       closeDetails();
@@ -479,7 +498,7 @@ export function CourseCard({
       onTouchStart={(event) => {
         if (
           (event.target as HTMLElement).closest(
-            "button, input, select, a, [role='slider'], [data-chart]",
+            "button, input, select, a, textarea, table, [role='slider'], [data-chart], [data-syllabus-reader]",
           )
         ) {
           touchStart.current = null;
@@ -511,6 +530,7 @@ export function CourseCard({
         onValueChange={(value) => {
           if (value === "sections") void openTab("sections", true);
           if (value === "ratings") void openTab("ratings", true);
+          if (value === "syllabus") void openTab("syllabus", true);
         }}
       >
         <div className="detail-tabs-row">
@@ -524,6 +544,9 @@ export function CourseCard({
             </TabsTrigger>
             <TabsTrigger value="ratings">
               {text(locale, "Evaluations & trends", "教学评价与趋势")}
+            </TabsTrigger>
+            <TabsTrigger value="syllabus">
+              {text(locale, "Syllabus", "教学大纲")}
             </TabsTrigger>
           </TabsList>
           <span className="detail-term">
@@ -680,6 +703,13 @@ export function CourseCard({
             )}
           </div>
         </TabsContent>
+        <TabsContent value="syllabus">
+          <SyllabusPanel
+            course={current}
+            locale={locale}
+            focusClassNumber={focusSection}
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -764,6 +794,16 @@ export function CourseCard({
                 {attribute}
               </Badge>
             ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openTab("syllabus", true)}
+              aria-haspopup="dialog"
+              aria-controls={tab ? detailId : undefined}
+            >
+              <FileText size={13} />
+              {text(locale, "Syllabus", "教学大纲")}
+            </Button>
           </div>
           <div className="course-fee-preview">
             <CourseFees course={current} locale={locale} compact />
