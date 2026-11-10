@@ -1,6 +1,6 @@
 /** Shared identity for the app shell, browser metadata, and install manifest. */
 export const brand = {
-  name: "WahO! / 蛙O！",
+  name: "WahO!",
   names: { en: "WahO!", zh: "蛙O！" },
   slogan: {
     en: ["Hop into better classes.", "Leap toward your degree."],
@@ -10,9 +10,9 @@ export const brand = {
     en: "OHIO STATE · COURSES & PROFESSOR RATINGS",
     zh: "OHIO STATE · 课程与教授评价",
   },
-  title: "WahO! 蛙O！ · OSU courses & professor ratings",
+  title: "WahO! | OSU Course Atlas",
   description:
-    "Hop into better classes. Leap toward your degree. 选课不迷路，毕业有蛙助。 Explore Ohio State courses, schedules, and professor evaluations with WahO! 蛙O！",
+    "Explore Ohio State courses, schedules, and professor evaluations. Hop into better classes and leap toward your degree with WahO!",
   themeColor: "#BA0C2F",
   backgroundColor: "#FAF8F6",
   assets: {
@@ -36,3 +36,17 @@ export const brand = {
 
 export type MascotExpression =
   "thinking" | keyof typeof brand.assets.expressions;
+
+export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
+  const section = pathname.startsWith("/saved")
+    ? locale === "zh"
+      ? "收藏"
+      : "Saved courses"
+    : pathname.startsWith("/methodology")
+      ? locale === "zh"
+        ? "数据与方法"
+        : "Behind the data"
+      : null;
+  const home = locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : brand.title;
+  return section ? `${section} · ${home}` : home;
+}

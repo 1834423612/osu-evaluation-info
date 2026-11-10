@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Bookmark, ArrowUpRight, Languages } from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
-import { brand } from "@/lib/brand";
+import { brand, localizedDocumentTitle } from "@/lib/brand";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -23,9 +24,23 @@ export function AppHeader({
     usePreferences();
   const savedCount =
     saved.length + savedSections.length + savedInstructors.length;
+  const pathname = usePathname();
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
-  }, [locale]);
+    const title = localizedDocumentTitle(locale, pathname);
+    const apply = () => {
+      if (document.title !== title) document.title = title;
+    };
+    apply();
+    // Next may finish inserting route metadata after the preference effect.
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    return () => observer.disconnect();
+  }, [locale, pathname]);
   return (
     <>
       <ActionToast />

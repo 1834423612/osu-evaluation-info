@@ -28,7 +28,7 @@ function metadataBase(): URL {
   return new URL("http://localhost:3000");
 }
 
-const socialImageAlt = `${brand.name} — ${brand.slogan.en.join(" ")} ${brand.slogan.zh.join("")}`;
+const socialImageAlt = `${brand.names.en} — ${brand.slogan.en.join(" ")}`;
 
 export const metadata: Metadata = {
   metadataBase: metadataBase(),
