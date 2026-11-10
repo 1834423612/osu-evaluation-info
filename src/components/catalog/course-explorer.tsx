@@ -6,7 +6,6 @@ import {
   Search,
   SlidersHorizontal,
   X,
-  ArrowUpRight,
   LoaderCircle,
   CircleAlert,
   ChevronLeft,
@@ -560,7 +559,28 @@ export function CourseExplorer() {
               </div>
             ) : null}
             <div className="results-context">
-              <span>{text(locale, "CURRENT OFFERINGS", "当前开课信息")}</span>
+              <span className="offerings-label">
+                {text(locale, "CURRENT OFFERINGS", "当前开课信息")}
+                {!loading && result?.fetchedAt ? (
+                  <small>
+                    {" "}
+                    ·{" "}
+                    {text(
+                      locale,
+                      result.sourceMode === "mirror" ? "Synced" : "Fetched",
+                      result.sourceMode === "mirror" ? "同步于" : "获取于",
+                    )}{" "}
+                    {new Date(
+                      result.snapshotAt ?? result.fetchedAt,
+                    ).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </small>
+                ) : null}
+              </span>
               <span className="source-status">
                 <span className="source-dot" />
                 {result?.sourceMode === "mirror"
@@ -727,37 +747,17 @@ export function CourseExplorer() {
               </nav>
             ) : null}
             {!loading && result ? (
-              <div className="results-footer">
-                <span>
-                  {text(
-                    locale,
-                    result.sourceMode === "mirror"
-                      ? "Complete synced catalog · Counted by distinct class section. Filter counts come from the live official index and may include duplicates."
-                      : "Official search hit counts · Results are grouped by course; official duplicate hits can affect counts.",
-                    result.sourceMode === "mirror"
-                      ? "完整同步目录 · 结果按独立班次计数；筛选项数量来自官方实时索引，可能包含重复命中。"
-                      : "官方搜索命中数量 · 列表已按课程归类，官方重复命中可能影响计数。",
-                  )}
-                </span>
-                <a href={result.source} target="_blank" rel="noreferrer">
-                  {text(locale, "Official search", "官方搜索")}
-                  <ArrowUpRight size={12} />
-                </a>
-                <span>
-                  {result.sourceMode === "mirror"
-                    ? text(locale, "Synced", "同步于")
-                    : text(locale, "Fetched", "获取于")}{" "}
-                  {new Date(result.fetchedAt).toLocaleString(
-                    locale === "zh" ? "zh-CN" : "en-US",
-                    {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    },
-                  )}
-                </span>
-              </div>
+              <p className="official-disclaimer">
+                {text(
+                  locale,
+                  result.sourceMode === "mirror"
+                    ? "Showing a synced official snapshot. Confirm current details in Buckeye Link."
+                    : "Fetched from OSU's official course service. Confirm current details in Buckeye Link.",
+                  result.sourceMode === "mirror"
+                    ? "当前展示官方同步快照；最新课程与选课情况请以 Buckeye Link 为准。"
+                    : "课程信息实时获取自 OSU 官方；最新课程与选课情况请以 Buckeye Link 为准。",
+                )}
+              </p>
             ) : null}
           </section>
         </div>

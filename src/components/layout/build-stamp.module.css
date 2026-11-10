@@ -1,0 +1,26 @@
+.stamp {
+  display: inline-flex;
+  min-width: 0;
+  max-width: min(440px, 100%);
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--subtle-surface);
+  padding: 5px 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.stamp > :is(svg, code) {
+  flex: 0 0 auto;
+}
+.stamp > code {
+  color: var(--secondary-foreground);
+  font-size: 10px;
+}
+.stamp > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

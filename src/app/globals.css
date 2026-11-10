@@ -729,6 +729,7 @@ h1 {
 }
 
 .site-footer {
+  flex-wrap: wrap;
   width: 100%;
   display: flex;
   align-items: center;
@@ -2324,6 +2325,36 @@ h1 {
 .preview-availability > small {
   color: var(--muted);
   font-size: 9px;
+}
+/* Compact course context and independent project information. */
+.offerings-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: baseline;
+}
+.offerings-label > small {
+  font-size: 10px;
+  font-weight: 400;
+}
+.official-disclaimer {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.footer-disclaimer {
+  flex: 1 1 100%;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.footer-disclaimer > p {
+  max-width: 800px;
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.8;
 }
 @media (min-width: 1500px) {
   .header-inner {
