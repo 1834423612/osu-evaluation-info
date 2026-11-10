@@ -1,0 +1,30 @@
+name: Archive OSU syllabi daily
+
+on:
+  schedule:
+    - cron: "43 3 * * *"
+      timezone: "America/New_York"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osu-syllabus-sync
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js 24 and pinned pnpm
+        run: bash scripts/ci/setup-catalog-runtime.sh
+      - name: Install runtime dependencies
+        run: pnpm install --prod --frozen-lockfile
+      - name: Archive published syllabus terms and documents
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm syllabus:sync
