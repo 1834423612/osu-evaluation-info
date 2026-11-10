@@ -1,83 +1,93 @@
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
-import { cleanSyllabusHtml } from "./content.ts";
 import { officialSyllabusUrl } from "./normalize.ts";
+import { prepareSyllabusPdfLayout } from "./pdf-layout.ts";
 import type { SyllabusDocument } from "./types.ts";
 
-/** Called only after a user action. No upload, remote PDF service or server rendering. */
-export async function downloadSyllabusPdf(document: SyllabusDocument) {
-  const [pdfModule, fontsModule, htmlModule] = await Promise.all([
+export function syllabusPdfFileName(document: SyllabusDocument) {
+  return `${document.entry.termName}-${document.entry.title}.pdf`.replace(
+    /[^a-z0-9. -]/gi,
+    "_",
+  );
+}
+
+/** All layout, image conversion, font embedding and PDF assembly happens on this device. */
+export async function createSyllabusPdf(document: SyllabusDocument) {
+  const [pdfModule, fontsModule, htmlModule, layout] = await Promise.all([
     import("pdfmake/build/pdfmake"),
     import("pdfmake/build/vfs_fonts"),
     import("html-to-pdfmake"),
+    prepareSyllabusPdfLayout(document),
   ]);
   const pdfMake = pdfModule.default,
     htmlToPdfmake = htmlModule.default;
   pdfMake.addVirtualFileSystem(fontsModule.default);
-  const converted = htmlToPdfmake(
-    document.components
-      .map((component) => cleanSyllabusHtml(component.html))
-      .join("\n"),
-    {
-      window: window as unknown as NonNullable<
-        Parameters<typeof htmlToPdfmake>[1]
-      >["window"],
-      tableAutoSize: true,
-      defaultStyles: {
-        h1: { fontSize: 20, marginBottom: 12 },
-        h2: { fontSize: 15, marginTop: 14, marginBottom: 8 },
-        p: { margin: [0, 0, 0, 5] },
-        table: { marginBottom: 10 },
+  for (const face of layout.fonts) {
+    pdfMake.addVirtualFileSystem({ [face.file]: face.data });
+    pdfMake.addFonts({
+      [face.key]: {
+        normal: face.file,
+        bold: face.file,
+        italics: face.file,
+        bolditalics: face.file,
       },
+    });
+  }
+  pdfMake.addTableLayouts({
+    syllabus: {
+      hLineWidth: () => 0.75,
+      vLineWidth: () => 0.75,
+      hLineColor: () => "#dddddd",
+      vLineColor: () => "#dddddd",
+      paddingLeft: () => 3.75,
+      paddingRight: () => 3.75,
+      paddingTop: () => 3.75,
+      paddingBottom: () => 3.75,
     },
-  );
-  const content = Array.isArray(converted) ? converted : [converted];
+  });
+  const converted = htmlToPdfmake(layout.html, {
+    window: window as unknown as NonNullable<
+      Parameters<typeof htmlToPdfmake>[1]
+    >["window"],
+    tableAutoSize: true,
+    defaultStyles: {
+      h1: { margin: 0 },
+      h2: { margin: 0 },
+      h3: { margin: 0 },
+      p: { margin: 0 },
+      table: { margin: 0 },
+      a: { color: "#ba0c2f", decoration: [] },
+    },
+  });
   const definition: TDocumentDefinitions = {
     pageSize: "LETTER",
-    pageMargins: [42, 42, 42, 48],
+    pageMargins: [18, 18, 18, 36],
     info: {
       title: `${document.entry.termName} ${document.entry.title}`,
       subject: document.entry.subtitle,
       creator: "WahO! — browser-local syllabus export",
     },
-    defaultStyle: { font: "Roboto", fontSize: 10, lineHeight: 1.2 },
-    content: [
-      {
-        text: `${document.entry.termName} · ${document.entry.title}`,
-        fontSize: 10,
-        color: "#666666",
-        margin: [0, 0, 0, 8],
-      },
-      ...content,
-      {
-        text: "Official syllabus",
-        link: officialSyllabusUrl(document.entry.code),
-        fontSize: 9,
-        color: "#ba0c2f",
-        margin: [0, 16, 0, 0],
-      },
-    ],
+    defaultStyle: { font: "Roboto", fontSize: 12, lineHeight: 1.5 },
+    pageBreakBefore: (node, container) =>
+      Boolean(
+        node.headlineLevel && !container.getFollowingNodesOnPage().length,
+      ),
+    content: Array.isArray(converted) ? converted : [converted],
     footer: (page, count) => ({
-      text: `${page} / ${count}`,
-      alignment: "center",
-      fontSize: 9,
+      columns: [
+        {
+          text: "OSU · Simple Syllabus",
+          link: officialSyllabusUrl(document.entry.code),
+        },
+        { text: `${page} / ${count}`, alignment: "right" },
+      ],
+      font: "Roboto",
+      fontSize: 8,
       color: "#777777",
-      margin: [0, 16, 0, 0],
+      margin: [18, 12, 18, 0],
     }),
   };
-  const fileName =
-    `${document.entry.termName}-${document.entry.title}.pdf`.replace(
-      /[^a-z0-9. -]/gi,
-      "_",
-    );
-  const blob = await pdfMake.createPdf(definition).getBlob();
-  const url = URL.createObjectURL(blob);
-  const link = window.document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.rel = "noopener";
-  window.document.body.append(link);
-  link.click();
-  link.remove();
-  // The reader retains a real user-activated link for browsers that suppress automatic saves.
-  return { url, fileName };
+  return {
+    blob: await pdfMake.createPdf(definition).getBlob(),
+    fileName: syllabusPdfFileName(document),
+  };
 }

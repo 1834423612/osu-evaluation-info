@@ -75,8 +75,9 @@ export function SyllabusReader({
     setExporting(true);
     setExportError(false);
     try {
-      const { downloadSyllabusPdf } = await import("@/lib/syllabus/pdf");
-      const prepared = await downloadSyllabusPdf(result.data);
+      const { createSyllabusPdf } = await import("@/lib/syllabus/pdf");
+      const { blob, fileName } = await createSyllabusPdf(result.data);
+      const prepared = { url: URL.createObjectURL(blob), fileName };
       if (!mounted.current) {
         URL.revokeObjectURL(prepared.url);
         return;
@@ -84,6 +85,12 @@ export function SyllabusReader({
       if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
       downloadUrl.current = prepared.url;
       setDownloadFile(prepared);
+      const link = document.createElement("a");
+      link.href = prepared.url;
+      link.download = prepared.fileName;
+      document.body.append(link);
+      link.click();
+      link.remove();
     } catch {
       if (mounted.current) setExportError(true);
     } finally {

@@ -53,6 +53,7 @@
     "sanitize-html": "^2.18.1",
     "tailwind-merge": "^3.3.0",
     "vaul": "^1.1.2",
+    "woff2-encoder": "2.0.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
