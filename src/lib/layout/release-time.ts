@@ -24,8 +24,18 @@ export function formatReleaseTime(
     ...options,
     timeZoneName: "short",
   }).formatToParts(date);
+  const compact = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      ...options,
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(date)
+      .map(({ type, value }) => [type, value]),
+  );
   return {
     label: new Intl.DateTimeFormat(language, options).format(date),
+    compact: `${compact.month}/${compact.day} ${compact.hour}:${compact.minute}`,
     zone: parts.find((part) => part.type === "timeZoneName")?.value ?? zone,
     full: new Intl.DateTimeFormat(language, {
       ...options,

@@ -8,6 +8,10 @@ test("release dates follow browser zones across date boundaries and daylight-sav
     formatReleaseTime(value, "en", "America/New_York").label,
     /Nov 9.*20:33/,
   );
+  assert.equal(
+    formatReleaseTime(value, "en", "America/New_York").compact,
+    "11/09 20:33",
+  );
   assert.match(
     formatReleaseTime(value, "en", "Asia/Tokyo").label,
     /Nov 10.*10:33/,
@@ -15,6 +19,14 @@ test("release dates follow browser zones across date boundaries and daylight-sav
   assert.match(
     formatReleaseTime(value, "zh", "Asia/Shanghai").label,
     /11月10日.*09:33/,
+  );
+  assert.equal(
+    formatReleaseTime(value, "zh", "Asia/Shanghai").compact,
+    "11/10 09:33",
+  );
+  assert.equal(
+    formatReleaseTime("2026-01-01T00:05:00Z", "en", "UTC").compact,
+    "01/01 00:05",
   );
   assert.match(
     formatReleaseTime("2026-07-10T01:33:00Z", "en", "America/New_York").label,

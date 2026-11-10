@@ -1092,7 +1092,31 @@ try {
       "version text aligns to the left of its column",
     );
     const hashBox = await release.locator("code").boundingBox();
-    if (hashBox.y > timestampBox.y + timestampBox.height - 1)
+    if (width <= 640) {
+      assert(
+        Math.abs(
+          hashBox.y +
+            hashBox.height / 2 -
+            timestampBox.y -
+            timestampBox.height / 2,
+        ) < 1,
+        "mobile update time and full hash stay on one line",
+      );
+      const arrowBox = await release
+        .locator(":scope > svg")
+        .last()
+        .boundingBox();
+      assert(
+        timestampBox.x + timestampBox.width + 3 <= hashBox.x &&
+          hashBox.x + hashBox.width + 2 <= arrowBox.x,
+        "single-line metadata has clear gaps and stays before the disclosure icon",
+      );
+      assert.match(
+        await release.locator("time").innerText(),
+        /^\d{2}\/\d{2} \d{2}:\d{2}$/,
+      );
+      assert.equal((await release.locator("code").innerText()).length, 8);
+    } else if (hashBox.y > timestampBox.y + timestampBox.height - 1)
       assert(
         Math.abs(hashBox.x - versionTextBox.x) < 1,
         "a wrapped hash stays left aligned",

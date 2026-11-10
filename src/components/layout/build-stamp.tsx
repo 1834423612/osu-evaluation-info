@@ -75,7 +75,10 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
                 <span className={styles.label}>
                   {text(locale, "Updated", "更新于")}
                 </span>
-                <time dateTime={updatedAt}>{updated.label}</time>
+                <time dateTime={updatedAt} title={updated.full}>
+                  <span className={styles.fullTime}>{updated.label}</span>
+                  <span className={styles.compactTime}>{updated.compact}</span>
+                </time>
               </>
             ) : null}
             <code>{hash}</code>

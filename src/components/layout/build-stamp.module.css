@@ -37,6 +37,9 @@
 .stamp :is(time, code) {
   white-space: nowrap;
 }
+.compactTime {
+  display: none;
+}
 .icon {
   flex: 0 0 auto;
 }
@@ -161,19 +164,33 @@
 }
 @media (max-width: 640px) {
   .stamp {
-    grid-template-columns: 12px minmax(0, 1fr) 11px;
-    gap: 4px;
+    grid-template-columns: 10px minmax(0, 1fr) 9px;
+    gap: 3px;
     font-size: 9px;
   }
+  .meta {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
   .stamp code {
-    font-size: 9px;
+    font-size: 8.5px;
   }
   .label {
     display: none;
   }
   .icon {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
+  }
+  .arrow {
+    width: 9px;
+    height: 9px;
+  }
+  .fullTime {
+    display: none;
+  }
+  .compactTime {
+    display: inline;
   }
 }
 @media (prefers-reduced-motion: reduce) {
