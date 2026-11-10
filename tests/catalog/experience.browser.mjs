@@ -197,10 +197,12 @@ async function setup({
   loading = false,
   paging = false,
   timeZone = "America/New_York",
+  deviceScaleFactor = 1,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width, height },
     timezoneId: timeZone,
+    deviceScaleFactor,
     locale: locale === "zh" ? "zh-CN" : "en-US",
     hasTouch: touch,
     isMobile: touch,
@@ -377,6 +379,178 @@ async function noOverflow(page, selector) {
       result.page <= result.viewport + 1 && result.width <= result.client + 1,
       JSON.stringify(result),
     );
+}
+
+async function verifyPinchNavigation(width, deviceScaleFactor) {
+  const { context, page, errors } = await setup({
+    width,
+    height: 900,
+    touch: true,
+    reduced: true,
+    deviceScaleFactor,
+  });
+  const cdp = await context.newCDPSession(page);
+  const originalWidth = await page.evaluate(
+    () => document.documentElement.clientWidth,
+  );
+  const zoom = async (scale) => {
+    // Native visual viewport scaling, not CSS zoom or a responsive viewport resize.
+    await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: scale });
+    await page.waitForFunction(
+      (expected) => Math.abs(visualViewport.scale - expected) < 0.01,
+      scale,
+    );
+  };
+  const atCorner = () => {
+    const v = visualViewport,
+      b = document.querySelector("[data-scroll-top]")?.getBoundingClientRect();
+    return (
+      b &&
+      Math.abs(b.width * v.scale - 42) < 0.5 &&
+      Math.abs(b.height * v.scale - 42) < 0.5 &&
+      Math.abs((v.offsetLeft + v.width - b.right) * v.scale - 16) < 0.5 &&
+      Math.abs((v.offsetTop + v.height - b.bottom) * v.scale - 16) < 0.5
+    );
+  };
+  await page.evaluate(() => scrollTo({ top: 250, behavior: "instant" }));
+  await page.waitForFunction(
+    () => !document.querySelector("[data-scroll-top]"),
+  );
+  await zoom(4);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  assert.equal(
+    await page.locator("[data-scroll-top]").count(),
+    0,
+    "pinching alone must not change the scroll visibility threshold",
+  );
+  await zoom(1);
+  await page.evaluate(() => {
+    const surface = document.createElement("div");
+    surface.style.cssText = "height:4000px;flex:none";
+    document.body.append(surface);
+    scrollTo({ top: surface.offsetTop + 600, behavior: "instant" });
+  });
+  for (const scale of [1, 1.5, 2, 3, 4, 1, 3, 2]) {
+    await zoom(scale);
+    await page.waitForFunction(atCorner);
+    assert.equal(
+      await page.evaluate(() => document.documentElement.clientWidth),
+      originalWidth,
+      "pinch zoom must not be mistaken for a layout resize",
+    );
+    assert.equal(
+      await page.evaluate(() => devicePixelRatio),
+      deviceScaleFactor,
+    );
+  }
+  await page.evaluate(() => {
+    const marker = document.createElement("span");
+    marker.style.cssText = `position:fixed;left:${innerWidth - 30}px;top:${innerHeight - 30}px;width:10px;height:10px`;
+    document.body.append(marker);
+    // This pans the browser's actual visual viewport; no viewport properties are mocked.
+    marker.scrollIntoView({
+      block: "center",
+      inline: "center",
+      behavior: "instant",
+    });
+    marker.remove();
+  });
+  await page.waitForFunction(
+    () => visualViewport.offsetLeft > 0 && visualViewport.offsetTop > 0,
+  );
+  await page.waitForFunction(atCorner);
+  assert(
+    await page.evaluate(() => {
+      const b = document
+        .querySelector("[data-scroll-top]")
+        .getBoundingClientRect();
+      return !!document
+        .elementFromPoint(b.x + b.width / 2, b.y + b.height / 2)
+        ?.closest("[data-scroll-top]");
+    }),
+    "zoomed button remains hit-testable after panning",
+  );
+
+  await page.evaluate(() => {
+    const v = visualViewport,
+      widget = document.createElement("div");
+    widget.id = "pinch-widget";
+    widget.style.cssText = `position:fixed;left:${v.offsetLeft + v.width - 98 / v.scale}px;top:${v.offsetTop + v.height - 88 / v.scale}px;width:${90 / v.scale}px;height:${80 / v.scale}px;z-index:220;background:#ddd`;
+    document.body.append(widget);
+  });
+  const clearsWidget = () => {
+    const b = document
+        .querySelector("[data-scroll-top]")
+        ?.getBoundingClientRect(),
+      w = document.querySelector("#pinch-widget")?.getBoundingClientRect(),
+      gap = 12 / visualViewport.scale;
+    return (
+      b &&
+      w &&
+      (b.right <= w.left - gap + 0.1 ||
+        b.left >= w.right + gap - 0.1 ||
+        b.bottom <= w.top - gap + 0.1 ||
+        b.top >= w.bottom + gap - 0.1)
+    );
+  };
+  await page.waitForFunction(clearsWidget);
+  await page.evaluate(() => {
+    const widget = document.querySelector("#pinch-widget"),
+      v = visualViewport;
+    widget.style.top = `${v.offsetTop + v.height - 128 / v.scale}px`;
+    widget.style.height = `${120 / v.scale}px`;
+  });
+  await page.waitForFunction(clearsWidget);
+  await page.evaluate(() => document.querySelector("#pinch-widget").remove());
+  await page.waitForFunction(atCorner);
+
+  await page.evaluate(() => {
+    const mask = document.createElement("div");
+    mask.id = "pinch-mask";
+    mask.style.cssText =
+      "position:fixed;inset:0;z-index:220;background:rgba(0,0,0,.1)";
+    document.body.append(mask);
+  });
+  await page.waitForFunction(
+    () => !document.querySelector("[data-scroll-top]"),
+  );
+  await page.evaluate(() => document.querySelector("#pinch-mask").remove());
+  await page.waitForFunction(atCorner);
+
+  const tap = await page.evaluate(() => {
+    const b = document
+        .querySelector("[data-scroll-top]")
+        .getBoundingClientRect(),
+      v = visualViewport;
+    return {
+      x: b.x + b.width / 2 - v.offsetLeft,
+      y: b.y + b.height / 2 - v.offsetTop,
+    };
+  });
+  await page.touchscreen.tap(tap.x, tap.y);
+  await page.waitForFunction(
+    () =>
+      scrollY < 2 && visualViewport.pageTop < 2 && visualViewport.pageLeft < 2,
+  );
+  await page.waitForFunction(
+    () => !document.querySelector("[data-scroll-top]"),
+  );
+  assert.equal(await page.locator("[data-scroll-top]").count(), 0);
+  assert.equal(
+    await page.evaluate(() => visualViewport.scale),
+    2,
+    "return to top preserves the user's zoom",
+  );
+  assert.deepEqual(errors, []);
+  console.log(
+    `PASS pinch navigation ${width}px @${deviceScaleFactor}x DPR: constant screen size and inset, repeated native viewport zoom, real panning, unknown widget and mask avoidance, touch return to actual top`,
+  );
+  await context.close();
 }
 try {
   for (const [width, locale] of [
@@ -881,6 +1055,8 @@ try {
     );
     await context.close();
   }
+  await verifyPinchNavigation(390, 1);
+  await verifyPinchNavigation(320, 3);
   {
     const { context, page, succeed, errors } = await setup({
       width: 390,

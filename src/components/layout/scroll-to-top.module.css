@@ -5,6 +5,7 @@
   place-items: center;
   width: 42px;
   height: 42px;
+  transform-origin: top left;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface);

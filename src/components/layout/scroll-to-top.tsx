@@ -6,6 +6,7 @@ import { ArrowUp } from "lucide-react";
 import { type Locale, text } from "@/lib/i18n";
 import {
   placeCornerControl,
+  cornerControlMetrics,
   scrollPageToTop,
   type FloatingRect,
 } from "@/lib/layout/scroll-to-top";
@@ -15,9 +16,11 @@ const OBSTACLES =
   '.app-header, .site-footer a, .footer-disclaimer, .course-pagination, [data-floating-obstacle], [data-translation-guide-target], [data-translation-guide] [role="region"], .action-toast, [data-language-notice], [data-debug-tools], [data-translation-popover][role="menu"], [data-radix-popper-content-wrapper]';
 
 export function ScrollToTop({ locale }: { locale: Locale }) {
-  const [placement, setPlacement] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [placement, setPlacement] = useState<{
+    x: number;
+    y: number;
+    inverseScale: number;
+  } | null>(null);
   useEffect(() => {
     let frame = 0,
       motionUntil = 0;
@@ -44,6 +47,7 @@ export function ScrollToTop({ locale }: { locale: Locale }) {
         width: viewport?.width ?? innerWidth,
         height: viewport?.height ?? innerHeight,
       };
+      const metrics = cornerControlMetrics(bounds, viewport?.scale);
       const modal =
         getComputedStyle(document.body).pointerEvents === "none" ||
         [
@@ -52,7 +56,7 @@ export function ScrollToTop({ locale }: { locale: Locale }) {
           ),
         ].some(visible);
       let next: { x: number; y: number } | null = null;
-      if (window.scrollY > Math.min(400, bounds.height * 0.5) && !modal) {
+      if (window.scrollY > metrics.scrollThreshold && !modal) {
         const elements = new Set<Element>(
           [...document.querySelectorAll(OBSTACLES)].filter(visible),
         );
@@ -61,7 +65,13 @@ export function ScrollToTop({ locale }: { locale: Locale }) {
         );
         // Probe the prospective button and its alternatives to discover third-party fixed widgets.
         for (let pass = 0; pass < 8; pass++) {
-          next = placeCornerControl(bounds, obstacles);
+          next = placeCornerControl(
+            bounds,
+            obstacles,
+            metrics.size,
+            metrics.inset,
+            metrics.gap,
+          );
           if (!next) break;
           let discovered = false;
           for (const [dx, dy] of [
@@ -72,8 +82,8 @@ export function ScrollToTop({ locale }: { locale: Locale }) {
             [21, 21],
           ]) {
             for (const hit of document.elementsFromPoint(
-              next.x + dx,
-              next.y + dy,
+              next.x + dx * metrics.inverseScale,
+              next.y + dy * metrics.inverseScale,
             )) {
               if (hit.closest("[data-scroll-top]")) continue;
               const interactive = hit.closest(
@@ -122,8 +132,15 @@ export function ScrollToTop({ locale }: { locale: Locale }) {
           targets = elements;
         }
       }
+      const placed = next
+        ? { ...next, inverseScale: metrics.inverseScale }
+        : null;
       setPlacement((previous) =>
-        previous?.x === next?.x && previous?.y === next?.y ? previous : next,
+        previous?.x === placed?.x &&
+        previous?.y === placed?.y &&
+        previous?.inverseScale === placed?.inverseScale
+          ? previous
+          : placed,
       );
       if (performance.now() < motionUntil) schedule();
     }
@@ -196,7 +213,11 @@ export function ScrollToTop({ locale }: { locale: Locale }) {
       aria-label={text(locale, "Back to top", "返回顶部")}
       title={text(locale, "Back to top", "返回顶部")}
       onClick={scrollPageToTop}
-      style={{ left: placement.x, top: placement.y }}
+      style={{
+        left: placement.x,
+        top: placement.y,
+        transform: `scale(${placement.inverseScale})`,
+      }}
     >
       <ArrowUp size={18} aria-hidden="true" />
     </button>,

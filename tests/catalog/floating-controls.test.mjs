@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { placeCornerControl } from "../../src/lib/layout/scroll-to-top.ts";
+import {
+  placeCornerControl,
+  cornerControlMetrics,
+} from "../../src/lib/layout/scroll-to-top.ts";
 
 test("corner control stays within the visual viewport and clears stacked floating widgets", () => {
   for (const width of [320, 390, 768, 1440]) {
@@ -28,6 +31,86 @@ test("corner control stays within the visual viewport and clears stacked floatin
       ),
     );
   }
+});
+
+test("pinch zoom preserves screen size, edge insets and scroll visibility through panning", () => {
+  for (const zoom of [0.75, 1, 1.5, 2, 3, 5]) {
+    for (const [left, top] of [
+      [0, 0],
+      [75, 130],
+    ]) {
+      const viewport = { left, top, width: 390 / zoom, height: 900 / zoom };
+      const metrics = cornerControlMetrics(viewport, zoom);
+      const result = placeCornerControl(
+        viewport,
+        [],
+        metrics.size,
+        metrics.inset,
+        metrics.gap,
+      );
+      assert(result);
+      assert(Math.abs(metrics.size * zoom - 42) < 0.001);
+      assert(
+        Math.abs(
+          (left + viewport.width - result.x - metrics.size) * zoom - 16,
+        ) < 0.001,
+      );
+      assert(
+        Math.abs(
+          (top + viewport.height - result.y - metrics.size) * zoom - 16,
+        ) < 0.001,
+      );
+      assert.equal(metrics.scrollThreshold, 400);
+    }
+  }
+});
+
+test("zoomed obstacle avoidance keeps the same visible clearance and hides behind covers", () => {
+  for (const zoom of [1, 1.5, 2, 4]) {
+    const viewport = {
+      left: 60,
+      top: 95,
+      width: 390 / zoom,
+      height: 800 / zoom,
+    };
+    const { size, inset, gap } = cornerControlMetrics(viewport, zoom);
+    const right = viewport.left + viewport.width,
+      bottom = viewport.top + viewport.height;
+    const widget = {
+      left: right - 100 / zoom,
+      right,
+      top: bottom - 80 / zoom,
+      bottom,
+    };
+    const result = placeCornerControl(viewport, [widget], size, inset, gap);
+    assert(result);
+    assert(
+      result.x + size <= widget.left - gap ||
+        result.y + size <= widget.top - gap,
+    );
+    assert.equal(
+      placeCornerControl(
+        viewport,
+        [{ left: viewport.left, top: viewport.top, right, bottom }],
+        size,
+        inset,
+        gap,
+      ),
+      null,
+    );
+  }
+});
+
+test("missing or invalid visual zoom defaults to normal geometry; keyboard resize remains independent", () => {
+  const viewport = { left: 0, top: 0, width: 390, height: 300 };
+  for (const zoom of [undefined, 0, -1, NaN, Infinity])
+    assert.deepEqual(cornerControlMetrics(viewport, zoom), {
+      inverseScale: 1,
+      size: 42,
+      inset: 16,
+      gap: 12,
+      scrollThreshold: 150,
+    });
 });
 test("full-screen covers hide the control, and keyboard offsets constrain placement", () => {
   assert.equal(
