@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink, FileText, LoaderCircle } from "lucide-react";
+import { ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CatalogCourse } from "@/lib/catalog/types";
-import { localizedTerm, text, type Locale } from "@/lib/i18n";
+import { text, type Locale } from "@/lib/i18n";
 import { syllabusClient } from "@/lib/syllabus/client";
 import {
   entryMatches,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/syllabus/normalize";
 import type { SyllabusEntry, SyllabusResult } from "@/lib/syllabus/types";
 import { SyllabusReader } from "./syllabus-reader";
+import { SyllabusSectionPicker } from "./syllabus-section-picker";
 import styles from "./syllabus.module.css";
 
 export default function SyllabusPanel({
@@ -64,28 +65,15 @@ export default function SyllabusPanel({
     entries.find((entry) => entry.code === selected) ??
     entries.find((entry) => matchedClass(entry) === focusClassNumber) ??
     entries[0];
-  const currentClass =
-    chosen &&
-    course.sections.find(
-      (section) => section.classNumber === matchedClass(chosen),
+  const choices = entries.flatMap((entry) => {
+    const section = course.sections.find(
+      (section) => section.classNumber === matchedClass(entry),
     );
+    return section ? [{ entry, section }] : [];
+  });
 
   return (
     <div className={styles.panel} data-syllabus-reader>
-      <div className={styles.intro}>
-        <FileText size={20} aria-hidden="true" />
-        <div>
-          <h3>{text(locale, "Course syllabus", "课程教学大纲")}</h3>
-          <p>
-            {localizedTerm(course.term, locale)} ·{" "}
-            {text(
-              locale,
-              "Matched by term, course and class number",
-              "按学期、课程和班次编号精确关联",
-            )}
-          </p>
-        </div>
-      </div>
       {error ? (
         <div className={styles.notice} role="status">
           <p>
@@ -117,40 +105,12 @@ export default function SyllabusPanel({
         </p>
       ) : entries.length ? (
         <>
-          <label className={styles.sectionChoice}>
-            {text(locale, "Class section", "开课班次")}
-            <select
-              value={chosen?.code ?? ""}
-              onChange={(event) => setSelected(event.target.value)}
-            >
-              {entries.map((entry) => {
-                const section = course.sections.find(
-                  (section) => section.classNumber === matchedClass(entry),
-                );
-                return (
-                  <option key={entry.code} value={entry.code}>
-                    #
-                    {section?.classNumber ??
-                      (entry.classNumber || entry.sectionIdentifier)}
-                    {section?.section
-                      ? ` · ${section.component} ${section.section}`
-                      : ""}
-                    {section?.instructors.length
-                      ? ` · ${section.instructors.map((instructor) => instructor.name).join(", ")}`
-                      : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-          {currentClass ? (
-            <p className={styles.caption}>
-              {currentClass.instructors
-                .map((person) => person.name)
-                .join(" · ")}{" "}
-              · #{currentClass.classNumber}
-            </p>
-          ) : null}
+          <SyllabusSectionPicker
+            items={choices}
+            value={chosen?.code ?? ""}
+            onChange={setSelected}
+            locale={locale}
+          />
           {chosen ? (
             <SyllabusReader key={chosen.code} entry={chosen} locale={locale} />
           ) : null}
