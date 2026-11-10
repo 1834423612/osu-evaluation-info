@@ -38,6 +38,7 @@ const server: Snapshot = {
 };
 let state = server;
 let initialized = false;
+let viewRevision = 0;
 const listeners = new Set<() => void>();
 const tap = createLogoTapSequence();
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -212,6 +213,7 @@ export const debugTools = {
     const development = process.env.NODE_ENV === "development";
     update({
       visible: development && !hidden,
+      expanded: development && !hidden && expanded,
       authorized: development,
       flags: window.__COURSE_ATLAS_DEBUG__ ?? DEFAULT_DEBUG_FLAGS,
       expiresAt: Date.now() + 8 * 3_600_000,
@@ -221,6 +223,7 @@ export const debugTools = {
       state.flags.layout,
     );
     instrumentNetwork();
+    const restoringView = viewRevision;
     void window.__COURSE_ATLAS_FETCH__!("/api/debug/session", {
       cache: "no-store",
     })
@@ -229,8 +232,12 @@ export const debugTools = {
         if (value.authorized)
           update({
             authorized: true,
-            visible: state.visible || reopen,
-            expanded: state.expanded || (reopen && expanded),
+            ...(viewRevision === restoringView
+              ? {
+                  visible: state.visible || reopen,
+                  expanded: reopen && expanded,
+                }
+              : {}),
             configured: value.configured,
             expiresAt: value.expiresAt,
           });
@@ -256,6 +263,7 @@ export const debugTools = {
   tapLogo(now: number, zh: boolean) {
     const count = tap(now);
     if (count === 7) {
+      viewRevision++;
       update({ visible: true, expanded: true });
       persist();
       notify(zh ? "调试工具已打开" : "Developer tools opened");
@@ -268,13 +276,17 @@ export const debugTools = {
     return count;
   },
   open() {
+    viewRevision++;
     update({ visible: true, expanded: true });
     persist();
   },
   toggle() {
+    viewRevision++;
     update({ expanded: !state.expanded });
+    persist();
   },
   hide() {
+    viewRevision++;
     update({ visible: false, expanded: false });
     persist();
   },
