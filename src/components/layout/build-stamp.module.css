@@ -1,26 +1,70 @@
 .stamp {
   display: inline-flex;
   min-width: 0;
-  max-width: min(440px, 100%);
+  width: min(278px, 100%);
+  max-width: 100%;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 9px;
   background: var(--subtle-surface);
-  padding: 5px 8px;
+  padding: 7px 9px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 9px;
+  line-height: 1.5;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
 }
-.stamp > :is(svg, code) {
+.stamp:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+.stamp:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+:is(.icon, .arrow) {
   flex: 0 0 auto;
 }
-.stamp > code {
-  color: var(--secondary-foreground);
-  font-size: 10px;
+.icon {
+  color: var(--primary);
 }
-.stamp > span {
+.copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+.meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.meta > time {
+  color: var(--secondary-foreground);
+}
+.meta > small {
+  color: var(--muted);
+  font-size: 8px;
+}
+.meta > code {
+  margin-left: auto;
+  color: var(--secondary-foreground);
+  font-size: 9px;
+}
+.subject {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp {
+    transition: none;
+  }
 }

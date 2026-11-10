@@ -119,7 +119,7 @@ export function DebugTools() {
                     : text(locale, "Locked", "待解锁")}
                 </small>
               </header>
-              <BuildStamp />
+              <BuildStamp locale={locale} />
               {!state.authorized ? (
                 <form
                   onSubmit={async (event) => {

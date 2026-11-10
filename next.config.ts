@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
     )
       .split(/\r?\n/)[0]
       .slice(0, 180),
+    NEXT_PUBLIC_BUILD_UPDATED_AT: gitValue("%cI") || new Date().toISOString(),
   },
   allowedDevOrigins: process.env.DEV_TAILSCALE_IP
     ? [process.env.DEV_TAILSCALE_IP]

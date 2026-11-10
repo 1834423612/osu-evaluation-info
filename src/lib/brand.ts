@@ -15,6 +15,12 @@ export const brand = {
     "Explore Ohio State courses, schedules, and professor evaluations. Hop into better classes and leap toward your degree with WahO!",
   themeColor: "#BA0C2F",
   backgroundColor: "#FAF8F6",
+  links: {
+    repository: "https://github.com/1834423612/osu-evaluation-info",
+    mainBranch: "https://github.com/1834423612/osu-evaluation-info/tree/master",
+    author: "https://github.com/1834423612",
+    website: "https://www.kjch.net",
+  },
   assets: {
     portrait: "/brand/mascot/portrait.webp",
     mascot: "/brand/mascot/full.webp",

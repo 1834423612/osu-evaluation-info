@@ -87,8 +87,10 @@ repack the cloud without dropping or clipping words.
 
 Server-rendered titles and social metadata use English. Browser tab titles follow
 the active site language and route, including after client navigation. The
-version strip uses the first line of the commit subject and a short hash from
-Vercel build metadata or the local Git checkout; long subjects are truncated.
+version strip links to the repository's primary branch and shows the first line
+of the commit subject, a short hash, and the latest commit time in UTC. The hash
+and subject come from Vercel build metadata or the local Git checkout. If Git
+timestamps are unavailable, the strip uses build time. Long subjects are truncated.
 
 ## Verification
 
