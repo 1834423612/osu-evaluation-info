@@ -1,33 +1,42 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
 import { ArrowUpRight, GitCommitHorizontal } from "lucide-react";
 import { brand } from "@/lib/brand";
 import { text, type Locale } from "@/lib/i18n";
+import { formatReleaseTime } from "@/lib/layout/release-time";
 import styles from "./build-stamp.module.css";
 
+function subscribeTimeZone(update: () => void) {
+  window.addEventListener("focus", update);
+  document.addEventListener("visibilitychange", update);
+  return () => {
+    window.removeEventListener("focus", update);
+    document.removeEventListener("visibilitychange", update);
+  };
+}
+const browserTimeZone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
+  const timeZone = useSyncExternalStore(
+    subscribeTimeZone,
+    browserTimeZone,
+    () => "UTC",
+  );
   const hash = process.env.NEXT_PUBLIC_BUILD_HASH;
   if (!hash) return null;
   const message = (process.env.NEXT_PUBLIC_BUILD_MESSAGE ?? "").split(
     /\r?\n/,
   )[0];
   const updatedAt = process.env.NEXT_PUBLIC_BUILD_UPDATED_AT ?? "";
-  const date = new Date(updatedAt);
-  const updated = Number.isFinite(date.getTime())
-    ? new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-        timeZone: "UTC",
-      }).format(date)
-    : null;
+  const updated = formatReleaseTime(updatedAt, locale, timeZone);
   return (
     <a
       className={styles.stamp}
       href={brand.links.mainBranch}
       target="_blank"
       rel="noreferrer noopener"
-      title={`${updatedAt} · ${hash} · ${message}`}
+      title={`${updated?.full ?? updatedAt} · ${hash} · ${message}`}
       aria-label={text(
         locale,
         `Latest update ${hash}. View source on GitHub.`,
@@ -45,8 +54,8 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
           {updated ? (
             <>
               <span>{text(locale, "Updated", "更新于")}</span>
-              <time dateTime={updatedAt}>{updated}</time>
-              <small>UTC</small>
+              <time dateTime={updatedAt}>{updated.label}</time>
+              <small>{updated.zone}</small>
             </>
           ) : null}
           <code>{hash}</code>

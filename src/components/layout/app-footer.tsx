@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Github, Globe2 } from "lucide-react";
+import { ArrowUpRight, Globe2 } from "lucide-react";
+import { GitHubMark } from "@/components/brand/github-mark";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -13,8 +14,8 @@ import styles from "./app-footer.module.css";
 export function AppFooter() {
   const { locale } = usePreferences();
   return (
-    <footer className="site-footer">
-      <div className="footer-identity">
+    <footer className={`site-footer ${styles.footer}`}>
+      <div className={`footer-identity ${styles.identity}`}>
         <Link
           href="/"
           className="footer-brand"
@@ -33,7 +34,10 @@ export function AppFooter() {
           </span>
         </Link>
       </div>
-      <div className="footer-links">
+      <div className={styles.release}>
+        <BuildStamp locale={locale} />
+      </div>
+      <div className={`footer-links ${styles.links}`}>
         <Link href="/methodology">
           {text(locale, "Behind the data", "数据与方法")}
         </Link>
@@ -46,38 +50,7 @@ export function AppFooter() {
           <ArrowUpRight size={12} />
         </a>
       </div>
-      <div className={styles.project}>
-        <a
-          className={styles.openSource}
-          href={brand.links.repository}
-          target="_blank"
-          rel="noreferrer noopener"
-          data-open-source
-        >
-          <span className={styles.sourceIcon}>
-            <Github size={19} aria-hidden="true" />
-          </span>
-          <span className={styles.sourceCopy}>
-            <strong>
-              {text(
-                locale,
-                "Open source. Built for Buckeyes.",
-                "完全开源，为选课多一点帮助。",
-              )}
-            </strong>
-            <span>
-              {text(
-                locale,
-                "Explore the code on GitHub",
-                "在 GitHub 查看代码，欢迎一起完善",
-              )}{" "}
-              <ArrowUpRight size={11} aria-hidden="true" />
-            </span>
-          </span>
-        </a>
-        <BuildStamp locale={locale} />
-      </div>
-      <div className="footer-disclaimer">
+      <div className={`footer-disclaimer ${styles.disclaimer}`}>
         <p>
           {text(
             locale,
@@ -85,33 +58,25 @@ export function AppFooter() {
             "本站为独立学生项目，不隶属于俄亥俄州立大学，亦未经其官方认可。课程与选课信息以 OSU 官方记录为准；本站仅做信息整理收录，学生评价代表其个人观点，不构成任何官方立场。",
           )}
         </p>
-        <div className={styles.credit}>
-          <span>
-            Made with{" "}
-            <span className={styles.heart} aria-label="love">
-              ❤️
-            </span>{" "}
-            by
-          </span>
-          <a
-            href={brand.links.author}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            kjch
-          </a>
-          <span aria-hidden="true" className={styles.separator}>
-            ·
-          </span>
-          <a
-            href={brand.links.website}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            <Globe2 size={11} aria-hidden="true" />
-            {text(locale, "Personal site", "个人网站")}
-          </a>
-        </div>
+      </div>
+      <div className={styles.credit}>
+        <span>
+          Made with{" "}
+          <span className={styles.heart} aria-label="love">
+            ❤️
+          </span>{" "}
+          by
+        </span>
+        <a href={brand.links.author} target="_blank" rel="noreferrer noopener">
+          <GitHubMark size={12} /> kjch
+        </a>
+        <span aria-hidden="true" className={styles.separator}>
+          ·
+        </span>
+        <a href={brand.links.website} target="_blank" rel="noreferrer noopener">
+          <Globe2 size={11} aria-hidden="true" />
+          {text(locale, "Personal site", "个人网站")}
+        </a>
       </div>
     </footer>
   );

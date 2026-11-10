@@ -95,3 +95,8 @@ The resolution order is `SITE_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_URL
 Keep original artwork and unused exports in the master kit. Copy only the chosen runtime variant into `public/brand` and update `src/lib/brand.ts` when a path changes. Run `pnpm brand:social` after updating the full mascot or brand copy. Browser icons are refreshed through `pnpm brand:icons`. Do not copy the complete master kit into the website.
 
 The master kit's `README.md` records provenance and format details. Historical website asset notes remain in its `legacy/osu-eval-docs` directory. The artwork depicts an unofficial campus mascot with Ohio State Block O elements; the supplied kit's usage notice remains with the originals.
+
+The compact GitHub notice appears below the header. Its mark and the author-link
+mark use a bundled `mark-github-16` SVG from GitHub's Primer Octicons instead of
+Lucide brand icons. The MIT notice is included at
+`public/brand/licenses/octicons.txt`; rendering makes no external icon request.

@@ -88,7 +88,8 @@ repack the cloud without dropping or clipping words.
 Server-rendered titles and social metadata use English. Browser tab titles follow
 the active site language and route, including after client navigation. The
 version strip links to the repository's primary branch and shows the first line
-of the commit subject, a short hash, and the latest commit time in UTC. The hash
+of the commit subject, a short hash, and the latest commit time in the browser's
+time zone (with a hydration-safe UTC server fallback). The hash
 and subject come from Vercel build metadata or the local Git checkout. If Git
 timestamps are unavailable, the strip uses build time. Long subjects are truncated.
 

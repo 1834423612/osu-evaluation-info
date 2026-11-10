@@ -68,3 +68,26 @@
     transition: none;
   }
 }
+@media (max-width: 640px) {
+  .stamp {
+    gap: 5px;
+    padding: 6px;
+  }
+  .meta {
+    gap: 2px 4px;
+    font-size: 8px;
+  }
+  .meta > span,
+  .meta > small {
+    display: none;
+  }
+  .meta > code {
+    font-size: 8px;
+  }
+  .subject {
+    font-size: 9px;
+  }
+  .arrow {
+    display: none;
+  }
+}
