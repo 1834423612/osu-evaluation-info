@@ -42,6 +42,28 @@
   min-width: 0;
   margin-top: 16px;
 }
+:global(.course-detail-panel):has(.panel) {
+  width: min(1000px, 96vw);
+}
+.officialFrame {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+.layoutChoice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  width: fit-content;
+}
 .toolbar {
   display: flex;
   align-items: center;

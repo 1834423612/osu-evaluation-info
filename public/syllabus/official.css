@@ -1,0 +1,201 @@
+/* Published OSU BUX syllabus typography, observed 2026-11-10.
+   Source: https://osu.simplesyllabus.com/api/syllabus-style.css
+   Editor presentation rules are reproduced without the source site's application code. */
+@font-face {
+  font-family: BuckeyeSans;
+  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Regular.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: BuckeyeSans;
+  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Italic.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: BuckeyeSans;
+  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Bold.woff2")
+    format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: BuckeyeSans;
+  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-ExtraBold.woff2")
+    format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: BuckeyeSerif;
+  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSerif/BuckeyeSerif2-Black.woff2")
+    format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+html {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #242526;
+  font-family: BuckeyeSans, InterNeue, Inter, Arial, sans-serif;
+  overflow-wrap: break-word;
+}
+body {
+  margin: 0;
+  background: #fff;
+}
+* {
+  box-sizing: border-box;
+}
+.doc {
+  width: 816px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+.component {
+  min-width: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+.component-wrapper {
+  display: block;
+}
+.flex {
+  display: flex;
+}
+.flex-row {
+  flex-direction: row;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.flex-1 {
+  flex: 1 1 0;
+}
+.list-none {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+app-form-editor,
+app-heading-component-variation,
+app-heading-component-editor-content,
+app-heading-component-editor-list,
+app-heading-cell-container,
+app-heading-cell {
+  display: block;
+}
+.component-body {
+  color: #242526;
+  font-family: BuckeyeSans, InterNeue, Inter, Arial, sans-serif;
+  font-size: 12pt;
+  font-weight: 300;
+}
+h1 {
+  margin: 0.67em 0;
+  font-family: BuckeyeSerif, Georgia, serif;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 2.25rem;
+}
+h2 {
+  margin: 0 0 8px;
+  font-family: BuckeyeSans, InterNeue, Inter, Arial, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 2.25rem;
+}
+.component .app-name-view.component-name {
+  margin: 24px 0 16px;
+  border-bottom: 2px solid #dfe1e5;
+  color: #242526;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 2.25rem;
+}
+h3 {
+  margin: 24px 0 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.625rem;
+}
+h4 {
+  margin: 24px 0 8px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+}
+.fr-view p {
+  margin: 1em 0;
+}
+.fr-view > p:first-child {
+  margin-top: 0;
+}
+.fr-view > p:last-child {
+  margin-bottom: 0;
+}
+.fr-view p:has(img[alt="The Ohio State University"]) {
+  width: 300px;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 24px 0 0;
+}
+.fr-view
+  p:has(img[alt="The Ohio State University"])
+  + h1
+  > span:is(:nth-of-type(1), :nth-of-type(2)) {
+  font-family: BuckeyeSans, InterNeue, Inter, Arial, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.625rem;
+}
+.component img {
+  max-width: 100%;
+  height: auto;
+}
+img.fr-dib {
+  display: block;
+  margin: 5px auto;
+}
+img.fr-fil {
+  margin-left: 0;
+}
+a {
+  color: #ba0c2f;
+  text-decoration: underline;
+}
+ul li::marker {
+  color: #ba0c2f;
+}
+table {
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+td,
+th {
+  min-width: 5px;
+  border: 1px solid #ddd;
+  padding: 5px;
+  vertical-align: top;
+}
+caption {
+  text-align: left;
+}
+pre {
+  white-space: pre-wrap;
+}
+strong,
+b {
+  font-weight: 700;
+}

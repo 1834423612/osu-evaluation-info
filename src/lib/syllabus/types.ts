@@ -30,6 +30,7 @@ export type SyllabusComponent = {
   order: number;
   locale: string;
   html: string;
+  officialHtml?: string;
 };
 
 export type SyllabusDocument = {

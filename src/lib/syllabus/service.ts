@@ -1,6 +1,7 @@
 import { createRequestPool } from "../catalog/request-pool.ts";
 import { anonymousSyllabusFetch } from "./anonymous-fetch.ts";
 import { cleanSyllabusHtml } from "./content.ts";
+import { cleanOfficialSyllabusHtml } from "./official-render.ts";
 import {
   entryMatches,
   SyllabusError,
@@ -133,6 +134,9 @@ export async function syllabusDocument(
           components: doc.components.map((component) => ({
             ...component,
             html: cleanSyllabusHtml(component.html),
+            officialHtml: cleanOfficialSyllabusHtml(
+              component.officialHtml ?? component.html,
+            ),
           })),
         });
       },

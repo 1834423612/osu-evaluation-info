@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Download, ExternalLink, LoaderCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataSourceBadge } from "@/components/ui/data-source-badge";
@@ -15,6 +15,8 @@ import type {
 } from "@/lib/syllabus/types";
 import styles from "./syllabus.module.css";
 import { SyllabusHighlights } from "./syllabus-highlights";
+import { OfficialSyllabusView } from "./official-syllabus-view";
+import { scrollOfficialSyllabusSection } from "@/lib/syllabus/official-render";
 
 export function SyllabusReader({
   entry,
@@ -32,6 +34,8 @@ export function SyllabusReader({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
   const sectionId = useId();
+  const [layout, setLayout] = useState<"official" | "reading">("official");
+  const officialFrame = useRef<HTMLIFrameElement>(null);
   const { code, termId, entityId, classNumber } = entry;
 
   useEffect(() => {
@@ -218,6 +222,28 @@ export function SyllabusReader({
       </p>
       {sections.length ? (
         <>
+          <div
+            className={styles.layoutChoice}
+            role="group"
+            aria-label={text(locale, "Syllabus layout", "大纲版式")}
+          >
+            <Button
+              size="sm"
+              variant={layout === "official" ? "secondary" : "ghost"}
+              aria-pressed={layout === "official"}
+              onClick={() => setLayout("official")}
+            >
+              {text(locale, "Official layout", "官方版式")}
+            </Button>
+            <Button
+              size="sm"
+              variant={layout === "reading" ? "secondary" : "ghost"}
+              aria-pressed={layout === "reading"}
+              onClick={() => setLayout("reading")}
+            >
+              {text(locale, "Reading view", "清爽阅读")}
+            </Button>
+          </div>
           <SyllabusHighlights document={result.data} locale={locale} />
           <div className={styles.search}>
             <Search size={15} />
@@ -244,7 +270,14 @@ export function SyllabusReader({
                 key={section.id}
                 type="button"
                 data-category={section.category}
-                onClick={() =>
+                onClick={() => {
+                  if (layout === "official" && officialFrame.current) {
+                    scrollOfficialSyllabusSection(
+                      officialFrame.current,
+                      section.id,
+                    );
+                    return;
+                  }
                   document
                     .getElementById(`${sectionId}-${section.id}`)
                     ?.scrollIntoView({
@@ -254,8 +287,8 @@ export function SyllabusReader({
                       ).matches
                         ? "instant"
                         : "smooth",
-                    })
-                }
+                    });
+                }}
               >
                 {section.title}
               </button>
@@ -270,23 +303,33 @@ export function SyllabusReader({
               )}
             </p>
           ) : null}
-          <article
-            className={styles.paper}
-            aria-label={text(
-              locale,
-              "Published syllabus content",
-              "已发布大纲正文",
-            )}
-          >
-            {visible.map((section) => (
-              <section
-                id={`${sectionId}-${section.id}`}
-                key={section.id}
-                className={styles.contentSection}
-                dangerouslySetInnerHTML={{ __html: section.html }}
-              />
-            ))}
-          </article>
+          {layout === "official" ? (
+            <OfficialSyllabusView
+              frameRef={officialFrame}
+              components={result.data.components.filter((component) =>
+                visible.some((section) => section.id === component.id),
+              )}
+              locale={locale}
+            />
+          ) : (
+            <article
+              className={styles.paper}
+              aria-label={text(
+                locale,
+                "Published syllabus content",
+                "已发布大纲正文",
+              )}
+            >
+              {visible.map((section) => (
+                <section
+                  id={`${sectionId}-${section.id}`}
+                  key={section.id}
+                  className={styles.contentSection}
+                  dangerouslySetInnerHTML={{ __html: section.html }}
+                />
+              ))}
+            </article>
+          )}
         </>
       ) : (
         <p className={styles.notice}>

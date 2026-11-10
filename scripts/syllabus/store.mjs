@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { cleanSyllabusHtml } from "../../src/lib/syllabus/content.ts";
+import { cleanOfficialSyllabusHtml } from "../../src/lib/syllabus/official-render.ts";
 
 export class SyllabusIndexChangedError extends Error {}
 
@@ -87,6 +88,9 @@ export async function saveDocument(client, document) {
     components: document.components.map((component) => ({
       ...component,
       html: cleanSyllabusHtml(component.html),
+      officialHtml: cleanOfficialSyllabusHtml(
+        component.officialHtml ?? component.html,
+      ),
     })),
   };
   const json = JSON.stringify(safe),

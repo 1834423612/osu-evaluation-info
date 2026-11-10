@@ -174,6 +174,7 @@ export function normalizeDocument(
         {
           id,
           html,
+          officialHtml: html,
           type: str(c.component_type),
           order: Number(c.sort_order) || 0,
           locale: str(c.locale) || "en-US",
