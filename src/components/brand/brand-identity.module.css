@@ -17,7 +17,7 @@
 }
 
 .hero {
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 28px;
   padding: 3px 0 5px;
 }

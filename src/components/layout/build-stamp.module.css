@@ -1,93 +1,152 @@
 .stamp {
-  display: inline-flex;
-  min-width: 0;
-  width: min(278px, 100%);
-  max-width: 100%;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--subtle-surface);
-  padding: 7px 9px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 28px;
+  border-radius: 5px;
+  padding: 4px 2px;
+  background: transparent;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.5;
-  text-decoration: none;
-  transition:
-    border-color 180ms ease,
-    background-color 180ms ease;
+  cursor: pointer;
+  transition: color 160ms ease;
 }
-.stamp:hover {
-  border-color: var(--accent-border);
+.stamp:hover,
+.stamp[data-state="open"] {
+  color: var(--primary);
+}
+.stamp code {
+  color: var(--ink);
+  font-size: 10px;
+}
+.stamp :is(time, code) {
+  white-space: nowrap;
+}
+.icon {
+  flex: 0 0 auto;
+}
+.arrow {
+  flex: 0 0 auto;
+  transition: transform 180ms ease;
+}
+.stamp[data-state="open"] .arrow {
+  transform: rotate(180deg);
+}
+.details {
+  z-index: 160;
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(420px, var(--radix-popover-content-available-height));
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: 0 12px 36px rgb(30 23 35 / 12%);
+  color: var(--ink);
+  animation: appear 160ms ease-out;
+}
+.details header > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.details header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.close:hover {
   background: var(--accent-soft);
+  color: var(--primary);
 }
-.stamp:focus-visible {
+.details time {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.details p {
+  margin: 12px 0 15px;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.detailLinks {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 11px;
+}
+.detailLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #496080;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.detailLinks a:hover {
+  color: var(--primary);
+}
+.stamp:focus-visible,
+.details :is(button, a):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
-:is(.icon, .arrow) {
-  flex: 0 0 auto;
+.popoverArrow {
+  fill: var(--surface);
 }
-.icon {
-  color: var(--primary);
-}
-.copy {
-  display: grid;
-  min-width: 0;
-  flex: 1;
-  gap: 2px;
-}
-.meta {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px;
-  font-variant-numeric: tabular-nums;
-}
-.meta > time {
-  color: var(--secondary-foreground);
-}
-.meta > small {
-  color: var(--muted);
-  font-size: 8px;
-}
-.meta > code {
-  margin-left: auto;
-  color: var(--secondary-foreground);
-  font-size: 9px;
-}
-.subject {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 10px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .stamp {
-    transition: none;
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 @media (max-width: 640px) {
   .stamp {
-    gap: 5px;
-    padding: 6px;
-  }
-  .meta {
-    gap: 2px 4px;
-    font-size: 8px;
-  }
-  .meta > span,
-  .meta > small {
-    display: none;
-  }
-  .meta > code {
-    font-size: 8px;
-  }
-  .subject {
+    gap: 4px;
     font-size: 9px;
   }
-  .arrow {
+  .stamp code {
+    font-size: 9px;
+  }
+  .stamp > span {
     display: none;
+  }
+  .icon {
+    width: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp,
+  .arrow {
+    transition: none;
+  }
+  .details {
+    animation: none;
   }
 }

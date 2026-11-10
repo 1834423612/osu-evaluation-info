@@ -8,7 +8,7 @@ import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { usePreferences } from "@/hooks/use-preferences";
 import { brand } from "@/lib/brand";
 import { text } from "@/lib/i18n";
-import { BuildStamp } from "./build-stamp";
+import { OpenSourceNotice } from "./open-source-notice";
 import styles from "./app-footer.module.css";
 
 export function AppFooter() {
@@ -35,7 +35,7 @@ export function AppFooter() {
         </Link>
       </div>
       <div className={styles.release}>
-        <BuildStamp locale={locale} />
+        <OpenSourceNotice locale={locale} compact />
       </div>
       <div className={`footer-links ${styles.links}`}>
         <Link href="/methodology">

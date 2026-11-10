@@ -1,6 +1,8 @@
 "use client";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
+import { ProjectInfo } from "@/components/layout/project-info";
+import projectStyles from "@/components/layout/project-info.module.css";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 import { brand } from "@/lib/brand";
@@ -10,10 +12,17 @@ export function Methodology() {
     <>
       <AppHeader active="methodology" />
       <main className="methodology-shell">
-        <span className="brand-eyebrow">
-          OHIO STATE · {brand.names[locale]}
-        </span>
-        <h1>{text(locale, "Behind the data", "数据从哪里来，分数怎么算")}</h1>
+        <div className={projectStyles.pageHeading}>
+          <div>
+            <span className="brand-eyebrow">
+              OHIO STATE · {brand.names[locale]}
+            </span>
+            <h1>
+              {text(locale, "Behind the data", "数据从哪里来，分数怎么算")}
+            </h1>
+          </div>
+          <ProjectInfo locale={locale} />
+        </div>
         <article>
           <h2>{text(locale, "Current classes", "当前开课信息")}</h2>
           <p>

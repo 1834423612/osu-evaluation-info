@@ -26,6 +26,8 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { AppHeader } from "@/components/layout/app-header";
 import { scrollPageToTop } from "@/lib/layout/scroll-to-top";
 import { AppFooter } from "@/components/layout/app-footer";
+import { ProjectInfo } from "@/components/layout/project-info";
+import projectStyles from "@/components/layout/project-info.module.css";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { brand } from "@/lib/brand";
@@ -392,27 +394,34 @@ export function CourseExplorer() {
               )}
             </p>
           </div>
-          <div className="term-control">
-            <label htmlFor="term-select">
-              {text(locale, "ACADEMIC TERM", "开课学期")}
-            </label>
-            <Select
-              value={selectedTerm}
-              onValueChange={(value) => updateParam("term", value)}
-            >
-              <SelectTrigger id="term-select" className="term-select">
-                <SelectValue
-                  placeholder={text(locale, "Loading terms…", "正在获取学期…")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {result?.terms.map((term) => (
-                  <SelectItem key={term.code} value={term.code}>
-                    {localizedTerm(term.label, locale)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className={projectStyles.heroTools}>
+            <ProjectInfo locale={locale} />
+            <div className="term-control">
+              <label htmlFor="term-select">
+                {text(locale, "ACADEMIC TERM", "开课学期")}
+              </label>
+              <Select
+                value={selectedTerm}
+                onValueChange={(value) => updateParam("term", value)}
+              >
+                <SelectTrigger id="term-select" className="term-select">
+                  <SelectValue
+                    placeholder={text(
+                      locale,
+                      "Loading terms…",
+                      "正在获取学期…",
+                    )}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {result?.terms.map((term) => (
+                    <SelectItem key={term.code} value={term.code}>
+                      {localizedTerm(term.label, locale)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <form

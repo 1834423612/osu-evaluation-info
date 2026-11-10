@@ -1,7 +1,13 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { ArrowUpRight, GitCommitHorizontal } from "lucide-react";
+import {
+  ArrowUpRight,
+  GitCommitHorizontal,
+  ChevronDown,
+  X,
+} from "lucide-react";
+import { Popover } from "radix-ui";
 import { brand } from "@/lib/brand";
 import { text, type Locale } from "@/lib/i18n";
 import { formatReleaseTime } from "@/lib/layout/release-time";
@@ -31,40 +37,83 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
   const updatedAt = process.env.NEXT_PUBLIC_BUILD_UPDATED_AT ?? "";
   const updated = formatReleaseTime(updatedAt, locale, timeZone);
   return (
-    <a
-      className={styles.stamp}
-      href={brand.links.mainBranch}
-      target="_blank"
-      rel="noreferrer noopener"
-      title={`${updated?.full ?? updatedAt} · ${hash} · ${message}`}
-      aria-label={text(
-        locale,
-        `Latest update ${hash}. View source on GitHub.`,
-        `最近更新 ${hash}，前往 GitHub 查看源代码。`,
-      )}
-      data-build-stamp
-    >
-      <GitCommitHorizontal
-        size={14}
-        className={styles.icon}
-        aria-hidden="true"
-      />
-      <span className={styles.copy}>
-        <span className={styles.meta}>
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          className={styles.stamp}
+          title={text(locale, "View update details", "查看更新详情")}
+          aria-label={text(
+            locale,
+            `Update details · ${hash}`,
+            `查看更新详情 · ${hash}`,
+          )}
+          data-build-stamp
+        >
+          <GitCommitHorizontal
+            size={14}
+            className={styles.icon}
+            aria-hidden="true"
+          />
           {updated ? (
             <>
               <span>{text(locale, "Updated", "更新于")}</span>
               <time dateTime={updatedAt}>{updated.label}</time>
-              <small>{updated.zone}</small>
             </>
           ) : null}
           <code>{hash}</code>
-        </span>
-        <span className={styles.subject}>
-          {message || text(locale, "Latest version", "最新版本")}
-        </span>
-      </span>
-      <ArrowUpRight size={12} className={styles.arrow} aria-hidden="true" />
-    </a>
+          <ChevronDown size={11} className={styles.arrow} aria-hidden="true" />
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          className={styles.details}
+          sideOffset={8}
+          align="end"
+          collisionPadding={16}
+          aria-label={text(locale, "Update details", "更新详情")}
+          data-update-details
+          data-floating-obstacle
+        >
+          <header>
+            <span>
+              <GitCommitHorizontal size={16} aria-hidden="true" />
+              {text(locale, "Latest update", "最近更新")}
+            </span>
+            <Popover.Close
+              className={styles.close}
+              aria-label={text(locale, "Close update details", "关闭更新详情")}
+            >
+              <X size={15} />
+            </Popover.Close>
+          </header>
+          {updated ? (
+            <time dateTime={updatedAt} title={updated.full}>
+              {updated.full}
+            </time>
+          ) : null}
+          <p>{message || text(locale, "Latest version", "最新版本")}</p>
+          <div className={styles.detailLinks}>
+            <a
+              href={`${brand.links.repository}/commit/${hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <code>{hash}</code>
+              <ArrowUpRight size={12} aria-hidden="true" />
+            </a>
+            <a
+              href={brand.links.mainBranch}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {text(locale, "View source", "查看源码")}
+              <ArrowUpRight size={12} aria-hidden="true" />
+            </a>
+          </div>
+          <Popover.Arrow className={styles.popoverArrow} />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

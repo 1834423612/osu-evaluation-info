@@ -15,7 +15,6 @@ import { TranslationGuide } from "@/components/translation/translation-guide";
 import { BrowserModelDownload } from "@/components/translation/browser-model-download";
 import { DebugTools } from "@/components/debug/debug-tools";
 import { ScrollToTop } from "./scroll-to-top";
-import { OpenSourceNotice } from "./open-source-notice";
 import styles from "./language-controls.module.css";
 
 export function AppHeader({
@@ -121,7 +120,6 @@ export function AppHeader({
           </div>
         </div>
       </header>
-      <OpenSourceNotice locale={locale} />
     </>
   );
 }

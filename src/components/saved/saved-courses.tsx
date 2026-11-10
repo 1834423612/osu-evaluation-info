@@ -1,4 +1,7 @@
 "use client";
+
+import { ProjectInfo } from "@/components/layout/project-info";
+import projectStyles from "@/components/layout/project-info.module.css";
 import Link from "next/link";
 import { BookOpen, GraduationCap, HardDrive, Star, Trash2 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
@@ -162,10 +165,13 @@ export function SavedCourses() {
               )}
             </p>
           </div>
-          <span className="saved-note">
-            <HardDrive size={13} />
-            {text(locale, "Saved on this device", "保存在当前设备")}
-          </span>
+          <div className={projectStyles.savedTools}>
+            <ProjectInfo locale={locale} />
+            <span className="saved-note">
+              <HardDrive size={13} />
+              {text(locale, "Saved on this device", "保存在当前设备")}
+            </span>
+          </div>
         </div>
         {savedCount ? (
           <Tabs

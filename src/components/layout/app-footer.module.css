@@ -1,6 +1,6 @@
 .footer:global(.site-footer) {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 278px);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px 24px;
 }
@@ -12,7 +12,7 @@
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
-  width: 100%;
+  max-width: 278px;
   min-width: 0;
 }
 .links {
@@ -89,7 +89,7 @@
 }
 @media (max-width: 640px) {
   .footer:global(.site-footer) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 164px);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px 10px;
   }
   .identity :global(.footer-description) {
