@@ -107,14 +107,25 @@ export default function RmpPanel({
     >
       <div className={styles.heading}>
         <h3>Rate My Professors</h3>
-        <div className={styles.headingMeta}>
+        <span
+          className={styles.syncNote}
+          title={text(locale, "Synced", "定期同步")}
+        >
+          <RefreshCw size={11} aria-hidden="true" />
+          {text(locale, "Synced", "定期同步")}
+        </span>
+        <div
+          className={styles.headingMeta}
+          title={text(locale, "Not official OSU data", "非 OSU 官方数据")}
+        >
           <DataSourceBadge source="unofficial">
             <AlertTriangle size={14} aria-hidden="true" />
-            {text(locale, "Not official OSU data", "非 OSU 官方数据")}
-          </DataSourceBadge>
-          <DataSourceBadge source="sync">
-            <RefreshCw size={14} aria-hidden="true" />
-            {text(locale, "Periodically synced from RMP", "定期同步自 RMP")}
+            <span className={styles.fullSource}>
+              {text(locale, "Not official OSU data", "非 OSU 官方数据")}
+            </span>
+            <span className={styles.shortSource}>
+              {text(locale, "Unofficial", "非官方")}
+            </span>
           </DataSourceBadge>
         </div>
       </div>

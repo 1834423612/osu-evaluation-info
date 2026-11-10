@@ -1,0 +1,98 @@
+import { normalizeRmpInput } from "./input.ts";
+import type { CourseRmpInput, CourseRmpSummary } from "./types";
+
+export type RmpInsight = {
+  status: CourseRmpSummary["status"];
+  tags: { tag: string; count: number }[];
+  difficulty: number | null;
+  difficultyCount: number;
+  reviewCount: number;
+  matchedInstructorCount: number;
+  requestedInstructorCount: number;
+  recentSince: string;
+};
+
+export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
+  const professors = [
+    ...new Map(
+      summary.instructors.map((item) => [item.professorId, item]),
+    ).values(),
+  ];
+  const tags = new Map<string, { tag: string; count: number }>();
+  let total = 0,
+    count = 0;
+  for (const professor of professors) {
+    if (
+      professor.recentDifficulty !== null &&
+      professor.recentDifficulty >= 1 &&
+      professor.recentDifficulty <= 5 &&
+      professor.recentDifficultyCount > 0
+    ) {
+      total += professor.recentDifficulty * professor.recentDifficultyCount;
+      count += professor.recentDifficultyCount;
+    }
+    for (const item of professor.topTags) {
+      const tag = item.tag.trim(),
+        identity = tag.toLowerCase();
+      if (!tag || !Number.isFinite(item.count) || item.count <= 0) continue;
+      const existing = tags.get(identity);
+      tags.set(identity, {
+        tag: existing?.tag ?? tag,
+        count: (existing?.count ?? 0) + item.count,
+      });
+    }
+  }
+  return {
+    status: summary.status,
+    tags: [...tags.values()]
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+      .slice(0, 12),
+    difficulty: count ? total / count : null,
+    difficultyCount: count,
+    reviewCount: professors.reduce((sum, item) => sum + item.reviewCount, 0),
+    matchedInstructorCount: summary.matchedInstructorCount,
+    requestedInstructorCount: summary.requestedInstructorCount,
+    recentSince: summary.recentSince,
+  };
+}
+
+export function parseRmpPreviewBatch(
+  value: unknown,
+): (CourseRmpInput & { id: string })[] {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !Array.isArray((value as { courses?: unknown }).courses)
+  )
+    throw new RangeError("Invalid course batch");
+  const courses = (value as { courses: unknown[] }).courses;
+  if (courses.length > 24) throw new RangeError("At most 24 courses");
+  const ids = new Set<string>();
+  return courses.map((value) => {
+    const item = value as CourseRmpInput & { id: string };
+    if (
+      !item ||
+      typeof item.id !== "string" ||
+      !item.id ||
+      item.id.length > 180 ||
+      ids.has(item.id) ||
+      typeof item.subject !== "string" ||
+      typeof item.catalogNumber !== "string" ||
+      typeof item.campus !== "string" ||
+      !Array.isArray(item.usernames) ||
+      item.usernames.some((value) => typeof value !== "string")
+    )
+      throw new RangeError("Invalid course");
+    ids.add(item.id);
+    return { ...normalizeRmpInput(item), id: item.id };
+  });
+}
+
+export function rmpTagTone(tag: string) {
+  if (/homework|workload|assignment|attendance|reading/i.test(tag))
+    return "work";
+  if (/test|exam|quiz|grade|grader/i.test(tag)) return "assessment";
+  if (/tough|difficult|hard|strict/i.test(tag)) return "challenge";
+  if (/helpful|caring|clear|amazing|respected/i.test(tag)) return "positive";
+  return "neutral";
+}

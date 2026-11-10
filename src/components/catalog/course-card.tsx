@@ -46,6 +46,7 @@ import { RatingSummary } from "@/components/evaluations/rating-summary";
 import { InstructorAvatar } from "@/components/people/instructor-avatar";
 import SectionsPanel from "./sections-panel";
 import { TranslateText } from "@/components/translation/translate-text";
+import { RmpCoursePreview } from "@/components/rmp/rmp-course-preview";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
 import { CourseFees, CourseIdentityFacts } from "./course-facts";
@@ -787,6 +788,7 @@ export function CourseCard({
           </span>
         </button>
       </div>
+      <RmpCoursePreview course={current} locale={locale} />
       <div className="course-fee-preview">
         <CourseFees course={current} locale={locale} compact />
       </div>

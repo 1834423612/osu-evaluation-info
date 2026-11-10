@@ -152,12 +152,14 @@ export function TranslateText({
   className,
   as = "p",
   preview = false,
+  compact = false,
 }: {
   text: string;
   locale: Locale;
   className?: string;
   as?: "p" | "div";
   preview?: boolean;
+  compact?: boolean;
 }) {
   const Container = as as ElementType;
   const contentId = useId();
@@ -614,8 +616,10 @@ export function TranslateText({
       data-translation-id={contentId}
       ref={contentRef}
       data-preview={preview ? "true" : undefined}
+      data-compact={compact ? "true" : undefined}
       style={{
-        display: "block",
+        display: compact ? "inline-flex" : "block",
+        flexWrap: compact ? "wrap" : undefined,
         overflow: "visible",
         WebkitLineClamp: "unset",
       }}

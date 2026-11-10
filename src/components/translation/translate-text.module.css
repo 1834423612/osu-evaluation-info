@@ -377,6 +377,49 @@
   color: #9b3c42;
 }
 
+.content[data-compact="true"] {
+  max-width: 100%;
+  align-items: center;
+  gap: 2px 4px;
+  font-size: inherit;
+}
+.content[data-compact="true"] .original,
+.content[data-compact="true"] .replaced {
+  display: inline;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: inherit;
+}
+.content[data-compact="true"] .translated {
+  flex-basis: 100%;
+  margin-top: 3px;
+  padding-left: 5px;
+  font-size: inherit;
+}
+.content[data-compact="true"] .actions {
+  display: inline-flex;
+  width: auto;
+  margin-top: 0;
+  gap: 0;
+}
+.content[data-compact="true"] .actionButton > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.content[data-compact="true"] .actionButton,
+.content[data-compact="true"] .settingsButton {
+  min-width: 22px;
+  min-height: 22px;
+  width: 22px;
+  padding: 2px;
+}
+.content[data-compact="true"] .sourceBadge {
+  display: none;
+}
 @keyframes turn {
   to {
     transform: rotate(360deg);
@@ -401,6 +444,11 @@
     min-width: 36px;
   }
 
+  .content[data-compact="true"] .actionButton,
+  .content[data-compact="true"] .settingsButton {
+    min-width: 28px;
+    min-height: 28px;
+  }
   .modeChoice,
   .autoChoice {
     min-height: 42px;

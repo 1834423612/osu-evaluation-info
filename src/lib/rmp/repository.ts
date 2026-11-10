@@ -71,7 +71,7 @@ const COURSE_SQL = `
     ) ORDER BY recent.review_date DESC NULLS LAST, recent.legacy_id DESC) AS reviews
     FROM (
       SELECT r.* FROM osu_rmp.review_query r
-      WHERE r.professor_id = m.professor_id AND r.course_key = $3
+      WHERE $5::boolean AND r.professor_id = m.professor_id AND r.course_key = $3
       ORDER BY r.review_date DESC NULLS LAST, r.legacy_id DESC LIMIT 3
     ) recent
   ) comments ON true
@@ -107,6 +107,7 @@ type CourseRow = {
 
 export async function getCourseRmp(
   rawInput: CourseRmpInput,
+  options: { preview?: boolean; bypassCache?: boolean } = {},
 ): Promise<CourseRmpSummary> {
   const input = normalizeRmpInput(rawInput);
   const today = new Date();
@@ -121,9 +122,10 @@ export async function getCourseRmp(
     refreshedAt: null,
   };
   if (!input.usernames.length) return empty;
-  const key = JSON.stringify([input, recentSince]);
+  const key = JSON.stringify([input, recentSince, !!options.preview]);
   const cached = cache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (!options.bypassCache && cached && cached.expiresAt > Date.now())
+    return cached.value;
   const running = pending.get(key);
   if (running) return running;
   if (pending.size >= MAX_ENTRIES) return { ...empty, status: "unavailable" };
@@ -135,6 +137,7 @@ export async function getCourseRmp(
         input.campus,
         `${input.subject}${input.catalogNumber}`.replace(/[\s_-]/g, ""),
         recentSince,
+        !options.preview,
       ]);
       const instructors: RmpInstructor[] = result.rows.map((row) => ({
         professorId: row.professor_id,

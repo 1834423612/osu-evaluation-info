@@ -2041,9 +2041,11 @@ h1 {
 .rating-source-tabs {
   margin-top: 15px;
   gap: 18px;
+  min-width: 0;
 }
 .rating-source-tabs > [data-slot="tabs-list"] {
   width: fit-content;
+  max-width: 100%;
   background: var(--accent-soft);
   padding: 4px;
   border-radius: 8px;
@@ -2589,6 +2591,13 @@ h1 {
     min-height: 44px;
     padding-inline: 0;
     font-size: 12px;
+  }
+
+  .rating-source-tabs > [data-slot="tabs-list"] [data-slot="tabs-trigger"] {
+    min-width: 0;
+    gap: 4px;
+    padding: 5px 6px;
+    font-size: 11px;
   }
 
   .detail-term {

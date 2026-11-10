@@ -4,11 +4,19 @@
   color: var(--ink);
 }
 .heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  gap: 7px;
+}
+.syncNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 .headingMeta {
   display: flex;
@@ -17,6 +25,9 @@
   justify-content: flex-end;
   gap: 6px;
   margin-left: auto;
+}
+.shortSource {
+  display: none;
 }
 .heading h3,
 .instructorHeading h4 {
@@ -510,8 +521,21 @@
   margin-top: 14px;
 }
 @media (max-width: 480px) {
+  .heading h3 {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .syncNote {
+    font-size: 9px;
+  }
   .headingMeta {
-    flex-basis: 100%;
+    min-width: 0;
+  }
+  .fullSource {
+    display: none;
+  }
+  .shortSource {
+    display: inline;
   }
   .emptyCard {
     grid-template-columns: 60px minmax(0, 1fr) 18px;
@@ -531,12 +555,19 @@
     gap: 9px;
   }
   .identity {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    grid-row: 1;
   }
   .instructorToggle {
+    grid-column: 1 / -1;
+    grid-row: 2;
     justify-content: space-between;
-    padding-left: 44px;
+    padding-left: 0;
     gap: 5px;
+  }
+  .instructorHeading > a {
+    grid-column: 2;
+    grid-row: 1;
   }
   .summaryScore {
     align-items: flex-start;
