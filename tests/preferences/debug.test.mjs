@@ -15,10 +15,10 @@ test("logo taps require seven quick presses and reset after an accidental pause"
   assert.equal(tap(0), 1);
   assert.equal(tap(100), 2);
   assert.equal(tap(200), 3);
-  assert.equal(tap(1200), 1);
+  assert.equal(tap(1500), 1);
   for (let index = 2; index <= 7; index++)
-    assert.equal(tap(1200 + index * 100), index);
-  assert.equal(tap(2000), 0);
+    assert.equal(tap(1500 + index * 100), index);
+  assert.equal(tap(2300), 0);
 });
 test("debug sessions require the correct key, a valid signature, and an unexpired bounded lifetime", () => {
   const now = Date.now(),

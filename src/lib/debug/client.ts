@@ -42,6 +42,7 @@ let viewRevision = 0;
 const listeners = new Set<() => void>();
 const tap = createLogoTapSequence();
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let tapProgressToast = false;
 declare global {
   interface Window {
     __COURSE_ATLAS_FETCH__?: typeof fetch;
@@ -75,9 +76,13 @@ function persist() {
   window.dispatchEvent(new Event(DEBUG_EVENT));
 }
 function notify(toast: string) {
+  tapProgressToast = false;
   clearTimeout(toastTimer);
   update({ toast });
-  toastTimer = setTimeout(() => update({ toast: "" }), 2200);
+  toastTimer = setTimeout(() => {
+    tapProgressToast = false;
+    update({ toast: "" });
+  }, 2200);
 }
 function restoreAnalytics() {
   try {
@@ -268,13 +273,23 @@ export const debugTools = {
       update({ visible: true, expanded: true });
       persist();
       notify(zh ? "调试工具已打开" : "Developer tools opened");
-    } else if (count >= 3)
+    } else if (count >= 3) {
       notify(
         zh
           ? `再点 ${7 - count} 下打开调试工具`
           : `${7 - count} more taps for developer tools`,
       );
+      tapProgressToast = true;
+    }
     return count;
+  },
+  resetLogoTaps() {
+    tap.reset();
+    if (tapProgressToast) {
+      tapProgressToast = false;
+      clearTimeout(toastTimer);
+      update({ toast: "" });
+    }
   },
   open() {
     viewRevision++;

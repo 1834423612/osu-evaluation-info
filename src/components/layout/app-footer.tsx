@@ -19,6 +19,7 @@ export function AppFooter() {
         <Link
           href="/"
           className="footer-brand"
+          data-debug-logo=""
           aria-label={text(
             locale,
             `${brand.names.en} home`,

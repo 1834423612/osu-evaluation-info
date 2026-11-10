@@ -563,6 +563,96 @@ async function verifyPinchNavigation(width, deviceScaleFactor) {
   );
   await context.close();
 }
+async function verifyLogoClicks() {
+  const { context, page, errors } = await setup({
+    width: 390,
+    height: 950,
+    touch: true,
+    clock: true,
+  });
+  const base = process.env.GUIDE_TEST_BASE_URL ?? "http://localhost:3101";
+  const saved = async () => {
+    await page.goto(`${base}/saved`, { waitUntil: "networkidle" });
+    await page.locator("header a[data-debug-logo]").waitFor();
+  };
+  const stay = () => assert.equal(new URL(page.url()).pathname, "/saved");
+  await saved();
+  const header = page.locator("header a[data-debug-logo]");
+  await header.click();
+  await page.clock.fastForward(650);
+  stay();
+  await page.clock.fastForward(50);
+  await page.waitForURL(`${base}/`);
+
+  await saved();
+  await header.locator("img").click();
+  await page.clock.fastForward(500);
+  await header.click();
+  for (let count = 3; count <= 7; count++) {
+    await page.clock.fastForward(900);
+    stay();
+    await header.click();
+    if (count === 3)
+      await page.getByText("再点 4 下打开调试工具", { exact: true }).waitFor();
+  }
+  await page.locator("[data-debug-tools]").waitFor();
+  stay();
+  await page.clock.fastForward(1500);
+  await page.getByRole("button", { name: "隐藏调试工具", exact: true }).click();
+
+  // Stopping a partial gesture never navigates; the next single click works normally.
+  await header.click();
+  await page.clock.fastForward(500);
+  await header.click();
+  await page.clock.fastForward(900);
+  await header.click();
+  await page.clock.fastForward(1101);
+  stay();
+  assert.equal(
+    await page.getByText("再点 4 下打开调试工具", { exact: true }).count(),
+    0,
+  );
+  await header.click();
+  await page.keyboard.press("Escape");
+  await page.clock.fastForward(800);
+  stay();
+
+  // A second pointerdown protects a slower release across the navigation deadline.
+  await header.click();
+  await page.clock.fastForward(650);
+  await header.hover();
+  await page.mouse.down();
+  await page.clock.fastForward(150);
+  stay();
+  await page.mouse.up();
+  await page.clock.fastForward(1200);
+  stay();
+
+  const footer = page.locator("footer a[data-debug-logo]");
+  for (let count = 1; count <= 7; count++) {
+    if (count > 1) await page.clock.fastForward(count === 2 ? 500 : 900);
+    await footer.click();
+    stay();
+  }
+  await page.locator("[data-debug-tools]").waitFor();
+  await page.clock.fastForward(1500);
+  await page.getByRole("button", { name: "隐藏调试工具", exact: true }).click();
+  await footer.click();
+  await page.clock.fastForward(650);
+  stay();
+  await page.clock.fastForward(50);
+  await page.waitForURL(`${base}/`);
+  await saved();
+  await header.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForURL(`${base}/`);
+  assert.deepEqual(errors, []);
+  console.log(
+    "PASS logo gestures: delayed home, second-press cancellation, relaxed header/footer seven taps, progress expiry, Escape, held press and keyboard navigation",
+  );
+  await context.close();
+}
+
 async function verifyLiveBuildInfo() {
   const { context, page, errors } = await setup({
     width: 390,
@@ -1301,6 +1391,7 @@ try {
   }
   await verifyPinchNavigation(390, 1);
   await verifyPinchNavigation(320, 3);
+  await verifyLogoClicks();
   await verifyLiveBuildInfo();
   {
     const { context, page, succeed, errors } = await setup({

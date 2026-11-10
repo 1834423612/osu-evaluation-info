@@ -1,3 +1,5 @@
+import { LOGO_TAP_GAP_MS, LOGO_TAP_DURATION_MS } from "./logo-clicks.ts";
+
 export type DebugFlags = {
   factory: boolean;
   bypassCache: boolean;
@@ -63,9 +65,9 @@ export function createLogoTapSequence() {
     first = 0,
     last = -Infinity,
     cooldown = 0;
-  return (now: number) => {
+  const tap = (now: number) => {
     if (now < cooldown) return 0;
-    if (now - last > 700 || now - first > 5000) {
+    if (now - last > LOGO_TAP_GAP_MS || now - first > LOGO_TAP_DURATION_MS) {
       count = 0;
       first = now;
     }
@@ -78,4 +80,10 @@ export function createLogoTapSequence() {
     }
     return count;
   };
+  tap.reset = () => {
+    count = 0;
+    first = 0;
+    last = -Infinity;
+  };
+  return tap;
 }

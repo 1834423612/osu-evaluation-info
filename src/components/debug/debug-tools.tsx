@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { Bug, Download, RefreshCw, Wrench, X } from "lucide-react";
 import { debugTools } from "@/lib/debug/client";
 import { type DebugFlags } from "@/lib/debug/flags";
 import { clearDebugResponses } from "@/lib/debug/services";
 import { buildInfoStore } from "@/lib/layout/build-info-client";
+import { createLogoClickController } from "@/lib/debug/logo-clicks";
 import {
   migrateBrowserStorage,
   STORAGE_RULES,
@@ -27,6 +29,7 @@ function downloadJSON(name: string, value: unknown) {
 }
 
 export function DebugTools() {
+  const router = useRouter();
   const state = useSyncExternalStore(
     debugTools.subscribe,
     debugTools.getSnapshot,
@@ -38,28 +41,87 @@ export function DebugTools() {
   const zh = locale === "zh";
   useEffect(() => {
     debugTools.initialize();
-    const click = (event: MouseEvent) => {
+    const gesture = createLogoClickController({
+      tap: (now) => debugTools.tapLogo(now, zh),
+      reset: debugTools.resetLogoTaps,
+    });
+    let source: Element | null = null;
+    const cancel = () => {
+      gesture.cancel();
+      source = null;
+    };
+    const logoFor = (event: Event) =>
+      event.target instanceof Element
+        ? event.target.closest("a[data-debug-logo]")
+        : null;
+    const selectLogo = (logo: Element) => {
+      if (source !== logo) {
+        cancel();
+        source = logo;
+      }
+    };
+    const pointerDown = (event: PointerEvent) => {
+      const logo = logoFor(event);
       if (
-        !(event.target instanceof Element) ||
-        !event.target.closest("[data-debug-logo]")
-      )
+        !logo ||
+        !event.isPrimary ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        cancel();
         return;
-      if (debugTools.tapLogo(performance.now(), zh) >= 2)
-        event.preventDefault();
+      }
+      selectLogo(logo);
+      // A second finger/mouse press cancels the pending home action before its click is released.
+      gesture.hold();
+    };
+    const click = (event: MouseEvent) => {
+      const logo = logoFor(event);
+      if (
+        !logo ||
+        event.button !== 0 ||
+        event.detail === 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        cancel();
+        return;
+      }
+      event.preventDefault();
+      selectLogo(logo);
+      gesture.press(performance.now(), () => router.push("/"));
     };
     const shortcut = (event: KeyboardEvent) => {
+      if (event.key === "Escape") cancel();
       if (event.ctrlKey && event.altKey && event.code === "KeyD") {
         event.preventDefault();
+        cancel();
         debugTools.open();
       }
     };
     document.addEventListener("click", click, true);
+    document.addEventListener("pointerdown", pointerDown, true);
+    document.addEventListener("pointercancel", cancel, true);
+    document.addEventListener("contextmenu", cancel, true);
     document.addEventListener("keydown", shortcut);
+    window.addEventListener("blur", cancel);
+    window.addEventListener("pagehide", cancel);
     return () => {
+      cancel();
       document.removeEventListener("click", click, true);
       document.removeEventListener("keydown", shortcut);
+      document.removeEventListener("pointerdown", pointerDown, true);
+      document.removeEventListener("pointercancel", cancel, true);
+      document.removeEventListener("contextmenu", cancel, true);
+      window.removeEventListener("blur", cancel);
+      window.removeEventListener("pagehide", cancel);
     };
-  }, [zh]);
+  }, [zh, router]);
   const switches: { key: keyof DebugFlags; en: string; zh: string }[] = [
     {
       key: "bypassCache",

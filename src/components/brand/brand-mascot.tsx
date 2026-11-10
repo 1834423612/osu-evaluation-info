@@ -29,7 +29,6 @@ export function BrandMascot({
       height={size}
       className={cn("brand-mascot", className)}
       data-mascot-expression={portrait ? "portrait" : expression}
-      data-debug-logo={portrait ? "" : undefined}
       loading={eager ? "eager" : "lazy"}
       unoptimized
     />

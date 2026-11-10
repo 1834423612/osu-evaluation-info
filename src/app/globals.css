@@ -110,6 +110,11 @@ select {
   align-items: center;
   gap: 64px;
 }
+a[data-debug-logo] {
+  user-select: none;
+  touch-action: manipulation;
+}
+
 .brand {
   display: flex;
   gap: 10px;

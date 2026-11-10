@@ -56,6 +56,7 @@ export function AppHeader({
           <Link
             href="/"
             className="brand"
+            data-debug-logo=""
             aria-label={text(
               locale,
               `${brand.names.en} home`,
