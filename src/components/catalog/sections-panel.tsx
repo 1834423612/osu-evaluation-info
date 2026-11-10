@@ -234,7 +234,7 @@ function SectionRow({
                     subject={subject}
                   />
                   <button
-                    className={`${styles.iconButton}${isSaved ? ` ${styles.saved}` : ""}`}
+                    className={`${styles.iconButton} ${styles.instructorSave}${isSaved ? ` ${styles.saved}` : ""}`}
                     type="button"
                     aria-pressed={isSaved}
                     data-analytics-action="instructor_course_favorite"
@@ -260,6 +260,7 @@ function SectionRow({
                     onClick={() => onSaveInstructor(instructor)}
                   >
                     <Star size={14} fill={isSaved ? "currentColor" : "none"} />
+                    <span>{text(locale, "Instructor", "教师")}</span>
                   </button>
                 </div>
               );
@@ -342,6 +343,7 @@ function SectionRow({
           onClick={onSave}
         >
           <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
+          <span>{text(locale, "Section", "班次")}</span>
         </button>
       </div>
       {expanded ? (

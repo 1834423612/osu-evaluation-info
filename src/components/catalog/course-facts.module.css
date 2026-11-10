@@ -46,6 +46,30 @@
 .pending {
   font-size: 10px;
 }
+.identity[data-compact="true"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px 9px;
+  margin-top: 0;
+  font-size: 10px;
+}
+.identity[data-compact="true"] .factChip {
+  min-height: 20px;
+  gap: 3px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+.identity[data-compact="true"] .credit {
+  white-space: nowrap;
+}
+.identity[data-compact="true"] code {
+  font-size: 10px;
+}
+.identity[data-compact="true"] .identifier > svg:last-child {
+  display: none;
+}
 .feeContainer {
   display: flex;
   flex-wrap: wrap;

@@ -1116,6 +1116,8 @@ h1 {
 }
 
 .course-code {
+  flex: 0 0 auto;
+  white-space: nowrap;
   letter-spacing: 0;
   color: var(--primary);
   font-size: 12px;
@@ -2804,7 +2806,7 @@ h1 {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 10px;
-    padding-left: 20px;
+    padding-left: 0;
     border-left-color: var(--line);
     border-top-color: var(--line);
   }

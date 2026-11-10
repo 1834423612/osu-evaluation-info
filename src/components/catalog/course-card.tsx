@@ -715,7 +715,7 @@ export function CourseCard({
             <span className="course-code">
               {course.subject} {course.catalogNumber}
             </span>
-            <CourseIdentityFacts course={current} locale={locale} />
+            <CourseIdentityFacts course={current} locale={locale} compact />
             <Button
               variant="ghost"
               size="icon-sm"

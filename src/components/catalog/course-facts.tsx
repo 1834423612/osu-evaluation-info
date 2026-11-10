@@ -21,9 +21,11 @@ export function courseIdLabel(course: CatalogCourse) {
 export function CourseIdentityFacts({
   course,
   locale,
+  compact = false,
 }: {
   course: CatalogCourse;
   locale: Locale;
+  compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const ids = courseIdLabel(course);
@@ -32,7 +34,10 @@ export function CourseIdentityFacts({
       ? String(course.creditsMin)
       : `${course.creditsMin}–${course.creditsMax}`;
   return (
-    <span className={styles.identity}>
+    <span
+      className={styles.identity}
+      data-compact={compact ? "true" : undefined}
+    >
       <span className={`${styles.factChip} ${styles.credit}`}>
         <GraduationCap size={13} aria-hidden="true" />
         {credits} {text(locale, "credits", "学分")}
@@ -59,7 +64,7 @@ export function CourseIdentityFacts({
           }}
         >
           <Hash size={12} aria-hidden="true" />
-          <span>{text(locale, "Code", "课程代码")}</span>
+          {!compact ? <span>{text(locale, "Code", "课程代码")}</span> : null}
           <code>{ids}</code>
           {copied ? (
             <Check size={12} aria-hidden="true" />
@@ -67,11 +72,11 @@ export function CourseIdentityFacts({
             <Copy size={12} aria-hidden="true" />
           )}
         </button>
-      ) : (
+      ) : !compact ? (
         <span className={styles.pending}>
           {text(locale, "Code loading…", "课程代码加载中…")}
         </span>
-      )}
+      ) : null}
     </span>
   );
 }
