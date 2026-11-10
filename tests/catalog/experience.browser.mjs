@@ -481,7 +481,7 @@ try {
     const topRepository = page.locator("main [data-open-source]");
     const topRepoBox = await topRepository.boundingBox();
     assert(topRepoBox.height <= 50, "repository introduction stays compact");
-    assert(topRepoBox.width <= (width <= 640 ? 153 : 221));
+    assert(topRepoBox.width <= (width <= 640 ? 129 : 221));
     const eyebrowBox = await page
       .getByText(
         locale === "zh"
@@ -518,9 +518,14 @@ try {
     if (width <= 640) {
       const titleBox = await page.locator(".page-heading h1").boundingBox();
       assert(
-        topRepoBox.y + topRepoBox.height < titleBox.y &&
-          titleBox.y + titleBox.height < termBox.y,
-        "mobile repository precedes the title and stays separate from the term selector",
+        titleBox.y - eyebrowBox.y - eyebrowBox.height <= 10,
+        "mobile Ohio State context stays close to the title",
+      );
+      assert(
+        topRepoBox.x >= titleBox.x + titleBox.width + 8 &&
+          topRepoBox.y + topRepoBox.height < descriptionBox.y &&
+          descriptionBox.y + descriptionBox.height < termBox.y,
+        "mobile text and repository stay in two adjacent columns above the description and term selector",
       );
     }
     assert(

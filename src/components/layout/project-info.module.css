@@ -8,11 +8,11 @@
 }
 .heroTools > .project {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1;
 }
 .heroTools :global(.term-control) {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 2;
   align-self: end;
   flex-direction: row;
   align-items: center;
@@ -52,16 +52,22 @@
 }
 @media (max-width: 640px) {
   .heroTools > .project {
-    grid-column: 2;
-    grid-row: 1;
-    width: 152px;
+    width: 128px;
+  }
+  .heroTools > .project > button {
+    gap: 3px;
+    padding-inline: 0;
+  }
+  .heroTools > .project > button > svg:first-child {
+    display: none;
   }
   .heroTools :global(.term-control) {
     grid-column: 1 / -1;
-    grid-row: 4;
+    grid-row: 3;
     justify-content: flex-start;
     gap: 10px;
     width: auto;
+    margin-top: 16px;
   }
   .heroTools :global(.term-control .term-select) {
     width: 160px;

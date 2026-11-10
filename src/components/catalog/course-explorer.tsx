@@ -374,10 +374,10 @@ export function CourseExplorer() {
       <AppHeader />
       <main className="explorer-shell">
         <div className={`page-heading ${brandStyles.hero}`}>
-          <span className={brandStyles.heroEyebrow}>
-            {brand.context[locale]}
-          </span>
           <div className={brandStyles.heroCopy}>
+            <span className={brandStyles.heroEyebrow}>
+              {brand.context[locale]}
+            </span>
             <h1
               className={brandStyles.slogan}
               lang={locale === "zh" ? "zh-CN" : "en"}

@@ -35,11 +35,7 @@ export function OpenSourceNotice({
         </strong>
         {!compact ? (
           <span>
-            {text(
-              locale,
-              "Review the code. Join in.",
-              "审查代码，欢迎参与改进。",
-            )}
+            {text(locale, "Review & contribute.", "审查代码，欢迎参与改进。")}
           </span>
         ) : null}
       </span>
