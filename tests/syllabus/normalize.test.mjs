@@ -64,9 +64,17 @@ test("matches exact term, course suffix/decimal and class identity", () => {
     entryMatches(
       synthetic,
       { subject: "ARCH", catalogNumber: "4410", termCode: "1268" },
-      ["10356"],
+      ["10357"],
     ),
     false,
+  );
+  assert.equal(
+    entryMatches(
+      synthetic,
+      { subject: "ARCH", catalogNumber: "4410", termCode: "1268" },
+      ["10356"],
+    ),
+    true,
   );
 });
 test("rejects malformed envelopes, pagination and unsafe query inputs", () => {

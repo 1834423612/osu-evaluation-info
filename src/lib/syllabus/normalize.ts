@@ -209,8 +209,22 @@ export function entryMatches(
     entry.termCode === query.termCode &&
     entry.subject === query.subject.toUpperCase() &&
     entry.catalogNumber === query.catalogNumber.toUpperCase() &&
-    (!classNumbers || classNumbers.includes(entry.classNumber))
+    (!classNumbers ||
+      matchedCatalogClassNumber(entry, query, classNumbers) !== null)
   );
+}
+
+/** A synthetic alias is accepted only against an independently loaded catalog section. */
+export function matchedCatalogClassNumber(
+  entry: SyllabusEntry,
+  query: SyllabusQuery,
+  classNumbers: readonly string[],
+): string | null {
+  if (!entryMatches(entry, query)) return null;
+  if (entry.classNumber && classNumbers.includes(entry.classNumber))
+    return entry.classNumber;
+  const alias = /^s_(\d{1,8})$/i.exec(entry.sectionIdentifier ?? "");
+  return alias && classNumbers.includes(alias[1]) ? alias[1] : null;
 }
 
 export function officialSyllabusUrl(code?: string) {

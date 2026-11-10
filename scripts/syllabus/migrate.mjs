@@ -16,8 +16,17 @@ try {
       "utf8",
     ),
   );
+  await client.query(
+    await readFile(
+      new URL(
+        "../../db/migrations/syllabus/002-catalog-links.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
   await client.query("COMMIT");
-  console.log("Syllabus schema version 1 is ready.");
+  console.log("Syllabus schema version 2 is ready.");
 } catch (error) {
   await client.query("ROLLBACK").catch(() => {});
   console.error(

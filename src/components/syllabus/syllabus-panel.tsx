@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { localizedTerm, text, type Locale } from "@/lib/i18n";
 import { syllabusClient } from "@/lib/syllabus/client";
-import { entryMatches, officialSyllabusUrl } from "@/lib/syllabus/normalize";
+import {
+  entryMatches,
+  matchedCatalogClassNumber,
+  officialSyllabusUrl,
+} from "@/lib/syllabus/normalize";
 import type { SyllabusEntry, SyllabusResult } from "@/lib/syllabus/types";
 import { SyllabusReader } from "./syllabus-reader";
 import styles from "./syllabus.module.css";
@@ -45,6 +49,12 @@ export default function SyllabusPanel({
   }, [subject, catalogNumber, termCode, retry]);
 
   const classNumbers = course.sections.map((section) => section.classNumber);
+  const matchedClass = (entry: SyllabusEntry) =>
+    matchedCatalogClassNumber(
+      entry,
+      { subject, catalogNumber, termCode },
+      classNumbers,
+    );
   // Campus identity comes from the catalog's exact section, never a guessed title.
   const entries =
     result?.data.filter((entry) =>
@@ -52,12 +62,12 @@ export default function SyllabusPanel({
     ) ?? [];
   const chosen =
     entries.find((entry) => entry.code === selected) ??
-    entries.find((entry) => entry.classNumber === focusClassNumber) ??
+    entries.find((entry) => matchedClass(entry) === focusClassNumber) ??
     entries[0];
   const currentClass =
     chosen &&
     course.sections.find(
-      (section) => section.classNumber === chosen.classNumber,
+      (section) => section.classNumber === matchedClass(chosen),
     );
 
   return (
@@ -115,11 +125,13 @@ export default function SyllabusPanel({
             >
               {entries.map((entry) => {
                 const section = course.sections.find(
-                  (section) => section.classNumber === entry.classNumber,
+                  (section) => section.classNumber === matchedClass(entry),
                 );
                 return (
                   <option key={entry.code} value={entry.code}>
-                    #{entry.classNumber}
+                    #
+                    {section?.classNumber ??
+                      (entry.classNumber || entry.sectionIdentifier)}
                     {section?.section
                       ? ` · ${section.component} ${section.section}`
                       : ""}

@@ -33,13 +33,19 @@ test(
   async () => {
     loadCatalogEnvironment();
     const schema = `syllabus_test_${randomUUID().replaceAll("-", "")}`;
+    const catalogSchema = `${schema}_catalog`;
     const client = new pg.Client({
       connectionString: process.env.DATABASE_URL,
       statement_timeout: 5000,
     });
     const scoped = {
       query: (sql, values) =>
-        client.query(sql.replaceAll("osu_syllabus", schema), values),
+        client.query(
+          sql
+            .replaceAll("osu_syllabus", schema)
+            .replaceAll("osu_catalog", catalogSchema),
+          values,
+        ),
     };
     const previousPool = global.osuEvaluationPool;
     try {
@@ -106,7 +112,8 @@ test(
         ...entry,
         code: "example456",
         entityId: randomUUID(),
-        classNumber: "25478",
+        classNumber: "",
+        sectionIdentifier: "s_25478",
       };
       await savePage(scoped, run, term, 1, {
         entries: [second],
@@ -122,6 +129,41 @@ test(
         ).rows[0].count,
         2,
       );
+      await client.query(`CREATE SCHEMA ${catalogSchema}`);
+      await scoped.query(`CREATE TABLE osu_catalog.sync_runs(id uuid PRIMARY KEY,terms jsonb,status text);
+        CREATE TABLE osu_catalog.snapshot_versions(run_id uuid PRIMARY KEY,published_at timestamptz);
+        CREATE TABLE osu_catalog.section_snapshots(last_seen_run uuid,term_code text,class_number text,course_id text,offering_number text,campus_code text,subject text,catalog_number text)`);
+      const catalogRun = randomUUID();
+      await scoped.query(
+        "INSERT INTO osu_catalog.sync_runs VALUES($1,'[\"1268\"]','complete')",
+        [catalogRun],
+      );
+      await scoped.query(
+        "INSERT INTO osu_catalog.snapshot_versions VALUES($1,now())",
+        [catalogRun],
+      );
+      await scoped.query(
+        "INSERT INTO osu_catalog.section_snapshots VALUES($1,'1268','15115','1','1','COL','ART','2000'),($1,'1268','25478','1','1','COL','ART','2000'),($1,'1272','25478','1','1','COL','ART','2000')",
+        [catalogRun],
+      );
+      await scoped.query(
+        await readFile(
+          new URL(
+            "../../db/migrations/syllabus/002-catalog-links.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
+      const links = (
+        await scoped.query(
+          "SELECT class_number,match_method FROM osu_syllabus.catalog_links ORDER BY class_number",
+        )
+      ).rows;
+      assert.deepEqual(links, [
+        { class_number: "15115", match_method: "class_number" },
+        { class_number: "25478", match_method: "verified_import_alias" },
+      ]);
       const document = normalizeDocument(documentFixture(), "example123");
       await saveDocument(scoped, document);
       await saveDocument(scoped, document);
@@ -176,6 +218,9 @@ test(
       global.osuEvaluationPool = previousPool;
       await client
         .query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`)
+        .catch(() => {});
+      await client
+        .query(`DROP SCHEMA IF EXISTS ${catalogSchema} CASCADE`)
         .catch(() => {});
       await client.end();
     }
