@@ -1,0 +1,617 @@
+import assert from "node:assert/strict";
+const { chromium } = await import(
+  process.env.PLAYWRIGHT_MODULE ?? "playwright"
+);
+
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
+  args: ["--no-sandbox"],
+});
+const KEY = "course-atlas:translation-guide:v1";
+let activePage;
+const course = {
+  id: "guide-course",
+  subject: "CSE",
+  subjectName: "Computer Science",
+  catalogNumber: "2221",
+  title: "Software I: Software Components",
+  description:
+    "Intellectual foundations of software engineering; design, implementation and testing of reusable software components. Learn the principles of modern software development through practical projects.",
+  creditsMin: 4,
+  creditsMax: 4,
+  campus: "Columbus",
+  campusCode: "col",
+  term: "Spring 2027",
+  termCode: "1272",
+  academicCareer: "Undergraduate",
+  attributes: [],
+  sections: [],
+  sectionsPartial: false,
+};
+const catalog = {
+  courses: [
+    course,
+    {
+      ...course,
+      id: "guide-course-2",
+      title: "Software II: Development and Design",
+      catalogNumber: "2231",
+      description:
+        "Software development using design patterns, algorithms and data structures. Practice collaborative programming and learn how to build reliable software systems.",
+    },
+  ],
+  page: 1,
+  nextCursor: null,
+  hasMore: false,
+  totalItems: 2,
+  matchedSections: 2,
+  totalCourses: 2,
+  totalPages: 1,
+  capped: false,
+  filters: [],
+  terms: [{ code: "1272", label: "Spring 2027" }],
+  source: "fixture",
+  fetchedAt: new Date().toISOString(),
+  evaluationStatus: "unavailable",
+};
+
+const evaluation = {
+  status: "no-data",
+  primary: null,
+  metrics: [],
+  instructors: [],
+  source: { importedAt: null },
+  methodologyVersion: "response-decay-v1",
+};
+const tags = [
+  { tag: "Lots of homework", count: 18 },
+  { tag: "Caring", count: 12 },
+  { tag: "Tough grader", count: 9 },
+  {
+    tag: "A very long descriptive review tag that must stay completely readable without overflowing",
+    count: 3,
+  },
+];
+const insight = {
+  status: "available",
+  tags,
+  difficulty: 3.4,
+  difficultyCount: 120,
+  reviewCount: 245,
+  matchedInstructorCount: 2,
+  requestedInstructorCount: 2,
+  recentSince: "2024-11-09",
+};
+const rmpSummary = {
+  status: "available",
+  recentSince: "2024-11-09",
+  refreshedAt: "2026-11-09",
+  matchedInstructorCount: 1,
+  requestedInstructorCount: 2,
+  instructors: [
+    {
+      professorId: "1",
+      nameDotNumber: "teacher.1",
+      name: "Alexandra Elizabeth Teacher",
+      profileUrl: "https://www.ratemyprofessors.com/professor/1",
+      reviewCount: 120,
+      recentReviewCount: 80,
+      recentQuality: 4.1,
+      recentDifficulty: 3.4,
+      recentDifficultyCount: 80,
+      recentQualityCount: 80,
+      latestReviewDate: "2026-11-09",
+      topTags: tags,
+      reviews: [],
+    },
+  ],
+};
+course.courseId = "012345";
+course.courseIds = ["012345", "987654"];
+course.evaluation = evaluation;
+course.sections = [
+  {
+    id: "s1",
+    classNumber: "12345",
+    section: "0010",
+    component: "Lecture",
+    instructionMode: "In Person",
+    enrollmentStatus: "",
+    enrollmentTotal: null,
+    waitlistTotal: null,
+    session: "Regular Academic Session",
+    sessionCode: "1",
+    courseId: "012345",
+    courseOfferingNumber: "1",
+    termCode: "1272",
+    campusCode: "COL",
+    instructors: [
+      { name: "Alexandra Elizabeth Teacher", email: "teacher.1@osu.edu" },
+      {
+        name: "Christopher Montgomery Instructor",
+        email: "instructor.2@osu.edu",
+      },
+    ],
+    meetings: [
+      {
+        days: [0, 2, 4],
+        startTime: "09:10",
+        endTime: "10:05",
+        location: "Dreese Laboratories 0357",
+        startDate: "2027-01-10",
+        endDate: "2027-05-01",
+      },
+    ],
+  },
+  {
+    id: "s2",
+    classNumber: "12346",
+    section: "0020",
+    component: "Laboratory",
+    instructionMode: "Hybrid Delivery",
+    enrollmentStatus: "",
+    enrollmentTotal: null,
+    waitlistTotal: null,
+    session: "Regular",
+    sessionCode: "1",
+    courseId: "012345",
+    courseOfferingNumber: "1",
+    termCode: "1272",
+    campusCode: "COL",
+    instructors: [
+      { name: "Alexandra Elizabeth Teacher", email: "teacher.1@osu.edu" },
+    ],
+    meetings: [
+      {
+        days: [1, 3],
+        startTime: "13:50",
+        endTime: "15:05",
+        location: "Caldwell Laboratory 0120",
+        startDate: "2027-01-10",
+        endDate: "2027-05-01",
+      },
+    ],
+  },
+];
+catalog.courses[1].courseId = "056789";
+catalog.courses[1].evaluation = evaluation;
+catalog.courses[1].sections = course.sections;
+
+async function setup({
+  width = 1440,
+  height = 1000,
+  locale = "zh",
+  fail = false,
+  touch = false,
+  reduced = false,
+  loading = false,
+} = {}) {
+  const context = await browser.newContext({
+    viewport: { width, height },
+    locale: locale === "zh" ? "zh-CN" : "en-US",
+    hasTouch: touch,
+    isMobile: touch,
+    reducedMotion: reduced ? "reduce" : "no-preference",
+  });
+  await context.addInitScript(
+    ({ locale, KEY, fixtureCourse }) => {
+      if (sessionStorage.getItem("fixture:seeded")) return;
+      sessionStorage.setItem("fixture:seeded", "1");
+      localStorage.setItem("course-atlas:locale:v1", locale);
+      localStorage.setItem("course-atlas:translation-model:v1", "ollama");
+      localStorage.setItem(KEY, "done");
+      localStorage.setItem(
+        "course-atlas:saved:v1",
+        JSON.stringify([{ ...fixtureCourse, id: "real-saved-course" }]),
+      );
+    },
+    { locale, KEY, fixtureCourse: course },
+  );
+  const page = await context.newPage();
+  activePage = page;
+  page.setDefaultTimeout(12000);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  let shouldFail = fail;
+  const requests = [];
+  let bypassRequests = 0;
+  const summaryBatches = [];
+  // Fixture tests never send traffic to analytics or other third-party services.
+  await page.route("**/*", (route) =>
+    new URL(route.request().url()).origin ===
+    new URL(process.env.GUIDE_TEST_BASE_URL ?? "http://localhost:3101").origin
+      ? route.continue()
+      : route.abort(),
+  );
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith("/api/debug/")) return route.continue();
+    if (route.request().headers()["x-course-atlas-debug"] === "bypass")
+      bypassRequests++;
+    if (url.pathname === "/api/rmp/summaries") {
+      const { courses } = route.request().postDataJSON();
+      summaryBatches.push(courses);
+      return route.fulfill({
+        json: {
+          summaries: Object.fromEntries(
+            courses.map((item) => [item.id, insight]),
+          ),
+        },
+      });
+    }
+    if (url.pathname === "/api/rmp/course")
+      return route.fulfill({ json: rmpSummary });
+    if (url.pathname === "/api/evaluations")
+      return route.fulfill({
+        json: {
+          summaries: Object.fromEntries(
+            catalog.courses.map((course) => [course.id, evaluation]),
+          ),
+        },
+      });
+    if (url.pathname === "/api/catalog/course")
+      return route.fulfill({
+        json: {
+          course,
+          sourceMode: "official",
+          source: "https://classes.osu.edu",
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    if (url.pathname === "/api/catalog") {
+      if (loading) await new Promise((resolve) => setTimeout(resolve, 900));
+      return route.fulfill({ json: catalog });
+    }
+    if (url.pathname === "/api/catalog/facets")
+      return route.fulfill({ json: { filters: [] } });
+    if (url.pathname === "/api/translate") {
+      const request = route.request().postDataJSON();
+      requests.push(request);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      if (shouldFail)
+        return route.fulfill({ status: 503, json: { error: "unavailable" } });
+      return route.fulfill({
+        json: {
+          version: 1,
+          results: request.items.map((item) => ({
+            id: item.id,
+            target: item.target,
+            status: "translated",
+            provider: "ollama",
+            cache: "miss",
+            durationMs: 8,
+            translation:
+              "软件工程的基础：设计、实现与测试可复用的软件组件。通过实践项目学习现代软件开发的原则。",
+          })),
+        },
+      });
+    }
+    if (url.pathname.includes("/sections"))
+      return route.fulfill({ json: { course, sections: [], totalItems: 0 } });
+    return route.fulfill({ json: {} });
+  });
+  await page.goto(process.env.GUIDE_TEST_BASE_URL ?? "http://localhost:3101", {
+    waitUntil: loading ? "domcontentloaded" : "networkidle",
+  });
+  if (!loading) {
+    await page.locator("[data-translation-action]").first().waitFor();
+    await page
+      .locator("[data-translation-action]")
+      .first()
+      .scrollIntoViewIfNeeded();
+  }
+  return {
+    context,
+    page,
+    errors,
+    requests,
+    getBypassRequests: () => bypassRequests,
+    summaryBatches,
+    succeed: () => {
+      shouldFail = false;
+    },
+  };
+}
+
+async function noOverflow(page, selector) {
+  const results = await page.locator(selector).evaluateAll((elements) =>
+    elements.map((element) => ({
+      width: element.scrollWidth,
+      client: element.clientWidth,
+      page: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+    })),
+  );
+  assert(results.length > 0);
+  for (const result of results)
+    assert(
+      result.page <= result.viewport + 1 && result.width <= result.client + 1,
+      JSON.stringify(result),
+    );
+}
+try {
+  for (const [width, locale] of [
+    [1440, "zh"],
+    [768, "en"],
+    [390, "zh"],
+    [320, "en"],
+  ]) {
+    const { context, page, errors, summaryBatches } = await setup({
+      width,
+      height: 950,
+      locale,
+      touch: width < 600,
+    });
+    await page.locator("[data-rmp-preview] li").first().waitFor();
+    assert(summaryBatches.length > 0);
+    assert.equal(
+      await page.locator("[data-debug-tools]").count(),
+      0,
+      "production toolbar starts hidden",
+    );
+    await noOverflow(page, ".course-card");
+    const code = await page.locator(".course-code").first().boundingBox();
+    assert(code.height < 26, "course number must fit on one line");
+    const rating = await page.locator(".rating-trigger").first().boundingBox();
+    const caption = await page.locator(".rating-caption").first().boundingBox();
+    assert(Math.abs(rating.x - caption.x) < (width < 640 ? 2 : 23));
+    assert(await page.locator(".offerings-label small").isVisible());
+    assert.equal(await page.locator(".results-footer").count(), 0);
+    assert(await page.locator("[data-build-stamp]").isVisible());
+    const expected =
+      locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : "WahO! | OSU Course Atlas";
+    assert.equal(await page.title(), expected);
+    assert.equal(
+      await page.locator('meta[property="og:title"]').getAttribute("content"),
+      "WahO! | OSU Course Atlas",
+      "social metadata remains English even with a Chinese tab title",
+    );
+    if (width === 1440) {
+      const html = await (
+        await page.request.get(new URL("/", page.url()).href)
+      ).text();
+      assert(html.includes("<title>WahO! | OSU Course Atlas</title>"));
+    }
+    const tag = page
+      .locator("[data-rmp-preview] li")
+      .filter({ hasText: "Lots of homework" })
+      .first();
+    await tag.locator("[data-translation-action]").click();
+    await tag.locator('[lang="zh-CN"]').waitFor();
+    assert(
+      await tag.getByText("Lots of homework", { exact: true }).isVisible(),
+    );
+    await noOverflow(page, "[data-rmp-preview] ul");
+    await page.locator("[data-rmp-preview]").first().scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: `/tmp/course-experience-${width}-${locale}.png`,
+      fullPage: false,
+    });
+    await page.getByRole("button", { name: course.title, exact: true }).click();
+    await page.getByRole("dialog").waitFor();
+    const dialog = page.getByRole("dialog");
+    await dialog.locator('[data-class-number="12345"]').waitFor();
+    // Vaul finishes opening after its contents become visible.
+    await page.waitForTimeout(400);
+    const bounds = await dialog.boundingBox();
+    assert(bounds.x >= -1 && bounds.x + bounds.width <= width + 1);
+    const teacher = dialog
+      .locator('[data-analytics-action="instructor_course_favorite"]')
+      .first();
+    const section = dialog
+      .locator('[data-analytics-action="section_favorite"]')
+      .first();
+    assert(
+      (await teacher.innerText()).includes(
+        locale === "zh" ? "教师" : "Instructor",
+      ),
+    );
+    assert(
+      (await section.innerText()).includes(
+        locale === "zh" ? "班次" : "Section",
+      ),
+    );
+    if (width < 640) {
+      const a = await teacher.boundingBox(),
+        b = await section.boundingBox();
+      assert(
+        a.y > b.y + 20,
+        "teacher and section save controls belong on separate rows",
+      );
+    }
+    await noOverflow(page, '[role="dialog"]');
+    await noOverflow(page, ".course-details");
+    await dialog
+      .locator('[data-class-number="12345"]')
+      .scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: `/tmp/section-experience-${width}-${locale}.png`,
+    });
+    await page
+      .getByRole("tab", {
+        name: locale === "zh" ? "教学评价与趋势" : "Evaluations & trends",
+        exact: true,
+      })
+      .click();
+    const official = dialog.locator('[data-source="official"]');
+    await official.waitFor();
+    const officialRect = await official.boundingBox();
+    await page
+      .getByRole("tab", {
+        name: locale === "zh" ? "RMP · 学生评论" : "RMP · student reviews",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("heading", { name: "Rate My Professors", exact: true })
+      .waitFor();
+    const title = await page
+      .getByRole("heading", { name: "Rate My Professors", exact: true })
+      .boundingBox();
+    const sync = await dialog
+      .getByText(locale === "zh" ? "定期同步" : "Synced", { exact: true })
+      .boundingBox();
+    const unofficial = await dialog
+      .locator('[data-source="unofficial"]')
+      .boundingBox();
+    assert(
+      sync.x >= title.x + title.width - 1 &&
+        Math.abs(sync.y + sync.height / 2 - title.y - title.height / 2) < 5,
+      "sync note stays beside the heading",
+    );
+    assert(
+      sync.x + sync.width <= unofficial.x + 1,
+      "sync text cannot overlap the source badge",
+    );
+    assert(
+      Math.abs(
+        unofficial.x + unofficial.width - officialRect.x - officialRect.width,
+      ) < 2,
+      `source badges share the same right edge: ${JSON.stringify({ officialRect, unofficial, title, sync })}`,
+    );
+    await noOverflow(page, '[role="dialog"]');
+    await noOverflow(page, '[data-analytics-area="rmp_reviews"]');
+    await noOverflow(page, ".course-details");
+    await page.waitForTimeout(400);
+    await page.screenshot({
+      path: `/tmp/rmp-experience-${width}-${locale}.png`,
+    });
+    await page.keyboard.press("Escape");
+    await page
+      .getByRole("button", {
+        name: locale === "zh" ? "切换到英文" : "Switch to Chinese",
+        exact: true,
+      })
+      .click();
+    await page.waitForTimeout(100);
+    assert.equal(
+      await page.title(),
+      locale === "zh" ? "WahO! | OSU Course Atlas" : "蛙O！ | OSU 课程信息汇总",
+    );
+    if (width === 1440) {
+      await page.locator('header a[href="/saved"]').click();
+      await page.waitForURL("**/saved");
+      await page.waitForFunction(() =>
+        document.title.startsWith("Saved courses · WahO!"),
+      );
+      await page.locator("header .brand").click();
+      await page.waitForURL((url) => url.pathname === "/");
+      await page.waitForFunction(
+        () => document.title === "WahO! | OSU Course Atlas",
+      );
+    }
+    assert.deepEqual(errors, []);
+    console.log(
+      `PASS ${width}px ${locale}: compact facts, alignment, RMP cloud translation, section actions, source badges, live title and footer`,
+    );
+    await context.close();
+  }
+  {
+    const { context, page, errors, getBypassRequests } = await setup({
+      width: 390,
+      height: 900,
+      touch: true,
+    });
+    const logo = page.locator("header [data-debug-logo]");
+    for (let index = 0; index < 7; index++) {
+      await logo.click();
+      await page.waitForTimeout(80);
+    }
+    await page.getByRole("button", { name: "解锁", exact: true }).waitFor();
+    assert.equal(
+      await page.locator('[data-debug-tools] input[type="checkbox"]').count(),
+      0,
+    );
+    await page
+      .locator('[data-debug-tools] input[type="password"]')
+      .fill("wrong");
+    await page.getByRole("button", { name: "解锁", exact: true }).click();
+    await page.getByRole("alert").waitFor();
+    await page
+      .locator('[data-debug-tools] input[type="password"]')
+      .fill(process.env.GUIDE_TEST_DEBUG_KEY ?? "local-regression-debug-key");
+    await page.getByRole("button", { name: "解锁", exact: true }).click();
+    await page.getByLabel("出厂预览 · 临时数据层").waitFor();
+    const original = await page.evaluate(() =>
+      localStorage.getItem("course-atlas:saved:v1"),
+    );
+    await page.getByLabel("出厂预览 · 临时数据层").check();
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("出厂预览 · 临时数据层").waitFor();
+    assert(await page.getByLabel("出厂预览 · 临时数据层").isChecked());
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("course-atlas:saved:v1")),
+      original,
+    );
+    await page.getByRole("button", { name: "DEV", exact: true }).click();
+    await page
+      .locator('.course-card [data-analytics-action="course_favorite"]')
+      .first()
+      .click();
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("course-atlas:saved:v1")),
+      original,
+    );
+    await page.getByRole("button", { name: "DEV", exact: true }).click();
+    await page.getByLabel("出厂预览 · 临时数据层").uncheck();
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("重复翻译引导").check();
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("heading", { name: "试试一键翻译" }).waitFor();
+    assert.equal(
+      await page.evaluate(() =>
+        localStorage.getItem("course-atlas:translation-guide:v1"),
+      ),
+      "done",
+    );
+    await page.getByLabel("重复翻译引导").uncheck();
+    await page.waitForLoadState("networkidle");
+    assert.equal(await page.locator("[data-translation-guide]").count(), 0);
+    await page.getByLabel("绕过应用 / HTTP 缓存").check();
+    await page.waitForLoadState("networkidle");
+    await page.locator("[data-rmp-preview] li").first().waitFor();
+    assert(getBypassRequests() > 0, "cache bypass reaches requests");
+    await page.getByLabel("本会话不上传 Umami").check();
+    await page.waitForLoadState("networkidle");
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("umami.disabled")),
+      "1",
+    );
+    assert.equal(
+      await page.evaluate(() => window.umamiBeforeSend("event", {})),
+      false,
+    );
+    await page.getByLabel("本会话不上传 Umami").uncheck();
+    await page.waitForLoadState("networkidle");
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("umami.disabled")),
+      null,
+    );
+    await page.getByRole("button", { name: "隐藏调试工具" }).click();
+    assert.equal(await page.locator("[data-debug-tools]").count(), 0);
+    for (let index = 0; index < 7; index++) {
+      await logo.click();
+      await page.waitForTimeout(80);
+    }
+    await page.getByLabel("出厂预览 · 临时数据层").waitFor();
+    assert.deepEqual(errors, []);
+    console.log(
+      "PASS production debug: seven taps, locked tools, wrong and correct keys, isolated factory state, guide replay, cache bypass, Umami opt-out and hide/reopen",
+    );
+    await context.close();
+  }
+} catch (error) {
+  if (activePage && !activePage.isClosed()) {
+    console.error(
+      await activePage.evaluate(() => ({
+        text: document.body.innerText.slice(-1600),
+        title: document.title,
+      })),
+    );
+    await activePage.screenshot({ path: "/tmp/course-experience-failure.png" });
+  }
+  throw error;
+} finally {
+  await browser.close();
+}
