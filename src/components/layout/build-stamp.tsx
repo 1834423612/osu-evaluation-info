@@ -7,6 +7,7 @@ import {
   ChevronDown,
   X,
   RefreshCw,
+  History,
 } from "lucide-react";
 import { Popover } from "radix-ui";
 import { brand } from "@/lib/brand";
@@ -64,18 +65,23 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
           )}
           data-build-stamp
         >
-          <GitCommitHorizontal
+          <History
             size={14}
             className={styles.icon}
+            data-build-update-icon
             aria-hidden="true"
           />
-          {updated ? (
-            <>
-              <span>{text(locale, "Updated", "更新于")}</span>
-              <time dateTime={updatedAt}>{updated.label}</time>
-            </>
-          ) : null}
-          <code>{hash}</code>
+          <span className={styles.meta}>
+            {updated ? (
+              <>
+                <span className={styles.label}>
+                  {text(locale, "Updated", "更新于")}
+                </span>
+                <time dateTime={updatedAt}>{updated.label}</time>
+              </>
+            ) : null}
+            <code>{hash}</code>
+          </span>
           <ChevronDown size={11} className={styles.arrow} aria-hidden="true" />
         </button>
       </Popover.Trigger>

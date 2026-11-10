@@ -820,6 +820,17 @@ try {
     });
     assert(await page.locator("[data-build-stamp]").isVisible());
     const release = page.locator("main [data-build-stamp]");
+    const updateIcon = release.locator("[data-build-update-icon]");
+    assert(
+      await updateIcon.isVisible(),
+      "update icon stays visible on every screen width",
+    );
+    const iconBox = await updateIcon.boundingBox(),
+      timestampBox = await release.locator("time").boundingBox();
+    assert(
+      iconBox.x + iconBox.width <= timestampBox.x + 1,
+      "update icon sits to the left of the version time",
+    );
     assert.equal(await release.getAttribute("aria-expanded"), "false");
     await release.click();
     const details = page.locator("[data-update-details]");

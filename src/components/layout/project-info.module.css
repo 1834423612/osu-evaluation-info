@@ -58,9 +58,6 @@
     gap: 3px;
     padding-inline: 0;
   }
-  .heroTools > .project > button > svg:first-child {
-    display: none;
-  }
   .heroTools :global(.term-control) {
     grid-column: 1 / -1;
     grid-row: 3;

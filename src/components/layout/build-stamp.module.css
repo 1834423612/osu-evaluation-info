@@ -1,11 +1,12 @@
 .stamp {
-  display: flex;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) 11px;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
   gap: 5px;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
   min-height: 28px;
   border-radius: 5px;
   padding: 4px 2px;
@@ -15,6 +16,14 @@
   line-height: 1.5;
   cursor: pointer;
   transition: color 160ms ease;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+  min-width: 0;
 }
 .stamp:hover,
 .stamp[data-state="open"] {
@@ -151,17 +160,19 @@
 }
 @media (max-width: 640px) {
   .stamp {
+    grid-template-columns: 12px minmax(0, 1fr) 11px;
     gap: 4px;
     font-size: 9px;
   }
   .stamp code {
     font-size: 9px;
   }
-  .stamp > span {
+  .label {
     display: none;
   }
   .icon {
     width: 12px;
+    height: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
