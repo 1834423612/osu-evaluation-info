@@ -31,7 +31,9 @@
   background: var(--surface);
   color: var(--ink);
   text-align: left;
-  transition: border-color var(--motion-fast), background var(--motion-fast);
+  transition:
+    border-color var(--motion-fast),
+    background var(--motion-fast);
 }
 .card:hover {
   border-color: var(--accent-border);
