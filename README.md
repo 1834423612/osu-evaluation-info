@@ -47,6 +47,10 @@ The synchronizer discovers current searchable terms and all campuses, then impor
 
 Official search is queried live with a short cache for text searches and detailed filters. Broad browsing can use a verified published database snapshot when the official service is unavailable; the interface labels the source and sync time. Enrollment status and counts come only from fresh official reads and are hidden for snapshots or expired responses. Expanding a course retrieves fresh official sections. Historical SEI and SSLE evaluations come from `osu_eval`, retain source metadata, and are never combined across instruments. Existing evaluation import commands remain available as `db:validate` / `db:import`.
 
+## Course syllabi
+
+Course cards and details include term- and section-matched Simple Syllabus documents, the official OSU layout, responsive reading, source excerpts, and browser-local US Letter PDF downloads. Browser requests prefer the official service, then an anonymous compatibility relay and versioned PostgreSQL backups. Initialize with `pnpm syllabus:migrate`; `pnpm syllabus:sync` discovers published terms and resumes archival work. The [syllabus operations guide](docs/syllabus/operations.md) covers verified endpoints, daily scheduling, matching, limitations, and recovery.
+
 ## Project layout
 
 - `src/app`: pages `/`, `/saved`, `/methodology`, and API route handlers.

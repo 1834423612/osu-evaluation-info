@@ -13,4 +13,6 @@ All commands run from the repository root unless a guide says otherwise.
 | Analytics            | [Umami setup, events, replays, and heatmaps](analytics/umami.md)                                                                                                                                                   |
 | Maintenance          | [Hidden developer tools, profile isolation, and automatic local-data upgrades](development-tools.md)                                                                                                               |
 
+See [Simple Syllabus endpoints, official rendering, archival operations, and course matching](syllabus/operations.md) for the syllabus feature.
+
 The [project README](../README.md) describes startup, checks, and the repository layout.
