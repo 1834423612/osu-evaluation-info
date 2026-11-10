@@ -1,5 +1,7 @@
 "use client";
 
+import { debugServiceControlled } from "@/lib/debug/services";
+
 import { useEffect, useRef, useState } from "react";
 import { Languages, LoaderCircle } from "lucide-react";
 import { text, type Locale } from "@/lib/i18n";
@@ -118,7 +120,7 @@ export function RmpWordCloud({
           }),
         ).values(),
       ];
-      if (chosen === "chrome") {
+      if (chosen === "chrome" && !debugServiceControlled("translation")) {
         for (const pair of pairs) {
           await browserModel.check(pair, manual);
           const support = browserModel.availability(pair);

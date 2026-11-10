@@ -7,6 +7,18 @@ export type DebugFlags = {
   layout: boolean;
   latency: number;
   offline: boolean;
+  pauseCatalog: boolean;
+  pauseSeats: boolean;
+  pauseTranslation: boolean;
+  pauseRmp: boolean;
+  pauseEvaluations: boolean;
+  pausePeople: boolean;
+  emptyCatalog: boolean;
+  emptySeats: boolean;
+  emptyRmp: boolean;
+  emptyEvaluations: boolean;
+  emptyPeople: boolean;
+  failTranslation: boolean;
 };
 export const DEFAULT_DEBUG_FLAGS: DebugFlags = {
   factory: false,
@@ -17,6 +29,18 @@ export const DEFAULT_DEBUG_FLAGS: DebugFlags = {
   layout: false,
   latency: 0,
   offline: false,
+  pauseCatalog: false,
+  pauseSeats: false,
+  pauseTranslation: false,
+  pauseRmp: false,
+  pauseEvaluations: false,
+  pausePeople: false,
+  emptyCatalog: false,
+  emptySeats: false,
+  emptyRmp: false,
+  emptyEvaluations: false,
+  emptyPeople: false,
+  failTranslation: false,
 };
 export const DEBUG_SESSION_KEY = "course-atlas:debug:session:v1";
 export const DEBUG_EVENT = "course-atlas:debug";

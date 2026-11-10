@@ -1,5 +1,7 @@
 "use client";
 
+import { debugFetch, debugServiceControlled } from "@/lib/debug/services";
+
 import { cacheBypassed } from "@/lib/debug/flags";
 import { browserStorage } from "@/lib/preferences/browser-storage";
 
@@ -224,6 +226,7 @@ function readLocal(
   identity: string,
   subject?: string,
 ): AvailableDirectoryResult | null {
+  if (debugServiceControlled("people")) return null;
   try {
     const parsed: unknown = JSON.parse(
       browserStorage().getItem(STORAGE_KEY) ?? "{}",
@@ -291,7 +294,7 @@ function lookup(
   if (existing) return existing;
   const request = new Promise<DirectoryLookupResult>((resolve) => {
     requestQueue.push(() => {
-      void fetch("/api/people/lookup", {
+      void debugFetch("people", "/api/people/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -394,7 +397,8 @@ export function InstructorDirectoryIdentity({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const identity = verifiedIdentity(props);
   const { name, email, subject } = props;
-  const cached = useCachedResult(identity, subject);
+  const cachedResult = useCachedResult(identity, subject);
+  const cached = debugServiceControlled("people") ? null : cachedResult;
   const effectiveResult = result ?? cached;
   const term = identity ?? instructorDirectoryQuery(props);
   const fallbackName =

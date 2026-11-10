@@ -1,4 +1,5 @@
 import { cacheBypassed } from "../debug/flags.ts";
+import { debugServiceControlled } from "../debug/services.ts";
 import {
   instructorPhotoUrl,
   isInstructorPhotoPlan,
@@ -16,6 +17,7 @@ export function createInstructorPhotoClient(
   } | null = null;
   return {
     async url(identity: string): Promise<string | null> {
+      if (debugServiceControlled("people")) return null;
       if (!validPhotoIdentity(identity)) return null;
       if (cacheBypassed() || !cached || cached.expires <= Date.now()) {
         const promise = (async () => {

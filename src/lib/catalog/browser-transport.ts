@@ -1,4 +1,5 @@
 import { cacheBypassed } from "../debug/flags.ts";
+import { debugResponse, debugFetch } from "../debug/services.ts";
 import {
   createOfficialCatalogClient,
   parseCatalogSearch,
@@ -130,28 +131,33 @@ export function createCatalogTransport(
   async function enrich(courses: CatalogCourse[], signal?: AbortSignal | null) {
     if (!courses.length) return;
     try {
-      const response = await fetcher("/api/evaluations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: signal
-          ? AbortSignal.any([signal, AbortSignal.timeout(10_000)])
-          : AbortSignal.timeout(10_000),
-        body: JSON.stringify({
-          courses: courses.map((c) => ({
-            id: c.id,
-            subject: c.subject,
-            catalogNumber: c.catalogNumber,
-            campusCode: c.campusCode,
-            instructors: [
-              ...new Map(
-                c.sections
-                  .flatMap((s) => s.instructors)
-                  .map((i) => [i.email ?? i.name, i]),
-              ).values(),
-            ].slice(0, 30),
-          })),
-        }),
-      });
+      const response = await debugFetch(
+        "evaluations",
+        "/api/evaluations",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(10_000)])
+            : AbortSignal.timeout(10_000),
+          body: JSON.stringify({
+            courses: courses.map((c) => ({
+              id: c.id,
+              subject: c.subject,
+              catalogNumber: c.catalogNumber,
+              campusCode: c.campusCode,
+              instructors: [
+                ...new Map(
+                  c.sections
+                    .flatMap((s) => s.instructors)
+                    .map((i) => [i.email ?? i.name, i]),
+                ).values(),
+              ].slice(0, 30),
+            })),
+          }),
+        },
+        fetcher,
+      );
       if (!response.ok) return;
       const data = (await response.json()) as {
         summaries?: Record<string, CourseEvaluationSummary>;
@@ -164,7 +170,7 @@ export function createCatalogTransport(
     }
   }
 
-  const request: typeof fetch = async (input, init = {}) => {
+  const requestLive: typeof fetch = async (input, init = {}) => {
     const local = new URL(String(input), "https://catalog.invalid");
     const resource = (Object.keys(PATHS) as CatalogResource[]).find(
       (key) => PATHS[key] === local.pathname,
@@ -285,6 +291,38 @@ export function createCatalogTransport(
       }
     }
     return Response.json(result);
+  };
+  const request: typeof fetch = (input, init) => {
+    if (init?.signal?.aborted) return Promise.reject(init.signal.reason);
+    const url = new URL(String(input), "https://catalog.invalid");
+    const seats = url.pathname === PATHS.availability;
+    return debugResponse(
+      seats ? "seats" : "catalog",
+      url.pathname + url.search,
+      () => requestLive(input, init),
+      () =>
+        seats
+          ? { availability: null }
+          : {
+              courses: [],
+              course: null,
+              filters: [],
+              terms: [],
+              page: 1,
+              nextCursor: null,
+              hasMore: false,
+              totalItems: 0,
+              matchedSections: 0,
+              totalCourses: 0,
+              totalPages: 0,
+              capped: false,
+              source: "https://classes.osu.edu/",
+              sourceMode: "official",
+              fetchedAt: new Date().toISOString(),
+              evaluationStatus: "unavailable",
+              debug: true,
+            },
+    );
   };
   return { request, discover };
 }

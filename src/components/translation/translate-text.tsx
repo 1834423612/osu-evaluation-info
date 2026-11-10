@@ -1,5 +1,7 @@
 "use client";
 
+import { debugServiceControlled } from "@/lib/debug/services";
+
 import { browserStorage } from "@/lib/preferences/browser-storage";
 
 import {
@@ -253,7 +255,11 @@ export function TranslateText({
       pendingKeysRef.current.add(requestKey);
       setStatus("loading");
       try {
-        if (selectedModel === "chrome" && manual) {
+        if (
+          selectedModel === "chrome" &&
+          manual &&
+          !debugServiceControlled("translation")
+        ) {
           await browserModel.check(
             {
               sourceLanguage: pair.sourceLanguage,
@@ -265,6 +271,7 @@ export function TranslateText({
         }
         if (
           selectedModel === "chrome" &&
+          !debugServiceControlled("translation") &&
           browserModel.availability({
             sourceLanguage: pair.sourceLanguage,
             targetLanguage: pair.targetLanguage,

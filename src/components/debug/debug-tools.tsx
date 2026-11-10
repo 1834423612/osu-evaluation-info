@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Bug, Download, RefreshCw, Wrench, X } from "lucide-react";
 import { debugTools } from "@/lib/debug/client";
 import { type DebugFlags } from "@/lib/debug/flags";
+import { clearDebugResponses } from "@/lib/debug/services";
 import {
   migrateBrowserStorage,
   STORAGE_RULES,
@@ -82,6 +83,86 @@ export function DebugTools() {
     },
     { key: "layout", en: "Outline layout boundaries", zh: "显示布局边界" },
     { key: "offline", en: "Simulate failed requests", zh: "模拟请求失败" },
+  ];
+  const serviceGroups: {
+    title: string;
+    note: string;
+    items: { key: keyof DebugFlags; label: string }[];
+  }[] = [
+    {
+      title: text(
+        locale,
+        "In development · pause requests",
+        "开发中 · 暂停获取",
+      ),
+      note: text(
+        locale,
+        "Survives refresh. Reuses this tab's saved responses; uncaptured requests stay paused. Snapshots expire after 4 hours.",
+        "刷新后仍生效。复用本标签页已获取的数据；没有快照时保持暂停。快照保留 4 小时。",
+      ),
+      items: [
+        {
+          key: "pauseCatalog",
+          label: text(locale, "Course catalog & filters", "课程与筛选项"),
+        },
+        { key: "pauseSeats", label: text(locale, "Section seats", "班次座位") },
+        {
+          key: "pauseTranslation",
+          label: text(
+            locale,
+            "Translation & model downloads",
+            "翻译与模型下载",
+          ),
+        },
+        { key: "pauseRmp", label: "Rate My Professors" },
+        {
+          key: "pauseEvaluations",
+          label: text(locale, "Course evaluations", "课程历史评价"),
+        },
+        {
+          key: "pausePeople",
+          label: text(locale, "People directory & photos", "教师检索与头像"),
+        },
+      ],
+    },
+    {
+      title: text(locale, "Simulate events", "模拟事件"),
+      note: text(
+        locale,
+        "Overrides saved responses without contacting the service. Refresh to apply to content already loaded.",
+        "优先于快照，不请求对应服务。刷新可应用到已经加载的内容。",
+      ),
+      items: [
+        {
+          key: "emptyCatalog",
+          label: text(
+            locale,
+            "No courses · any search",
+            "任何查询都找不到课程",
+          ),
+        },
+        {
+          key: "emptySeats",
+          label: text(locale, "Seats unavailable", "班次座位暂无数据"),
+        },
+        {
+          key: "emptyRmp",
+          label: text(locale, "No RMP reviews", "RMP 暂无评价"),
+        },
+        {
+          key: "emptyEvaluations",
+          label: text(locale, "No course evaluations", "暂无课程历史评价"),
+        },
+        {
+          key: "emptyPeople",
+          label: text(locale, "No people found", "找不到教师资料"),
+        },
+        {
+          key: "failTranslation",
+          label: text(locale, "Translation unavailable", "翻译服务不可用"),
+        },
+      ],
+    },
   ];
   return (
     <>
@@ -192,6 +273,29 @@ export function DebugTools() {
                       </label>
                     ))}
                   </div>
+                  {serviceGroups.map((group) => (
+                    <fieldset className={styles.group} key={group.title}>
+                      <legend>{group.title}</legend>
+                      <p>{group.note}</p>
+                      <div className={styles.switches}>
+                        {group.items.map((item) => (
+                          <label key={item.key}>
+                            <span>{item.label}</span>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(state.flags[item.key])}
+                              onChange={(event) =>
+                                debugTools.setFlag(
+                                  item.key,
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ))}
                   <label className={styles.delay}>
                     {text(locale, "Request delay", "请求延迟")}
                     <select
@@ -209,6 +313,20 @@ export function DebugTools() {
                     </select>
                   </label>
                   <div className={styles.buttons}>
+                    <button
+                      onClick={() => {
+                        clearDebugResponses();
+                        debugTools.notify(
+                          text(
+                            locale,
+                            "Response snapshots cleared",
+                            "请求快照已清理",
+                          ),
+                        );
+                      }}
+                    >
+                      {text(locale, "Clear response snapshots", "清理请求快照")}
+                    </button>
                     <button
                       onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
                     >

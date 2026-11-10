@@ -1,4 +1,5 @@
 import { cacheBypassed } from "../debug/flags.ts";
+import { debugFetch, debugServiceControlled } from "../debug/services.ts";
 import type { CourseRmpInput } from "./types";
 import type { RmpInsight } from "./insights";
 
@@ -20,17 +21,22 @@ export function createRmpPreviewClient(
     running = true;
     const batch = queue.splice(0, 24);
     try {
-      const response = await fetcher("/api/rmp/summaries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          courses: batch.map((item, index) => ({
-            ...item.input,
-            id: String(index),
-          })),
-        }),
-        signal: AbortSignal.timeout(12_000),
-      });
+      const response = await debugFetch(
+        "rmp",
+        "/api/rmp/summaries",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            courses: batch.map((item, index) => ({
+              ...item.input,
+              id: String(index),
+            })),
+          }),
+          signal: AbortSignal.timeout(12_000),
+        },
+        fetcher,
+      );
       if (!response.ok) throw new Error("RMP unavailable");
       const body = await response.json();
       batch.forEach((item, index) => {
@@ -64,7 +70,12 @@ export function createRmpPreviewClient(
     request(input: CourseRmpInput) {
       const key = JSON.stringify(input);
       const saved = cache.get(key);
-      if (!cacheBypassed() && saved && saved.expires > Date.now())
+      if (
+        !debugServiceControlled("rmp") &&
+        !cacheBypassed() &&
+        saved &&
+        saved.expires > Date.now()
+      )
         return Promise.resolve(saved.value);
       const active = pending.get(key);
       if (active) return active;

@@ -59,6 +59,7 @@ function persist() {
       DEBUG_SESSION_KEY,
       JSON.stringify({
         flags: state.flags,
+        authorized: state.authorized,
         expiresAt: state.expiresAt,
         hidden: !state.visible,
         expanded: state.expanded,

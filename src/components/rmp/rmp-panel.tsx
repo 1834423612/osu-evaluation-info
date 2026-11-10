@@ -1,5 +1,7 @@
 "use client";
 
+import { debugFetch } from "@/lib/debug/services";
+
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -80,7 +82,7 @@ export default function RmpPanel({
     const controller = new AbortController();
     void (async () => {
       try {
-        const response = await fetch(`/api/rmp/course?${query}`, {
+        const response = await debugFetch("rmp", `/api/rmp/course?${query}`, {
           signal: AbortSignal.any([
             controller.signal,
             AbortSignal.timeout(15_000),
@@ -277,9 +279,13 @@ function InstructorReviews({
       const params = new URLSearchParams(courseQuery);
       params.set("professor", instructor.professorId);
       params.set("offset", String(targetPage * REVIEW_PAGE_SIZE));
-      const response = await fetch(`/api/rmp/course/reviews?${params}`, {
-        signal: AbortSignal.timeout(15_000),
-      });
+      const response = await debugFetch(
+        "rmp",
+        `/api/rmp/course/reviews?${params}`,
+        {
+          signal: AbortSignal.timeout(15_000),
+        },
+      );
       if (!response.ok) throw new Error("RMP review page unavailable");
       const page: {
         reviews: typeof instructor.reviews;
