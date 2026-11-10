@@ -46,42 +46,49 @@
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 6px;
-  color: var(--muted);
-  font-size: 10px;
+  gap: 8px 12px;
+  padding-top: 14px;
+  color: #756c78;
+  font-size: 13px;
   line-height: 1.8;
 }
-.credit > span:first-child {
+.signature,
+.signature > span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  white-space: nowrap;
 }
 .heart {
-  color: var(--primary);
-  font-size: 11px;
+  flex: 0 0 auto;
+  color: #ca4664;
+  fill: #ca4664;
+  stroke-width: 1.5;
 }
 .credit a {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  border: 1px solid #dce5ee;
-  border-radius: 6px;
-  padding: 2px 6px;
-  background: #f0f4f8;
-  color: #395b80;
+  gap: 5px;
+  min-height: 28px;
+  border-radius: 3px;
+  color: #65466e;
   text-decoration: underline;
-  text-underline-offset: 3px;
-  font-weight: 550;
+  text-decoration-color: #ba9fc3;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  font-weight: 600;
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease;
 }
 .credit a:hover {
   color: var(--primary);
-  background: var(--accent-soft);
-  border-color: var(--accent-border);
+  text-decoration-color: currentColor;
 }
 .separator {
-  margin-inline: 2px;
-  opacity: 0.5;
+  width: 1px;
+  height: 13px;
+  background: #b9aebc;
 }
 .credit a:focus-visible {
   outline: 2px solid var(--ring);
@@ -99,6 +106,11 @@
   .identity :global(.footer-brand) {
     gap: 7px;
     font-size: 11px;
+  }
+  .credit {
+    gap: 7px 10px;
+    font-size: 12px;
+    padding-top: 11px;
   }
 }
 @media (max-width: 350px) {
@@ -119,5 +131,10 @@
   }
   .credit {
     grid-row: 5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .credit a {
+    transition: none;
   }
 }

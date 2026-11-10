@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Globe2 } from "lucide-react";
+import { ArrowUpRight, Globe2, Heart } from "lucide-react";
 import { GitHubMark } from "@/components/brand/github-mark";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
@@ -60,21 +60,22 @@ export function AppFooter() {
         </p>
       </div>
       <div className={styles.credit}>
-        <span>
-          Made with{" "}
-          <span className={styles.heart} aria-label="love">
-            ❤️
-          </span>{" "}
-          by
+        <span className={styles.signature}>
+          <span>
+            Made with{" "}
+            <Heart size={13} className={styles.heart} aria-label="love" /> by
+          </span>
+          <a
+            href={brand.links.author}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <GitHubMark size={14} /> kjch
+          </a>
         </span>
-        <a href={brand.links.author} target="_blank" rel="noreferrer noopener">
-          <GitHubMark size={12} /> kjch
-        </a>
-        <span aria-hidden="true" className={styles.separator}>
-          ·
-        </span>
+        <span aria-hidden="true" className={styles.separator} />
         <a href={brand.links.website} target="_blank" rel="noreferrer noopener">
-          <Globe2 size={11} aria-hidden="true" />
+          <Globe2 size={13} aria-hidden="true" />
           {text(locale, "Personal site", "个人网站")}
         </a>
       </div>
