@@ -653,6 +653,163 @@ async function verifyLogoClicks() {
   await context.close();
 }
 
+async function verifyUpdateNotice(width, locale) {
+  const { context, page, errors } = await setup({
+    width,
+    height: 950,
+    locale,
+    touch: width < 640,
+    clock: true,
+  });
+  const base = process.env.GUIDE_TEST_BASE_URL ?? "http://localhost:3101";
+  const baseline = await (
+    await page.request.get(`${base}/api/build-info`)
+  ).json();
+  let published = {
+    ...baseline.build,
+    sha: "f".repeat(40),
+    environment: "production",
+    message:
+      "fix: improve course lists and update notifications with a deliberately long summary for narrow screens",
+  };
+  let requests = 0;
+  await page.route("**/api/build-info", (route) => {
+    requests++;
+    return route.fulfill({ json: { version: 1, build: published } });
+  });
+  const check = async () => {
+    await page.clock.fastForward(6000);
+    const response = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === "/api/build-info",
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await response;
+  };
+  const notice = page.locator("[data-update-notice]");
+  const close = () =>
+    notice.getByRole("button", {
+      name: locale === "zh" ? "关闭更新提示" : "Dismiss update notice",
+      exact: true,
+    });
+  const refresh = () =>
+    notice.getByRole("button", {
+      name: locale === "zh" ? "刷新" : "Refresh",
+      exact: true,
+    });
+  await check();
+  await notice.waitFor();
+  await notice.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  );
+  const rect = await notice.boundingBox();
+  assert(
+    rect.y >= 10 &&
+      rect.y < 20 &&
+      rect.x >= 11 &&
+      rect.x + rect.width <= width - 11,
+  );
+  const closeBox = await close().boundingBox(),
+    refreshBox = await refresh().boundingBox();
+  assert(
+    closeBox.width >= 36 && closeBox.height >= 36 && refreshBox.height >= 36,
+  );
+  await noOverflow(page, "[data-update-notice]");
+  await page.clock.fastForward(90_000);
+  assert(
+    await notice.isVisible(),
+    "the update notice has no automatic timeout",
+  );
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  assert(
+    Math.abs((await notice.boundingBox()).y - rect.y) < 1,
+    "notice stays at the top while scrolling",
+  );
+  await page.screenshot({ path: `/tmp/update-notice-${width}.png` });
+  await close().click();
+  await check();
+  assert.equal(
+    await notice.count(),
+    0,
+    "the dismissed release is not shown again by polling",
+  );
+  await page.goto(`${base}/saved`, { waitUntil: "networkidle" });
+  assert.equal(
+    await notice.count(),
+    0,
+    "dismissal survives route navigation and reload",
+  );
+
+  published = {
+    ...published,
+    sha: "e".repeat(40),
+    message: "fix: another deployment",
+  };
+  await check();
+  await notice.waitFor();
+  await Promise.all([
+    page.waitForEvent("framenavigated", (frame) => frame === page.mainFrame()),
+    refresh().click(),
+  ]);
+  await page.waitForLoadState("networkidle");
+  // A fixture cannot replace the loaded bundle: dismiss the same simulated deployment after reload.
+  await notice.waitFor();
+  await close().click();
+
+  if (width === 390) {
+    await page.keyboard.press("Control+Alt+KeyD");
+    assert.equal(
+      await page
+        .getByRole("button", { name: "模拟新版本提示", exact: true })
+        .count(),
+      0,
+      "update test controls require maintenance access",
+    );
+    await page
+      .locator('[data-debug-tools] input[type="password"]')
+      .fill(process.env.GUIDE_TEST_DEBUG_KEY ?? "local-regression-debug-key");
+    await page.getByRole("button", { name: "解锁", exact: true }).click();
+    const preview = page.getByRole("button", {
+      name: "模拟新版本提示",
+      exact: true,
+    });
+    await preview.click();
+    await page.locator("[data-update-preview]").waitFor();
+    assert((await notice.innerText()).includes("测试预览"));
+    await page.clock.fastForward(65_000);
+    assert(await notice.isVisible());
+    await close().click();
+    await preview.click();
+    await page.locator("[data-update-preview]").waitFor();
+    await close().click();
+    assert.equal(
+      await page.locator("main [data-build-stamp] code").innerText(),
+      "eeeeeeee",
+      "previews leave real version data intact",
+    );
+    await page
+      .getByRole("button", { name: "重置更新提示关闭记录", exact: true })
+      .click();
+    await notice.waitFor();
+    assert.equal(await notice.getAttribute("data-update-preview"), null);
+    await close().click();
+    await page.clock.fastForward(6000);
+    const before = requests;
+    const checked = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === "/api/build-info",
+    );
+    await page
+      .getByRole("button", { name: "立即检查更新", exact: true })
+      .click();
+    await checked;
+    assert.equal(requests, before + 1);
+  }
+  assert.deepEqual(errors, []);
+  console.log(
+    `PASS update notice ${width}px ${locale}: persistent top placement, readable controls, dismissal per release across navigation/reload, later deployments, manual refresh${width === 390 ? ", authorized repeatable developer preview, dismissal reset and manual check" : ""}`,
+  );
+  await context.close();
+}
+
 async function verifyLiveBuildInfo() {
   const { context, page, errors } = await setup({
     width: 390,
@@ -734,6 +891,11 @@ async function verifyLiveBuildInfo() {
     await stamp.locator("time").getAttribute("datetime"),
     published.updatedAt,
   );
+  await page.getByRole("button", { name: "DEV", exact: true }).click();
+  await page
+    .locator("[data-update-notice]")
+    .getByRole("button", { name: "关闭更新提示", exact: true })
+    .click();
   await stamp.click();
   const details = page.locator("[data-update-details]");
   await details.getByText("feat: published update", { exact: true }).waitFor();
@@ -1406,6 +1568,12 @@ try {
   await verifyPinchNavigation(390, 1);
   await verifyPinchNavigation(320, 3);
   await verifyLogoClicks();
+  for (const [width, locale] of [
+    [1440, "en"],
+    [390, "zh"],
+    [320, "en"],
+  ])
+    await verifyUpdateNotice(width, locale);
   await verifyLiveBuildInfo();
   {
     const { context, page, succeed, errors } = await setup({
