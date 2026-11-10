@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import Script from "next/script";
 import { normalizeCourseSearch } from "@/lib/analytics";
+import { debugFlag, DEBUG_EVENT } from "@/lib/debug/flags";
+import { useSyncExternalStore } from "react";
 
 type EventProperties = Record<string, string | number | boolean>;
 type PendingEvent = { name: string; properties: EventProperties };
@@ -19,6 +21,10 @@ const pendingEvents: PendingEvent[] = [];
 const scrollDepths = new WeakMap<Element, Set<number>>();
 
 export function trackUmamiEvent(name: string, properties: EventProperties) {
+  if (debugFlag("skipAnalytics")) {
+    pendingEvents.length = 0;
+    return;
+  }
   if (window.umami?.track) {
     window.umami.track(name, properties);
     return;
@@ -27,6 +33,10 @@ export function trackUmamiEvent(name: string, properties: EventProperties) {
 }
 
 function flushPendingEvents() {
+  if (debugFlag("skipAnalytics")) {
+    pendingEvents.length = 0;
+    return;
+  }
   const tracker = window.umami;
   if (!tracker?.track) return;
   while (pendingEvents.length) {
@@ -174,8 +184,16 @@ export function UmamiAnalytics({
   trackerUrl: string;
   recorderUrl: string;
 }) {
+  const disabled = useSyncExternalStore(
+    (callback) => {
+      window.addEventListener(DEBUG_EVENT, callback);
+      return () => window.removeEventListener(DEBUG_EVENT, callback);
+    },
+    () => debugFlag("skipAnalytics"),
+    () => false,
+  );
   useEffect(() => {
-    if (!websiteId || !trackerUrl) return;
+    if (!websiteId || !trackerUrl || disabled) return;
     document.addEventListener("click", onClick, true);
     document.addEventListener("change", onChange, true);
     document.addEventListener("submit", onSubmit, true);
@@ -189,9 +207,9 @@ export function UmamiAnalytics({
       document.removeEventListener("submit", onSubmit, true);
       document.removeEventListener("scroll", onScroll, true);
     };
-  }, [trackerUrl, websiteId]);
+  }, [trackerUrl, websiteId, disabled]);
 
-  if (!websiteId || !trackerUrl) return null;
+  if (!websiteId || !trackerUrl || disabled) return null;
   return (
     <>
       <Script

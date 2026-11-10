@@ -1,0 +1,192 @@
+.tools {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 88px);
+  left: 12px;
+  z-index: 150;
+  max-width: calc(100vw - 24px);
+  color: var(--ink);
+}
+.launcher {
+  display: flex;
+  width: fit-content;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 3px 12px rgb(25 18 29 / 8%);
+}
+.launcher > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 5px 8px;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+.launcher > button:hover {
+  background: var(--accent-soft);
+  color: var(--primary);
+}
+.panel {
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(60dvh, 650px, max(120px, calc(100dvh - 330px)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 36px rgb(25 18 29 / 14%);
+}
+.panel > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.panel > header > small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9px;
+}
+.panel p {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+  margin: 10px 0;
+}
+.panel form {
+  display: grid;
+  gap: 8px;
+}
+.panel form > label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+}
+.panel input[type="password"] {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 9px;
+}
+.panel form > button {
+  min-height: 34px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+}
+.switches {
+  display: grid;
+  gap: 3px;
+  border-block: 1px solid var(--line);
+  padding: 7px 0;
+}
+.switches > label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.switches input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+}
+.delay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 11px;
+}
+.delay select {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px;
+  background: var(--surface);
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.buttons > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.buttons > button:hover {
+  background: var(--accent-soft);
+}
+.panel details {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.panel summary {
+  cursor: pointer;
+}
+.requests {
+  display: grid;
+  gap: 5px;
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.requests > li {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+  min-width: 0;
+  font-size: 9px;
+}
+.requests code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.requests small {
+  flex: 0 0 auto;
+  font-size: 9px;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 190;
+  max-width: calc(100vw - 24px);
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #302b32;
+  padding: 9px 16px;
+  color: white;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 16%);
+  font-size: 12px;
+  pointer-events: none;
+}
+.tools button:focus-visible,
+.tools input:focus-visible,
+.tools select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

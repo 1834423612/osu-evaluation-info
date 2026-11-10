@@ -2356,6 +2356,18 @@ h1 {
   font-size: 10px;
   line-height: 1.8;
 }
+[data-debug-logo] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+html[data-debug-layout] body * {
+  outline: 1px solid rgb(64 126 211 / 25%);
+}
+html[data-debug-layout] [data-debug-tools],
+html[data-debug-layout] [data-debug-tools] * {
+  outline: none;
+}
 @media (min-width: 1500px) {
   .header-inner {
     padding: 0 40px;

@@ -11,5 +11,6 @@ All commands run from the repository root unless a guide says otherwise.
 | Rate My Professors   | [Collection](rmp/import.md), [identity mappings](rmp/mapping.md), [legacy supplements](rmp/supplement.md)                                                                                                          |
 | Translation          | [Translation providers and scheduling](translation.md), [node states and management](translation-operations.md)                                                                                                    |
 | Analytics            | [Umami setup, events, replays, and heatmaps](analytics/umami.md)                                                                                                                                                   |
+| Maintenance          | [Hidden developer tools, profile isolation, and automatic local-data upgrades](development-tools.md)                                                                                                               |
 
 The [project README](../README.md) describes startup, checks, and the repository layout.

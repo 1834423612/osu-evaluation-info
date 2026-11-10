@@ -87,7 +87,12 @@ export default function RootLayout({
           id="umami-url-filter"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `window.umamiBeforeSend = function(type, payload) {
+            __html: `try {
+              var debugSession = JSON.parse(sessionStorage.getItem("course-atlas:debug:session:v1") || "null");
+              if (debugSession && debugSession.expiresAt > Date.now()) window.__COURSE_ATLAS_DEBUG__ = debugSession.flags;
+            } catch (_) {}
+            window.umamiBeforeSend = function(type, payload) {
+              if (window.__COURSE_ATLAS_DEBUG__ && window.__COURSE_ATLAS_DEBUG__.skipAnalytics) return false;
               if (!payload || typeof payload !== "object") return payload;
               for (const field of ["url", "referrer"]) {
                 if (typeof payload[field] !== "string" || !payload[field]) continue;
