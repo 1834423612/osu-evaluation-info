@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download, ExternalLink, LoaderCircle } from "lucide-react";
+import { ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import { text, type Locale } from "@/lib/i18n";
@@ -13,6 +13,7 @@ import type {
   SyllabusResult,
 } from "@/lib/syllabus/types";
 import { SyllabusHighlights } from "./syllabus-highlights";
+import { SyllabusDownload } from "./syllabus-download";
 import { SyllabusViewer, type SyllabusViewerHandle } from "./syllabus-viewer";
 import styles from "./syllabus.module.css";
 
@@ -28,23 +29,8 @@ export function SyllabusReader({
   );
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState(false);
-  const [downloadFile, setDownloadFile] = useState<{
-    url: string;
-    fileName: string;
-  } | null>(null);
-  const downloadUrl = useRef<string | null>(null),
-    mounted = useRef(false),
-    viewer = useRef<SyllabusViewerHandle>(null);
+  const viewer = useRef<SyllabusViewerHandle>(null);
   const { code, termId, entityId, classNumber } = entry;
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
-    };
-  }, []);
   useEffect(() => {
     const controller = new AbortController();
     syllabusClient
@@ -69,34 +55,6 @@ export function SyllabusReader({
       });
     return () => controller.abort();
   }, [code, termId, entityId, classNumber, retry]);
-
-  async function download() {
-    if (!result || exporting) return;
-    setExporting(true);
-    setExportError(false);
-    try {
-      const { createSyllabusPdf } = await import("@/lib/syllabus/pdf");
-      const { blob, fileName } = await createSyllabusPdf(result.data);
-      const prepared = { url: URL.createObjectURL(blob), fileName };
-      if (!mounted.current) {
-        URL.revokeObjectURL(prepared.url);
-        return;
-      }
-      if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
-      downloadUrl.current = prepared.url;
-      setDownloadFile(prepared);
-      const link = document.createElement("a");
-      link.href = prepared.url;
-      link.download = prepared.fileName;
-      document.body.append(link);
-      link.click();
-      link.remove();
-    } catch {
-      if (mounted.current) setExportError(true);
-    } finally {
-      if (mounted.current) setExporting(false);
-    }
-  }
 
   if (error)
     return (
@@ -150,37 +108,6 @@ export function SyllabusReader({
       </p>
     );
 
-  const downloadAction = (
-    <div className={styles.downloadGroup}>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={exporting || !result.data.components.length}
-        onClick={() => void download()}
-        title={text(
-          locale,
-          "Create a US Letter PDF on this device",
-          "在本机生成 Letter PDF",
-        )}
-      >
-        {exporting ? (
-          <LoaderCircle size={14} className="spin" />
-        ) : (
-          <Download size={14} />
-        )}{" "}
-        {text(locale, "Download PDF", "下载 PDF")}
-      </Button>
-      {downloadFile ? (
-        <a
-          className={styles.saveLink}
-          href={downloadFile.url}
-          download={downloadFile.fileName}
-        >
-          {text(locale, "Save again", "再次保存")}
-        </a>
-      ) : null}
-    </div>
-  );
   const timestamp =
     result.source === "backup"
       ? result.fetchedAt
@@ -233,15 +160,6 @@ export function SyllabusReader({
           )}
         </p>
       ) : null}
-      {exportError ? (
-        <p className={styles.notice} role="alert">
-          {text(
-            locale,
-            "PDF export failed. Please retry or open the source.",
-            "PDF 导出失败，请重试或打开官方原文。",
-          )}
-        </p>
-      ) : null}
       {result.data.components.length ? (
         <>
           <SyllabusHighlights
@@ -253,7 +171,13 @@ export function SyllabusReader({
             ref={viewer}
             document={result.data}
             locale={locale}
-            downloadAction={downloadAction}
+            downloadAction={
+              <SyllabusDownload
+                key={code}
+                document={result.data}
+                locale={locale}
+              />
+            }
           />
         </>
       ) : (
