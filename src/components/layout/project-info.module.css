@@ -1,16 +1,19 @@
 .project {
-  width: 260px;
+  width: 220px;
   max-width: 100%;
   min-width: 0;
 }
 .heroTools {
-  display: grid;
-  width: 260px;
-  min-width: 0;
-  gap: 12px;
-  margin-top: 31px;
+  display: contents;
+}
+.heroTools > .project {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 .heroTools :global(.term-control) {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: end;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
@@ -20,10 +23,11 @@
 }
 .heroTools :global(.term-control label) {
   font-size: 10px;
+  white-space: nowrap;
 }
-.heroTools :global(.term-select) {
+.heroTools :global(.term-control .term-select) {
   min-width: 0;
-  width: 150px;
+  width: 130px;
 }
 .pageHeading {
   display: flex;
@@ -47,28 +51,20 @@
   gap: 8px;
 }
 @media (max-width: 640px) {
-  .heroTools {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    align-items: end;
-    gap: 16px;
-    width: 100%;
-    margin-top: 0;
-  }
   .heroTools > .project {
     grid-column: 2;
     grid-row: 1;
-    width: 100%;
+    width: 152px;
   }
   .heroTools :global(.term-control) {
-    grid-column: 1;
-    grid-row: 1;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 7px;
-    padding-bottom: 28px;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    justify-content: flex-start;
+    gap: 10px;
+    width: auto;
   }
-  .heroTools :global(.term-select) {
-    width: 100%;
+  .heroTools :global(.term-control .term-select) {
+    width: 160px;
   }
   .pageHeading {
     align-items: flex-start;

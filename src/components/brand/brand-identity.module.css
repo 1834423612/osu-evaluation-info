@@ -17,16 +17,22 @@
 }
 
 .hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
   align-items: flex-start;
-  gap: 28px;
+  gap: 0 28px;
   padding: 3px 0 5px;
 }
 
 .heroCopy {
+  grid-column: 1;
+  grid-row: 2;
   min-width: 0;
 }
 
 .heroEyebrow {
+  grid-column: 1;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -69,15 +75,13 @@
 }
 
 .hero .heroDescription {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: end;
   max-width: 560px;
   margin-top: 13px;
   font-size: 13px;
   line-height: 1.7;
-}
-
-.hero > :last-child {
-  flex-shrink: 0;
-  margin-bottom: 3px;
 }
 
 @media (max-width: 800px) {
@@ -88,15 +92,26 @@
 
 @media (max-width: 640px) {
   .hero {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
+    grid-template-columns: minmax(0, 1fr) 152px;
+    gap: 16px 12px;
+  }
+
+  .heroCopy {
+    grid-column: 1 / -1;
+  }
+
+  .heroEyebrow {
+    margin-bottom: 0;
+  }
+
+  .hero .heroDescription {
+    grid-column: 1 / -1;
+    margin-top: 0;
   }
 }
 
 @media (max-width: 540px) {
   .heroEyebrow {
-    margin-bottom: 12px;
     font-size: 9px;
     letter-spacing: 0.04em;
   }

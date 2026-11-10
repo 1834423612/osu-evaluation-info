@@ -374,10 +374,10 @@ export function CourseExplorer() {
       <AppHeader />
       <main className="explorer-shell">
         <div className={`page-heading ${brandStyles.hero}`}>
+          <span className={brandStyles.heroEyebrow}>
+            {brand.context[locale]}
+          </span>
           <div className={brandStyles.heroCopy}>
-            <span className={brandStyles.heroEyebrow}>
-              {brand.context[locale]}
-            </span>
             <h1
               className={brandStyles.slogan}
               lang={locale === "zh" ? "zh-CN" : "en"}
@@ -386,14 +386,14 @@ export function CourseExplorer() {
               {locale === "en" ? " " : null}
               <span>{brand.slogan[locale][1]}</span>
             </h1>
-            <p className={brandStyles.heroDescription}>
-              {text(
-                locale,
-                "Explore Ohio State courses, compare schedules, and get to know your professors.",
-                "查课程、看课表、了解教授，为下一学期做好准备。",
-              )}
-            </p>
           </div>
+          <p className={brandStyles.heroDescription}>
+            {text(
+              locale,
+              "Explore Ohio State courses, compare schedules, and get to know your professors.",
+              "查课程、看课表、了解教授，为下一学期做好准备。",
+            )}
+          </p>
           <div className={projectStyles.heroTools}>
             <ProjectInfo locale={locale} />
             <div className="term-control">

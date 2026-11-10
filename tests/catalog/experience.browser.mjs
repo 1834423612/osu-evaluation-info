@@ -480,7 +480,49 @@ try {
     assert.equal(await page.locator("[data-open-source]").count(), 2);
     const topRepository = page.locator("main [data-open-source]");
     const topRepoBox = await topRepository.boundingBox();
-    assert(topRepoBox.height <= 82, "repository introduction stays compact");
+    assert(topRepoBox.height <= 50, "repository introduction stays compact");
+    assert(topRepoBox.width <= (width <= 640 ? 153 : 221));
+    const eyebrowBox = await page
+      .getByText(
+        locale === "zh"
+          ? "OHIO STATE · 课程与教授评价"
+          : "OHIO STATE · COURSES & PROFESSOR RATINGS",
+        { exact: true },
+      )
+      .boundingBox();
+    const termBox = await page.locator(".term-control").boundingBox();
+    const descriptionBox = await page
+      .getByText(
+        locale === "zh"
+          ? "查课程、看课表、了解教授，为下一学期做好准备。"
+          : "Explore Ohio State courses, compare schedules, and get to know your professors.",
+        { exact: true },
+      )
+      .boundingBox();
+    if (width > 640)
+      assert(
+        Math.abs(
+          termBox.y + termBox.height - descriptionBox.y - descriptionBox.height,
+        ) < 2,
+        "desktop term selector bottom aligns with the introductory description",
+      );
+    else
+      assert(
+        termBox.y >= descriptionBox.y + descriptionBox.height + 8,
+        "mobile description and term selector retain separate rows",
+      );
+    assert(
+      Math.abs(topRepoBox.y - eyebrowBox.y) < 2,
+      "repository aligns with the top of the Ohio State context",
+    );
+    if (width <= 640) {
+      const titleBox = await page.locator(".page-heading h1").boundingBox();
+      assert(
+        topRepoBox.y + topRepoBox.height < titleBox.y &&
+          titleBox.y + titleBox.height < termBox.y,
+        "mobile repository precedes the title and stays separate from the term selector",
+      );
+    }
     assert(
       (await page.locator("footer [data-open-source]").boundingBox()).height <=
         42,
