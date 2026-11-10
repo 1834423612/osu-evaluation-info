@@ -90,6 +90,7 @@ export type CatalogFacet = {
 };
 export type CatalogTerm = { code: string; label: string };
 export type CatalogResponse = {
+  relatedMatch?: { query: string; matchedQuery: string; subject: string };
   courses: CatalogCourse[];
   page: number;
   nextCursor: string | null;

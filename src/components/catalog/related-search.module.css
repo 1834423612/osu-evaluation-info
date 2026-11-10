@@ -1,0 +1,27 @@
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 18px;
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  background: var(--accent-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.notice > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--primary);
+}
+.notice p {
+  min-width: 0;
+  margin: 0;
+}
+.notice strong {
+  color: var(--ink);
+  font-weight: 650;
+}

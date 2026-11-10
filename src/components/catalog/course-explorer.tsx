@@ -3,6 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import {
+  fetchCatalogFacets,
+  searchCatalogWithRelated,
+} from "@/lib/catalog/search-client";
+import {
   Search,
   SlidersHorizontal,
   X,
@@ -26,6 +30,7 @@ import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { brand } from "@/lib/brand";
 import brandStyles from "@/components/brand/brand-identity.module.css";
+import relatedStyles from "./related-search.module.css";
 import { FilterPanel } from "./filter-panel";
 import { CourseCard } from "./course-card";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
@@ -97,6 +102,7 @@ export function CourseExplorer() {
     params.delete("detailTab");
     params.delete("ratingSource");
     params.delete("focusSection");
+    params.delete("relatedFrom");
     return params.toString();
   })();
   const {
@@ -127,15 +133,9 @@ export function CourseExplorer() {
   useEffect(() => {
     if (!facetTerm) return;
     const controller = new AbortController();
-    void fetchCatalogResource(
-      `/api/catalog/facets?term=${encodeURIComponent(facetTerm)}&campus=all`,
-      { signal: controller.signal },
-    )
-      .then(async (response) => {
-        if (response.ok) {
-          const data = await response.json();
-          setBaseFacets(data.filters);
-        }
+    void fetchCatalogFacets(facetTerm)
+      .then((filters) => {
+        if (!controller.signal.aborted) setBaseFacets(filters);
       })
       .catch(() => {});
     return () => controller.abort();
@@ -145,6 +145,7 @@ export function CourseExplorer() {
     const params = new URLSearchParams(query);
     params.delete("cursor");
     params.delete(PAGE_HISTORY_PARAM);
+    if (key === "q") params.delete("relatedFrom");
     if (value) params.set(key, value);
     else params.delete(key);
     if (params.toString() === query) {
@@ -185,14 +186,22 @@ export function CourseExplorer() {
       setPageCursors(restoredPage.cursors);
       setLoadingMore(false);
       try {
-        const response = await fetchCatalogResource(`/api/catalog?${params}`, {
+        const data = await searchCatalogWithRelated(`/api/catalog?${params}`, {
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error("Unavailable");
-        const data: CatalogResponse = await response.json();
         if (current === generation.current) {
           setResult(data);
           setCourses(data.courses);
+          if (data.relatedMatch) {
+            const canonical = new URLSearchParams(catalogQuery);
+            canonical.set("q", data.relatedMatch.matchedQuery);
+            canonical.delete("cursor");
+            canonical.delete(PAGE_HISTORY_PARAM);
+            skipQueryFetch.current = canonical.toString();
+            canonical.set("relatedFrom", data.relatedMatch.query);
+            setLoading(false);
+            window.history.replaceState(null, "", `/?${canonical}`);
+          }
         }
       } catch {
         if (!controller.signal.aborted) {
@@ -222,6 +231,7 @@ export function CourseExplorer() {
       params.delete("detailTab");
       params.delete("ratingSource");
       params.delete("focusSection");
+      params.delete("relatedFrom");
       const targetIndex =
         direction === "next"
           ? pageIndex + 1
@@ -294,6 +304,7 @@ export function CourseExplorer() {
             fetchParams.delete("detailTab");
             fetchParams.delete("ratingSource");
             fetchParams.delete("focusSection");
+            fetchParams.delete("relatedFrom");
             skipQueryFetch.current = fetchParams.toString();
             window.history.pushState(
               null,
@@ -331,6 +342,7 @@ export function CourseExplorer() {
         "detailTab",
         "ratingSource",
         "focusSection",
+        "relatedFrom",
       ].includes(key),
   );
   const filters = (
@@ -345,6 +357,7 @@ export function CourseExplorer() {
   const selectedTerm = searchParams.get("term") ?? result?.terms[0]?.code ?? "";
   const count = result?.matchedSections ?? result?.totalItems;
   const selectedCampus = searchParams.get("campus") ?? "col";
+  const relatedFrom = searchParams.get("relatedFrom")?.slice(0, 200);
   const campusLabel =
     searchParams.get("campus") === "all"
       ? text(locale, "All campuses", "所有校区")
@@ -551,6 +564,28 @@ export function CourseExplorer() {
                 <button onClick={resetFilters} className="clear-filters">
                   {text(locale, "Clear filters", "清除筛选")}
                 </button>
+              </div>
+            ) : null}
+            {!loading &&
+            !error &&
+            courses.length > 0 &&
+            relatedFrom &&
+            relatedFrom !== searchParams.get("q") ? (
+              <div
+                className={relatedStyles.notice}
+                role="status"
+                data-related-search
+              >
+                <Search size={16} aria-hidden="true" />
+                <p>
+                  {text(
+                    locale,
+                    `No exact match for “${relatedFrom}”. Showing possibly related results for`,
+                    `未找到与“${relatedFrom}”精确匹配的课程，以下是可能相关的`,
+                  )}{" "}
+                  <strong>{searchParams.get("q")}</strong>
+                  {locale === "zh" ? " 课程。" : "."}
+                </p>
               </div>
             ) : null}
             <div className="results-context">
