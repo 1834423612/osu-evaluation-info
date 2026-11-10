@@ -1,0 +1,106 @@
+.project {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+.openSource {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--secondary-foreground);
+  text-decoration: none;
+}
+.sourceIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 35px;
+  height: 35px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--subtle-surface);
+  color: var(--primary);
+  transition: background-color 180ms ease;
+}
+.sourceCopy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.sourceCopy > strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.sourceCopy > span {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.openSource:hover .sourceIcon {
+  background: var(--accent-soft);
+}
+.openSource:hover .sourceCopy > strong {
+  color: var(--primary);
+}
+.credit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.credit > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.heart {
+  font-size: 11px;
+}
+.credit a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--secondary-foreground);
+}
+.credit a:hover {
+  color: var(--primary);
+}
+.separator {
+  margin-inline: 3px;
+  opacity: 0.5;
+}
+.openSource:focus-visible,
+.credit a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media (max-width: 640px) {
+  .project {
+    align-items: flex-start;
+    gap: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sourceIcon {
+    transition: none;
+  }
+}

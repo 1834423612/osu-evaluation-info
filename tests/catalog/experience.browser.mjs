@@ -392,6 +392,28 @@ try {
     assert(await page.locator(".offerings-label small").isVisible());
     assert.equal(await page.locator(".results-footer").count(), 0);
     assert(await page.locator("[data-build-stamp]").isVisible());
+    const release = page.locator("footer [data-build-stamp]");
+    assert.equal(
+      await release.getAttribute("href"),
+      "https://github.com/1834423612/osu-evaluation-info/tree/master",
+    );
+    assert(await release.locator("time").getAttribute("datetime"));
+    assert((await release.boundingBox()).width <= 279);
+    assert.equal(
+      await page.locator("footer [data-open-source]").getAttribute("href"),
+      "https://github.com/1834423612/osu-evaluation-info",
+    );
+    assert.equal(
+      await page
+        .locator("footer")
+        .getByRole("link", { name: "kjch", exact: true })
+        .getAttribute("href"),
+      "https://github.com/1834423612",
+    );
+    assert.equal(
+      await page.locator('footer a[href="https://www.kjch.net"]').count(),
+      1,
+    );
     const expected =
       locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : "WahO! | OSU Course Atlas";
     assert.equal(await page.title(), expected);
@@ -590,6 +612,13 @@ try {
       );
     }
     assert.deepEqual(errors, []);
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await noOverflow(page, ".site-footer");
+    await page.screenshot({
+      path: `/tmp/footer-experience-${width}-${locale}.png`,
+    });
     console.log(
       `PASS ${width}px ${locale}: compact facts, alignment, RMP cloud translation, section actions, source badges, live title and footer`,
     );
