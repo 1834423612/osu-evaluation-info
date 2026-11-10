@@ -26,6 +26,14 @@ const course = {
   termCode: "1272",
   academicCareer: "Undergraduate",
   attributes: [],
+  fees: [
+    {
+      kind: "textbook",
+      description: "Digital textbook access",
+      amount: 90,
+      campusCodes: ["COL"],
+    },
+  ],
   sections: [],
   sectionsPartial: false,
 };
@@ -770,6 +778,40 @@ try {
     const rating = await page.locator(".rating-trigger").first().boundingBox();
     const caption = await page.locator(".rating-caption").first().boundingBox();
     assert(Math.abs(rating.x - caption.x) < (width < 640 ? 2 : 23));
+    for (const fee of await page
+      .locator(".course-card .course-fee-preview")
+      .all()) {
+      const rects = await fee.evaluate((element) => {
+        const content = element.closest(".course-content");
+        const meta = content
+          .querySelector(".course-meta")
+          .getBoundingClientRect();
+        const bounds = element.getBoundingClientRect();
+        const rmp = element
+          .closest(".course-card")
+          .querySelector("[data-rmp-preview]")
+          .getBoundingClientRect();
+        return {
+          left: bounds.left,
+          right: bounds.right,
+          top: bounds.top,
+          bottom: bounds.bottom,
+          metaLeft: meta.left,
+          metaBottom: meta.bottom,
+          contentRight: content.getBoundingClientRect().right,
+          rmpTop: rmp.top,
+        };
+      });
+      assert(
+        Math.abs(rects.left - rects.metaLeft) < 1 &&
+          rects.top >= rects.metaBottom + 8,
+        "fees align below course level and campus",
+      );
+      assert(
+        rects.right <= rects.contentRight + 1 && rects.bottom < rects.rmpTop,
+        "fees stay within the course information area above RMP",
+      );
+    }
     assert(await page.locator(".offerings-label small").isVisible());
     assert.equal(await page.locator(".results-footer").count(), 0);
     await page.evaluate(() => scrollTo(0, 0));

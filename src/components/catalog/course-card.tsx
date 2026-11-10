@@ -765,6 +765,9 @@ export function CourseCard({
               </Badge>
             ))}
           </div>
+          <div className="course-fee-preview">
+            <CourseFees course={current} locale={locale} compact />
+          </div>
         </div>
         <button
           className="rating-trigger"
@@ -789,9 +792,6 @@ export function CourseCard({
         </button>
       </div>
       <RmpCoursePreview course={current} locale={locale} />
-      <div className="course-fee-preview">
-        <CourseFees course={current} locale={locale} compact />
-      </div>
       <CoursePreview
         course={current}
         locale={locale}

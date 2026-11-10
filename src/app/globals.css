@@ -2311,7 +2311,7 @@ h1 {
   flex-basis: 240px;
 }
 .course-fee-preview {
-  padding: 0 24px 10px;
+  margin-top: 10px;
 }
 .course-fee-preview:empty {
   display: none;
