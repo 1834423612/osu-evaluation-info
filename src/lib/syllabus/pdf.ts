@@ -22,7 +22,6 @@ export async function downloadSyllabusPdf(document: SyllabusDocument) {
         Parameters<typeof htmlToPdfmake>[1]
       >["window"],
       tableAutoSize: true,
-      removeExtraBlanks: true,
       defaultStyles: {
         h1: { fontSize: 20, marginBottom: 12 },
         h2: { fontSize: 15, marginTop: 14, marginBottom: 8 },
@@ -70,5 +69,15 @@ export async function downloadSyllabusPdf(document: SyllabusDocument) {
       /[^a-z0-9. -]/gi,
       "_",
     );
-  await pdfMake.createPdf(definition).download(fileName);
+  const blob = await pdfMake.createPdf(definition).getBlob();
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.rel = "noopener";
+  window.document.body.append(link);
+  link.click();
+  link.remove();
+  // The reader retains a real user-activated link for browsers that suppress automatic saves.
+  return { url, fileName };
 }

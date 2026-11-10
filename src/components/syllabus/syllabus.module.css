@@ -101,6 +101,15 @@
   font-size: 12px;
   line-height: 1.65;
 }
+.saveLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 10px;
+  color: var(--primary);
+  text-decoration: underline;
+  font-size: 13px;
+}
 .notice {
   margin: 14px 0;
   padding: 14px 16px;

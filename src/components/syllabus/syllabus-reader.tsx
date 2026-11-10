@@ -33,10 +33,23 @@ export function SyllabusReader({
   const [query, setQuery] = useState("");
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
+  const [downloadFile, setDownloadFile] = useState<{
+    url: string;
+    fileName: string;
+  } | null>(null);
+  const downloadUrl = useRef<string | null>(null);
+  const mounted = useRef(false);
   const sectionId = useId();
   const [layout, setLayout] = useState<"official" | "reading">("official");
   const officialFrame = useRef<HTMLIFrameElement>(null);
   const { code, termId, entityId, classNumber } = entry;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,11 +94,18 @@ export function SyllabusReader({
     setExportError(false);
     try {
       const { downloadSyllabusPdf } = await import("@/lib/syllabus/pdf");
-      await downloadSyllabusPdf(result.data);
+      const prepared = await downloadSyllabusPdf(result.data);
+      if (!mounted.current) {
+        URL.revokeObjectURL(prepared.url);
+        return;
+      }
+      if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
+      downloadUrl.current = prepared.url;
+      setDownloadFile(prepared);
     } catch {
-      setExportError(true);
+      if (mounted.current) setExportError(true);
     } finally {
-      setExporting(false);
+      if (mounted.current) setExporting(false);
     }
   }
 
@@ -212,6 +232,19 @@ export function SyllabusReader({
             "PDF 导出失败，请重试或打开官网。",
           )}
         </p>
+      ) : null}
+      {downloadFile ? (
+        <a
+          className={styles.saveLink}
+          href={downloadFile.url}
+          download={downloadFile.fileName}
+        >
+          {text(
+            locale,
+            "PDF ready · tap to save again",
+            "PDF 已就绪 · 点击保存",
+          )}
+        </a>
       ) : null}
       <p className={styles.caption}>
         {text(
