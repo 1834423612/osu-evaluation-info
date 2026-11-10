@@ -5,6 +5,7 @@ import { Bug, Download, RefreshCw, Wrench, X } from "lucide-react";
 import { debugTools } from "@/lib/debug/client";
 import { type DebugFlags } from "@/lib/debug/flags";
 import { clearDebugResponses } from "@/lib/debug/services";
+import { buildInfoStore } from "@/lib/layout/build-info-client";
 import {
   migrateBrowserStorage,
   STORAGE_RULES,
@@ -388,7 +389,9 @@ export function DebugTools() {
                     <button
                       onClick={() =>
                         downloadJSON("waho-diagnostics.json", {
-                          build: process.env.NEXT_PUBLIC_BUILD_HASH,
+                          build:
+                            buildInfoStore.getSnapshot()?.sha.slice(0, 8) ??
+                            process.env.NEXT_PUBLIC_BUILD_HASH,
                           path: location.pathname,
                           viewport: { width: innerWidth, height: innerHeight },
                           browser: navigator.userAgent,

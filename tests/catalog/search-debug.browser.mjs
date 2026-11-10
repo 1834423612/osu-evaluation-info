@@ -83,6 +83,7 @@ try {
     )
       return route.continue();
     if (url.pathname.startsWith("/api/debug/")) return route.continue();
+    if (url.pathname === "/api/build-info") return route.continue();
     requests.push(url);
     if (url.href === OFFICIAL_ENDPOINTS.terms)
       return route.fulfill({

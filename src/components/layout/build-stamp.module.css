@@ -108,6 +108,29 @@
 .detailLinks a:hover {
   color: var(--primary);
 }
+.newVersion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: var(--accent-soft);
+  color: var(--muted);
+  font-size: 11px;
+}
+.newVersion button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
 .stamp:focus-visible,
 .details :is(button, a):focus-visible {
   outline: 2px solid var(--ring);

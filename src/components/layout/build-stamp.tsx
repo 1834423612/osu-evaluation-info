@@ -6,11 +6,13 @@ import {
   GitCommitHorizontal,
   ChevronDown,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { Popover } from "radix-ui";
 import { brand } from "@/lib/brand";
 import { text, type Locale } from "@/lib/i18n";
 import { formatReleaseTime } from "@/lib/layout/release-time";
+import { buildInfoStore } from "@/lib/layout/build-info-client";
 import styles from "./build-stamp.module.css";
 
 function subscribeTimeZone(update: () => void) {
@@ -29,15 +31,27 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
     browserTimeZone,
     () => "UTC",
   );
-  const hash = process.env.NEXT_PUBLIC_BUILD_HASH;
-  if (!hash) return null;
-  const message = (process.env.NEXT_PUBLIC_BUILD_MESSAGE ?? "").split(
-    /\r?\n/,
-  )[0];
-  const updatedAt = process.env.NEXT_PUBLIC_BUILD_UPDATED_AT ?? "";
+  const build = useSyncExternalStore(
+    buildInfoStore.subscribe,
+    buildInfoStore.getSnapshot,
+    buildInfoStore.getServerSnapshot,
+  );
+  if (!build) return null;
+  const hash = build.sha.slice(0, 8);
+  const message = build.message;
+  const updatedAt = build.updatedAt ?? "";
+  const bundled = buildInfoStore.getServerSnapshot();
+  const newerVersion =
+    build.environment === "production" &&
+    !!bundled &&
+    build.sha !== bundled.sha;
   const updated = formatReleaseTime(updatedAt, locale, timeZone);
   return (
-    <Popover.Root>
+    <Popover.Root
+      onOpenChange={(open) => {
+        if (open) void buildInfoStore.refresh();
+      }}
+    >
       <Popover.Trigger asChild>
         <button
           type="button"
@@ -89,13 +103,29 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
           </header>
           {updated ? (
             <time dateTime={updatedAt} title={updated.full}>
+              {text(
+                locale,
+                build.timeKind === "build" ? "Built · " : "Committed · ",
+                build.timeKind === "build" ? "构建于 · " : "提交于 · ",
+              )}
               {updated.full}
             </time>
           ) : null}
           <p>{message || text(locale, "Latest version", "最新版本")}</p>
+          {newerVersion ? (
+            <div className={styles.newVersion} role="status">
+              <span>
+                {text(locale, "A newer version is ready.", "新版本已发布。")}
+              </span>
+              <button type="button" onClick={() => window.location.reload()}>
+                <RefreshCw size={12} aria-hidden="true" />
+                {text(locale, "Refresh page", "刷新页面")}
+              </button>
+            </div>
+          ) : null}
           <div className={styles.detailLinks}>
             <a
-              href={`${brand.links.repository}/commit/${hash}`}
+              href={`${brand.links.repository}/commit/${build.sha}`}
               target="_blank"
               rel="noopener noreferrer"
             >

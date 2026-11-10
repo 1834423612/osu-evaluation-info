@@ -198,6 +198,7 @@ async function setup({
   paging = false,
   timeZone = "America/New_York",
   deviceScaleFactor = 1,
+  clock = false,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width, height },
@@ -224,6 +225,7 @@ async function setup({
     { locale, KEY, fixtureCourse: course },
   );
   const page = await context.newPage();
+  if (clock) await page.clock.install();
   activePage = page;
   page.setDefaultTimeout(12000);
   const errors = [];
@@ -242,6 +244,7 @@ async function setup({
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith("/api/debug/")) return route.continue();
+    if (url.pathname === "/api/build-info") return route.continue();
     if (route.request().headers()["x-course-atlas-debug"] === "bypass")
       bypassRequests++;
     if (url.pathname === "/api/rmp/summaries") {
@@ -552,6 +555,194 @@ async function verifyPinchNavigation(width, deviceScaleFactor) {
   );
   await context.close();
 }
+async function verifyLiveBuildInfo() {
+  const { context, page, errors } = await setup({
+    width: 390,
+    height: 950,
+    touch: true,
+    clock: true,
+  });
+  const response = await page.request.get(
+    new URL(
+      "/api/build-info",
+      process.env.GUIDE_TEST_BASE_URL ?? "http://localhost:3101",
+    ).href,
+  );
+  assert.equal(response.status(), 200);
+  assert.match(response.headers()["cache-control"], /no-store/);
+  const baseline = await response.json();
+  assert.equal(baseline.version, 1);
+  assert.match(baseline.build.sha, /^[0-9a-f]{40,64}$/);
+  const stamp = page.locator("main [data-build-stamp]");
+  await page.waitForFunction(
+    (sha) =>
+      document.querySelector("main [data-build-stamp] code")?.textContent ===
+      sha.slice(0, 8),
+    baseline.build.sha,
+  );
+  let requests = 0,
+    status = 200,
+    navigations = 0;
+  let published = {
+    ...baseline.build,
+    sha: "f".repeat(40),
+    message: "feat: published update\nextra body must stay hidden",
+    updatedAt: "2026-11-10T06:15:00.000Z",
+    timeKind: "commit",
+    environment: "production",
+  };
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) navigations++;
+  });
+  await page.route("**/api/build-info", (route) => {
+    requests++;
+    return route.fulfill({
+      status,
+      json:
+        status === 200
+          ? { version: 1, build: published }
+          : { error: "unavailable" },
+    });
+  });
+  await page.keyboard.press("Control+Alt+KeyD");
+  await page.locator("[data-debug-tools] [data-build-stamp]").waitFor();
+  assert.equal(
+    requests,
+    0,
+    "a second version component shares the existing subscription",
+  );
+  const focusCheck = async () => {
+    await page.clock.fastForward(6000);
+    const pending = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === "/api/build-info",
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await pending;
+  };
+  await focusCheck();
+  await page.waitForFunction(
+    () =>
+      document.querySelector("main [data-build-stamp] code")?.textContent ===
+      "ffffffff",
+  );
+  assert.equal(requests, 1);
+  assert.equal(
+    await page
+      .locator("[data-debug-tools] [data-build-stamp] code")
+      .innerText(),
+    "ffffffff",
+  );
+  assert.equal(
+    await stamp.locator("time").getAttribute("datetime"),
+    published.updatedAt,
+  );
+  await stamp.click();
+  const details = page.locator("[data-update-details]");
+  await details.getByText("feat: published update", { exact: true }).waitFor();
+  assert(!(await details.innerText()).includes("extra body"));
+  assert.equal(
+    await details.getByRole("link").first().getAttribute("href"),
+    `https://github.com/1834423612/osu-evaluation-info/commit/${published.sha}`,
+  );
+  assert(
+    await details
+      .getByRole("button", { name: "刷新页面", exact: true })
+      .isVisible(),
+  );
+  assert.equal(
+    requests,
+    1,
+    "opening details is throttled instead of issuing a duplicate request",
+  );
+
+  status = 503;
+  await focusCheck();
+  assert.equal(
+    await stamp.locator("code").innerText(),
+    "ffffffff",
+    "temporary failures preserve the last good version",
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  const beforeHidden = requests;
+  await page.clock.fastForward(60_000);
+  assert.equal(requests, beforeHidden, "background tabs do not poll");
+  status = 200;
+  published = {
+    ...published,
+    sha: "e".repeat(40),
+    message: "fix: next deployment",
+  };
+  const resumed = page.waitForResponse(
+    (r) => new URL(r.url()).pathname === "/api/build-info",
+  );
+  await page.evaluate(() => {
+    delete document.visibilityState;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await resumed;
+  await page.waitForFunction(
+    () =>
+      document.querySelector("main [data-build-stamp] code")?.textContent ===
+      "eeeeeeee",
+  );
+
+  published = {
+    ...published,
+    sha: "d".repeat(40),
+    message: "local commit without restart",
+    environment: "development",
+  };
+  const periodic = page.waitForResponse(
+    (r) => new URL(r.url()).pathname === "/api/build-info",
+  );
+  await page.clock.fastForward(31_000);
+  await periodic;
+  await page.waitForFunction(
+    () =>
+      document.querySelector("main [data-build-stamp] code")?.textContent ===
+      "dddddddd",
+  );
+  assert.equal(
+    await details
+      .getByRole("button", { name: "刷新页面", exact: true })
+      .count(),
+    0,
+    "development commits update without requiring a reload",
+  );
+  assert.equal(
+    navigations,
+    0,
+    "new versions never interrupt the user's work with an automatic reload",
+  );
+
+  published = {
+    ...published,
+    sha: "c".repeat(40),
+    message: "another production deployment",
+    environment: "production",
+  };
+  await focusCheck();
+  await details
+    .getByRole("button", { name: "刷新页面", exact: true })
+    .waitFor();
+  await Promise.all([
+    page.waitForEvent("framenavigated", (frame) => frame === page.mainFrame()),
+    details.getByRole("button", { name: "刷新页面", exact: true }).click(),
+  ]);
+  assert.equal(navigations, 1);
+  assert.deepEqual(errors, []);
+  console.log(
+    "PASS live version: uncached endpoint, shared components, focus and interval sync, hidden-tab pause, failure recovery, local commits and explicit production refresh",
+  );
+  await context.close();
+}
+
 try {
   for (const [width, locale] of [
     [1440, "zh"],
@@ -1057,6 +1248,7 @@ try {
   }
   await verifyPinchNavigation(390, 1);
   await verifyPinchNavigation(320, 3);
+  await verifyLiveBuildInfo();
   {
     const { context, page, succeed, errors } = await setup({
       width: 390,
