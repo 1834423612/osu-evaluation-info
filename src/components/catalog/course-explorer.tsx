@@ -20,6 +20,7 @@ import type {
 import { text, localizedCampus, localizedTerm } from "@/lib/i18n";
 import { usePreferences } from "@/hooks/use-preferences";
 import { AppHeader } from "@/components/layout/app-header";
+import { scrollPageToTop } from "@/lib/layout/scroll-to-top";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
@@ -301,13 +302,7 @@ export function CourseExplorer() {
             );
           }
         }
-        window.scrollTo({
-          top: 0,
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "auto"
-            : "smooth",
-        });
+        requestAnimationFrame(scrollPageToTop);
       } catch {
         if (
           current === generation.current &&
@@ -728,7 +723,10 @@ export function CourseExplorer() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => void loadPage("previous")}
+                  onClick={() => {
+                    scrollPageToTop();
+                    void loadPage("previous");
+                  }}
                   disabled={pageCursors.length < 2 || loadingMore}
                 >
                   <ChevronLeft data-icon="inline-start" />
@@ -745,7 +743,10 @@ export function CourseExplorer() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => void loadPage("next")}
+                  onClick={() => {
+                    scrollPageToTop();
+                    void loadPage("next");
+                  }}
                   disabled={!result.hasMore || loadingMore}
                 >
                   {loadingMore ? (
@@ -759,7 +760,6 @@ export function CourseExplorer() {
                 </Button>
               </nav>
             ) : null}
-
           </section>
         </div>
       </main>

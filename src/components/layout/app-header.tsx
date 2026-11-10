@@ -14,6 +14,7 @@ import { LanguageNotice } from "./language-notice";
 import { TranslationGuide } from "@/components/translation/translation-guide";
 import { BrowserModelDownload } from "@/components/translation/browser-model-download";
 import { DebugTools } from "@/components/debug/debug-tools";
+import { ScrollToTop } from "./scroll-to-top";
 import { OpenSourceNotice } from "./open-source-notice";
 import styles from "./language-controls.module.css";
 
@@ -50,6 +51,7 @@ export function AppHeader({
       <TranslationGuide locale={locale} />
       <BrowserModelDownload />
       <DebugTools />
+      <ScrollToTop locale={locale} />
       <header className="app-header">
         <div className="header-inner">
           <Link

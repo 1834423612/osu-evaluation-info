@@ -24,3 +24,10 @@ Desktop and touch browser checks cover panel entry/exit, course tabs, saved-item
 toasts, page navigation, ordinary/reduced motion, drawer touch dismissal,
 content scroll, and translation preference layering. Screenshots and temporary
 interaction scripts are kept outside the repository.
+
+The return-to-top control uses the visual viewport and moves out of the way of
+translation guides, menus, toasts, other fixed widgets, and nearby links/buttons.
+Full-screen covers and modal dialogs hide it. Resize/mutation observers and
+short animation sampling update placement without a permanent polling loop.
+Pagination uses the same scroll behavior on activation and after results load;
+reduced-motion users return immediately.
