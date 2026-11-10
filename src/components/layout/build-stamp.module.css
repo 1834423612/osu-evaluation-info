@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) 11px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: start;
   gap: 5px;
   min-width: 0;
   max-width: 100%;
@@ -14,13 +14,14 @@
   color: var(--muted);
   font-size: 10px;
   line-height: 1.5;
+  text-align: left;
   cursor: pointer;
   transition: color 160ms ease;
 }
 .meta {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 2px 5px;
   min-width: 0;

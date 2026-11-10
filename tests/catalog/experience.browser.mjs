@@ -921,6 +921,20 @@ try {
       iconBox.x + iconBox.width <= timestampBox.x + 1,
       "update icon sits to the left of the version time",
     );
+    const versionText = release.locator(":scope > span");
+    const versionTextBox = await versionText.boundingBox();
+    const firstVersionText = versionText.locator(":scope > :visible").first();
+    const firstTextBox = await firstVersionText.boundingBox();
+    assert(
+      Math.abs(firstTextBox.x - versionTextBox.x) < 1,
+      "version text aligns to the left of its column",
+    );
+    const hashBox = await release.locator("code").boundingBox();
+    if (hashBox.y > timestampBox.y + timestampBox.height - 1)
+      assert(
+        Math.abs(hashBox.x - versionTextBox.x) < 1,
+        "a wrapped hash stays left aligned",
+      );
     assert.equal(await release.getAttribute("aria-expanded"), "false");
     await release.click();
     const details = page.locator("[data-update-details]");
