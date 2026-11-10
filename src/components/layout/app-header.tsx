@@ -15,6 +15,7 @@ import { TranslationGuide } from "@/components/translation/translation-guide";
 import { BrowserModelDownload } from "@/components/translation/browser-model-download";
 import { DebugTools } from "@/components/debug/debug-tools";
 import { ScrollToTop } from "./scroll-to-top";
+import { UpdateNotice } from "./update-notice";
 import styles from "./language-controls.module.css";
 
 export function AppHeader({
@@ -46,6 +47,7 @@ export function AppHeader({
   return (
     <>
       <ActionToast />
+      <UpdateNotice locale={locale} />
       <LanguageNotice />
       <TranslationGuide locale={locale} />
       <BrowserModelDownload />

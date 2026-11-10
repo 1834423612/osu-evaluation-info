@@ -14,6 +14,7 @@ import { brand } from "@/lib/brand";
 import { text, type Locale } from "@/lib/i18n";
 import { formatReleaseTime } from "@/lib/layout/release-time";
 import { buildInfoStore } from "@/lib/layout/build-info-client";
+import { availableUpdate } from "@/lib/layout/update-notice-client";
 import styles from "./build-stamp.module.css";
 
 function subscribeTimeZone(update: () => void) {
@@ -42,10 +43,7 @@ export function BuildStamp({ locale = "en" }: { locale?: Locale }) {
   const message = build.message;
   const updatedAt = build.updatedAt ?? "";
   const bundled = buildInfoStore.getServerSnapshot();
-  const newerVersion =
-    build.environment === "production" &&
-    !!bundled &&
-    build.sha !== bundled.sha;
+  const newerVersion = availableUpdate(build, bundled);
   const updated = formatReleaseTime(updatedAt, locale, timeZone);
   return (
     <Popover.Root
