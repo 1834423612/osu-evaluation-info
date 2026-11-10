@@ -19,6 +19,8 @@ export type RmpInstructor = {
   recentDifficulty: number | null;
   recentQualityCount: number;
   recentDifficultyCount: number;
+  historicalDifficulty: number | null;
+  historicalDifficultyCount: number;
   latestReviewDate: string | null;
   reviews: RmpReview[];
   topTags: { tag: string; count: number }[];

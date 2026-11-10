@@ -77,6 +77,42 @@ test("empty ratings stay unknown and public batch inputs are bounded and normali
     }),
   );
 });
+test("historical difficulty is sample-weighted only when the course has no recent ratings", () => {
+  const first = {
+    ...professor("1", null, 0, []),
+    historicalDifficulty: 2,
+    historicalDifficultyCount: 5,
+  };
+  const second = {
+    ...professor("2", null, 0, []),
+    historicalDifficulty: 4,
+    historicalDifficultyCount: 15,
+  };
+  const summary = { status: "available", instructors: [first, second, first] };
+  const historical = aggregateRmpInsights(summary);
+  assert.equal(historical.difficulty, 3.5);
+  assert.equal(historical.difficultyCount, 20);
+  assert.equal(historical.difficultyPeriod, "historical");
+  const recent = aggregateRmpInsights({
+    ...summary,
+    instructors: [
+      { ...first, recentDifficulty: 1, recentDifficultyCount: 2 },
+      second,
+    ],
+  });
+  assert.equal(recent.difficulty, 1);
+  assert.equal(recent.difficultyCount, 2);
+  assert.equal(recent.difficultyPeriod, "recent");
+  const unknown = aggregateRmpInsights({
+    ...summary,
+    instructors: [
+      { ...first, historicalDifficulty: null },
+      { ...second, historicalDifficulty: 6 },
+    ],
+  });
+  assert.equal(unknown.difficulty, null);
+  assert.equal(unknown.difficultyPeriod, "none");
+});
 test("list previews batch and share requests without fetching one endpoint per card", async () => {
   const calls = [];
   const client = createRmpPreviewClient(async (_url, options) => {

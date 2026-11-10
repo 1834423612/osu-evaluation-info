@@ -38,6 +38,7 @@ const COURSE_SQL = `
     stats.review_count, stats.recent_review_count,
     stats.recent_quality, stats.recent_difficulty,
     stats.recent_quality_count, stats.recent_difficulty_count,
+    stats.historical_difficulty, stats.historical_difficulty_count,
     stats.latest_review_date, stats.refreshed_at,
     coalesce(comments.reviews, '[]'::jsonb) AS reviews,
     coalesce(tags.top_tags, '[]'::jsonb) AS top_tags
@@ -53,6 +54,14 @@ const COURSE_SQL = `
         FILTER (WHERE r.review_date BETWEEN $4::date AND CURRENT_DATE)::int AS recent_quality_count,
       count(r.difficulty_rating)
         FILTER (WHERE r.review_date BETWEEN $4::date AND CURRENT_DATE)::int AS recent_difficulty_count,
+      avg(r.difficulty_rating) FILTER (
+        WHERE r.difficulty_rating BETWEEN 1 AND 5
+          AND (r.review_date <= CURRENT_DATE OR r.review_date IS NULL)
+      )::float8 AS historical_difficulty,
+      count(*) FILTER (
+        WHERE r.difficulty_rating BETWEEN 1 AND 5
+          AND (r.review_date <= CURRENT_DATE OR r.review_date IS NULL)
+      )::int AS historical_difficulty_count,
       max(r.review_date)::text AS latest_review_date,
       max(r.updated_at)::text AS refreshed_at
     FROM osu_rmp.review_query r
@@ -99,6 +108,8 @@ type CourseRow = {
   recent_difficulty: number | null;
   recent_quality_count: number;
   recent_difficulty_count: number;
+  historical_difficulty: number | null;
+  historical_difficulty_count: number;
   latest_review_date: string | null;
   refreshed_at: string | null;
   reviews: RmpInstructor["reviews"];
@@ -150,6 +161,8 @@ export async function getCourseRmp(
         recentDifficulty: row.recent_difficulty,
         recentQualityCount: row.recent_quality_count,
         recentDifficultyCount: row.recent_difficulty_count,
+        historicalDifficulty: row.historical_difficulty,
+        historicalDifficultyCount: row.historical_difficulty_count,
         latestReviewDate: row.latest_review_date,
         reviews: row.reviews,
         topTags: row.top_tags,

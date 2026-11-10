@@ -6,6 +6,7 @@ export type RmpInsight = {
   tags: { tag: string; count: number }[];
   difficulty: number | null;
   difficultyCount: number;
+  difficultyPeriod: "recent" | "historical" | "none";
   reviewCount: number;
   matchedInstructorCount: number;
   requestedInstructorCount: number;
@@ -20,7 +21,9 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
   ];
   const tags = new Map<string, { tag: string; count: number }>();
   let total = 0,
-    count = 0;
+    count = 0,
+    historicalTotal = 0,
+    historicalCount = 0;
   for (const professor of professors) {
     if (
       professor.recentDifficulty !== null &&
@@ -30,6 +33,16 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
     ) {
       total += professor.recentDifficulty * professor.recentDifficultyCount;
       count += professor.recentDifficultyCount;
+    }
+    if (
+      professor.historicalDifficulty !== null &&
+      professor.historicalDifficulty >= 1 &&
+      professor.historicalDifficulty <= 5 &&
+      professor.historicalDifficultyCount > 0
+    ) {
+      historicalTotal +=
+        professor.historicalDifficulty * professor.historicalDifficultyCount;
+      historicalCount += professor.historicalDifficultyCount;
     }
     for (const item of professor.topTags) {
       const tag = item.tag.trim(),
@@ -47,8 +60,17 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
     tags: [...tags.values()]
       .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
       .slice(0, 12),
-    difficulty: count ? total / count : null,
-    difficultyCount: count,
+    difficulty: count
+      ? total / count
+      : historicalCount
+        ? historicalTotal / historicalCount
+        : null,
+    difficultyCount: count || historicalCount,
+    difficultyPeriod: count
+      ? "recent"
+      : historicalCount
+        ? "historical"
+        : "none",
     reviewCount: professors.reduce((sum, item) => sum + item.reviewCount, 0),
     matchedInstructorCount: summary.matchedInstructorCount,
     requestedInstructorCount: summary.requestedInstructorCount,

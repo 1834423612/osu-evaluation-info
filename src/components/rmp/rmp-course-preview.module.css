@@ -44,6 +44,9 @@
   font-size: 9px;
   font-weight: 400;
 }
+.difficulty[data-period="historical"] > small {
+  color: #8a651d;
+}
 .meter {
   display: block;
   width: 65px;

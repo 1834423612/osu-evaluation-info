@@ -92,7 +92,10 @@ export function RmpCoursePreview({
       </div>
       {insight?.status === "available" ? (
         <>
-          <div className={styles.difficulty}>
+          <div
+            className={styles.difficulty}
+            data-period={insight.difficultyPeriod}
+          >
             <Gauge size={13} aria-hidden="true" />
             <span>{text(locale, "Difficulty", "课程难度")}</span>
             <strong>
@@ -109,11 +112,17 @@ export function RmpCoursePreview({
             <small>
               {difficulty === null
                 ? text(locale, "No recent ratings", "暂无近期评分")
-                : text(
-                    locale,
-                    `${insight.difficultyCount} ratings · 2 years`,
-                    `近两年 ${insight.difficultyCount} 条`,
-                  )}
+                : insight.difficultyPeriod === "historical"
+                  ? text(
+                      locale,
+                      `${insight.difficultyCount} all-time · May be outdated`,
+                      `${insight.difficultyCount} 条历史 · 可能过时`,
+                    )
+                  : text(
+                      locale,
+                      `${insight.difficultyCount} ratings · 2 years`,
+                      `近两年 ${insight.difficultyCount} 条`,
+                    )}
             </small>
           </div>
           {insight.tags.length ? (
