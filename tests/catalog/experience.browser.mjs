@@ -407,12 +407,24 @@ try {
     assert(Math.abs(rating.x - caption.x) < (width < 640 ? 2 : 23));
     assert(await page.locator(".offerings-label small").isVisible());
     assert.equal(await page.locator(".results-footer").count(), 0);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `/tmp/hero-experience-${width}-${locale}.png`,
+    });
     assert(await page.locator("[data-build-stamp]").isVisible());
-    const release = page.locator("footer [data-build-stamp]");
+    const release = page.locator("main [data-build-stamp]");
+    assert.equal(await release.getAttribute("aria-expanded"), "false");
+    await release.click();
+    const details = page.locator("[data-update-details]");
+    await details.waitFor();
+    assert((await details.locator("p").innerText()).length > 0);
     assert.equal(
-      await release.getAttribute("href"),
+      await details.getByRole("link").last().getAttribute("href"),
       "https://github.com/1834423612/osu-evaluation-info/tree/master",
     );
+    await noOverflow(page, "[data-update-details]");
+    await page.keyboard.press("Escape");
+    await details.waitFor({ state: "hidden" });
     assert(await release.locator("time").getAttribute("datetime"));
     assert(
       await release.locator("time").evaluate((element) => {
@@ -426,7 +438,9 @@ try {
     const identityBox = await page
       .locator("footer .footer-identity")
       .boundingBox();
-    const releaseBox = await release.boundingBox();
+    const releaseBox = await page
+      .locator("footer [data-open-source]")
+      .boundingBox();
     if (width > 350)
       assert(
         releaseBox.x >= identityBox.x + identityBox.width - 1 &&
@@ -436,7 +450,7 @@ try {
               identityBox.y -
               identityBox.height / 2,
           ) < 3,
-        "footer identity and release share one row",
+        "footer identity and repository share one row",
       );
     const footerLinks = await page
       .locator("footer .footer-links")
@@ -463,17 +477,26 @@ try {
         .count(),
       1,
     );
-    assert.equal(await page.locator("footer [data-open-source]").count(), 0);
+    assert.equal(await page.locator("[data-open-source]").count(), 2);
+    const topRepository = page.locator("main [data-open-source]");
+    const topRepoBox = await topRepository.boundingBox();
+    assert(topRepoBox.height <= 82, "repository introduction stays compact");
     assert(
-      await page
-        .locator("[data-open-source]")
-        .evaluate(
-          (element) =>
-            !!(
-              element.compareDocumentPosition(document.querySelector("main")) &
-              Node.DOCUMENT_POSITION_FOLLOWING
-            ),
-        ),
+      (await page.locator("footer [data-open-source]").boundingBox()).height <=
+        42,
+      "footer repository remains a compact black strip",
+    );
+    const headingBox = await page.locator(".page-heading").boundingBox();
+    assert(
+      Math.abs(
+        topRepoBox.x + topRepoBox.width - headingBox.x - headingBox.width,
+      ) < 2,
+      "repository aligns with heading right edge",
+    );
+    assert(
+      topRepoBox.y >= headingBox.y &&
+        topRepoBox.y + topRepoBox.height <= headingBox.y + headingBox.height,
+      "repository belongs inside the heading",
     );
     const infoPosition = await page
       .locator(".official-disclaimer")
@@ -486,9 +509,9 @@ try {
       infoPosition.notice < infoPosition.card,
       "official-data notice belongs above results",
     );
-    assert((await release.boundingBox()).width <= 279);
+    assert((await release.boundingBox()).width <= 261);
     assert.equal(
-      await page.locator("[data-open-source]").getAttribute("href"),
+      await topRepository.getAttribute("href"),
       "https://github.com/1834423612/osu-evaluation-info",
     );
     assert.equal(
