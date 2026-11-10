@@ -1,3 +1,4 @@
+import { browserStorage } from "../preferences/browser-storage.ts";
 export const WATCH_SELECTION_KEY = "course-atlas:watch-sections:v1";
 export const LARGE_WATCH_SELECTION = 8;
 export const WATCH_SELECTION_EVENT = "course-atlas:watch-selection";
@@ -7,7 +8,7 @@ let memory: Record<string, string[]> = {};
 
 export function getWatchSelection(courseId: string) {
   try {
-    const next = localStorage.getItem(WATCH_SELECTION_KEY);
+    const next = browserStorage().getItem(WATCH_SELECTION_KEY);
     if (next !== raw) {
       raw = next;
       const parsed: unknown = next ? JSON.parse(next) : {};
@@ -39,7 +40,7 @@ export function saveWatchSelection(courseId: string, selected: string[]) {
   for (const key of keys.slice(0, -100)) delete memory[key];
   try {
     const serialized = JSON.stringify(memory);
-    localStorage.setItem(WATCH_SELECTION_KEY, serialized);
+    browserStorage().setItem(WATCH_SELECTION_KEY, serialized);
     raw = serialized;
   } catch {
     /* Keep the in-memory choice. */

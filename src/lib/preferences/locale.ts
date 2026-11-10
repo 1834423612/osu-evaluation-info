@@ -44,6 +44,7 @@ export function createLocalePreferenceStore(environment: {
   detect: () => PreferredLocale;
   changed: () => void;
   apply: (locale: PreferredLocale) => void;
+  replayNotice?: () => boolean;
 }) {
   let initialized = false;
   let memory: PreferredLocale = "en";
@@ -75,6 +76,8 @@ export function createLocalePreferenceStore(environment: {
     if (stored) {
       memory = stored;
       environment.apply(stored);
+      if (environment.replayNotice?.())
+        notice = { kind: "suggestion", locale: stored };
     } else {
       const detected = environment.detect();
       persist(detected);

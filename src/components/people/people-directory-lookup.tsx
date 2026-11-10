@@ -1,5 +1,8 @@
 "use client";
 
+import { cacheBypassed } from "@/lib/debug/flags";
+import { browserStorage } from "@/lib/preferences/browser-storage";
+
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Popover } from "radix-ui";
 import {
@@ -113,7 +116,9 @@ function useCachedResult(identity: string | null, subject?: string) {
     subscribe,
     () => {
       const cached = identity ? cachedResults.get(identity) : null;
-      return cached && resultIsFresh(cached, subject) ? cached : null;
+      return !cacheBypassed() && cached && resultIsFresh(cached, subject)
+        ? cached
+        : null;
     },
     () => null,
   );
@@ -221,7 +226,7 @@ function readLocal(
 ): AvailableDirectoryResult | null {
   try {
     const parsed: unknown = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) ?? "{}",
+      browserStorage().getItem(STORAGE_KEY) ?? "{}",
     );
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
       return null;
@@ -253,7 +258,7 @@ function writeLocal(
     let parsed: Record<string, StoredDirectoryResult> = {};
     try {
       const current: unknown = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) ?? "{}",
+        browserStorage().getItem(STORAGE_KEY) ?? "{}",
       );
       if (current && typeof current === "object" && !Array.isArray(current))
         parsed = current as Record<string, StoredDirectoryResult>;
@@ -270,7 +275,7 @@ function writeLocal(
         delete parsed[key];
     for (const key of Object.keys(parsed).slice(0, -MAX_LOCAL_RECORDS))
       delete parsed[key];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    browserStorage().setItem(STORAGE_KEY, JSON.stringify(parsed));
   } catch {
     // Private browsing and storage quotas should not prevent verification.
   }

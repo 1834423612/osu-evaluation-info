@@ -1,4 +1,7 @@
 "use client";
+
+import { debugFlag } from "@/lib/debug/flags";
+import { browserStorage } from "@/lib/preferences/browser-storage";
 import { useEffect, useSyncExternalStore } from "react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { CatalogSection } from "@/lib/catalog/types";
@@ -29,8 +32,9 @@ const EMPTY: CatalogCourse[] = [];
 const EMPTY_SECTIONS: SavedSection[] = [];
 const EMPTY_INSTRUCTORS: SavedInstructor[] = [];
 const localePreference = createLocalePreferenceStore({
-  read: () => localStorage.getItem(LOCALE_KEY),
-  write: (locale) => localStorage.setItem(LOCALE_KEY, locale),
+  read: () => browserStorage().getItem(LOCALE_KEY),
+  replayNotice: () => debugFlag("replayLanguage"),
+  write: (locale) => browserStorage().setItem(LOCALE_KEY, locale),
   detect: () =>
     detectLocale({
       languages: [...(navigator.languages ?? []), navigator.language],
@@ -95,14 +99,16 @@ function getLocale(): Locale {
 }
 function getEnrollmentWatch() {
   try {
-    return localStorage.getItem(ENROLLMENT_WATCH_KEY) === "true";
+    return browserStorage().getItem(ENROLLMENT_WATCH_KEY) === "true";
   } catch {
     return false;
   }
 }
 function getEnrollmentWatchInterval(): EnrollmentWatchInterval {
   try {
-    const stored = Number(localStorage.getItem(ENROLLMENT_WATCH_INTERVAL_KEY));
+    const stored = Number(
+      browserStorage().getItem(ENROLLMENT_WATCH_INTERVAL_KEY),
+    );
     return ENROLLMENT_WATCH_INTERVALS.includes(
       stored as EnrollmentWatchInterval,
     )
@@ -114,7 +120,7 @@ function getEnrollmentWatchInterval(): EnrollmentWatchInterval {
 }
 function getSaved() {
   try {
-    const raw = localStorage.getItem(SAVED_KEY);
+    const raw = browserStorage().getItem(SAVED_KEY);
     if (raw === savedRaw) return savedCache;
     savedRaw = raw;
     const parsed: unknown = raw ? JSON.parse(raw) : [];
@@ -135,7 +141,7 @@ function getSaved() {
 function getSavedDetails<T>(key: string, type: "sections" | "instructors") {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(key);
+    raw = browserStorage().getItem(key);
   } catch {
     return (type === "sections" ? EMPTY_SECTIONS : EMPTY_INSTRUCTORS) as T[];
   }
@@ -169,7 +175,7 @@ function getSavedDetails<T>(key: string, type: "sections" | "instructors") {
 }
 function writeArray(key: string, value: unknown[]) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    browserStorage().setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event(EVENT));
     return true;
   } catch {
@@ -190,7 +196,7 @@ export function usePreferences() {
     if (storageMigrated) return;
     storageMigrated = true;
     try {
-      migrateSavedAvailability(window.localStorage);
+      migrateSavedAvailability(browserStorage());
     } catch {
       /* Storage may be disabled. */
     }
@@ -228,7 +234,7 @@ export function usePreferences() {
   }
   function setEnrollmentWatch(value: boolean) {
     try {
-      localStorage.setItem(ENROLLMENT_WATCH_KEY, String(value));
+      browserStorage().setItem(ENROLLMENT_WATCH_KEY, String(value));
     } catch {
       return;
     }
@@ -237,7 +243,7 @@ export function usePreferences() {
   function setEnrollmentWatchInterval(value: EnrollmentWatchInterval) {
     if (!ENROLLMENT_WATCH_INTERVALS.includes(value)) return;
     try {
-      localStorage.setItem(ENROLLMENT_WATCH_INTERVAL_KEY, String(value));
+      browserStorage().setItem(ENROLLMENT_WATCH_INTERVAL_KEY, String(value));
     } catch {
       return;
     }
@@ -250,7 +256,7 @@ export function usePreferences() {
       ? current.filter((item) => item.id !== course.id)
       : [...current, course].slice(-100);
     try {
-      localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+      browserStorage().setItem(SAVED_KEY, JSON.stringify(next));
     } catch {
       return false;
     }
@@ -264,7 +270,7 @@ export function usePreferences() {
           ? latest
           : [...latest, course].slice(-100);
       try {
-        localStorage.setItem(SAVED_KEY, JSON.stringify(undone));
+        browserStorage().setItem(SAVED_KEY, JSON.stringify(undone));
         window.dispatchEvent(new Event(EVENT));
       } catch {}
     });

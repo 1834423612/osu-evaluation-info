@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useSyncExternalStore } from "react";
+import { browserStorage } from "@/lib/preferences/browser-storage";
 import { usePathname } from "next/navigation";
 import type { MascotExpression } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -21,8 +22,8 @@ function chooseExpression(scene: MascotScene): MascotExpression {
   let previous: string | null = null;
   try {
     previous =
-      sessionStorage.getItem(key) ??
-      sessionStorage.getItem(`course-atlas:mascot:${scene}:v1`);
+      browserStorage("session").getItem(key) ??
+      browserStorage("session").getItem(`course-atlas:mascot:${scene}:v1`);
   } catch {
     // Artwork still works when browser storage is disabled.
   }
@@ -35,7 +36,7 @@ function chooseExpression(scene: MascotScene): MascotExpression {
   }
   const selected = choices[Math.floor(random * choices.length)];
   try {
-    sessionStorage.setItem(key, selected);
+    browserStorage("session").setItem(key, selected);
   } catch {
     // Remembering the last expression is optional.
   }

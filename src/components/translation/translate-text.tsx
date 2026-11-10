@@ -1,5 +1,7 @@
 "use client";
 
+import { browserStorage } from "@/lib/preferences/browser-storage";
+
 import {
   useCallback,
   useEffect,
@@ -73,7 +75,7 @@ function isTranslationModel(value: unknown): value is TranslationModel {
 function getStoredModel(): TranslationModel {
   if (memoryModel) return memoryModel;
   try {
-    const value = localStorage.getItem(MODEL_KEY);
+    const value = browserStorage().getItem(MODEL_KEY);
     return isTranslationModel(value) ? value : "auto";
   } catch {
     return "auto";
@@ -88,7 +90,7 @@ function isDisplayMode(value: unknown): value is DisplayMode {
 function getStoredMode(): DisplayMode {
   if (memoryMode) return memoryMode;
   try {
-    const value = localStorage.getItem(MODE_KEY);
+    const value = browserStorage().getItem(MODE_KEY);
     return isDisplayMode(value) ? value : "bilingual";
   } catch {
     return "bilingual";
@@ -99,7 +101,7 @@ function getStoredMode(): DisplayMode {
 function getStoredAuto() {
   if (memoryAuto !== null) return memoryAuto;
   try {
-    return localStorage.getItem(AUTO_KEY) === "true";
+    return browserStorage().getItem(AUTO_KEY) === "true";
   } catch {
     return false;
   }
@@ -417,7 +419,7 @@ export function TranslateText({
     if (!translationGuide.isSettingsGuided(contentId)) setMenuOpen(false);
     memoryMode = next;
     try {
-      localStorage.setItem(MODE_KEY, next);
+      browserStorage().setItem(MODE_KEY, next);
     } catch {
       // In-memory preference still applies for this page view.
     }
@@ -427,7 +429,7 @@ export function TranslateText({
   function toggleAutomatic() {
     memoryAuto = !automatic;
     try {
-      localStorage.setItem(AUTO_KEY, String(memoryAuto));
+      browserStorage().setItem(AUTO_KEY, String(memoryAuto));
     } catch {
       // The current browser session still uses the selected preference.
     }
@@ -465,7 +467,7 @@ export function TranslateText({
     } else if (value === storedModel) return;
     memoryModel = value;
     try {
-      localStorage.setItem(MODEL_KEY, value);
+      browserStorage().setItem(MODEL_KEY, value);
     } catch {
       // Keep the selection for this page when browser storage is unavailable.
     }
