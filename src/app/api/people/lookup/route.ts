@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { debugBypassRequest } from "@/lib/debug/server";
 import {
   lookupDirectory,
   validDirectoryFallbackName,
@@ -125,8 +126,9 @@ export async function POST(request: Request) {
     );
 
   const identity = directoryAccountFromTerm(term);
+  const bypassCache = debugBypassRequest(request);
   let savedPerson = null;
-  if (identity) {
+  if (identity && !bypassCache) {
     try {
       savedPerson = await readDirectoryPerson(identity);
     } catch {
@@ -140,7 +142,9 @@ export async function POST(request: Request) {
       return response(directoryPersonResponse(savedPerson));
   }
 
-  const result = await lookupDirectory(term, fallbackName, subject);
+  const result = await lookupDirectory(term, fallbackName, subject, {
+    bypassCache,
+  });
   if (
     identity &&
     result.status === "available" &&

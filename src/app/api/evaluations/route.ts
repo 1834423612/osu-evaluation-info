@@ -1,3 +1,4 @@
+import { debugBypassRequest } from "@/lib/debug/server";
 import { getCourseEvaluations } from "@/lib/evaluations/repository";
 import {
   parseEvaluationBatch,
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     [...groups].map(async ([campus, group]) => {
       const result = await getCourseEvaluations(
         group.map((c) => ({ ...c, campus })),
+        { bypassCache: debugBypassRequest(request) },
       );
       for (const course of group)
         summaries[course.id] =
@@ -63,9 +65,10 @@ export async function GET(request: Request) {
     .getAll("email")
     .slice(0, 30)
     .map((email) => ({ name: email.split("@")[0], email }));
-  const summaries = await getCourseEvaluations([
-    { subject, catalogNumber, campus, instructors },
-  ]);
+  const summaries = await getCourseEvaluations(
+    [{ subject, catalogNumber, campus, instructors }],
+    { bypassCache: debugBypassRequest(request) },
+  );
   const summary = summaries[`${subject} ${catalogNumber}`];
   return Response.json(summary, {
     status: summary.status === "unavailable" ? 503 : 200,

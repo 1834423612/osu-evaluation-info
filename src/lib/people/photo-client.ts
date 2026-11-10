@@ -1,3 +1,4 @@
+import { cacheBypassed } from "../debug/flags.ts";
 import {
   instructorPhotoUrl,
   isInstructorPhotoPlan,
@@ -16,7 +17,7 @@ export function createInstructorPhotoClient(
   return {
     async url(identity: string): Promise<string | null> {
       if (!validPhotoIdentity(identity)) return null;
-      if (!cached || cached.expires <= Date.now()) {
+      if (cacheBypassed() || !cached || cached.expires <= Date.now()) {
         const promise = (async () => {
           const response = await fetcher("/api/instructors/photo", {
             signal: AbortSignal.timeout(10_000),

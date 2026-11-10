@@ -1,3 +1,4 @@
+import { cacheBypassed } from "../debug/flags.ts";
 export class RequestQueueFullError extends Error {
   constructor() {
     super("Availability queue is busy. Try again shortly.");
@@ -102,7 +103,7 @@ export function createRequestPool<T>({
   ): Promise<T> {
     if (signal?.aborted) return Promise.reject(signal.reason);
     const saved = cache.get(key);
-    if (saved && saved.expires > Date.now())
+    if (!cacheBypassed() && saved && saved.expires > Date.now())
       return Promise.resolve(saved.value);
     cache.delete(key);
     let job = pending.get(key);

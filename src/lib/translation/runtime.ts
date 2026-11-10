@@ -1,4 +1,5 @@
 import { createTranslationGateway } from "./gateway.ts";
+import { debugBypassRequest } from "../debug/server.ts";
 import { createTranslationHandler } from "./handler.ts";
 import { createTranslationProviders } from "./providers.ts";
 import { createDatabaseTranslationUsage } from "./usage.ts";
@@ -33,7 +34,11 @@ function createRuntime() {
   );
   let lastMaintenance = -Infinity;
   return {
-    handle: createTranslationHandler(gateway.translateBatch),
+    handle: createTranslationHandler(
+      gateway.translateBatch,
+      Date.now,
+      debugBypassRequest,
+    ),
     reportUsage: createTranslationUsageHandler(
       usage.observe,
       Date.now,
@@ -53,8 +58,8 @@ function createRuntime() {
 }
 
 const shared = globalThis as typeof globalThis & {
-  osuTranslationRuntimeV4?: ReturnType<typeof createRuntime>;
+  osuTranslationRuntimeV5?: ReturnType<typeof createRuntime>;
 };
 /** Share NAS permits, circuit state and bounded caches across requests and dev reloads. */
-export const translationRuntime = (shared.osuTranslationRuntimeV4 ??=
+export const translationRuntime = (shared.osuTranslationRuntimeV5 ??=
   createRuntime());

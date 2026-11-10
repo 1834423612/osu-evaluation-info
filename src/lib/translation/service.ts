@@ -3,7 +3,10 @@ export type GoogleTranslationProvider = "dict-chrome-ex" | "clients5" | "gtx";
 export type TranslationProvider =
   "chrome" | "ollama" | GoogleTranslationProvider;
 export type TranslationModel = "auto" | "chrome" | "ollama" | "google";
-export type TranslationRequestOptions = { mode?: "auto" | "ollama" };
+export type TranslationRequestOptions = {
+  mode?: "auto" | "ollama";
+  bypassCache?: boolean;
+};
 export type TranslationDisplayMode = "bilingual" | "replace";
 export type TranslationAction =
   "translate" | "show-translation" | "hide-translation" | "show-original";

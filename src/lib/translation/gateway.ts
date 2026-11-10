@@ -262,7 +262,7 @@ export function createTranslationGateway(
       cache.delete(key);
       saved = undefined;
     }
-    if (saved) {
+    if (saved && !options.bypassCache) {
       report("cache");
       return {
         ...metadata,
@@ -272,7 +272,7 @@ export function createTranslationGateway(
         durationMs: 0,
       };
     }
-    const pendingKey = `${options.mode ?? "auto"}\0${key}`;
+    const pendingKey = `${options.mode ?? "auto"}\0${options.bypassCache ? "fresh" : "cached"}\0${key}`;
     let operation = pending.get(pendingKey);
     const shared = Boolean(operation);
     let queuedCacheHit = false;
@@ -280,7 +280,7 @@ export function createTranslationGateway(
       const deadline = Date.now() + queueWaitMs;
       const work = () => {
         const current = cache.get(key);
-        if (current && current.expires > now()) {
+        if (!options.bypassCache && current && current.expires > now()) {
           queuedCacheHit = true;
           return Promise.resolve(current.result);
         }
@@ -290,7 +290,7 @@ export function createTranslationGateway(
       };
       operation = (options.mode === "ollama" ? manualQueue.run(work) : work())
         .then((result) => {
-          if (!queuedCacheHit) {
+          if (!queuedCacheHit && !options.bypassCache) {
             cache.set(key, {
               result,
               expires: now() + 7 * 24 * 60 * 60 * 1000,

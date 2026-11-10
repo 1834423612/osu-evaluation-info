@@ -711,6 +711,7 @@ export async function lookupDirectory(
   termValue: string,
   fallbackNameValue?: string,
   subject?: string,
+  options: { bypassCache?: boolean } = {},
 ): Promise<DirectoryLookupResult> {
   if (!validDirectorySearchTerm(termValue))
     return { status: "unavailable", source: null, results: [] };
@@ -720,7 +721,7 @@ export async function lookupDirectory(
     : undefined;
   const key = cacheKey(term, fallbackName, subject);
   const cached = cache.get(key);
-  if (cached && cached.expiresAt > Date.now()) {
+  if (!options.bypassCache && cached && cached.expiresAt > Date.now()) {
     cache.delete(key);
     cache.set(key, cached);
     return cached.value.status === "available"

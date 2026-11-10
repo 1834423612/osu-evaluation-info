@@ -1,3 +1,4 @@
+import { cacheBypassed } from "../debug/flags.ts";
 import {
   createTranslationConsumers,
   type TranslationCallbacks,
@@ -33,7 +34,8 @@ export function createTranslationScheduler<Value = string>(
     callbacks: TranslationCallbacks = {},
   ) {
     const saved = cache.get(key);
-    if (saved && saved.expires > now()) return Promise.resolve(saved.value);
+    if (!cacheBypassed() && saved && saved.expires > now())
+      return Promise.resolve(saved.value);
     if (saved) cache.delete(key);
     const active = pending.get(key);
     if (active) {
@@ -41,7 +43,7 @@ export function createTranslationScheduler<Value = string>(
       return active.promise;
     }
     const failure = failures.get(key);
-    if (!retry && failure && failure.expires > now())
+    if (!cacheBypassed() && !retry && failure && failure.expires > now())
       return Promise.reject(failure.error);
     if (failure) failures.delete(key);
     if (queue.length >= 200)

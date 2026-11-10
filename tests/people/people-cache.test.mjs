@@ -45,6 +45,12 @@ const routeText = stripTypeScriptTypes(
   ),
 )
   .replace(
+    '"@/lib/debug/server"',
+    JSON.stringify(
+      new URL("../../src/lib/debug/server.ts", import.meta.url).href,
+    ),
+  )
+  .replace(
     /import\s*\{[^;]*\}\s*from "@\/lib\/people\/directory";/,
     `const { directoryAccountFromTerm, validDirectoryFallbackName, validDirectorySearchTerm } = globalThis[Symbol.for("osu-directory-cache-test")];
      const lookupDirectory = (...args) => globalThis[Symbol.for("osu-directory-cache-test")].lookupDirectory(...args);`,

@@ -1,3 +1,4 @@
+import { cacheBypassed } from "../debug/flags.ts";
 import {
   createOfficialCatalogClient,
   parseCatalogSearch,
@@ -66,7 +67,7 @@ export function createCatalogTransport(
 
   function discover(resource: CatalogResource, signal?: AbortSignal | null) {
     let cached = plans.get(resource);
-    if (!cached || cached.expires <= Date.now()) {
+    if (cacheBypassed() || !cached || cached.expires <= Date.now()) {
       const promise = (async () => {
         const response = await fetcher(PATHS[resource], {
           signal: AbortSignal.timeout(10_000),
@@ -92,7 +93,7 @@ export function createCatalogTransport(
     const url = String(input),
       isTerms = url.endsWith("/searchableTermsV2");
     if (init?.signal?.aborted) throw init.signal.reason;
-    if (isTerms && terms && terms.expires > Date.now())
+    if (!cacheBypassed() && isTerms && terms && terms.expires > Date.now())
       return Response.json(terms.body);
     const body = await metadataPool.read(
       url,

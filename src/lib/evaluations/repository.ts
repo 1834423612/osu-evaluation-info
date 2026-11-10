@@ -48,8 +48,8 @@ function cacheRows(key: string, rows: EvaluationAggregateRow[]) {
   cachedRowCount += rows.length;
 }
 
-async function getSource(): Promise<EvaluationSource> {
-  if (sourceCache && sourceCache.expiresAt > Date.now())
+async function getSource(bypassCache = false): Promise<EvaluationSource> {
+  if (!bypassCache && sourceCache && sourceCache.expiresAt > Date.now())
     return sourceCache.value;
   if (sourceRequest) return sourceRequest;
   sourceRequest = (async () => {
@@ -128,6 +128,7 @@ const COURSE_SQL = `
  */
 export async function getCourseEvaluations(
   inputs: CourseEvaluationInput[],
+  options: { bypassCache?: boolean } = {},
 ): Promise<Record<string, CourseEvaluationSummary>> {
   if (inputs.length > 50)
     throw new RangeError("At most 50 courses can be evaluated in one request.");
@@ -165,10 +166,10 @@ export async function getCourseEvaluations(
     `${keyOf(input)}\0${input.campus ?? "*"}`;
   try {
     if (!isDatabaseConfigured()) throw new Error("Database unavailable");
-    const sourcePromise = getSource();
+    const sourcePromise = getSource(options.bypassCache);
     const missing = normalized.filter((input) => {
       const cached = rowCache.get(cacheKeyOf(input));
-      return !cached || cached.expiresAt <= Date.now();
+      return options.bypassCache || !cached || cached.expiresAt <= Date.now();
     });
     const rowsPromise = missing.length
       ? queryDatabase<EvaluationAggregateRow>(COURSE_SQL, [

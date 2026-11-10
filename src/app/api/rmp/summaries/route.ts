@@ -1,4 +1,5 @@
 import { readJsonBody } from "@/lib/http/json-body";
+import { debugBypassRequest } from "@/lib/debug/server";
 import {
   aggregateRmpInsights,
   parseRmpPreviewBatch,
@@ -10,13 +11,14 @@ export async function POST(request: Request) {
   try {
     const courses = parseRmpPreviewBatch(await readJsonBody(request, 131_072));
     const summaries: Record<string, RmpInsight> = Object.create(null);
+    const bypassCache = debugBypassRequest(request);
     let index = 0;
     await Promise.all(
       Array.from({ length: Math.min(4, courses.length) }, async () => {
         while (index < courses.length) {
           const course = courses[index++];
           summaries[course.id] = aggregateRmpInsights(
-            await getCourseRmp(course, { preview: true }),
+            await getCourseRmp(course, { preview: true, bypassCache }),
           );
         }
       }),

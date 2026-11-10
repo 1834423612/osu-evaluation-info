@@ -26,6 +26,7 @@ export function createTranslationHandler(
     options?: TranslationRequestOptions,
   ) => Promise<TranslationResult[]>,
   now = Date.now,
+  bypassCache: (request: Request) => boolean = () => false,
 ) {
   const requests = new Map<string, { start: number; count: number }>();
   function allow(key: string, cost: number) {
@@ -79,7 +80,10 @@ export function createTranslationHandler(
         429,
       );
     try {
-      const results = await translateBatch(items, { mode });
+      const results = await translateBatch(items, {
+        mode,
+        ...(bypassCache(request) ? { bypassCache: true } : {}),
+      });
       const legacy = !(payload as { items?: unknown }).items;
       if (legacy) {
         const result = results[0];
