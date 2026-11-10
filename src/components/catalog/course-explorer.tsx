@@ -588,6 +588,19 @@ export function CourseExplorer() {
                   : text(locale, "Official OSU data", "OSU 官方数据")}
               </span>
             </div>
+            {!loading && result ? (
+              <p className="official-disclaimer">
+                {text(
+                  locale,
+                  result.sourceMode === "mirror"
+                    ? "Showing a synced official snapshot. Confirm current details in Buckeye Link."
+                    : "Fetched from OSU's official course service. Confirm current details in Buckeye Link.",
+                  result.sourceMode === "mirror"
+                    ? "当前展示官方同步快照；最新课程与选课情况请以 Buckeye Link 为准。"
+                    : "课程信息实时获取自 OSU 官方；最新课程与选课情况请以 Buckeye Link 为准。",
+                )}
+              </p>
+            ) : null}
             {!loading && result?.capped ? (
               <p className="query-limit-note">
                 <CircleAlert size={15} />
@@ -746,19 +759,7 @@ export function CourseExplorer() {
                 </Button>
               </nav>
             ) : null}
-            {!loading && result ? (
-              <p className="official-disclaimer">
-                {text(
-                  locale,
-                  result.sourceMode === "mirror"
-                    ? "Showing a synced official snapshot. Confirm current details in Buckeye Link."
-                    : "Fetched from OSU's official course service. Confirm current details in Buckeye Link.",
-                  result.sourceMode === "mirror"
-                    ? "当前展示官方同步快照；最新课程与选课情况请以 Buckeye Link 为准。"
-                    : "课程信息实时获取自 OSU 官方；最新课程与选课情况请以 Buckeye Link 为准。",
-                )}
-              </p>
-            ) : null}
+
           </section>
         </div>
       </main>
