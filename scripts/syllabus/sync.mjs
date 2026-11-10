@@ -207,6 +207,7 @@ export async function syncSyllabus(options) {
     }
     let processed = 0,
       failures = 0;
+    let consecutiveFailures = 0;
     await client.query(
       "UPDATE osu_syllabus.entry_observations SET document_status=NULL WHERE run_id=$1 AND document_status='failed'",
       [runId],
@@ -233,9 +234,11 @@ export async function syncSyllabus(options) {
         try {
           const document = await readSyllabusDocument(row.code, fetcher);
           if (!document.components.length && !document.entry.hasUploads)
-            throw new Error("Published syllabus has no readable content.");
-          await saveDocument(client, document);
-          if (document.entry.hasUploads) status = "uploaded";
+            status = "missing";
+          else {
+            await saveDocument(client, document);
+            if (document.entry.hasUploads) status = "uploaded";
+          }
         } catch (error) {
           status =
             error instanceof SyllabusError &&
@@ -248,6 +251,11 @@ export async function syncSyllabus(options) {
           "UPDATE osu_syllabus.entry_observations SET document_status=$3 WHERE run_id=$1 AND code=$2",
           [runId, row.code, status],
         );
+        consecutiveFailures = status === "failed" ? consecutiveFailures + 1 : 0;
+        if (consecutiveFailures >= 5)
+          throw new Error(
+            "Five consecutive document failures; stopped to preserve the archive and avoid a blocked crawl. Rerun to resume.",
+          );
         processed++;
         if (processed % 50 === 0)
           console.log(

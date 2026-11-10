@@ -26,8 +26,13 @@ export async function officialSyllabusJson(
       ? AbortSignal.any([signal, AbortSignal.timeout(15_000)])
       : AbortSignal.timeout(15_000),
   });
-  if (response.status === 401 || response.status === 403)
-    throw new SyllabusError("restricted");
+  if (response.status === 401 || response.status === 403) {
+    const kind = response.headers.get("content-type")?.includes("json")
+      ? "restricted"
+      : "unavailable";
+    await response.body?.cancel();
+    throw new SyllabusError(kind);
+  }
   if (response.status === 404) throw new SyllabusError("missing");
   if (!response.ok || !response.headers.get("content-type")?.includes("json"))
     throw new SyllabusError("unavailable");

@@ -122,12 +122,22 @@ test("keeps denied access, absent publications and HTML error pages distinct", a
     [503, "unavailable"],
   ])
     await assert.rejects(
-      readSyllabusDocument(
-        "example123",
-        async () => new Response("blocked", { status }),
+      readSyllabusDocument("example123", async () =>
+        Response.json({ error: "blocked" }, { status }),
       ),
       (error) => error.kind === kind,
     );
+  await assert.rejects(
+    readSyllabusDocument(
+      "example123",
+      async () =>
+        new Response("<html>Request blocked</html>", {
+          status: 403,
+          headers: { "Content-Type": "text/html" },
+        }),
+    ),
+    (error) => error.kind === "unavailable",
+  );
   await assert.rejects(
     readSyllabusDocument(
       "example123",
