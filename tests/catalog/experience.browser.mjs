@@ -68,16 +68,25 @@ const tags = [
   { tag: "Lots of homework", count: 18 },
   { tag: "Caring", count: 12 },
   { tag: "Tough grader", count: 9 },
+  { tag: "Inspirational", count: 8 },
+  { tag: "Clear grading criteria", count: 7 },
+  { tag: "Accessible outside class", count: 6 },
+  { tag: "Amazing lectures", count: 5 },
+  { tag: "Respected", count: 4 },
+  { tag: "Get ready to read", count: 2 },
+  { tag: "Participation matters", count: 2 },
+  { tag: "Test heavy", count: 1 },
   {
     tag: "A very long descriptive review tag that must stay completely readable without overflowing",
     count: 3,
   },
-];
+].sort((a, b) => b.count - a.count);
 const insight = {
   status: "available",
   tags,
   difficulty: 3.4,
   difficultyCount: 120,
+  difficultyPeriod: "recent",
   reviewCount: 245,
   matchedInstructorCount: 2,
   requestedInstructorCount: 2,
@@ -200,6 +209,7 @@ async function setup({
       sessionStorage.setItem("fixture:seeded", "1");
       localStorage.setItem("course-atlas:locale:v1", locale);
       localStorage.setItem("course-atlas:translation-model:v1", "ollama");
+      localStorage.setItem("course-atlas:translation-mode:v1", "bilingual");
       localStorage.setItem(KEY, "done");
       localStorage.setItem(
         "course-atlas:saved:v1",
@@ -235,7 +245,17 @@ async function setup({
       return route.fulfill({
         json: {
           summaries: Object.fromEntries(
-            courses.map((item) => [item.id, insight]),
+            courses.map((item) => [
+              item.id,
+              item.catalogNumber === "2231"
+                ? {
+                    ...insight,
+                    difficultyPeriod: "historical",
+                    difficulty: 2.8,
+                    difficultyCount: 45,
+                  }
+                : insight,
+            ]),
           ),
         },
       });
@@ -282,7 +302,20 @@ async function setup({
             cache: "miss",
             durationMs: 8,
             translation:
-              "软件工程的基础：设计、实现与测试可复用的软件组件。通过实践项目学习现代软件开发的原则。",
+              {
+                "Lots of homework": "作业很多",
+                Caring: "关心学生",
+                "Tough grader": "评分严格",
+                Inspirational: "富有启发",
+                "Clear grading criteria": "评分标准明确",
+                "Accessible outside class": "课外答疑",
+                "Amazing lectures": "讲课精彩",
+                Respected: "受人尊敬",
+                "Get ready to read": "阅读量大",
+                "Participation matters": "重视参与",
+                "Test heavy": "考试较多",
+              }[item.text] ??
+              "一条很长的学生评价标签，完整保留译文内容，检查词云在窄屏上重新排列后没有溢出。",
           })),
         },
       });
@@ -337,7 +370,7 @@ try {
     [390, "zh"],
     [320, "en"],
   ]) {
-    const { context, page, errors, summaryBatches } = await setup({
+    const { context, page, errors, summaryBatches, requests } = await setup({
       width,
       height: 950,
       locale,
@@ -373,16 +406,71 @@ try {
       ).text();
       assert(html.includes("<title>WahO! | OSU Course Atlas</title>"));
     }
-    const tag = page
-      .locator("[data-rmp-preview] li")
-      .filter({ hasText: "Lots of homework" })
-      .first();
-    await tag.locator("[data-translation-action]").click();
-    await tag.locator('[lang="zh-CN"]').waitFor();
-    assert(
-      await tag.getByText("Lots of homework", { exact: true }).isVisible(),
+    const cloud = page.locator("[data-rmp-cloud]").first();
+    await cloud.locator("[data-cloud-word]").first().waitFor();
+    assert.equal(await cloud.locator("button").count(), 1);
+    assert.equal(await cloud.locator("li button").count(), 0);
+    const styles = await cloud
+      .locator("[data-cloud-word]")
+      .evaluateAll((words) =>
+        words.map((word) => ({
+          count: Number(word.dataset.count),
+          size: parseFloat(getComputedStyle(word).fontSize),
+          color: getComputedStyle(word).color,
+        })),
+      );
+    assert.equal(new Set(styles.map((word) => word.color)).size, styles.length);
+    assert(styles[0].size > styles.at(-1).size + 15);
+    await cloud.locator("button").evaluate((button) => {
+      button.click();
+      button.click();
+    });
+    await cloud.locator('[data-cloud-word][lang="zh-CN"]').first().waitFor();
+    assert.equal(
+      requests
+        .flatMap((request) => request.items)
+        .filter((item) => tags.some((tag) => tag.tag === item.text)).length,
+      tags.length,
+      "rapid taps share one request per tag",
     );
+    assert.equal(
+      await cloud.locator("[data-cloud-word]").first().innerText(),
+      "作业很多",
+    );
+    assert.equal(
+      await page.evaluate(() =>
+        localStorage.getItem("course-atlas:translation-mode:v1"),
+      ),
+      "bilingual",
+    );
+    await page.waitForTimeout(350);
+    const rectangles = await cloud
+      .locator("[data-cloud-word]")
+      .evaluateAll((words) =>
+        words.map((word) => word.getBoundingClientRect().toJSON()),
+      );
+    for (let i = 0; i < rectangles.length; i++)
+      for (let j = i + 1; j < rectangles.length; j++) {
+        const a = rectangles[i],
+          b = rectangles[j];
+        assert(
+          a.right <= b.left ||
+            b.right <= a.left ||
+            a.bottom <= b.top ||
+            b.bottom <= a.top,
+          "translated words cannot overlap",
+        );
+      }
     await noOverflow(page, "[data-rmp-preview] ul");
+    await page.locator("[data-rmp-preview]").first().scrollIntoViewIfNeeded();
+    await page.locator(".course-card").nth(1).scrollIntoViewIfNeeded();
+    await page.locator('[data-period="historical"]').waitFor();
+    assert(
+      await page
+        .locator('[data-period="historical"]')
+        .getByText(/May be outdated|可能过时/)
+        .isVisible(),
+    );
     await page.locator("[data-rmp-preview]").first().scrollIntoViewIfNeeded();
     await page.screenshot({
       path: `/tmp/course-experience-${width}-${locale}.png`,
@@ -504,6 +592,42 @@ try {
     assert.deepEqual(errors, []);
     console.log(
       `PASS ${width}px ${locale}: compact facts, alignment, RMP cloud translation, section actions, source badges, live title and footer`,
+    );
+    await context.close();
+  }
+  {
+    const { context, page, succeed, errors } = await setup({
+      width: 390,
+      height: 900,
+      touch: true,
+      fail: true,
+    });
+    const cloud = page.locator("[data-rmp-cloud]").first();
+    await cloud.locator("[data-cloud-word]").first().waitFor();
+    await cloud.locator("button").click();
+    await cloud.getByRole("status").waitFor();
+    assert.equal(
+      await cloud.locator("[data-cloud-word]").first().innerText(),
+      "Lots of homework",
+    );
+    assert.equal(await cloud.getAttribute("data-translated"), null);
+    succeed();
+    await cloud.locator("button").click();
+    await cloud.locator('[data-cloud-word][lang="zh-CN"]').first().waitFor();
+    await cloud.locator("button").click();
+    assert.equal(
+      await cloud.locator("[data-cloud-word]").first().innerText(),
+      "Lots of homework",
+    );
+    assert.equal(
+      await page.evaluate(() =>
+        localStorage.getItem("course-atlas:translation-mode:v1"),
+      ),
+      "bilingual",
+    );
+    assert.deepEqual(errors, []);
+    console.log(
+      "PASS cloud recovery: failure preserves original words, retry replaces in place, original toggle preserves global preferences",
     );
     await context.close();
   }

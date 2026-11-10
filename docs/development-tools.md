@@ -76,8 +76,14 @@ to 24 courses with at most four concurrent repository lookups. The preview query
 omits review comment payloads. Tags combine matched course reviews across unique
 professors; recent difficulty is weighted by each professor's valid rating count.
 The UI shows the sample size, the two-year window, and the nonofficial source.
-Missing ratings remain unknown. Tags wrap naturally, and translation preserves
-the full original and translated text.
+When there are no recent difficulty ratings, it falls back to valid all-time
+ratings and marks the score as possibly outdated. Missing ratings remain unknown.
+Tags use seeded, measured word-cloud packing with frequency-based font sizes and
+distinct colors. A single translation control replaces all words in place;
+global bilingual/replace preferences are preserved. Model selection and automatic
+translation remain shared with other snippets. Original words can be restored;
+failed group translations preserve the original cloud. Resizing and translation
+repack the cloud without dropping or clipping words.
 
 Server-rendered titles and social metadata use English. Browser tab titles follow
 the active site language and route, including after client navigation. The

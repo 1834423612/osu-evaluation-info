@@ -61,51 +61,6 @@
   border-radius: inherit;
   background: #9375b3;
 }
-.cloud {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  list-style: none;
-  padding: 0;
-  margin: 10px 0 0;
-  min-width: 0;
-}
-.cloud > li {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 5px;
-  min-width: 0;
-  max-width: 100%;
-  border-radius: 7px;
-  padding: 4px 7px;
-  color: var(--secondary-foreground);
-  background: var(--secondary);
-  line-height: 1.5;
-}
-.cloud > li > small {
-  flex: 0 0 auto;
-  padding-top: 2px;
-  color: inherit;
-  opacity: 0.7;
-  font-size: 8px;
-}
-.cloud > li[data-tone="work"] {
-  background: #fff3e3;
-  color: #8a5b19;
-}
-.cloud > li[data-tone="assessment"] {
-  background: #fcecef;
-  color: #9a4c60;
-}
-.cloud > li[data-tone="challenge"] {
-  background: #f3edfa;
-  color: #7655a1;
-}
-.cloud > li[data-tone="positive"] {
-  background: #edf7f0;
-  color: #357b55;
-}
 .empty,
 .note {
   margin: 7px 0 0;

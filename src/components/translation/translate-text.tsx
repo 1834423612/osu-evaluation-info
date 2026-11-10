@@ -28,16 +28,14 @@ import {
   MAX_TRANSLATION_LENGTH,
   translationAction,
   translationLanguagePair,
-  type TranslationTarget,
-  type TranslationProvider,
   type TranslationModel,
-  TranslationUnavailableError,
 } from "@/lib/translation/service";
-import { translateInBrowser } from "@/lib/translation/browser";
-import { createRemoteTranslationClient } from "@/lib/translation/client";
-import { createBrowserUsageReporter } from "@/lib/translation/browser-usage";
 import styles from "./translate-text.module.css";
-import { createTranslationScheduler } from "@/lib/translation/scheduler";
+import {
+  requestTextTranslation,
+  translationCacheKey as cacheKey,
+  type DisplayTranslation,
+} from "@/lib/translation/text-client";
 import { createTranslationRetry } from "@/lib/translation/retry";
 import { TRANSLATION_SUCCESS_EVENT } from "@/lib/translation/onboarding";
 import { translationGuide } from "./translation-guide-store";
@@ -47,22 +45,11 @@ import { browserModel } from "./browser-model-store";
 type DisplayMode = "bilingual" | "replace";
 type TranslationStatus =
   "idle" | "queued" | "loading" | "downloading" | "error";
-type DisplayTranslation = {
-  translation: string;
-  provider: TranslationProvider;
-};
-
 const MODE_KEY = "course-atlas:translation-mode:v1";
 const AUTO_KEY = "course-atlas:translation-auto:v1";
 const MODEL_KEY = "course-atlas:translation-model:v1";
 const MODELS = ["auto", "chrome", "ollama", "google"] as const;
 const MODE_EVENT = "course-atlas:translation-mode";
-const scheduler = createTranslationScheduler<DisplayTranslation>(4);
-const remoteTranslation = createRemoteTranslationClient(
-  fetch,
-  25,
-  createBrowserUsageReporter(),
-);
 let memoryMode: DisplayMode | null = null;
 let memoryAuto: boolean | null = null;
 let memoryModel: TranslationModel | null = null;
@@ -137,12 +124,19 @@ function getCompactMenus() {
   return window.matchMedia("(max-width: 600px)").matches;
 }
 
-function cacheKey(
-  source: string,
-  target: TranslationTarget,
-  model: TranslationModel,
-) {
-  return `${model}\0${target}\0${source}`;
+/** Read the same live model and auto preference without changing display settings. */
+export function useTranslationPreferences() {
+  const model = useSyncExternalStore(
+    subscribeToMode,
+    getStoredModel,
+    () => "auto" as TranslationModel,
+  );
+  const automatic = useSyncExternalStore(
+    subscribeToMode,
+    getStoredAuto,
+    () => false,
+  );
+  return { model, automatic };
 }
 
 /** Translate a snippet with shared work, per-model results and visibility-aware automatic retries. */
@@ -295,43 +289,9 @@ export function TranslateText({
           }
           if (activeKeyRef.current !== requestKey) return;
         }
-        const result = await scheduler.request(
-          requestKey,
-          async (callbacks) => {
-            let result: DisplayTranslation | null = null;
-            if (selectedModel === "auto" || selectedModel === "chrome") {
-              try {
-                const local = await translateInBrowser(
-                  text,
-                  pair.sourceLanguage,
-                  pair.targetLanguage,
-                );
-                if (local) result = { translation: local, provider: "chrome" };
-              } catch {
-                result = null;
-              }
-            }
-            if (!result && selectedModel === "chrome")
-              throw new TranslationUnavailableError();
-            if (!result) {
-              if (!callbacks.canStart?.())
-                throw new DOMException(
-                  "Translation model changed.",
-                  "AbortError",
-                );
-              callbacks.onStarted?.();
-              result = await remoteTranslation.request(
-                text,
-                pair.targetLanguage,
-                selectedModel === "chrome" ? "auto" : selectedModel,
-                callbacks,
-              );
-            }
-            return {
-              translation: result.translation,
-              provider: result.provider,
-            };
-          },
+        const result = await requestTextTranslation(
+          text,
+          selectedModel,
           manual,
           {
             onQueued: () => setStatus("queued"),

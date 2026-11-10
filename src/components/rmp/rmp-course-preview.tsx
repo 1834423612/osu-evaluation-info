@@ -4,11 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { Gauge, MessageCircle } from "lucide-react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { RmpInsight } from "@/lib/rmp/insights";
-import { rmpTagTone } from "@/lib/rmp/insights";
 import { rmpPreviews } from "@/lib/rmp/preview-client";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
 import { text, type Locale } from "@/lib/i18n";
-import { TranslateText } from "@/components/translation/translate-text";
+import { RmpWordCloud } from "./rmp-word-cloud";
 import styles from "./rmp-course-preview.module.css";
 
 export function RmpCoursePreview({
@@ -70,10 +69,6 @@ export function RmpCoursePreview({
     };
   }, [key]);
   const insight = state?.key === key ? state.value : null;
-  const maxTag = Math.max(
-    1,
-    ...(insight?.tags.map((item) => item.count) ?? []),
-  );
   const difficulty = insight?.difficulty ?? null;
   return (
     <div className={styles.preview} ref={ref} data-rmp-preview>
@@ -126,30 +121,7 @@ export function RmpCoursePreview({
             </small>
           </div>
           {insight.tags.length ? (
-            <ul
-              className={styles.cloud}
-              aria-label={text(locale, "Student review tags", "学生评价词云")}
-            >
-              {insight.tags.map((item) => (
-                <li
-                  key={item.tag}
-                  data-tone={rmpTagTone(item.tag)}
-                  style={{
-                    fontSize: `${10 + Math.sqrt(item.count / maxTag) * 3}px`,
-                  }}
-                >
-                  <TranslateText
-                    as="div"
-                    text={item.tag}
-                    locale={locale}
-                    compact
-                  />
-                  <small title={text(locale, "Tag mentions", "标签提及次数")}>
-                    {item.count}
-                  </small>
-                </li>
-              ))}
-            </ul>
+            <RmpWordCloud tags={insight.tags} locale={locale} seed={key} />
           ) : (
             <p className={styles.empty}>
               {text(locale, "No review tags yet", "暂无评价标签")}
