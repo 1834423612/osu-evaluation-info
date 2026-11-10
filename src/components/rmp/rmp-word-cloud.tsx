@@ -48,6 +48,9 @@ export function RmpWordCloud({
     translated ? active!.words![index] : item.tag,
   );
   const labelsKey = JSON.stringify(labels);
+  const counts = tags.map((tag) => tag.count);
+  const fontSize = (count: number) =>
+    `calc(11px + ${cloudFontSize(count, counts) - 11}px * var(--cloud-scale, 1))`;
 
   useEffect(() => {
     currentKey.current = key;
@@ -222,10 +225,7 @@ export function RmpWordCloud({
             key={item.tag}
             className={styles.word}
             style={{
-              fontSize: cloudFontSize(
-                item.count,
-                tags.map((tag) => tag.count),
-              ),
+              fontSize: fontSize(item.count),
             }}
           >
             {labels[index]}
@@ -234,7 +234,7 @@ export function RmpWordCloud({
       </div>
       <ul
         className={styles.cloud}
-        style={{ height: layout?.height ?? 140 }}
+        style={{ height: layout?.height ?? 120 }}
         aria-label={text(locale, "Student review word cloud", "学生评价词云")}
         aria-busy={!!active?.busy}
       >
@@ -255,10 +255,7 @@ export function RmpWordCloud({
               title={`${item.tag} · ${item.count} ${text(locale, "mentions", "次提及")}`}
               style={{
                 color: CLOUD_COLORS[index % CLOUD_COLORS.length],
-                fontSize: cloudFontSize(
-                  item.count,
-                  tags.map((tag) => tag.count),
-                ),
+                fontSize: fontSize(item.count),
                 left: box?.x,
                 top: box?.y,
                 width: box?.width,

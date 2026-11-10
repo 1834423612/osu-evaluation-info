@@ -30,8 +30,8 @@ export function cloudFontSize(count: number, counts: number[]) {
   const max = Math.max(1, ...counts),
     min = Math.min(...counts);
   return max === min
-    ? 22
-    : 11 + 20 * Math.sqrt(Math.max(0, (count - min) / (max - min)));
+    ? 19
+    : 11 + 16 * Math.sqrt(Math.max(0, (count - min) / (max - min)));
 }
 export function cloudWordAngle(id: string, index: number) {
   if (!index) return 0;
@@ -45,11 +45,11 @@ function dimensions(box: CloudBox) {
     width:
       Math.abs(box.width * Math.cos(radians)) +
       Math.abs(box.height * Math.sin(radians)) +
-      8,
+      6,
     height:
       Math.abs(box.height * Math.cos(radians)) +
       Math.abs(box.width * Math.sin(radians)) +
-      8,
+      6,
   };
 }
 
@@ -59,9 +59,9 @@ export function packWordCloud(boxes: CloudBox[], width: number) {
     return { words: [] as PlacedCloudWord[], height: 0 };
   const sizes = boxes.map(dimensions);
   let height = Math.max(
-    110,
+    96,
     (sizes.reduce((area, box) => area + box.width * box.height, 0) / width) *
-      1.7,
+      1.55,
   );
   for (let attempt = 0; attempt < 12; attempt++, height = height * 1.2 + 12) {
     const placed: { x: number; y: number; width: number; height: number }[] =
@@ -96,7 +96,7 @@ export function packWordCloud(boxes: CloudBox[], width: number) {
     if (placed.length !== boxes.length) continue;
     const top = Math.min(...placed.map((item) => item.y - item.height / 2));
     const bottom = Math.max(...placed.map((item) => item.y + item.height / 2));
-    const usedHeight = Math.max(124, bottom - top + 12);
+    const usedHeight = Math.max(108, bottom - top + 12);
     const shift = (usedHeight - (bottom - top)) / 2 - top;
     return {
       words: boxes.map((box, index) => ({

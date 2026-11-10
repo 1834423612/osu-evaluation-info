@@ -92,6 +92,11 @@
     transform: rotate(360deg);
   }
 }
+@media (max-width: 640px) {
+  .root {
+    --cloud-scale: 0.8;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .cloud,
   .cloud > li {
