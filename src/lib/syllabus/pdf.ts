@@ -71,8 +71,10 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
             ),
         );
         table.headerRows = headers < 0 ? rows.length : headers;
-        table.keepWithHeaderRows = 1;
-        table.dontBreakRows = true;
+        table.keepWithHeaderRows = Number(
+          Number(table.headerRows) > 0 &&
+            Number(table.headerRows) < rows.length,
+        );
       }
       const rule = element.getAttribute("data-syllabus-heading-rule");
       if (!rule) return ret;
@@ -131,9 +133,26 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
     defaultStyle: { font: "Roboto", fontSize: 12, lineHeight: 1.28 },
     pageBreakBefore: (node, container) =>
       Boolean(
-        node.headlineLevel && !container.getFollowingNodesOnPage().length,
+        node.headlineLevel &&
+        !container.getFollowingNodesOnPage().some(
+          (following) =>
+            // The heading stack contains its own text and rule. Count only
+            // later reading content, so a rule cannot strand a title.
+            (following.startPosition?.top ?? 0) >
+              (node.startPosition?.top ?? 0) + 1 &&
+            (following.text ||
+              following.table ||
+              following.image ||
+              following.ul ||
+              following.ol ||
+              following.svg),
+        ),
       ),
-    content: Array.isArray(converted) ? converted : [converted],
+    // html-to-pdfmake's declarations target pdfmake 0.2; the normalized content
+    // above is shared by 0.2 and 0.3, whose TypeScript unions differ.
+    content: (Array.isArray(converted)
+      ? converted
+      : [converted]) as unknown as TDocumentDefinitions["content"],
     footer: (page, count) => ({
       columns: [
         {

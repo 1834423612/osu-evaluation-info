@@ -21,6 +21,9 @@ with pdfplumber.open(sys.argv[1]) as document:
             # pdfmake includes the normal inter-word space in each word annotation.
             assert link["x1"] - max(char["x1"] for char in text) < max(char["size"] for char in text) * 0.5 + 1, (number, "link extends beyond text", link)
     assert any("Buckeye" in font for font in fonts), fonts
+    if "--fixture-reference" in sys.argv:
+        rows = [row for page in document.pages for table in page.extract_tables() for row in table]
+        assert ["Independent work", ""] in rows, "blank table cells must preserve the column structure"
     if "--art-reference" in sys.argv:
         first = document.pages[0]
         assert first.images and 34 <= first.images[0]["top"] <= 44, "opening logo must use the page margin, not extra blank rows"
@@ -29,4 +32,6 @@ with pdfplumber.open(sys.argv[1]) as document:
         assert 17 <= qualifications["top"] - miranda["top"] <= 19, "16px/24px CSS text must keep its 18pt baseline rhythm"
         for page in document.pages:
             assert not page.extract_text().split("OSU · Simple Syllabus")[0].rstrip().endswith("Week Topic"), "table header must stay with a body row"
+            if page.search("Syllabus - Course Schedule"):
+                assert page.search("Introductions"), "section heading must stay with its table and first body row"
     print(json.dumps({"pages": len(document.pages), "links": links, "fonts": sorted(fonts), "letterMarginsAndLinkBounds": "passed"}))

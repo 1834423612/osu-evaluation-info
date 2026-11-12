@@ -136,8 +136,17 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
       // Empty Angular layout placeholders become full text lines in pdfmake.
       // Their browser height is zero; omit them rather than exporting blank rows.
       if (
-        tag !== "br" &&
-        tag !== "img" &&
+        ![
+          "br",
+          "img",
+          "hr",
+          "td",
+          "th",
+          "tr",
+          "thead",
+          "tbody",
+          "tfoot",
+        ].includes(tag) &&
         !source.textContent?.trim() &&
         !source.querySelector("img,table,hr")
       )

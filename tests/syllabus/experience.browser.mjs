@@ -37,6 +37,10 @@ const document = normalizeDocument(
 );
 document.components[0].html +=
   '<p><a href="https://osu.edu/">Official linked resource</a></p>';
+const emptyCellTable =
+  "<table><tr><th>Optional activity</th><th>Notes</th></tr><tr><td>Independent work</td><td></td></tr></table>";
+document.components[2].html += emptyCellTable;
+document.components[2].officialHtml += emptyCellTable;
 const section = {
   id: "15115",
   classNumber: "15115",
