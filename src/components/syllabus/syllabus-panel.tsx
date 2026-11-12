@@ -103,7 +103,7 @@ export default function SyllabusPanel({
             "正在查找本学期大纲…",
           )}
         </p>
-      ) : entries.length ? (
+      ) : (
         <>
           <SyllabusSectionPicker
             course={course}
@@ -114,16 +114,16 @@ export default function SyllabusPanel({
           />
           {chosen ? (
             <SyllabusReader key={chosen.code} entry={chosen} locale={locale} />
-          ) : null}
-        </>
-      ) : (
-        <p className={styles.notice} role="status">
-          {text(
-            locale,
-            "No matching published syllabus was found for this term and these class sections. This does not mean the course has no syllabus; it may be unpublished or not indexed yet.",
-            "未找到与本学期、当前班次匹配的已发布大纲。这不代表课程没有大纲，也可能尚未发布或收录。",
+          ) : (
+            <p className={styles.notice} role="status">
+              {text(
+                locale,
+                "No matching published syllabus was found for this term and these class sections. It may be unpublished or not indexed yet.",
+                "未找到与本学期、当前班次匹配的已发布大纲，可能尚未发布或收录。",
+              )}
+            </p>
           )}
-        </p>
+        </>
       )}
       {course.sectionsPartial ? (
         <p className={styles.caption}>

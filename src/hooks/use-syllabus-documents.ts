@@ -20,16 +20,23 @@ export function useSyllabusDocuments(entries: SyllabusEntry[]) {
   const [state, setState] = useState<{
     key: string;
     values: Record<string, SyllabusResult<SyllabusDocument> | null>;
-  }>({ key: "", values: {} });
+    missing: string[];
+  }>({ key: "", values: {}, missing: [] });
   useEffect(() => {
     const controller = new AbortController();
     void loadSyllabusDocuments(
       JSON.parse(key),
       controller.signal,
-      (code, result) => {
+      (code, result, error) => {
         if (result) savedSyllabiActions.observe(result);
         setState((previous) => ({
           key,
+          missing: [
+            ...(previous.key === key
+              ? previous.missing.filter((id) => id !== code)
+              : []),
+            ...(error === "missing" ? [code] : []),
+          ],
           values: {
             ...(previous.key === key ? previous.values : {}),
             [code]: result,
@@ -39,7 +46,11 @@ export function useSyllabusDocuments(entries: SyllabusEntry[]) {
     );
     return () => controller.abort();
   }, [key]);
-  return state.key === key
-    ? state.values
-    : (empty as Record<string, SyllabusResult<SyllabusDocument> | null>);
+  return {
+    documents:
+      state.key === key
+        ? state.values
+        : (empty as Record<string, SyllabusResult<SyllabusDocument> | null>),
+    missing: new Set(state.key === key ? state.missing : []),
+  };
 }

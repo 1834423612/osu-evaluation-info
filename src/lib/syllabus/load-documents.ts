@@ -1,5 +1,6 @@
 import { syllabusClient } from "./client.ts";
 import { documentMatchesEntry } from "./saved.ts";
+import { SyllabusError } from "./normalize.ts";
 import type {
   SyllabusDocument,
   SyllabusEntry,
@@ -16,6 +17,7 @@ export async function loadSyllabusDocuments(
   onResult: (
     code: string,
     result: SyllabusResult<SyllabusDocument> | null,
+    error?: SyllabusError["kind"],
   ) => void,
   fresh = false,
 ) {
@@ -32,8 +34,13 @@ export async function loadSyllabusDocuments(
         if (!documentMatchesEntry(result.data, entry as SyllabusEntry))
           throw new Error("Syllabus identity mismatch");
         if (!signal.aborted) onResult(entry.code, result);
-      } catch {
-        if (!signal.aborted) onResult(entry.code, null);
+      } catch (error) {
+        if (!signal.aborted)
+          onResult(
+            entry.code,
+            null,
+            error instanceof SyllabusError ? error.kind : "unavailable",
+          );
       }
     }
   }

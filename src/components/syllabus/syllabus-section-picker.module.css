@@ -1,5 +1,9 @@
 .picker {
   margin: 8px 0 14px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--subtle-surface);
 }
 .eyebrow {
   display: flex;
@@ -20,6 +24,8 @@
   padding: 2px;
 }
 .card {
+  position: relative;
+  isolation: isolate;
   min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--line);
@@ -47,6 +53,98 @@
   font-size: 10px;
   text-align: left;
   cursor: pointer;
+}
+.selection:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 7px;
+}
+.card :is(button:not([role="radio"]), a) {
+  position: relative;
+  z-index: 2;
+}
+.card:has(.selection:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.card[data-available="false"] {
+  border-color: #d5c69f;
+  background: repeating-linear-gradient(
+    135deg,
+    #fffdf7,
+    #fffdf7 12px,
+    #f8f4e8 12px,
+    #f8f4e8 13px
+  );
+}
+.card[data-filter-match="false"][data-available="true"] {
+  border-style: dashed;
+  opacity: 0.68;
+}
+.unpublished {
+  color: #86600e;
+  font-size: 9px;
+}
+.filtered {
+  color: var(--muted);
+  font-size: 9px;
+}
+.filterToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--secondary-foreground);
+  font-size: 10px;
+  cursor: pointer;
+}
+.filterToggle[data-active="true"] {
+  border-color: var(--accent-border);
+  color: var(--primary);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.filters label {
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.filters select {
+  max-width: 145px;
+  min-height: 29px;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11px;
+}
+.filters > button {
+  min-height: 29px;
+  padding: 3px 7px;
+  color: var(--primary);
+  font-size: 10px;
+  cursor: pointer;
+}
+.filters p {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
 }
 .choice {
   display: grid;
@@ -102,6 +200,10 @@
 }
 .iconButton[aria-pressed="true"] {
   color: var(--primary);
+}
+.iconButton:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 .iconButton:focus-visible,
 .selection:focus-visible {
