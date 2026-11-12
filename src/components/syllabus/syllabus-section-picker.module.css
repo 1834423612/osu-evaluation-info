@@ -1,128 +1,197 @@
 .picker {
-  margin: 10px 0 18px;
+  margin: 8px 0 14px;
 }
 .eyebrow {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 .cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  max-height: 284px;
-  padding: 3px;
-  margin: -3px;
+  gap: 7px;
+  max-height: 300px;
   overflow-y: auto;
   overscroll-behavior-y: auto;
   scrollbar-width: thin;
+  padding: 2px;
 }
 .card {
-  display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 7px;
   background: var(--surface);
-  color: var(--ink);
-  text-align: left;
-  transition:
-    border-color var(--motion-fast),
-    background var(--motion-fast);
 }
-.card:hover {
+.card[data-selected="true"] {
   border-color: var(--accent-border);
   background: var(--subtle-surface);
-}
-.card[data-state="checked"] {
-  border-color: var(--accent-border);
-  background: linear-gradient(135deg, #fff, var(--accent-soft));
-  box-shadow: inset 3px 0 0 var(--primary);
-}
-.card:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 1px;
 }
 .cardTop {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
+  gap: 4px;
 }
-.avatars {
-  display: flex;
-  flex-shrink: 0;
-  padding-right: 3px;
-}
-.avatars > span + span {
-  margin-left: -11px;
-}
-.names {
+.selection {
   display: flex;
   flex: 1;
-  flex-wrap: wrap;
-  gap: 2px 10px;
   min-width: 0;
-  font-size: 13px;
-  line-height: 1.55;
-  font-weight: 600;
-  overflow-wrap: anywhere;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 28px;
+  color: var(--secondary-foreground);
+  font-size: 10px;
+  text-align: left;
+  cursor: pointer;
 }
 .choice {
   display: grid;
-  flex-shrink: 0;
+  flex: 0 0 14px;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface);
-  color: #fff;
+  color: var(--primary);
 }
-.card[data-state="checked"] .choice {
+.selection[data-state="checked"] .choice {
   border-color: var(--primary);
-  background: var(--primary);
-}
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px 8px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
 }
 .number {
-  padding: 2px 6px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.updated {
+  padding: 1px 5px;
   border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 600;
+}
+.updated::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.iconButton {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.iconButton:hover {
+  background: var(--secondary);
+  color: var(--ink);
+}
+.iconButton[aria-pressed="true"] {
+  color: var(--primary);
+}
+.iconButton:focus-visible,
+.selection:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.teachers {
+  display: grid;
+  gap: 5px;
+  margin-block: 5px;
+}
+.teacher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.teacherInfo {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.teacherName {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.savedTeacher {
+  padding: 1px 4px;
+  border-radius: 3px;
   background: var(--secondary);
   color: var(--secondary-foreground);
-  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+  font-weight: 400;
+}
+.tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.tags > span {
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--secondary-foreground);
+}
+.tags small {
+  font-size: 9px;
 }
 .schedule {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.timestamp {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.muted {
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.55;
 }
-.schedule svg {
-  flex-shrink: 0;
+@media (pointer: coarse) {
+  .iconButton {
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .selection {
+    min-height: 36px;
+  }
 }
 @media (max-width: 600px) {
   .cards {
     grid-template-columns: minmax(0, 1fr);
-    max-height: 244px;
-  }
-  .card {
-    padding: 12px;
+    max-height: 282px;
   }
 }

@@ -106,6 +106,7 @@ export default function SyllabusPanel({
       ) : entries.length ? (
         <>
           <SyllabusSectionPicker
+            course={course}
             items={choices}
             value={chosen?.code ?? ""}
             onChange={setSelected}
