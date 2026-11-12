@@ -155,6 +155,39 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
         style.backgroundColor = computed.backgroundColor;
       style.marginTop = `${parseFloat(computed.marginTop) + parseFloat(computed.paddingTop)}px`;
       style.marginBottom = `${parseFloat(computed.marginBottom) + parseFloat(computed.paddingBottom)}px`;
+      style.marginLeft = `${parseFloat(computed.marginLeft) + parseFloat(computed.paddingLeft)}px`;
+      style.marginRight = `${parseFloat(computed.marginRight) + parseFloat(computed.paddingRight)}px`;
+      // Preserve real rows of columns instead of flattening the official flex layout.
+      const children = [...source.children].filter(
+        (child) => (child as HTMLElement).getBoundingClientRect().width > 0,
+      );
+      if (
+        target.tagName === "DIV" &&
+        computed.display === "flex" &&
+        computed.flexDirection === "row" &&
+        children.length > 1 &&
+        children.every(
+          (child) =>
+            Math.abs(
+              child.getBoundingClientRect().top -
+                children[0].getBoundingClientRect().top,
+            ) < 1,
+        )
+      )
+        target.setAttribute("data-pdfmake-type", "columns");
+      const parent = source.parentElement;
+      if (
+        parent &&
+        view!.getComputedStyle(parent).display === "flex" &&
+        parent.children.length > 1
+      ) {
+        target.setAttribute(
+          "data-pdfmake",
+          JSON.stringify({
+            width: `${(source.getBoundingClientRect().width / parent.getBoundingClientRect().width) * 100}%`,
+          }),
+        );
+      }
       if (tag === "a")
         target.setAttribute("href", (source as HTMLAnchorElement).href);
       if (/^h[1-3]$/.test(tag))

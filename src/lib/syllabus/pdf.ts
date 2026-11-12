@@ -44,23 +44,28 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
       paddingBottom: () => 3.75,
     },
   });
-  const converted = htmlToPdfmake(layout.html, {
+  const conversionOptions = {
     window: window as unknown as NonNullable<
       Parameters<typeof htmlToPdfmake>[1]
     >["window"],
     tableAutoSize: true,
+    collapseMargins: true,
     defaultStyles: {
       h1: { margin: 0 },
       h2: { margin: 0 },
       h3: { margin: 0 },
       p: { margin: 0 },
       table: { margin: 0 },
-      a: { color: "#ba0c2f", decoration: [] },
+      // The converter appends decorations; [] becomes a nested empty decoration
+      // that pdfmake rejects on documents containing links.
+      a: { color: "#ba0c2f", decoration: undefined },
     },
-  });
+  };
+  const converted = htmlToPdfmake(layout.html, conversionOptions);
   const definition: TDocumentDefinitions = {
     pageSize: "LETTER",
-    pageMargins: [18, 18, 18, 36],
+    // 48 CSS px at 96 dpi = 36 PDF points: matches the official .doc container.
+    pageMargins: [36, 36, 36, 36],
     info: {
       title: `${document.entry.termName} ${document.entry.title}`,
       subject: document.entry.subtitle,
@@ -83,7 +88,7 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
       font: "Roboto",
       fontSize: 8,
       color: "#777777",
-      margin: [18, 12, 18, 0],
+      margin: [36, 12, 36, 0],
     }),
   };
   return {
