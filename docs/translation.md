@@ -27,6 +27,12 @@ settings control; failed or automatic translations do not advance it. If the
 translated text pushes that control off a phone's screen, the guide gently
 scrolls it into view. The settings menu briefly explains automatic translation,
 bilingual versus in-place display, and model selection using the real controls.
+The same settings and guide also expose **Translate word clouds by default**.
+It is an independent opt-in stored as
+`course-atlas:translation-word-cloud-auto:v1`. Missing, invalid, and legacy
+profiles default to off, even when text auto-translation is enabled. Only an
+explicit enable translates visible word clouds automatically. Manual cloud
+translation remains available and is not hidden when the preference changes.
 
 The first appearance waits for initial scrolling to settle. Once visible, the
 card stays mounted and follows the same control; when that control leaves the
