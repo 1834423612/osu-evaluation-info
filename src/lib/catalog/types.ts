@@ -60,6 +60,7 @@ export type CatalogAvailability = {
   fetchedAt: string | null;
 };
 export type CatalogCourse = {
+  searchMatch?: import("../search/types").SearchEvidence;
   availability?: CatalogAvailability;
   id: string;
   courseId?: string;
@@ -91,6 +92,11 @@ export type CatalogFacet = {
 export type CatalogTerm = { code: string; label: string };
 export type CatalogResponse = {
   searchInfo?: {
+    engine?: string;
+    corrections?: import("../search/types").SearchCorrection[];
+    relaxed?: boolean;
+    indexCourses?: number;
+    fallbackReason?: "unavailable" | "filter";
     query: string;
     kind: "course" | "number" | "subject" | "keyword";
     interpretedQuery?: string;
@@ -114,7 +120,7 @@ export type CatalogResponse = {
   filters: CatalogFacet[];
   terms: CatalogTerm[];
   source: string;
-  sourceMode?: "official" | "mirror";
+  sourceMode?: "official" | "mirror" | "index";
   snapshotAt?: string;
   fetchedAt: string;
   evaluationStatus: "available" | "unavailable" | "partial";
