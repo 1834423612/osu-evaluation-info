@@ -1,4 +1,5 @@
 "use client";
+import { SceneMascot } from "@/components/brand/scene-mascot";
 
 import { debugFetch, debugServiceControlled } from "@/lib/debug/services";
 
@@ -637,6 +638,9 @@ export function InstructorDirectoryIdentity({
                     : "Identity check"}
             </strong>
           </div>
+          {!person && !loading && effectiveResult?.status === "available" ? (
+            <SceneMascot scene="no-results" size={44} />
+          ) : null}
           {person ? (
             <div className={styles.details}>
               {detailRows(person, roles, props.locale).map((row) => (

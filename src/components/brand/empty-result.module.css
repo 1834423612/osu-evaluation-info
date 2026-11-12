@@ -1,0 +1,20 @@
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.empty > :first-child {
+  flex-shrink: 0;
+}
+.empty > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.empty p {
+  margin: 3px 0;
+}

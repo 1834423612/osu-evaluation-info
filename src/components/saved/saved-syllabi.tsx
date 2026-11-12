@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { EmptyResult } from "@/components/brand/empty-result";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -197,13 +198,13 @@ export function SavedSyllabi({ locale }: { locale: Locale }) {
         ))}
       </div>
       {!items.length ? (
-        <p className={styles.status}>
+        <EmptyResult>
           {text(
             locale,
             "No saved syllabi. Save one from a course's Syllabus tab.",
             "暂无收藏大纲，可在课程的「教学大纲」中收藏。",
           )}
-        </p>
+        </EmptyResult>
       ) : null}
       <Sheet
         open={Boolean(chosen)}

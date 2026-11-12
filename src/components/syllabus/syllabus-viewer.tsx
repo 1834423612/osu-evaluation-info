@@ -25,6 +25,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { SceneMascot } from "@/components/brand/scene-mascot";
 import {
   extractSyllabusSections,
   type SyllabusSection,
@@ -405,7 +406,7 @@ export const SyllabusViewer = forwardRef<
         <div className={styles.canvas}>
           {!visible.length ? (
             <div className={styles.empty} role="status">
-              <Search size={25} />
+              <SceneMascot scene="no-results" size={72} />
               <p>{text(locale, "No matching sections", "没有匹配的章节")}</p>
               <button type="button" onClick={() => setQuery("")}>
                 {text(locale, "Clear search", "清空搜索")}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EmptyResult } from "@/components/brand/empty-result";
 import { ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CatalogCourse } from "@/lib/catalog/types";
@@ -115,13 +116,13 @@ export default function SyllabusPanel({
           {chosen ? (
             <SyllabusReader key={chosen.code} entry={chosen} locale={locale} />
           ) : (
-            <p className={styles.notice} role="status">
+            <EmptyResult>
               {text(
                 locale,
                 "No matching published syllabus was found for this term and these class sections. It may be unpublished or not indexed yet.",
                 "未找到与本学期、当前班次匹配的已发布大纲，可能尚未发布或收录。",
               )}
-            </p>
+            </EmptyResult>
           )}
         </>
       )}

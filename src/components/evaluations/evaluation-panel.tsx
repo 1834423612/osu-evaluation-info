@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { SceneMascot } from "@/components/brand/scene-mascot";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -607,7 +608,7 @@ export function EvaluationPanel({
       <p className={styles.courseTotal}>{labels.courseTotal}</p>
       {!primary ? (
         <div className={styles.emptyState}>
-          <CircleHelp size={22} aria-hidden="true" />
+          <SceneMascot scene="no-results" size={56} />
           <div>
             <strong>{unavailable ? labels.unavailable : labels.noData}</strong>
             <p>{labels.noDataDetail}</p>

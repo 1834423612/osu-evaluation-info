@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { EmptyResult } from "@/components/brand/empty-result";
 import { ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataSourceBadge } from "@/components/ui/data-source-badge";
@@ -63,25 +64,27 @@ export function SyllabusReader({
   if (error)
     return (
       <div className={styles.notice} role="status">
-        <p>
-          {error === "restricted"
-            ? text(
-                locale,
-                "The official service declined this document request. Check access on the official page.",
-                "官方拒绝了这份文档请求，请到官网检查访问权限。",
-              )
-            : error === "missing"
+        <EmptyResult size={40}>
+          <p>
+            {error === "restricted"
               ? text(
                   locale,
-                  "This syllabus is not published or is no longer available.",
-                  "这份大纲目前未发布，或已不再提供。",
+                  "The official service declined this document request. Check access on the official page.",
+                  "官方拒绝了这份文档请求，请到官网检查访问权限。",
                 )
-              : text(
-                  locale,
-                  "The syllabus could not be loaded and no usable backup was found.",
-                  "大纲暂时无法获取，且未找到可用备份。",
-                )}
-        </p>
+              : error === "missing"
+                ? text(
+                    locale,
+                    "This syllabus is not published or is no longer available.",
+                    "这份大纲目前未发布，或已不再提供。",
+                  )
+                : text(
+                    locale,
+                    "The syllabus could not be loaded and no usable backup was found.",
+                    "大纲暂时无法获取，且未找到可用备份。",
+                  )}
+          </p>
+        </EmptyResult>
         <div className={styles.actions}>
           <Button
             variant="outline"
@@ -192,13 +195,13 @@ export function SyllabusReader({
           />
         </>
       ) : (
-        <p className={styles.notice}>
+        <EmptyResult>
           {text(
             locale,
             "No readable sections were returned. Check the files on the official page.",
             "官方未返回可读分区，请到官网检查上传文件。",
           )}
-        </p>
+        </EmptyResult>
       )}
     </div>
   );

@@ -16,7 +16,8 @@ import { syllabusHasUpdate } from "@/lib/syllabus/saved";
 import { SavedSyllabi } from "./saved-syllabi";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
-import { BrandMascot } from "@/components/brand/brand-mascot";
+import { SceneMascot } from "@/components/brand/scene-mascot";
+import { EmptyResult } from "@/components/brand/empty-result";
 import { CourseCard } from "@/components/catalog/course-card";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
 import { MeetingStrip } from "@/components/catalog/meeting-strip";
@@ -258,9 +259,9 @@ export function SavedCourses() {
                   ))}
                 </div>
               ) : (
-                <p className={styles.emptyCategory}>
+                <EmptyResult>
                   {text(locale, "No saved courses.", "暂无收藏课程。")}
-                </p>
+                </EmptyResult>
               )}
             </TabsContent>
             <TabsContent value="sections" className={styles.tabContent}>
@@ -362,9 +363,9 @@ export function SavedCourses() {
                   ))}
                 </div>
               ) : (
-                <p className={styles.emptyCategory}>
+                <EmptyResult>
                   {text(locale, "No saved sections.", "暂无收藏班次。")}
-                </p>
+                </EmptyResult>
               )}
             </TabsContent>
             <TabsContent value="instructors" className={styles.tabContent}>
@@ -434,15 +435,15 @@ export function SavedCourses() {
                   ))}
                 </div>
               ) : (
-                <p className={styles.emptyCategory}>
+                <EmptyResult>
                   {text(locale, "No saved instructors.", "暂无收藏教师。")}
-                </p>
+                </EmptyResult>
               )}
             </TabsContent>
           </Tabs>
         ) : (
           <div className="empty-results">
-            <BrandMascot expression="salute" size={136} />
+            <SceneMascot scene="no-results" size={136} />
             <h2>
               {text(locale, "Keep the courses you like", "收藏感兴趣的课程")}
             </h2>

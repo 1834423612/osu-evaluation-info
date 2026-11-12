@@ -1,4 +1,5 @@
 "use client";
+import { EmptyResult } from "@/components/brand/empty-result";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
@@ -745,6 +746,15 @@ export default function SectionsPanel({
           </button>
         </div>
       </div>
+      {course.sections.length && matchCount === 0 ? (
+        <EmptyResult size={40}>
+          {text(
+            locale,
+            "No sections match the filters. All sections remain below.",
+            "没有符合筛选的班次，全部班次仍保留在下方。",
+          )}
+        </EmptyResult>
+      ) : null}
       {course.sections.length ? (
         <ul className={styles.list} ref={listRef}>
           {rankedSections.map(({ section, matches }) => (
@@ -779,11 +789,11 @@ export default function SectionsPanel({
           ))}
         </ul>
       ) : (
-        <div className={styles.empty}>
+        <EmptyResult>
           <strong>
             {text(locale, "No sections have been posted", "暂无已公布班次")}
           </strong>
-        </div>
+        </EmptyResult>
       )}
       {focusAnnouncement ? (
         <p

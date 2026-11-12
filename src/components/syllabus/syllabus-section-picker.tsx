@@ -1,5 +1,6 @@
 "use client";
 import { useId, useState } from "react";
+import { EmptyResult } from "@/components/brand/empty-result";
 import {
   Bookmark,
   Check,
@@ -186,6 +187,15 @@ export function SyllabusSectionPicker({
             )}
           </p>
         </div>
+      ) : null}
+      {active && !rows.some((row) => row.available && row.matches) ? (
+        <EmptyResult size={40}>
+          {text(
+            locale,
+            "No matching published syllabi. All sections are still listed below.",
+            "没有符合条件的已发布大纲，所有班次仍保留在下方。",
+          )}
+        </EmptyResult>
       ) : null}
       <RadioGroup.Root
         className={styles.cards}
