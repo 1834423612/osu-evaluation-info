@@ -106,9 +106,23 @@ export function RmpWordCloud({
   }, [labelsKey, sourceKey, seed]);
 
   async function translate(manual = true) {
-    if (pending.current) return;
+    if (pending.current) {
+      if (
+        manual &&
+        state?.key === key &&
+        state.automatic &&
+        !automaticRef.current
+      ) {
+        generation.current++;
+        pending.current = false;
+      } else return;
+    }
     if (active?.words) {
-      setState({ ...active, visible: !active.visible });
+      if (!manual) {
+        if (!active.visible) setState({ ...active, visible: true });
+        return;
+      }
+      setState({ ...active, visible: !active.visible, automatic: false });
       return;
     }
     pending.current = true;
