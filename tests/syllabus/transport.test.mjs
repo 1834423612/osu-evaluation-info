@@ -13,6 +13,31 @@ import {
   term,
 } from "./fixtures.mjs";
 
+test("explicit update checks replace the document cache without replaying stale versions", async () => {
+  let calls = 0;
+  const client = createSyllabusClient(async () => {
+    calls++;
+    return Response.json(
+      documentFixture({ modified: `2026-11-01T10:0${calls}:00Z` }),
+    );
+  });
+  const first = await client.document("example123");
+  assert.equal(
+    (await client.document("example123")).data.modifiedAt,
+    first.data.modifiedAt,
+  );
+  assert.equal(calls, 1);
+  const updated = await client.document("example123", undefined, {
+    fresh: true,
+  });
+  assert.notEqual(updated.data.modifiedAt, first.data.modifiedAt);
+  assert.equal(calls, 2);
+  assert.equal(
+    (await client.document("example123")).data.modifiedAt,
+    updated.data.modifiedAt,
+  );
+});
+
 test("reads official data in browser with no credentials and a fixed term UUID", async () => {
   const seen = [];
   const client = createSyllabusClient(async (url, options) => {
