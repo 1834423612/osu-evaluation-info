@@ -1,7 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import {
   fetchCatalogFacets,
   searchCatalogWithRelated,
@@ -32,8 +31,8 @@ import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { brand } from "@/lib/brand";
 import brandStyles from "@/components/brand/brand-identity.module.css";
-import relatedStyles from "./related-search.module.css";
 import { FilterPanel } from "./filter-panel";
+import { SearchContext } from "./search-context";
 import { CourseCard } from "./course-card";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
 import { Button } from "@/components/ui/button";
@@ -57,6 +56,19 @@ import {
 
 const PAGE_HISTORY_PARAM = "pageHistory";
 const MAX_SAVED_PAGE_CURSORS = 20;
+
+function catalogParams(value: string) {
+  const params = new URLSearchParams(value);
+  for (const key of [
+    "course",
+    "detailTab",
+    "ratingSource",
+    "focusSection",
+    "relatedFrom",
+  ])
+    params.delete(key);
+  return params.toString();
+}
 
 function restorePageState(history: string | null, cursor: string | null) {
   if (history) {
@@ -98,15 +110,7 @@ function restorePageState(history: string | null, cursor: string | null) {
 export function CourseExplorer() {
   const searchParams = useSearchParams();
   const query = searchParams.toString();
-  const catalogQuery = (() => {
-    const params = new URLSearchParams(query);
-    params.delete("course");
-    params.delete("detailTab");
-    params.delete("ratingSource");
-    params.delete("focusSection");
-    params.delete("relatedFrom");
-    return params.toString();
-  })();
+  const catalogQuery = catalogParams(query);
   const {
     locale,
     saved,
@@ -130,7 +134,19 @@ export function CourseExplorer() {
   const generation = useRef(0);
   const requestController = useRef<AbortController | null>(null);
   const skipQueryFetch = useRef<string | null>(null);
+  const renderedQuery = useRef<string | null>(null);
   const facetTerm = searchParams.get("term") ?? result?.terms[0]?.code ?? "";
+
+  useEffect(() => {
+    // A fast Back can precede Next's native-history state update. The URL then
+    // equals the previous render although the manually loaded page has changed.
+    const restore = () => {
+      if (renderedQuery.current !== catalogParams(window.location.search))
+        setRetry((value) => value + 1);
+    };
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, []);
 
   useEffect(() => {
     if (!facetTerm) return;
@@ -148,6 +164,8 @@ export function CourseExplorer() {
     params.delete("cursor");
     params.delete(PAGE_HISTORY_PARAM);
     if (key === "q") params.delete("relatedFrom");
+    if (key === "q" && !value && params.get("sort") === "relevance")
+      params.delete("sort");
     if (value) params.set(key, value);
     else params.delete(key);
     if (params.toString() === query) {
@@ -162,6 +180,17 @@ export function CourseExplorer() {
     if (searchParams.get("term")) params.set("term", searchParams.get("term")!);
     window.history.pushState(null, "", `/?${params}`);
   }
+  function chooseSearch(query: string, clearSubject = false) {
+    if (!clearSubject) {
+      updateParam("q", query);
+      return;
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    for (const key of ["subject", "cursor", PAGE_HISTORY_PARAM, "relatedFrom"])
+      params.delete(key);
+    params.set("q", query);
+    window.history.pushState(null, "", `/?${params}`);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -171,6 +200,7 @@ export function CourseExplorer() {
       requestController.current = controller;
       return () => controller.abort();
     }
+    skipQueryFetch.current = null;
     requestController.current?.abort();
     requestController.current = controller;
     const current = ++generation.current;
@@ -192,18 +222,9 @@ export function CourseExplorer() {
           signal: controller.signal,
         });
         if (current === generation.current) {
+          renderedQuery.current = catalogQuery;
           setResult(data);
           setCourses(data.courses);
-          if (data.relatedMatch) {
-            const canonical = new URLSearchParams(catalogQuery);
-            canonical.set("q", data.relatedMatch.matchedQuery);
-            canonical.delete("cursor");
-            canonical.delete(PAGE_HISTORY_PARAM);
-            skipQueryFetch.current = canonical.toString();
-            canonical.set("relatedFrom", data.relatedMatch.query);
-            setLoading(false);
-            window.history.replaceState(null, "", `/?${canonical}`);
-          }
         }
       } catch {
         if (!controller.signal.aborted) {
@@ -247,11 +268,9 @@ export function CourseExplorer() {
           : (pageCursors[targetIndex - historyOffset] ?? null);
       if (targetCursor) params.set("cursor", targetCursor);
       try {
-        const response = await fetchCatalogResource(`/api/catalog?${params}`, {
+        const data = await searchCatalogWithRelated(`/api/catalog?${params}`, {
           signal: requestController.current?.signal,
         });
-        if (!response.ok) throw new Error("Unavailable");
-        const data: CatalogResponse = await response.json();
         if (current !== generation.current) return;
         setResult(data);
         setCourses(data.courses);
@@ -300,6 +319,7 @@ export function CourseExplorer() {
             else urlParams.delete(PAGE_HISTORY_PARAM);
           }
           const nextQuery = urlParams.toString();
+          renderedQuery.current = catalogParams(nextQuery);
           if (nextQuery !== query) {
             const fetchParams = new URLSearchParams(nextQuery);
             fetchParams.delete("course");
@@ -359,7 +379,6 @@ export function CourseExplorer() {
   const selectedTerm = searchParams.get("term") ?? result?.terms[0]?.code ?? "";
   const count = result?.matchedSections ?? result?.totalItems;
   const selectedCampus = searchParams.get("campus") ?? "col";
-  const relatedFrom = searchParams.get("relatedFrom")?.slice(0, 200);
   const campusLabel =
     searchParams.get("campus") === "all"
       ? text(locale, "All campuses", "所有校区")
@@ -473,17 +492,23 @@ export function CourseExplorer() {
                   </span>
                 </span>
                 <span className="count-divider" />
-                <span className="result-count">
-                  <strong>
-                    {loading ? "…" : (count?.toLocaleString() ?? "—")}
-                    {!loading &&
-                    result?.capped &&
-                    result.matchedSections === null
-                      ? "+"
-                      : ""}
-                  </strong>
-                  <span>{text(locale, "class results", "条班次结果")}</span>
-                </span>
+                {result?.searchInfo && !result.searchInfo.complete ? (
+                  <span className="results-campus">
+                    {text(locale, "Matches on this page", "展示本页匹配")}
+                  </span>
+                ) : (
+                  <span className="result-count">
+                    <strong>
+                      {loading ? "…" : (count?.toLocaleString() ?? "—")}
+                      {!loading &&
+                      result?.capped &&
+                      result.matchedSections === null
+                        ? "+"
+                        : ""}
+                    </strong>
+                    <span>{text(locale, "class results", "条班次结果")}</span>
+                  </span>
+                )}
                 <span className="count-divider" />
                 <span className="results-campus">{campusLabel}</span>
               </div>
@@ -525,13 +550,24 @@ export function CourseExplorer() {
                   {text(locale, "Sort results", "结果排序")}
                 </label>
                 <Select
-                  value={searchParams.get("sort") ?? "subject"}
+                  value={
+                    searchParams.get("sort") === "relevance" &&
+                    !searchParams.get("q")
+                      ? "subject"
+                      : (searchParams.get("sort") ??
+                        (searchParams.get("q") ? "relevance" : "subject"))
+                  }
                   onValueChange={(value) => updateParam("sort", value)}
                 >
                   <SelectTrigger id="sort-select" className="sort-select">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    {searchParams.get("q") ? (
+                      <SelectItem value="relevance">
+                        {text(locale, "Most relevant", "相关度优先")}
+                      </SelectItem>
+                    ) : null}
                     <SelectItem value="subject">
                       {text(locale, "Subject A–Z", "学科 A–Z")}
                     </SelectItem>
@@ -575,27 +611,13 @@ export function CourseExplorer() {
                 </button>
               </div>
             ) : null}
-            {!loading &&
-            !error &&
-            courses.length > 0 &&
-            relatedFrom &&
-            relatedFrom !== searchParams.get("q") ? (
-              <div
-                className={relatedStyles.notice}
-                role="status"
-                data-related-search
-              >
-                <Search size={16} aria-hidden="true" />
-                <p>
-                  {text(
-                    locale,
-                    `No exact match for “${relatedFrom}”. Showing possibly related results for`,
-                    `未找到与“${relatedFrom}”精确匹配的课程，以下是可能相关的`,
-                  )}{" "}
-                  <strong>{searchParams.get("q")}</strong>
-                  {locale === "zh" ? " 课程。" : "."}
-                </p>
-              </div>
+            {!loading && !error && result?.searchInfo ? (
+              <SearchContext
+                result={result}
+                locale={locale}
+                onChoose={chooseSearch}
+                onClearSubject={() => updateParam("subject", "")}
+              />
             ) : null}
             <div className="results-context">
               <span className="offerings-label">
@@ -718,8 +740,12 @@ export function CourseExplorer() {
                 <p>
                   {text(
                     locale,
-                    "Try a different course name, or broaden the campus and filter choices.",
-                    "换个课程名称试试，或放宽校区与筛选条件。",
+                    result?.hasMore && result.searchInfo
+                      ? "No close matches in this group. Continue to the next group or refine your query."
+                      : "No matching offering under this term and these filters. Try the suggestions, another term, or broader filters.",
+                    result?.hasMore && result.searchInfo
+                      ? "本组暂未找到相关课程，可继续查找下一组，或调整搜索词。"
+                      : "当前学期与筛选下未找到匹配开课信息，可尝试上方建议、其他学期或放宽筛选。",
                   )}
                 </p>
                 <Button variant="outline" onClick={resetFilters}>
@@ -758,7 +784,9 @@ export function CourseExplorer() {
                 </Button>
               </div>
             ) : null}
-            {!loading && result && courses.length ? (
+            {!loading &&
+            result &&
+            (courses.length > 0 || result.hasMore || pageIndex > 0) ? (
               <nav
                 className="course-pagination"
                 aria-label={text(locale, "Course result pages", "课程结果分页")}

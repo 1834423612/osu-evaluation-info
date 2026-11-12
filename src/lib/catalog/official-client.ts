@@ -9,6 +9,8 @@ import type {
 } from "./types";
 import { parseExactCourseQuery } from "./exact-search.ts";
 import { feesForCampus, isFeeAttribute } from "./fees.ts";
+import { searchRankedCatalog } from "./ranked-search.ts";
+import { editDistance, normalizeSearchText } from "./search-query.ts";
 
 const dayNames = [
   "monday",
@@ -316,20 +318,26 @@ export function createOfficialCatalogClient(
 
   async function searchOfficialCatalog(
     input: CatalogSearch = {},
+    raw = false,
   ): Promise<CatalogResponse> {
     const terms = await getSearchableTerms();
     const term = input.term || terms[0].code;
-    const query = input.q?.trim().slice(0, 200) ?? "";
+    const query = normalizeSearchText(input.q ?? "");
     const subject = input.subject;
     const embeddedQuery = parseExactCourseQuery(query);
     const exactQuery = embeddedQuery ?? parseExactCourseQuery(query, subject);
-    if (exactQuery) {
+    if (exactQuery && !raw) {
       const conflicts =
         embeddedQuery &&
         subject &&
         embeddedQuery.subject !== subject.toUpperCase();
       const exact = conflicts
-        ? { courses: [], complete: true, fetchedAt: new Date().toISOString() }
+        ? {
+            courses: [],
+            alternatives: [],
+            complete: true,
+            fetchedAt: new Date().toISOString(),
+          }
         : await getOfficialCourse({
             subject: exactQuery.subject,
             catalog: exactQuery.catalogNumber,
@@ -358,8 +366,26 @@ export function createOfficialCatalogClient(
         sourceMode: "official",
         fetchedAt: exact.fetchedAt || new Date().toISOString(),
         evaluationStatus: "unavailable",
+        searchInfo: {
+          query,
+          kind: "course",
+          complete: exact.complete,
+          suggestions: courses.length
+            ? []
+            : exact.alternatives.map((course) => ({
+                query: `${course.subject} ${course.catalogNumber}`,
+                label: `${course.subject} ${course.catalogNumber} · ${course.title}`,
+                kind: "course",
+              })),
+        },
       };
     }
+    if (query && !raw)
+      return searchRankedCatalog(
+        input,
+        (next) => searchOfficialCatalog(next, true),
+        mergeCatalogCourse,
+      );
     const campus =
       input.campus?.toLowerCase() === "all"
         ? ""
@@ -381,7 +407,9 @@ export function createOfficialCatalogClient(
     ) {
       throw new CatalogInputError("Invalid course pagination cursor.");
     }
-    const limit = Math.max(1, Math.min(24, Math.floor(input.limit ?? 12)));
+    const limit = raw
+      ? 200
+      : Math.max(1, Math.min(24, Math.floor(input.limit ?? 12)));
     const params = new URLSearchParams({
       q: query,
       client: "class-search-ui",
@@ -482,6 +510,7 @@ export function createOfficialCatalogClient(
         params.set(key, input.filters[key].slice(0, 200));
     const startedAt = Date.now();
     const grouped = new Map<string, CatalogCourse>();
+    const alternatives = new Map<string, CatalogCourse>();
     let fetchedAt = "";
     let complete = false;
     // Bound expansion work even for unusually large independent-study subjects.
@@ -498,6 +527,24 @@ export function createOfficialCatalogClient(
       fetchedAt = fetchedTimes.get(data) ?? new Date().toISOString();
       for (const item of list(data.courses)) {
         const raw = object(item.course);
+        const other = str(raw.catalogNumber).toUpperCase();
+        if (
+          str(raw.subject).toUpperCase() === input.subject.toUpperCase() &&
+          other !== input.catalog.toUpperCase() &&
+          (other.startsWith(input.catalog.toUpperCase()) ||
+            editDistance(
+              other.replace(/[A-Z].*$/, "").split(".")[0],
+              input.catalog.toUpperCase(),
+              1,
+            ) <= 1)
+        ) {
+          const candidate = normalizeOfficialCourse(item, term);
+          if (alternatives.size < 6)
+            alternatives.set(
+              `${candidate.subject}:${candidate.catalogNumber}`,
+              candidate,
+            );
+        }
         if (
           str(raw.subject).toUpperCase() !== input.subject.toUpperCase() ||
           str(raw.catalogNumber).toUpperCase() !== input.catalog.toUpperCase()
@@ -532,6 +579,7 @@ export function createOfficialCatalogClient(
       // Detail requests select one campus; exact all-campus searches use the full list.
       course: courses[0] ?? null,
       courses,
+      alternatives: [...alternatives.values()],
       fetchedAt,
       complete,
       source: "https://classes.osu.edu/",

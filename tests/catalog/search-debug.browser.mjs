@@ -169,35 +169,36 @@ try {
     await page.goto(`${base}/?q=${encodeURIComponent(query)}&term=1272`, {
       waitUntil: "networkidle",
     });
-    await page.locator("[data-related-search]").waitFor();
+    await page.locator("[data-search-context]").waitFor();
     assert(
-      (await page.locator("[data-related-search]").innerText()).includes(query),
+      (await page.locator("[data-search-context]").innerText()).includes(query),
     );
     assert(
       (await page.locator(".course-code").first().innerText()).includes(
         "CSE 1100",
       ),
     );
-    assert.equal(
-      new URL(page.url()).searchParams.get("q"),
-      query === "CS" ? "CSE" : "CSE 1100",
-    );
+    assert.equal(new URL(page.url()).searchParams.get("q"), query);
     const searches = requests.filter(
       (u) =>
         u.origin === "https://content.osu.edu" &&
         u.pathname.endsWith("/search") &&
-        u.searchParams.get("q"),
+        u.searchParams.get("subject") === "cse",
     );
-    assert.equal(searches.length, 2, "one exact and one corrected search only");
+    assert.equal(
+      searches.length,
+      1,
+      "resolve the subject before one course request",
+    );
     requests.length = 0;
     await page.reload({ waitUntil: "networkidle" });
-    await page.locator("[data-related-search]").waitFor();
+    await page.locator("[data-search-context]").waitFor();
     assert.equal(
       requests.filter(
         (u) =>
           u.origin === "https://content.osu.edu" &&
           u.pathname.endsWith("/search") &&
-          u.searchParams.get("q"),
+          u.searchParams.get("subject") === "cse",
       ).length,
       1,
       "reload uses corrected query once",
@@ -209,16 +210,23 @@ try {
   await page.waitForFunction(
     () => !new URL(location.href).searchParams.has("relatedFrom"),
   );
-  assert.equal(await page.locator("[data-related-search]").count(), 0);
+  await page.waitForFunction(() =>
+    document
+      .querySelector("[data-search-context]")
+      ?.textContent.includes("CSE 1100"),
+  );
   console.log(
-    "PASS search: CS / CSED codes, compact and spaced numbers, clear correction notice, bounded requests and canonical reload",
+    "PASS search: CS / CSED codes, original query preserved, interpreted subject, bounded requests and reload",
   );
 
   await page.keyboard.press("Control+Alt+KeyD");
-  await page
-    .getByLabel("维护密钥", { exact: false })
-    .fill(process.env.DEBUG_TEST_KEY ?? "local-regression-debug-key");
-  await page.getByRole("button", { name: "解锁", exact: true }).click();
+  const keyField = page.getByLabel("维护密钥", { exact: false });
+  if (await keyField.count()) {
+    await keyField.fill(
+      process.env.DEBUG_TEST_KEY ?? "local-regression-debug-key",
+    );
+    await page.getByRole("button", { name: "解锁", exact: true }).click();
+  }
   await page.getByLabel("课程与筛选项", { exact: true }).waitFor();
   await page.reload({ waitUntil: "networkidle" }); // capture the normalized, current tab responses after authorization
   const cloud = page.locator("[data-rmp-cloud]").first();

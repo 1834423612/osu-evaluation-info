@@ -90,6 +90,17 @@ export type CatalogFacet = {
 };
 export type CatalogTerm = { code: string; label: string };
 export type CatalogResponse = {
+  searchInfo?: {
+    query: string;
+    kind: "course" | "number" | "subject" | "keyword";
+    interpretedQuery?: string;
+    subject?: string;
+    complete: boolean;
+    candidateSections?: number;
+    descriptionMatches?: boolean;
+    conflict?: boolean;
+    suggestions: import("./search-query").SearchSuggestion[];
+  };
   relatedMatch?: { query: string; matchedQuery: string; subject: string };
   courses: CatalogCourse[];
   page: number;
