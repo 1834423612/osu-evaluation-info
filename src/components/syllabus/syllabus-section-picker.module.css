@@ -161,6 +161,46 @@
 .tags small {
   font-size: 9px;
 }
+.scores {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.score b {
+  font-size: 10px;
+}
+.score small {
+  font-size: 8px;
+  opacity: 0.8;
+}
+.score[data-tone="positive"] {
+  color: var(--positive);
+  border-color: var(--positive-border);
+  background: var(--positive-soft);
+}
+.score[data-tone="mixed"] {
+  color: #86600e;
+  border-color: #e8d7ad;
+  background: #fcf7e9;
+}
+.score[data-tone="caution"] {
+  color: var(--primary);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
 .schedule {
   display: flex;
   align-items: center;

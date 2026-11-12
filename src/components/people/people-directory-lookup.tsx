@@ -384,10 +384,38 @@ function detailRows(
   return rows;
 }
 
+/** Share the same verified identities and bounded queue with syllabus filters. */
+export async function readInstructorDirectory(props: DirectoryInstructor) {
+  const identity = verifiedIdentity(props);
+  const cached = identity
+    ? (cachedResults.get(identity) ?? readLocal(identity, props.subject))
+    : null;
+  if (
+    !debugServiceControlled("people") &&
+    !cacheBypassed() &&
+    cached &&
+    resultIsFresh(cached, props.subject)
+  )
+    return selectDirectoryCandidate(cached.results, props);
+  const next = await lookup(
+    identity ?? instructorDirectoryQuery(props),
+    identity && props.name.trim().split(/\s+/).length >= 2
+      ? props.name.trim().replace(/\s+/g, " ")
+      : undefined,
+    props.subject,
+  );
+  if (next.status !== "available") return null;
+  const person = selectDirectoryCandidate(next.results, props);
+  if (identity && person && !next.stale)
+    writeLocal(identity, next, props.subject);
+  return person;
+}
+
 export function InstructorDirectoryIdentity({
   size = 30,
+  showUnknownLabel = false,
   ...props
-}: Props & { size?: number }) {
+}: Props & { size?: number; showUnknownLabel?: boolean }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DirectoryLookupResult | null>(null);
@@ -546,6 +574,20 @@ export function InstructorDirectoryIdentity({
                       {directoryRoleBadgeLabel(role, props.locale)}
                     </span>
                   ))}
+                </span>
+              ) : showUnknownLabel ? (
+                <span>
+                  {props.locale === "zh"
+                    ? loading
+                      ? "身份核验中"
+                      : checked
+                        ? "任职未提供"
+                        : "身份待核验"
+                    : loading
+                      ? "Verifying role"
+                      : checked
+                        ? "Role not listed"
+                        : "Role unverified"}
                 </span>
               ) : null}
               {additionalRoles > 0 ? (

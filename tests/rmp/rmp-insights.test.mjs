@@ -13,6 +13,31 @@ const professor = (id, difficulty, count, tags) => ({
   reviewCount: count,
   topTags: tags,
 });
+test("RMP quality uses valid recent quality counts and does not substitute difficulty", () => {
+  const first = {
+    ...professor("1", 1, 100, []),
+    recentQuality: 4,
+    recentQualityCount: 10,
+  };
+  const result = aggregateRmpInsights({
+    instructors: [
+      first,
+      first,
+      { ...professor("2", 5, 1, []), recentQuality: 2, recentQualityCount: 30 },
+      {
+        ...professor("3", 5, 10, []),
+        recentQuality: null,
+        recentQualityCount: 10,
+      },
+    ],
+  });
+  assert.equal(result.quality, 2.5);
+  assert.equal(result.qualityCount, 40);
+  assert.equal(
+    aggregateRmpInsights({ instructors: [professor("1", 4, 10, [])] }).quality,
+    null,
+  );
+});
 test("difficulty weights every professor by valid recent ratings, and duplicate profiles cannot inflate tags", () => {
   const first = professor("1", 2, 10, [{ tag: "Caring", count: 3 }]);
   const result = aggregateRmpInsights({

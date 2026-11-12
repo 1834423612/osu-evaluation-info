@@ -5,6 +5,8 @@ export type RmpInsight = {
   status: CourseRmpSummary["status"];
   tags: { tag: string; count: number }[];
   difficulty: number | null;
+  quality: number | null;
+  qualityCount: number;
   difficultyCount: number;
   difficultyPeriod: "recent" | "historical" | "none";
   reviewCount: number;
@@ -20,11 +22,22 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
     ).values(),
   ];
   const tags = new Map<string, { tag: string; count: number }>();
+  let qualityTotal = 0,
+    qualityCount = 0;
   let total = 0,
     count = 0,
     historicalTotal = 0,
     historicalCount = 0;
   for (const professor of professors) {
+    if (
+      typeof professor.recentQuality === "number" &&
+      professor.recentQuality >= 1 &&
+      professor.recentQuality <= 5 &&
+      professor.recentQualityCount > 0
+    ) {
+      qualityTotal += professor.recentQuality * professor.recentQualityCount;
+      qualityCount += professor.recentQualityCount;
+    }
     if (
       professor.recentDifficulty !== null &&
       professor.recentDifficulty >= 1 &&
@@ -57,6 +70,8 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
   }
   return {
     status: summary.status,
+    quality: qualityCount ? qualityTotal / qualityCount : null,
+    qualityCount,
     tags: [...tags.values()]
       .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
       .slice(0, 12),
