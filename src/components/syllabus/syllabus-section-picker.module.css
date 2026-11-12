@@ -17,7 +17,7 @@
   padding: 3px;
   margin: -3px;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   scrollbar-width: thin;
 }
 .card {

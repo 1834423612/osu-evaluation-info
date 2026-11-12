@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { officialSyllabusFrame } from "@/lib/syllabus/official-render";
+import { attachSyllabusScrollChain } from "@/lib/syllabus/scroll-chain";
 import { text, type Locale } from "@/lib/i18n";
 import type { SyllabusComponent } from "@/lib/syllabus/types";
 import styles from "./official-syllabus-view.module.css";
@@ -57,8 +58,7 @@ export function OfficialSyllabusView({
         if (!doc?.body || !view) return;
         const paper = doc.querySelector<HTMLElement>(".doc");
         if (paper) paper.style.zoom = String(zoom);
-        doc.documentElement.style.setProperty("overscroll-behavior", "contain");
-        doc.body.style.setProperty("overscroll-behavior", "contain");
+        const detachScroll = attachSyllabusScrollChain(frameRef.current!);
         let active = true,
           animation: number | null = null;
         const update = () => {
@@ -106,6 +106,7 @@ export function OfficialSyllabusView({
         update();
         cleanup.current = () => {
           active = false;
+          detachScroll();
           observer.disconnect();
           view.removeEventListener("scroll", update);
           view.removeEventListener("resize", update);

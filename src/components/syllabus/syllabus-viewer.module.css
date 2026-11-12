@@ -192,7 +192,7 @@
   border-right: 1px solid var(--line);
   background: var(--subtle-surface);
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   scrollbar-width: thin;
 }
 .outlineHeading {
@@ -285,7 +285,7 @@
   height: 100%;
   padding: 20px;
   overflow: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
 }
 .paper {
   width: 816px;

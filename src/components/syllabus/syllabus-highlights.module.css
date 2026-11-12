@@ -53,7 +53,7 @@
   max-height: 236px;
   padding: 14px 16px;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   scrollbar-width: thin;
 }
 .note {
