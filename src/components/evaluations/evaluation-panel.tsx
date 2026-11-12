@@ -1,4 +1,5 @@
 "use client";
+import { ReferenceInfo } from "@/components/reference/reference-info";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { SceneMascot } from "@/components/brand/scene-mascot";
@@ -526,7 +527,13 @@ function MetricPanel({
     >
       <div className={styles.metricHeading}>
         <div>
-          <h4>{metric.instrument}</h4>
+          <h4>
+            {metric.instrument}
+            <ReferenceInfo
+              topic={metric.instrument === "SEI" ? "sei" : "ssle"}
+              locale={locale}
+            />
+          </h4>
           <span className={styles.subtle}>{labels[metric.instrument]}</span>
           <span className={styles.subtle}>
             {primary ? labels.current : labels.older} · {metric.firstTerm}–
@@ -599,7 +606,10 @@ export function EvaluationPanel({
   return (
     <section className={styles.panel} aria-label={labels.title}>
       <div className={styles.panelHeading}>
-        <h3>{labels.title}</h3>
+        <h3>
+          {labels.title}
+          <ReferenceInfo topic="scoring" locale={locale} />
+        </h3>
         <DataSourceBadge source="official">
           <ShieldCheck size={14} aria-hidden="true" />
           {text(locale, "Official OSU data", "OSU 官方数据")}

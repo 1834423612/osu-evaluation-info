@@ -1,4 +1,5 @@
 "use client";
+import { ReferenceInfo } from "@/components/reference/reference-info";
 import { EmptyResult } from "@/components/brand/empty-result";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -370,7 +371,10 @@ function SectionRow({
               <dd>{section.classNumber}</dd>
             </div>
             <div>
-              <dt>{text(locale, "Instruction mode", "授课方式")}</dt>
+              <dt>
+                {text(locale, "Instruction mode", "授课方式")}
+                <ReferenceInfo topic="instruction-modes" locale={locale} />
+              </dt>
               <dd>
                 {section.instructionMode ||
                   text(locale, "Not posted", "未公布")}
@@ -554,7 +558,10 @@ export default function SectionsPanel({
         <div className={styles.filterGroups}>
           {options.components.length ? (
             <fieldset>
-              <legend>{text(locale, "Component", "班次类型")}</legend>
+              <legend>
+                {text(locale, "Component", "班次类型")}
+                <ReferenceInfo topic="components" locale={locale} />
+              </legend>
               <div className={styles.chips}>
                 {options.components.map((component) => (
                   <button
@@ -575,7 +582,10 @@ export default function SectionsPanel({
           ) : null}
           {options.instructionModes.length ? (
             <fieldset>
-              <legend>{text(locale, "Instruction mode", "授课方式")}</legend>
+              <legend>
+                {text(locale, "Instruction mode", "授课方式")}
+                <ReferenceInfo topic="instruction-modes" locale={locale} />
+              </legend>
               <div className={styles.chips}>
                 {options.instructionModes.map((mode) => (
                   <button

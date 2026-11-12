@@ -52,7 +52,11 @@ export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
       ? locale === "zh"
         ? "数据与方法"
         : "Behind the data"
-      : null;
+      : pathname.startsWith("/reference")
+        ? locale === "zh"
+          ? "OSU 课程说明"
+          : "OSU field guide"
+        : null;
   const home = locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : brand.title;
   return section ? `${section} · ${home}` : home;
 }

@@ -20,6 +20,7 @@ import {
 import type { CatalogFacet } from "@/lib/catalog/types";
 import { campusOptions, facetLabels, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { ReferenceInfo } from "@/components/reference/reference-info";
 
 const PRIMARY = [
   "subject",
@@ -96,6 +97,14 @@ function FilterFacet({
       <legend id={`${id}-label`}>
         <Icon aria-hidden="true" />
         <span>{label}</span>
+        {facet.slug === "instruction-mode" || facet.slug === "component" ? (
+          <ReferenceInfo
+            topic={
+              facet.slug === "component" ? "components" : "instruction-modes"
+            }
+            locale={locale}
+          />
+        ) : null}
       </legend>
       {searchable ? (
         <label className="filter-search" htmlFor={`${id}-search`}>

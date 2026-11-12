@@ -335,6 +335,20 @@ try {
     /18:00/,
   ); // fixed OSU time despite Asia/Shanghai
   const first = page.locator('[data-syllabus-card="example123"]');
+  const courseBeforeInfo = page.url();
+  await page.locator('[data-reference-info="scoring"]').first().click();
+  const referenceDrawer = page.locator("[data-reference-drawer]");
+  await referenceDrawer.waitFor();
+  await referenceDrawer.locator("details > summary").click();
+  assert(await referenceDrawer.getByRole("math").isVisible());
+  await referenceDrawer
+    .getByRole("button", { name: "关闭说明", exact: true })
+    .click();
+  assert.equal(page.url(), courseBeforeInfo);
+  assert(
+    await first.isVisible(),
+    "Contextual help preserves the open course panel",
+  );
   await first
     .getByLabel("Miranda Holmes 的 RMP 评价标签")
     .getByText("Caring", { exact: true })
@@ -583,8 +597,28 @@ try {
       .click();
     await view.page.screenshot({
       path: `${output}/picker-${width}.png`,
-      fullPage: true,
+      fullPage: false,
     });
+    await view.page.locator('[data-reference-info="scoring"]').first().click();
+    await view.page.locator("[data-reference-drawer]").waitFor();
+    await view.page.screenshot({
+      path: `${output}/info-drawer-${width}.png`,
+      fullPage: false,
+    });
+    await view.page
+      .locator("[data-reference-drawer]")
+      .getByRole("button", { name: "关闭说明", exact: true })
+      .click();
+    assert(
+      await view.page.locator('[data-syllabus-card="example123"]').isVisible(),
+    );
+    assert.equal(
+      await view.page
+        .getByRole("button", { name: "筛选与排序", exact: true })
+        .getAttribute("aria-expanded"),
+      "true",
+      "Help keeps the filter state",
+    );
     assert(
       await view.page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,

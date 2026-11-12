@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Bookmark, ArrowUpRight, Languages } from "lucide-react";
+import { Bookmark, Languages } from "lucide-react";
+import { ResourcesMenu } from "./resources-menu";
+import resourceStyles from "./resources-menu.module.css";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { brand, localizedDocumentTitle } from "@/lib/brand";
@@ -24,7 +26,7 @@ import styles from "./language-controls.module.css";
 export function AppHeader({
   active = "explore",
 }: {
-  active?: "explore" | "saved" | "methodology";
+  active?: "explore" | "saved" | "methodology" | "reference";
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
@@ -63,7 +65,7 @@ export function AppHeader({
       <SyllabusUpdateMonitor />
       <ScrollToTop locale={locale} />
       <header className="app-header">
-        <div className="header-inner">
+        <div className={`header-inner ${resourceStyles.header}`}>
           <Link
             href="/"
             className="brand"
@@ -120,14 +122,10 @@ export function AppHeader({
             </Link>
           </nav>
           <div className="header-actions">
-            <Link
-              href="/methodology"
-              className="data-link"
-              aria-current={active === "methodology" ? "page" : undefined}
-            >
-              {text(locale, "Behind the data", "数据与方法")}
-              <ArrowUpRight size={13} />
-            </Link>
+            <ResourcesMenu
+              locale={locale}
+              active={active === "methodology" || active === "reference"}
+            />
             <Button
               variant="outline"
               size="sm"

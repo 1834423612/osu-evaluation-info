@@ -1,0 +1,84 @@
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--secondary-foreground);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.trigger[data-active="true"],
+.trigger[data-state="open"] {
+  color: #386a5d;
+  background: #eff7f3;
+  border-color: #d0e1d9;
+}
+.menu {
+  z-index: 120;
+  min-width: 245px;
+  padding: 5px;
+  border: 1px solid #d3ddd7;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 10px 35px #263b2d20;
+}
+.menu a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border-radius: 6px;
+  color: #386a5d;
+  outline: none;
+}
+.menu a[data-highlighted] {
+  background: #eff7f3;
+}
+.menu b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.menu small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+@media (max-width: 850px) {
+  .trigger {
+    width: 30px;
+    justify-content: center;
+    padding: 5px;
+    margin-right: 5px;
+  }
+  .trigger > span,
+  .trigger > svg:last-child {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .header:global(.header-inner) {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+  .header :global(.main-nav) {
+    gap: 12px;
+  }
+}
+@media (max-width: 420px) {
+  .header :global(.brand-school) {
+    display: none;
+  }
+  .header :global(.brand) {
+    gap: 5px;
+  }
+}
+@media (max-width: 360px) {
+  .header :global(.brand-mark) {
+    display: none;
+  }
+}

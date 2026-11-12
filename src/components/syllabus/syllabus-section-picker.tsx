@@ -23,6 +23,7 @@ import type { CatalogCourse, CatalogSection } from "@/lib/catalog/types";
 import type { SyllabusEntry } from "@/lib/syllabus/types";
 import { text, type Locale } from "@/lib/i18n";
 import { SyllabusTeachers } from "./syllabus-teachers";
+import { ReferenceInfo } from "@/components/reference/reference-info";
 import styles from "./syllabus-section-picker.module.css";
 
 export function SyllabusSectionPicker({
@@ -75,6 +76,7 @@ export function SyllabusSectionPicker({
             `${rows.filter((row) => row.available).length} 份可用大纲 · ${rows.length} 个班次`,
           )}
         </strong>
+        <ReferenceInfo topic="scoring" locale={locale} />
         <button
           type="button"
           className={styles.filterToggle}
@@ -298,6 +300,7 @@ export function SyllabusSectionPicker({
                 <Clock3 size={11} />
                 <span>{schedule}</span>
                 <span>{section.instructionMode}</span>
+                <ReferenceInfo topic="instruction-modes" locale={locale} />
               </div>
               <div className={styles.timestamp}>
                 {!entry ? (
