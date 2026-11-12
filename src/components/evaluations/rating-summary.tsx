@@ -1,5 +1,4 @@
 import { CircleHelp, TrendingUp, TriangleAlert } from "lucide-react";
-import { SceneMascot } from "@/components/brand/scene-mascot";
 import type {
   CourseEvaluationSummary,
   EvaluationConfidence,
@@ -77,9 +76,6 @@ export function RatingSummary({
   if (!summary?.primary) {
     return (
       <div className={styles.ratingEmpty}>
-        {summary?.status === "no-data" ? (
-          <SceneMascot scene="no-results" size={28} />
-        ) : null}
         <span className={styles.emptyScore} aria-hidden="true">
           —
         </span>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SceneMascot } from "@/components/brand/scene-mascot";
 import { Gauge, MessageCircle } from "lucide-react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { RmpInsight } from "@/lib/rmp/insights";
@@ -125,7 +124,6 @@ export function RmpCoursePreview({
             <RmpWordCloud tags={insight.tags} locale={locale} seed={key} />
           ) : (
             <p className={styles.empty}>
-              <SceneMascot scene="rmp-empty" size={28} />
               {text(locale, "No review tags yet", "暂无评价标签")}
             </p>
           )}
@@ -139,9 +137,6 @@ export function RmpCoursePreview({
         </>
       ) : (
         <p className={styles.empty}>
-          {insight?.status === "no-data" ? (
-            <SceneMascot scene="rmp-empty" size={32} />
-          ) : null}
           {state?.key !== key && usernames.length
             ? text(locale, "Loading student voices…", "正在汇总学生评价…")
             : insight?.status === "unavailable" ||
