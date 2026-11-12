@@ -30,7 +30,11 @@ export function RmpWordCloud({
   const measure = useRef<HTMLDivElement>(null);
   const generation = useRef(0);
   const pending = useRef(false);
-  const { model, automatic } = useTranslationPreferences();
+  const { model, automaticCloud } = useTranslationPreferences();
+  const automaticRef = useRef(automaticCloud);
+  useEffect(() => {
+    automaticRef.current = automaticCloud;
+  }, [automaticCloud]);
   const sourceKey = JSON.stringify(tags);
   const key = `${model}\0${sourceKey}`;
   const currentKey = useRef(key);
@@ -40,11 +44,13 @@ export function RmpWordCloud({
     busy?: boolean;
     error?: boolean;
     visible?: boolean;
+    automatic?: boolean;
   } | null>(null);
   const [layout, setLayout] = useState<ReturnType<typeof packWordCloud> | null>(
     null,
   );
-  const active = state?.key === key ? state : null;
+  const active =
+    state?.key === key && (!state.automatic || automaticCloud) ? state : null;
   const translated = !!active?.visible && !!active.words;
   const labels = tags.map((item, index) =>
     translated ? active!.words![index] : item.tag,
@@ -108,8 +114,10 @@ export function RmpWordCloud({
     pending.current = true;
     const version = generation.current;
     const isCurrent = () =>
-      version === generation.current && currentKey.current === key;
-    setState({ key, busy: true });
+      version === generation.current &&
+      currentKey.current === key &&
+      (manual || automaticRef.current);
+    setState({ key, busy: true, automatic: !manual });
     try {
       let chosen = model;
       const pairs = [
@@ -156,7 +164,8 @@ export function RmpWordCloud({
           return result.translation;
         }),
       );
-      if (isCurrent()) setState({ key, words, visible: true });
+      if (isCurrent())
+        setState({ key, words, visible: true, automatic: !manual });
     } catch {
       if (isCurrent()) {
         setState({ key, error: true });
@@ -164,7 +173,7 @@ export function RmpWordCloud({
         pending.current = false;
       }
     } finally {
-      if (isCurrent()) pending.current = false;
+      if (version === generation.current) pending.current = false;
     }
   }
   const translateRef = useRef(translate);
@@ -173,7 +182,7 @@ export function RmpWordCloud({
   });
   useEffect(() => {
     const element = root.current;
-    if (!element || !automatic) return;
+    if (!element || !automaticCloud) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
         observer.disconnect();
@@ -182,7 +191,7 @@ export function RmpWordCloud({
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [automatic, key]);
+  }, [automaticCloud, key]);
 
   return (
     <div

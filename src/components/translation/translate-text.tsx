@@ -3,6 +3,10 @@
 import { debugServiceControlled } from "@/lib/debug/services";
 
 import { browserStorage } from "@/lib/preferences/browser-storage";
+import {
+  WORD_CLOUD_AUTO_KEY,
+  readWordCloudAuto,
+} from "@/lib/translation/word-cloud-preference";
 
 import {
   useCallback,
@@ -54,6 +58,7 @@ const MODELS = ["auto", "chrome", "ollama", "google"] as const;
 const MODE_EVENT = "course-atlas:translation-mode";
 let memoryMode: DisplayMode | null = null;
 let memoryAuto: boolean | null = null;
+let memoryCloudAuto: boolean | null = null;
 let memoryModel: TranslationModel | null = null;
 
 function isTranslationModel(value: unknown): value is TranslationModel {
@@ -95,12 +100,20 @@ function getStoredAuto() {
     return false;
   }
 }
+function getStoredCloudAuto() {
+  try {
+    return memoryCloudAuto ?? readWordCloudAuto(browserStorage());
+  } catch {
+    return false;
+  }
+}
 
 /** Synchronize translation preferences across mounted snippets and browser tabs. */
 function subscribeToMode(callback: () => void) {
   const onStorage = () => {
     memoryMode = null;
     memoryAuto = null;
+    memoryCloudAuto = null;
     memoryModel = null;
     callback();
   };
@@ -138,7 +151,12 @@ export function useTranslationPreferences() {
     getStoredAuto,
     () => false,
   );
-  return { model, automatic };
+  const automaticCloud = useSyncExternalStore(
+    subscribeToMode,
+    getStoredCloudAuto,
+    () => false,
+  );
+  return { model, automatic, automaticCloud };
 }
 
 /** Translate a snippet with shared work, per-model results and visibility-aware automatic retries. */
@@ -175,6 +193,11 @@ export function TranslateText({
   const automatic = useSyncExternalStore(
     subscribeToMode,
     getStoredAuto,
+    () => false,
+  );
+  const automaticCloud = useSyncExternalStore(
+    subscribeToMode,
+    getStoredCloudAuto,
     () => false,
   );
   const storedModel = useSyncExternalStore<TranslationModel>(
@@ -405,6 +428,16 @@ export function TranslateText({
     if (!translationGuide.isSettingsGuided(contentId)) setMenuOpen(false);
     window.dispatchEvent(new Event(MODE_EVENT));
   }
+  function toggleAutomaticCloud() {
+    memoryCloudAuto = !automaticCloud;
+    try {
+      browserStorage().setItem(WORD_CLOUD_AUTO_KEY, String(memoryCloudAuto));
+    } catch {
+      /* Session preference remains usable. */
+    }
+    if (!translationGuide.isSettingsGuided(contentId)) setMenuOpen(false);
+    window.dispatchEvent(new Event(MODE_EVENT));
+  }
 
   async function chooseModel(value: string) {
     setModelMenuOpen(false);
@@ -462,6 +495,8 @@ export function TranslateText({
           downloading: "正在准备语言模型…",
           auto: "自动翻译",
           autoHint: "自动翻译当前可见内容",
+          autoCloud: "默认翻译词云",
+          autoCloudHint: "独立于正文自动翻译，默认关闭；只处理可见词云",
           provider: "翻译服务",
           localProvider: "本机翻译",
           googleProvider: "Google 翻译",
@@ -491,6 +526,9 @@ export function TranslateText({
           downloading: "Preparing the language model…",
           auto: "Translate automatically",
           autoHint: "Translate visible content automatically",
+          autoCloud: "Translate word clouds by default",
+          autoCloudHint:
+            "Off by default · independent of text auto-translation · visible clouds only",
           provider: "Translation service",
           localProvider: "On-device",
           googleProvider: "Google Translate",
@@ -712,6 +750,26 @@ export function TranslateText({
                 </span>
               </DropdownMenu.CheckboxItem>
               <span className={styles.menuHint}>{labels.autoHint}</span>
+              <DropdownMenu.CheckboxItem
+                className={styles.autoChoice}
+                data-translation-cloud-auto
+                aria-label={labels.autoCloud}
+                checked={automaticCloud}
+                onSelect={(event) => {
+                  if (translationGuide.isSettingsGuided(contentId))
+                    event.preventDefault();
+                }}
+                onCheckedChange={toggleAutomaticCloud}
+              >
+                <span>{labels.autoCloud}</span>
+                <span
+                  className={styles.switchTrack}
+                  data-checked={automaticCloud}
+                >
+                  <span />
+                </span>
+              </DropdownMenu.CheckboxItem>
+              <span className={styles.menuHint}>{labels.autoCloudHint}</span>
               <DropdownMenu.Separator className={styles.menuDivider} />
               <DropdownMenu.Sub
                 open={modelMenuOpen}

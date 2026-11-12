@@ -587,7 +587,9 @@ export function TranslationSettingsGuide({
       </span>
       <span>
         <strong>让翻译更顺手</strong>
-        <span>自动翻译、显示方式和模型，随时可改。</span>
+        <span>
+          自动翻译、词云默认翻译、显示方式和模型，随时可改。词云默认翻译独立控制，初始关闭。
+        </span>
       </span>
     </div>
   );

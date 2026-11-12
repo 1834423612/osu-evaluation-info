@@ -34,6 +34,11 @@ export const STORAGE_RULES: Record<string, Rule> = {
     kind: "setting",
     allowed: ["true", "false"],
   },
+  "translation-word-cloud-auto": {
+    version: 1,
+    kind: "setting",
+    allowed: ["true", "false"],
+  },
   "translation-model": {
     version: 1,
     kind: "setting",
