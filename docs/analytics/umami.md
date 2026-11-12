@@ -31,3 +31,24 @@ page views for the built-in UTM report.
 The `NEXT_PUBLIC_` values are embedded during the production build. Changing
 them requires rebuilding and redeploying the application. Leave the settings
 blank to disable analytics on a deployment.
+
+## Read-only search audit (Umami 3.4.x)
+
+Set `UMAMI_API_KEY` in `.env.local` using an account API key from the self-hosted
+Umami settings. This server-side key must not use a `NEXT_PUBLIC_` name. The API
+origin defaults to the tracker URL's origin; `UMAMI_API_BASE_URL` can override it.
+
+```sh
+node --env-file=.env.local scripts/analytics/analyze-search.mjs /tmp/osu-search-audit.json
+```
+
+The script uses authenticated GET requests, traverses all event/property pages,
+and refuses capped or incomplete responses. Its report contains aggregate
+activity counts and search terms, with a separate production-domain breakdown
+so developer traffic does not inflate the result. It omits visitor/session IDs,
+locations, referrers and credentials. Keep the generated report outside the
+public repository. Search submission events alone do not establish whether a
+search succeeded; result instrumentation is required to measure that outcome.
+
+API contracts: [Umami 3.4.1 event data](https://github.com/umami-software/umami/blob/v3.4.1/src/app/api/websites/%5BwebsiteId%5D/event-data/route.ts)
+and [API-key authentication](https://umami.is/blog/umami-v3.4).
