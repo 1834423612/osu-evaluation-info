@@ -7,6 +7,7 @@ import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import { text, type Locale } from "@/lib/i18n";
 import { syllabusClient } from "@/lib/syllabus/client";
 import { officialSyllabusUrl, SyllabusError } from "@/lib/syllabus/normalize";
+import { formatSyllabusTime } from "@/lib/syllabus/time";
 import type {
   SyllabusDocument,
   SyllabusEntry,
@@ -108,10 +109,6 @@ export function SyllabusReader({
       </p>
     );
 
-  const timestamp =
-    result.source === "backup"
-      ? result.fetchedAt
-      : (result.data.modifiedAt ?? result.fetchedAt);
   return (
     <div className={styles.reader}>
       <div className={styles.sourceLine}>
@@ -123,15 +120,25 @@ export function SyllabusReader({
             : text(locale, "OSU official", "OSU 官方")}
         </DataSourceBadge>
         <span>
+          {text(locale, "Official update", "官方更新")}{" "}
+          {formatSyllabusTime(result.data.modifiedAt, locale) ? (
+            <time
+              dateTime={result.data.modifiedAt!}
+              title={result.data.modifiedAt!}
+            >
+              {formatSyllabusTime(result.data.modifiedAt, locale)}
+            </time>
+          ) : (
+            text(locale, "Not provided", "未提供")
+          )}
+        </span>
+        <span>
           {result.source === "backup"
             ? text(locale, "Archived", "备份于")
-            : result.data.modifiedAt
-              ? text(locale, "Updated", "更新于")
-              : text(locale, "Retrieved", "获取于")}{" "}
-          {new Date(timestamp).toLocaleDateString(
-            locale === "zh" ? "zh-CN" : "en-US",
-            { year: "numeric", month: "short", day: "numeric" },
-          )}
+            : text(locale, "Checked", "核验于")}{" "}
+          <time dateTime={result.fetchedAt}>
+            {formatSyllabusTime(result.fetchedAt, locale)}
+          </time>
         </span>
         <a
           href={officialSyllabusUrl(code)}
