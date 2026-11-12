@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+import { useSavedSyllabi } from "@/hooks/use-saved-syllabi";
+import { checkSavedSyllabi } from "@/lib/syllabus/update-check";
+import { syllabusHasUpdate } from "@/lib/syllabus/saved";
+import { syllabusScrollDiagnostics } from "@/lib/debug/syllabus";
 import { useRouter } from "next/navigation";
 import { Bug, Download, RefreshCw, Wrench, X } from "lucide-react";
 import { debugTools } from "@/lib/debug/client";
@@ -39,7 +44,44 @@ export function DebugTools() {
   const { locale, setLocale } = usePreferences();
   const [key, setKey] = useState("");
   const [error, setError] = useState("");
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  const toolsRef = useRef<HTMLElement | null>(null);
+  const { savedSyllabi } = useSavedSyllabi();
+  const [checkingSyllabi, setCheckingSyllabi] = useState(false);
   const zh = locale === "zh";
+  useEffect(() => {
+    // Keep the tools inside the active modal's focus scope and outside page stacking contexts.
+    const selectHost = () =>
+      setPortalTarget(
+        document.fullscreenElement ??
+          [
+            ...document.querySelectorAll('[role="dialog"][data-state="open"]'),
+          ].at(-1) ??
+          document.body,
+      );
+    selectHost();
+    const observer = new MutationObserver(selectHost);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-state"],
+    });
+    document.addEventListener("fullscreenchange", selectHost);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("fullscreenchange", selectHost);
+    };
+  }, []);
+  useEffect(() => {
+    const node = toolsRef.current;
+    if (!state.visible || !node || typeof node.showPopover !== "function")
+      return;
+    node.showPopover();
+    return () => {
+      if (node.matches(":popover-open")) node.hidePopover();
+    };
+  }, [state.visible, portalTarget]);
   useEffect(() => {
     debugTools.initialize();
     const gesture = createLogoClickController({
@@ -228,10 +270,13 @@ export function DebugTools() {
       ],
     },
   ];
-  return (
+  if (!portalTarget) return null;
+  return createPortal(
     <>
       {state.visible ? (
         <aside
+          ref={toolsRef}
+          popover="manual"
           className={styles.tools}
           data-debug-tools
           aria-label={text(locale, "Developer tools", "调试工具")}
@@ -323,20 +368,110 @@ export function DebugTools() {
                       "测试状态单独保存，真实收藏不会被删除。",
                     )}
                   </p>
-                  <div className={styles.switches}>
-                    {switches.map((item) => (
-                      <label key={item.key}>
-                        <span>{zh ? item.zh : item.en}</span>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(state.flags[item.key])}
-                          onChange={(event) =>
-                            debugTools.setFlag(item.key, event.target.checked)
+                  <fieldset className={styles.group}>
+                    <legend>
+                      {text(locale, "General & interface", "通用与界面")}
+                    </legend>
+                    <div className={styles.switches}>
+                      {switches.map((item) => (
+                        <label key={item.key}>
+                          <span>{zh ? item.zh : item.en}</span>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(state.flags[item.key])}
+                            onChange={(event) =>
+                              debugTools.setFlag(item.key, event.target.checked)
+                            }
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <fieldset className={styles.group}>
+                    <legend>
+                      {text(locale, "Syllabus & scrolling", "教学大纲与滚动")}
+                    </legend>
+                    <p>
+                      {text(
+                        locale,
+                        `${savedSyllabi.length} saved · ${savedSyllabi.filter(syllabusHasUpdate).length} unread updates`,
+                        `${savedSyllabi.length} 份收藏 · ${savedSyllabi.filter(syllabusHasUpdate).length} 份未读更新`,
+                      )}
+                    </p>
+                    <div className={styles.buttons}>
+                      <button
+                        type="button"
+                        disabled={checkingSyllabi}
+                        onClick={async () => {
+                          setCheckingSyllabi(true);
+                          try {
+                            const result = await checkSavedSyllabi(true);
+                            debugTools.notify(
+                              result
+                                ? text(
+                                    locale,
+                                    `Checked ${result.checked}; unavailable ${result.failed + result.archived}`,
+                                    `已核验 ${result.checked} 份；暂不可核验 ${result.failed + result.archived} 份`,
+                                  )
+                                : text(
+                                    locale,
+                                    "No check needed",
+                                    "无需重复检查",
+                                  ),
+                            );
+                          } finally {
+                            setCheckingSyllabi(false);
                           }
-                        />
-                      </label>
-                    ))}
-                  </div>
+                        }}
+                      >
+                        {text(locale, "Check syllabus updates", "检查大纲更新")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadJSON(
+                            "waho-syllabus-scroll.json",
+                            syllabusScrollDiagnostics(),
+                          )
+                        }
+                      >
+                        {text(
+                          locale,
+                          "Export scroll diagnostics",
+                          "导出滚动诊断",
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadJSON(
+                            "waho-syllabus-revisions.json",
+                            savedSyllabi.map(
+                              ({ id, latest, acknowledged, checkedAt }) => ({
+                                id,
+                                latest,
+                                acknowledged,
+                                checkedAt,
+                                unread:
+                                  !latest || !acknowledged
+                                    ? false
+                                    : latest.snapshotId !==
+                                        acknowledged.snapshotId ||
+                                      latest.modifiedAt !==
+                                        acknowledged.modifiedAt,
+                              }),
+                            ),
+                          )
+                        }
+                      >
+                        {text(
+                          locale,
+                          "Export revision states",
+                          "导出大纲版本状态",
+                        )}
+                      </button>
+                    </div>
+                  </fieldset>
                   {serviceGroups.map((group) => (
                     <fieldset className={styles.group} key={group.title}>
                       <legend>{group.title}</legend>
@@ -422,127 +557,143 @@ export function DebugTools() {
                       </button>
                     </div>
                   </fieldset>
-                  <label className={styles.delay}>
-                    {text(locale, "Request delay", "请求延迟")}
-                    <select
-                      value={state.flags.latency}
-                      onChange={(event) =>
-                        debugTools.setFlag(
-                          "latency",
-                          Number(event.target.value),
-                        )
-                      }
-                    >
-                      <option value={0}>0 ms</option>
-                      <option value={800}>800 ms</option>
-                      <option value={2000}>2000 ms</option>
-                    </select>
-                  </label>
-                  <div className={styles.buttons}>
-                    <button
-                      onClick={() => {
-                        clearDebugResponses();
-                        debugTools.notify(
-                          text(
-                            locale,
-                            "Response snapshots cleared",
-                            "请求快照已清理",
-                          ),
-                        );
-                      }}
-                    >
-                      {text(locale, "Clear response snapshots", "清理请求快照")}
-                    </button>
-                    <button
-                      onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
-                    >
-                      {text(locale, "切换中文", "Switch to English")}
-                    </button>
-                    <button onClick={() => location.reload()}>
-                      <RefreshCw size={12} />
-                      {text(locale, "Refresh data", "刷新页面与内存数据")}
-                    </button>
-                    <button
-                      onClick={() => {
-                        const result = migrateBrowserStorage(localStorage);
-                        debugTools.notify(
-                          zh
-                            ? `已合并 ${result.merged} 项，清理 ${result.removed} 项`
-                            : `Merged ${result.merged}, cleaned ${result.removed}`,
-                        );
-                      }}
-                    >
-                      {text(locale, "Upgrade local data", "检查本地数据升级")}
-                    </button>
-                    <button
-                      onClick={() => {
-                        for (const [name, rule] of Object.entries(
-                          STORAGE_RULES,
-                        ))
-                          if (rule.kind === "cache")
-                            localStorage.removeItem(
-                              `course-atlas:${name}:v${rule.version}`,
-                            );
-                        location.reload();
-                      }}
-                    >
-                      {text(locale, "Clear derived caches", "仅清理可重建缓存")}
-                    </button>
-                    <button
-                      onClick={() =>
-                        downloadJSON(
-                          "waho-local-backup.json",
-                          Object.fromEntries(
-                            Array.from(
+                  <fieldset className={styles.group}>
+                    <legend>
+                      {text(locale, "Storage & diagnostics", "存储与诊断")}
+                    </legend>
+                    <label className={styles.delay}>
+                      {text(locale, "Request delay", "请求延迟")}
+                      <select
+                        value={state.flags.latency}
+                        onChange={(event) =>
+                          debugTools.setFlag(
+                            "latency",
+                            Number(event.target.value),
+                          )
+                        }
+                      >
+                        <option value={0}>0 ms</option>
+                        <option value={800}>800 ms</option>
+                        <option value={2000}>2000 ms</option>
+                      </select>
+                    </label>
+                    <div className={styles.buttons}>
+                      <button
+                        onClick={() => {
+                          clearDebugResponses();
+                          debugTools.notify(
+                            text(
+                              locale,
+                              "Response snapshots cleared",
+                              "请求快照已清理",
+                            ),
+                          );
+                        }}
+                      >
+                        {text(
+                          locale,
+                          "Clear response snapshots",
+                          "清理请求快照",
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
+                      >
+                        {text(locale, "切换中文", "Switch to English")}
+                      </button>
+                      <button onClick={() => location.reload()}>
+                        <RefreshCw size={12} />
+                        {text(locale, "Refresh data", "刷新页面与内存数据")}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const result = migrateBrowserStorage(localStorage);
+                          debugTools.notify(
+                            zh
+                              ? `已合并 ${result.merged} 项，清理 ${result.removed} 项`
+                              : `Merged ${result.merged}, cleaned ${result.removed}`,
+                          );
+                        }}
+                      >
+                        {text(locale, "Upgrade local data", "检查本地数据升级")}
+                      </button>
+                      <button
+                        onClick={() => {
+                          for (const [name, rule] of Object.entries(
+                            STORAGE_RULES,
+                          ))
+                            if (rule.kind === "cache")
+                              localStorage.removeItem(
+                                `course-atlas:${name}:v${rule.version}`,
+                              );
+                          location.reload();
+                        }}
+                      >
+                        {text(
+                          locale,
+                          "Clear derived caches",
+                          "仅清理可重建缓存",
+                        )}
+                      </button>
+                      <button
+                        onClick={() =>
+                          downloadJSON(
+                            "waho-local-backup.json",
+                            Object.fromEntries(
+                              Array.from(
+                                { length: localStorage.length },
+                                (_, index) => localStorage.key(index),
+                              )
+                                .filter(
+                                  (key): key is string =>
+                                    !!key &&
+                                    key.startsWith("course-atlas:") &&
+                                    !key.startsWith("course-atlas:debug:"),
+                                )
+                                .map((key) => [key, localStorage.getItem(key)]),
+                            ),
+                          )
+                        }
+                      >
+                        <Download size={12} />
+                        {text(locale, "Export saved data", "导出真实本地备份")}
+                      </button>
+                      <button
+                        onClick={() =>
+                          downloadJSON("waho-diagnostics.json", {
+                            build:
+                              buildInfoStore.getSnapshot()?.sha.slice(0, 8) ??
+                              process.env.NEXT_PUBLIC_BUILD_HASH,
+                            path: location.pathname,
+                            viewport: {
+                              width: innerWidth,
+                              height: innerHeight,
+                            },
+                            browser: navigator.userAgent,
+                            flags: state.flags,
+                            storageKeys: Array.from(
                               { length: localStorage.length },
                               (_, index) => localStorage.key(index),
-                            )
-                              .filter(
-                                (key): key is string =>
-                                  !!key &&
-                                  key.startsWith("course-atlas:") &&
-                                  !key.startsWith("course-atlas:debug:"),
-                              )
-                              .map((key) => [key, localStorage.getItem(key)]),
-                          ),
-                        )
-                      }
-                    >
-                      <Download size={12} />
-                      {text(locale, "Export saved data", "导出真实本地备份")}
-                    </button>
-                    <button
-                      onClick={() =>
-                        downloadJSON("waho-diagnostics.json", {
-                          build:
-                            buildInfoStore.getSnapshot()?.sha.slice(0, 8) ??
-                            process.env.NEXT_PUBLIC_BUILD_HASH,
-                          path: location.pathname,
-                          viewport: { width: innerWidth, height: innerHeight },
-                          browser: navigator.userAgent,
-                          flags: state.flags,
-                          storageKeys: Array.from(
-                            { length: localStorage.length },
-                            (_, index) => localStorage.key(index),
-                          ),
-                          requests: state.requests,
-                        })
-                      }
-                    >
-                      {text(
-                        locale,
-                        "Export diagnostics",
-                        "导出诊断（不含数据值）",
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        void debugTools.reset();
-                      }}
-                    >
-                      {text(locale, "Restore normal mode", "恢复正常模式")}
-                    </button>
-                  </div>
+                            ),
+                            requests: state.requests,
+                          })
+                        }
+                      >
+                        {text(
+                          locale,
+                          "Export diagnostics",
+                          "导出诊断（不含数据值）",
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          void debugTools.reset();
+                        }}
+                      >
+                        {text(locale, "Restore normal mode", "恢复正常模式")}
+                      </button>
+                    </div>
+                  </fieldset>
                   <details>
                     <summary>
                       {text(locale, "Recent requests", "近期请求")} ·{" "}
@@ -570,6 +721,7 @@ export function DebugTools() {
           {state.toast}
         </div>
       ) : null}
-    </>
+    </>,
+    portalTarget,
   );
 }
