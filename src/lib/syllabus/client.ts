@@ -1,4 +1,5 @@
 import { createRequestPool } from "../catalog/request-pool.ts";
+import { cacheBypassed } from "../debug/flags.ts";
 import {
   entryMatches,
   SyllabusError,
@@ -19,6 +20,15 @@ import type {
 } from "./types.ts";
 
 export function createSyllabusClient(fetcher: typeof fetch = fetch) {
+  const documentPool = createRequestPool<SyllabusResult<SyllabusDocument>>({
+    concurrency: 2,
+    minStartIntervalMs: 150,
+    maxQueued: 20,
+  });
+  const documentCache = new Map<
+    string,
+    { result: SyllabusResult<SyllabusDocument>; expires: number }
+  >();
   const pool = createRequestPool<unknown>({
     concurrency: 2,
     minStartIntervalMs: 150,
@@ -149,18 +159,31 @@ export function createSyllabusClient(fetcher: typeof fetch = fetch) {
     ) as Promise<SyllabusResult<SyllabusEntry[]>>;
   }
 
-  function document(code: string, signal?: AbortSignal) {
+  function document(
+    code: string,
+    signal?: AbortSignal,
+    { fresh = false }: { fresh?: boolean } = {},
+  ) {
     if (!validCode(code)) return Promise.reject(new SyllabusError("invalid"));
-    return pool.read(
+    if (signal?.aborted) return Promise.reject(signal.reason);
+    const cached = documentCache.get(code);
+    if (!fresh && !cacheBypassed() && cached && cached.expires > Date.now())
+      return Promise.resolve(cached.result);
+    return documentPool.read(
       `document:${code}`,
-      (jobSignal) =>
-        directOrRelay(
+      async (jobSignal) => {
+        const result = await directOrRelay(
           () => readSyllabusDocument(code, fetcher, jobSignal),
           new URLSearchParams({ resource: "document", code }),
           jobSignal,
-        ),
+        );
+        documentCache.set(code, { result, expires: Date.now() + 5 * 60_000 });
+        while (documentCache.size > 100)
+          documentCache.delete(documentCache.keys().next().value!);
+        return result;
+      },
       { signal },
-    ) as Promise<SyllabusResult<SyllabusDocument>>;
+    );
   }
   return { terms, entries, document };
 }

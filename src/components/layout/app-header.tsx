@@ -16,6 +16,9 @@ import { BrowserModelDownload } from "@/components/translation/browser-model-dow
 import { DebugTools } from "@/components/debug/debug-tools";
 import { ScrollToTop } from "./scroll-to-top";
 import { UpdateNotice } from "./update-notice";
+import { useSavedSyllabi } from "@/hooks/use-saved-syllabi";
+import { syllabusHasUpdate } from "@/lib/syllabus/saved";
+import { SyllabusUpdateMonitor } from "@/components/syllabus/syllabus-update-monitor";
 import styles from "./language-controls.module.css";
 
 export function AppHeader({
@@ -25,8 +28,13 @@ export function AppHeader({
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
+  const { savedSyllabi } = useSavedSyllabi();
   const savedCount =
-    saved.length + savedSections.length + savedInstructors.length;
+    saved.length +
+    savedSections.length +
+    savedInstructors.length +
+    savedSyllabi.length;
+  const updates = savedSyllabi.filter(syllabusHasUpdate).length;
   const pathname = usePathname();
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
@@ -52,6 +60,7 @@ export function AppHeader({
       <TranslationGuide locale={locale} />
       <BrowserModelDownload />
       <DebugTools />
+      <SyllabusUpdateMonitor />
       <ScrollToTop locale={locale} />
       <header className="app-header">
         <div className="header-inner">
@@ -92,6 +101,22 @@ export function AppHeader({
               <Bookmark size={15} />
               {text(locale, "Saved", "收藏")}
               <span className="nav-count">{savedCount}</span>
+              {updates ? (
+                <span
+                  className={styles.updateDot}
+                  role="status"
+                  aria-label={text(
+                    locale,
+                    `${updates} syllabus updates`,
+                    `${updates} 份大纲有更新`,
+                  )}
+                  title={text(
+                    locale,
+                    `${updates} syllabus updates`,
+                    `${updates} 份大纲有更新`,
+                  )}
+                />
+              ) : null}
             </Link>
           </nav>
           <div className="header-actions">

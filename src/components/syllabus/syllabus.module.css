@@ -43,6 +43,31 @@
   font-size: 12px;
   line-height: 1.65;
 }
+.updateNotice {
+  margin-block: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.updateNotice p {
+  margin-block: 4px 8px;
+}
+.updateNotice button {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 5px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.updateNotice button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .notice {
   margin: 12px 0;
   padding: 12px 14px;

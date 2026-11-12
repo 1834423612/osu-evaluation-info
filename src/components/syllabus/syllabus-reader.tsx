@@ -8,6 +8,8 @@ import { text, type Locale } from "@/lib/i18n";
 import { syllabusClient } from "@/lib/syllabus/client";
 import { officialSyllabusUrl, SyllabusError } from "@/lib/syllabus/normalize";
 import { formatSyllabusTime } from "@/lib/syllabus/time";
+import { savedSyllabiActions } from "@/hooks/use-saved-syllabi";
+import { SyllabusUpdateNotice } from "./syllabus-update-notice";
 import type {
   SyllabusDocument,
   SyllabusEntry,
@@ -44,6 +46,7 @@ export function SyllabusReader({
         )
           throw new SyllabusError("unavailable");
         if (!controller.signal.aborted) {
+          savedSyllabiActions.observe(data);
           setResult(data);
           setError(null);
         }
@@ -149,6 +152,7 @@ export function SyllabusReader({
           <ExternalLink size={12} />
         </a>
       </div>
+      <SyllabusUpdateNotice result={result} locale={locale} />
       {result.source === "backup" ? (
         <p className={styles.notice}>
           {text(
