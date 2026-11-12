@@ -86,7 +86,14 @@ const course = {
       id: "25478",
       classNumber: "25478",
       section: "0020",
-      instructors: [section.instructors[0]],
+      instructors: [section.instructors[1]],
+    },
+    {
+      ...section,
+      id: "99999",
+      classNumber: "99999",
+      section: "0030",
+      instructors: [],
     },
   ],
   sectionsPartial: false,
@@ -228,6 +235,8 @@ async function setup(width = 1440, seed = false, locale = "zh") {
                   },
                 ],
                 difficulty: 3,
+                quality: item.usernames?.[0] === "holmes.1" ? 4.5 : 2.5,
+                qualityCount: 3,
                 difficultyCount: 3,
                 reviewCount: 3,
                 matchedInstructorCount: 1,
@@ -238,8 +247,56 @@ async function setup(width = 1440, seed = false, locale = "zh") {
         },
       });
     }
-    if (url.pathname === "/api/evaluations")
-      return route.fulfill({ json: { summaries: {} } });
+    if (url.pathname === "/api/evaluations") {
+      if (route.request().method() === "POST")
+        return route.fulfill({ json: { summaries: {} } });
+      return route.fulfill({
+        json: {
+          status: "available",
+          instructors: section.instructors.map((person, index) => ({
+            ...person,
+            nameDotNumber: index ? "teacher.1" : "holmes.1",
+            match: "exact-email",
+            metrics: [
+              {
+                instrument: "SEI",
+                score: index ? 2.2 : 4.7,
+                responseCount: 20,
+              },
+              {
+                instrument: "SSLE",
+                score: index ? 4.6 : 3.2,
+                responseCount: 30,
+              },
+            ],
+          })),
+        },
+      });
+    }
+    if (url.pathname === "/api/people/lookup") {
+      const { term } = route.request().postDataJSON();
+      const first = term === "holmes.1";
+      return route.fulfill({
+        json: {
+          status: "available",
+          source: "osu-search",
+          cache: "source",
+          verifiedAt: new Date().toISOString(),
+          results: [
+            {
+              name: first ? "Miranda Holmes" : "Alex Teacher",
+              roles: [first ? "lecturer" : "teaching-assistant"],
+              appointments: [
+                {
+                  title: first ? "Lecturer" : "Graduate Teaching Associate",
+                  organization: "Art",
+                },
+              ],
+            },
+          ],
+        },
+      });
+    }
     return route.fulfill({ json: {} });
   });
   return {
@@ -271,13 +328,61 @@ try {
   await page.locator('[data-syllabus-card="example123"] time').waitFor();
   assert.match(
     await page.locator('[data-syllabus-card="example123"] time').innerText(),
-    /05:00/,
+    /18:00/,
   ); // fixed OSU time despite Asia/Shanghai
   const first = page.locator('[data-syllabus-card="example123"]');
   await first
     .getByLabel("Miranda Holmes 的 RMP 评价标签")
     .getByText("Caring", { exact: true })
     .waitFor();
+  await first.getByText("讲师", { exact: true }).waitFor();
+  await first.getByText("4.70", { exact: true }).waitFor();
+  await first.getByText("4.60", { exact: true }).waitFor();
+  assert.equal(
+    await first
+      .getByLabel("Miranda Holmes 的评分")
+      .locator('[data-tone="positive"]')
+      .first()
+      .evaluate((node) => getComputedStyle(node).color),
+    "rgb(53, 112, 74)",
+  );
+  assert.equal(
+    await first
+      .getByLabel("Alex Teacher 的评分")
+      .locator('[data-tone="caution"]')
+      .first()
+      .evaluate((node) => getComputedStyle(node).color),
+    "rgb(186, 12, 47)",
+  );
+  const secondCard = page.locator('[data-syllabus-card="example124"]');
+  await secondCard.click({
+    position: { x: 20, y: (await secondCard.boundingBox()).height - 12 },
+  });
+  assert.equal(await secondCard.getAttribute("data-selected"), "true");
+  await first.click({
+    position: { x: 20, y: (await first.boundingBox()).height - 12 },
+  });
+  assert.equal(await first.getAttribute("data-selected"), "true");
+  const unavailable = page.locator('[data-syllabus-card="unpublished-99999"]');
+  assert.equal(await unavailable.getAttribute("data-available"), "false");
+  assert.equal(await unavailable.getByRole("radio").isDisabled(), true);
+  await page.getByRole("button", { name: "筛选与排序", exact: true }).click();
+  await page.getByLabel("最低评分", { exact: true }).selectOption("3.5");
+  assert.equal(await secondCard.getAttribute("data-filter-match"), "false");
+  await page.getByLabel("最低评分", { exact: true }).selectOption("4.5");
+  await page.locator("[data-empty-result] img").waitFor();
+  await page.getByLabel("最低评分", { exact: true }).selectOption("0");
+  await page.getByLabel("评分来源", { exact: true }).selectOption("SEI");
+  await page.getByLabel("大纲排序", { exact: true }).selectOption("asc");
+  assert.equal(
+    await page
+      .locator("[data-syllabus-card]")
+      .first()
+      .getAttribute("data-syllabus-card"),
+    "example124",
+  );
+  await page.getByRole("button", { name: "重置", exact: true }).click();
+  await page.getByRole("button", { name: "筛选与排序", exact: true }).click();
   await first
     .getByLabel("Alex Teacher 的 RMP 评价标签")
     .getByText("Tough grader", { exact: true })
@@ -302,6 +407,32 @@ try {
     name: "大纲速览",
     exact: true,
   });
+  await tabs.getByRole("tab", { name: "课程安排", exact: true }).click();
+  const long = highlights
+    .locator('[data-slot="tabs-content"][data-state="active"] > div')
+    .first();
+  await long.hover();
+  await long.evaluate((node) => {
+    node.scrollTop = 50;
+  });
+  const longBefore = await panel.evaluate((node) => node.scrollTop);
+  await page.mouse.wheel(0, 240);
+  await page.waitForFunction(
+    (before) =>
+      document.querySelector(".course-detail-panel").scrollTop > before + 20,
+    longBefore,
+  );
+  assert.equal(await long.evaluate((node) => node.scrollTop), 50);
+  await page.waitForTimeout(180);
+  await long.hover();
+  await page.mouse.wheel(0, 40);
+  await page.waitForFunction(
+    () =>
+      document.querySelector(
+        '[aria-label="大纲速览"] [data-state="active"][data-slot="tabs-content"] > div',
+      ).scrollTop > 60,
+  );
+  await tabs.getByRole("tab", { name: "考核方式", exact: true }).click();
   const short = highlights
     .locator('[data-slot="tabs-content"][data-state="active"] > div')
     .first();
@@ -318,6 +449,34 @@ try {
   const frame = await iframe
     .elementHandle()
     .then((handle) => handle.contentFrame());
+  await panel.evaluate((node) => {
+    node.scrollTop = Math.max(0, node.scrollHeight - node.clientHeight - 120);
+  });
+  await frame.evaluate(() => {
+    document.scrollingElement.scrollTop = 100;
+  });
+  const previewBox = await iframe.boundingBox();
+  await page.mouse.move(
+    previewBox.x + previewBox.width / 2,
+    Math.min(850, previewBox.y + 160),
+  );
+  const previewBefore = await panel.evaluate((node) => node.scrollTop);
+  await page.mouse.wheel(0, 240);
+  await page.waitForFunction(
+    (before) =>
+      document.querySelector(".course-detail-panel").scrollTop > before + 20,
+    previewBefore,
+  );
+  assert.equal(
+    await frame.evaluate(() => document.scrollingElement.scrollTop),
+    100,
+  );
+  await page.waitForTimeout(180);
+  await page.mouse.wheel(0, 40);
+  await frame.waitForFunction(() => document.scrollingElement.scrollTop > 110);
+  await panel.evaluate((node) => {
+    node.scrollTop = Math.max(0, node.scrollHeight - node.clientHeight - 100);
+  });
   await frame.evaluate(() => {
     document.scrollingElement.scrollTop =
       document.scrollingElement.scrollHeight;
@@ -504,6 +663,154 @@ try {
     );
     await mobile.context.close();
   }
+  const empty = await setup(390);
+  await empty.page.goto(`${base}/saved`, { waitUntil: "networkidle" });
+  await empty.page.getByRole("tab", { name: /^班次/ }).click();
+  const expression = empty.page.locator(
+    "[data-empty-result] [data-mascot-expression]",
+  );
+  await expression.waitFor();
+  const previousExpression = await expression.getAttribute(
+    "data-mascot-expression",
+  );
+  await empty.page.getByRole("tab", { name: /^课程/ }).click();
+  await empty.page.getByRole("tab", { name: /^班次/ }).click();
+  await expression.waitFor();
+  assert.notEqual(
+    await expression.getAttribute("data-mascot-expression"),
+    previousExpression,
+  );
+  await empty.page.getByRole("tab", { name: /^课程/ }).click();
+  await empty.page.route("**/api/syllabus?*", (route) =>
+    new URL(route.request().url()).searchParams.get("resource") === "entries"
+      ? route.fulfill({
+          json: {
+            data: [],
+            source: "official-relay",
+            fetchedAt: new Date().toISOString(),
+          },
+        })
+      : route.fallback(),
+  );
+  await empty.page
+    .getByRole("button", { name: "教学大纲", exact: true })
+    .click();
+  await empty.page
+    .locator("[data-syllabus-reader] [data-empty-result] img")
+    .waitFor();
+  assert.equal(
+    await empty.page
+      .locator('[data-syllabus-card][data-available="false"]')
+      .count(),
+    3,
+  );
+  assert.equal(
+    await empty.page
+      .locator('[data-syllabus-reader] [role="radio"]:enabled')
+      .count(),
+    0,
+  );
+  assert.equal(empty.errors.length, 0, empty.errors.join("\n"));
+  await empty.context.close();
+  console.log(
+    "Empty results: expressions rotate on re-entry and unpublished sections remain visible without readable documents",
+  );
+  const preferences = await setup();
+  const translatedTexts = [];
+  await preferences.context.addInitScript(() => {
+    localStorage.setItem("course-atlas:translation-auto:v1", "true");
+    localStorage.setItem("course-atlas:translation-model:v1", "ollama");
+  });
+  await preferences.page.route("**/api/translate", async (route) => {
+    const body = route.request().postDataJSON();
+    translatedTexts.push(...body.items.map((item) => item.text));
+    return route.fulfill({
+      json: {
+        version: 1,
+        results: body.items.map((item) => ({
+          id: item.id,
+          target: item.target,
+          status: "translated",
+          translation: item.text === "Caring" ? "关心学生" : "课程描述译文",
+          provider: "ollama",
+          cache: "miss",
+          durationMs: 5,
+        })),
+      },
+    });
+  });
+  const prefPage = preferences.page;
+  await prefPage.goto(`${base}/saved`, { waitUntil: "networkidle" });
+  await prefPage.getByText("课程描述译文", { exact: true }).waitFor();
+  const cloud = prefPage.locator("[data-rmp-cloud]").first();
+  await cloud.locator('[data-cloud-word][data-original="Caring"]').waitFor();
+  assert.equal(await cloud.getAttribute("data-translated"), null);
+  assert.equal(translatedTexts.includes("Caring"), false);
+  await prefPage.locator("[data-translation-settings]").first().click();
+  const preference = prefPage.getByRole("menuitemcheckbox", {
+    name: "默认翻译词云",
+    exact: true,
+  });
+  assert.equal(await preference.getAttribute("aria-checked"), "false");
+  await preference.click();
+  await prefPage.waitForFunction(
+    () =>
+      document
+        .querySelector("[data-rmp-cloud]")
+        ?.getAttribute("data-translated") === "true",
+  );
+  assert.equal(
+    await prefPage.evaluate(() =>
+      localStorage.getItem("course-atlas:translation-word-cloud-auto:v1"),
+    ),
+    "true",
+  );
+  await prefPage.reload({ waitUntil: "networkidle" });
+  await prefPage.locator("[data-translation-settings]").first().click();
+  assert.equal(
+    await prefPage
+      .getByRole("menuitemcheckbox", { name: "默认翻译词云", exact: true })
+      .getAttribute("aria-checked"),
+    "true",
+  );
+  await prefPage
+    .getByRole("menuitemcheckbox", { name: "默认翻译词云", exact: true })
+    .click();
+  assert.equal(await cloud.getAttribute("data-translated"), null);
+  await cloud.getByRole("button", { name: "翻译词云", exact: true }).click();
+  await prefPage.waitForFunction(
+    () =>
+      document
+        .querySelector("[data-rmp-cloud]")
+        ?.getAttribute("data-translated") === "true",
+  );
+  assert.equal(
+    await prefPage.evaluate(() =>
+      localStorage.getItem("course-atlas:translation-word-cloud-auto:v1"),
+    ),
+    "false",
+  );
+  assert.equal(
+    await prefPage.evaluate(() =>
+      localStorage.getItem("course-atlas:translation-auto:v1"),
+    ),
+    "true",
+  );
+  await prefPage.locator("[data-translation-settings]").first().click();
+  await prefPage
+    .getByRole("menuitemcheckbox", { name: "默认翻译词云", exact: true })
+    .click();
+  assert.equal(await cloud.getAttribute("data-translated"), "true");
+  await prefPage.locator("[data-translation-settings]").first().click();
+  await prefPage
+    .getByRole("menuitemcheckbox", { name: "默认翻译词云", exact: true })
+    .click();
+  assert.equal(await cloud.getAttribute("data-translated"), "true");
+  assert.equal(preferences.errors.length, 0, preferences.errors.join("\n"));
+  console.log(
+    "Translation: legacy text-auto keeps clouds off; explicit cloud opt-in persists and manual translation remains independent",
+  );
+  await preferences.context.close();
   if (process.env.SYLLABUS_DOCUMENT_FILE) {
     const live = await setup(1440, true);
     const official = JSON.parse(

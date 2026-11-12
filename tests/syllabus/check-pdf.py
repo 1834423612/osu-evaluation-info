@@ -14,6 +14,8 @@ with pdfplumber.open(sys.argv[1]) as document:
                 assert char["x0"] >= 34 and char["x1"] <= 578, (number, "content outside margins", char)
         for link in page.hyperlinks:
             links += 1
+            if any(abs(image["x0"] - link["x0"]) < 2 and abs(image["x1"] - link["x1"]) < 2 and abs(image["top"] - link["top"]) < 2 for image in page.images):
+                continue
             text = [char for char in page.chars if char["text"].strip() and char["x0"] >= link["x0"] - 1 and char["x1"] <= link["x1"] + 1 and char["top"] >= link["top"] - 2 and char["bottom"] <= link["bottom"] + 2]
             assert text, (number, "link has no visible text", link)
             # pdfmake includes the normal inter-word space in each word annotation.
