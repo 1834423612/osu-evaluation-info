@@ -18,3 +18,12 @@
 .empty p {
   margin: 3px 0;
 }
+.empty[data-layout="stack"] {
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+}
+.empty[data-layout="stack"] > div {
+  max-width: 400px;
+}

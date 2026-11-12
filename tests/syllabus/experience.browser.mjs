@@ -547,6 +547,41 @@ try {
   );
   await desktop.context.close();
 
+  for (const width of [390, 768, 1440]) {
+    const view = await setup(width);
+    await openCourse(view.page);
+    await view.page.locator('[data-syllabus-card="example123"] time').waitFor();
+    await view.page
+      .getByRole("button", { name: "筛选与排序", exact: true })
+      .click();
+    await view.page.screenshot({
+      path: `${output}/picker-${width}.png`,
+      fullPage: true,
+    });
+    assert(
+      await view.page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    );
+    for (const person of ["Miranda Holmes", "Alex Teacher"]) {
+      const teacher = view.page.locator(
+        `[data-syllabus-card="example123"] [data-syllabus-teacher="${person}"]`,
+      );
+      assert(
+        await teacher
+          .getByRole("button", { name: `收藏教师 ${person}`, exact: true })
+          .isVisible(),
+      );
+      assert(
+        await teacher
+          .getByLabel(`${person} 的评分`, { exact: true })
+          .evaluate((node) => node.scrollWidth <= node.clientWidth + 1),
+      );
+    }
+    assert.equal(view.errors.length, 0, view.errors.join("\n"));
+    await view.context.close();
+  }
+
   for (const width of [390, 1440]) {
     const mobile = await setup(width, true);
     const { page } = mobile;

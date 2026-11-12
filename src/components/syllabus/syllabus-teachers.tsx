@@ -46,11 +46,26 @@ function Teacher({
             size={24}
             showUnknownLabel
           />
-          {saved ? (
-            <span className={styles.savedTeacher}>
-              {text(locale, "Saved teacher", "已收藏教师")}
+          <button
+            type="button"
+            className={styles.teacherSave}
+            aria-pressed={saved}
+            aria-label={text(
+              locale,
+              `${saved ? "Unsave" : "Save"} teacher ${person.name}`,
+              `${saved ? "取消收藏" : "收藏"}教师 ${person.name}`,
+            )}
+            onClick={() => toggleInstructor(course, person)}
+          >
+            <Star size={12} fill={saved ? "currentColor" : "none"} />
+            <span>
+              {text(
+                locale,
+                saved ? "Saved teacher" : "Save teacher",
+                saved ? "已收藏教师" : "收藏教师",
+              )}
             </span>
-          ) : null}
+          </button>
         </div>
         <div
           className={styles.scores}
@@ -118,19 +133,6 @@ function Teacher({
           )}
         </span>
       </div>
-      <button
-        type="button"
-        className={styles.iconButton}
-        aria-pressed={saved}
-        aria-label={text(
-          locale,
-          `${saved ? "Unsave" : "Save"} teacher ${person.name}`,
-          `${saved ? "取消收藏" : "收藏"}教师 ${person.name}`,
-        )}
-        onClick={() => toggleInstructor(course, person)}
-      >
-        <Star size={13} fill={saved ? "currentColor" : "none"} />
-      </button>
     </div>
   );
 }

@@ -68,13 +68,13 @@ export function SyllabusSectionPicker({
     <div className={styles.picker}>
       <div className={styles.eyebrow}>
         <FileText size={13} />
-        <span>
+        <strong>
           {text(
             locale,
             `${rows.filter((row) => row.available).length} available syllabi · ${rows.length} sections`,
             `${rows.filter((row) => row.available).length} 份可用大纲 · ${rows.length} 个班次`,
           )}
-        </span>
+        </strong>
         <button
           type="button"
           className={styles.filterToggle}
@@ -265,7 +265,7 @@ export function SyllabusSectionPicker({
                 </RadioGroup.Item>
                 <button
                   type="button"
-                  className={styles.iconButton}
+                  className={styles.saveButton}
                   disabled={!available}
                   aria-pressed={Boolean(saved)}
                   aria-label={text(
@@ -278,6 +278,13 @@ export function SyllabusSectionPicker({
                   }
                 >
                   <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+                  <span>
+                    {text(
+                      locale,
+                      saved ? "Saved syllabus" : "Save syllabus",
+                      saved ? "已收藏大纲" : "收藏大纲",
+                    )}
+                  </span>
                 </button>
               </div>
               <SyllabusTeachers

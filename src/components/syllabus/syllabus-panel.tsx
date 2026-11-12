@@ -118,7 +118,7 @@ export default function SyllabusPanel({
           {chosen ? (
             <SyllabusReader key={chosen.code} entry={chosen} locale={locale} />
           ) : (
-            <EmptyResult>
+            <EmptyResult layout="stack" size={64}>
               {text(
                 locale,
                 "No matching published syllabus was found for this term and these class sections. It may be unpublished or not indexed yet.",

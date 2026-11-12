@@ -1,46 +1,57 @@
 .picker {
-  margin: 8px 0 14px;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--subtle-surface);
+  margin: 10px 0 18px;
+  padding: 12px;
+  border: 1px solid #c9ced5;
+  border-radius: 12px;
+  background: #f1f3f5;
 }
 .eyebrow {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  color: var(--muted);
+  gap: 7px;
+  margin-bottom: 10px;
+  color: var(--secondary-foreground);
   font-size: 11px;
+}
+.eyebrow strong {
+  font-weight: 600;
 }
 .cards {
   display: grid;
-  align-items: start;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  max-height: 300px;
+  align-content: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  max-height: 360px;
   overflow-y: auto;
   overscroll-behavior-y: auto;
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
   padding: 2px;
 }
 .card {
   position: relative;
   isolation: isolate;
   min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  border: 1px solid #cdd2d8;
+  border-radius: 9px;
   background: var(--surface);
+  box-shadow: 0 1px 2px #18223205;
 }
 .card[data-selected="true"] {
-  border-color: var(--accent-border);
-  background: var(--subtle-surface);
+  border-color: #b85b6b;
+  box-shadow: 0 0 0 1px #ba0c2f16;
 }
 .cardTop {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
+  background: #f8f9fa;
+}
+.card[data-selected="true"] .cardTop {
+  background: #fbf4f5;
 }
 .selection {
   display: flex;
@@ -48,10 +59,10 @@
   min-width: 0;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
-  min-height: 28px;
+  gap: 6px;
+  min-height: 30px;
   color: var(--secondary-foreground);
-  font-size: 10px;
+  font-size: 11px;
   text-align: left;
   cursor: pointer;
 }
@@ -60,7 +71,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  border-radius: 7px;
+  border-radius: 9px;
 }
 .card :is(button:not([role="radio"]), a) {
   position: relative;
@@ -68,42 +79,43 @@
 }
 .card:has(.selection:focus-visible) {
   outline: 2px solid var(--ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 .card[data-available="false"] {
-  border-color: #d5c69f;
+  border-color: #d6c8a5;
+  background: #fffdf8;
+}
+.card[data-available="false"] .cardTop {
   background: repeating-linear-gradient(
     135deg,
-    #fffdf7,
-    #fffdf7 12px,
-    #f8f4e8 12px,
-    #f8f4e8 13px
+    #faf5e9,
+    #faf5e9 12px,
+    #f3ead6 12px,
+    #f3ead6 14px
   );
 }
 .card[data-filter-match="false"][data-available="true"] {
   border-style: dashed;
   opacity: 0.68;
 }
-.unpublished {
-  color: #86600e;
-  font-size: 9px;
-}
+.unpublished,
 .filtered {
-  color: var(--muted);
-  font-size: 9px;
+  color: #86600e;
+  font-size: 10px;
 }
 .filterToggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  flex-shrink: 0;
+  gap: 5px;
   margin-left: auto;
-  min-height: 28px;
-  padding: 3px 6px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid #c9ced5;
+  border-radius: 6px;
   background: var(--surface);
   color: var(--secondary-foreground);
-  font-size: 10px;
+  font-size: 11px;
   cursor: pointer;
 }
 .filterToggle[data-active="true"] {
@@ -111,37 +123,41 @@
   color: var(--primary);
 }
 .filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: end;
-  gap: 7px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #c9ced5;
+  border-radius: 8px;
+  background: var(--surface);
 }
 .filters label {
   display: grid;
-  gap: 3px;
-  color: var(--muted);
-  font-size: 10px;
+  gap: 5px;
+  color: var(--secondary-foreground);
+  font-size: 11px;
 }
 .filters select {
-  max-width: 145px;
-  min-height: 29px;
-  padding: 3px 6px;
-  border: 1px solid var(--line);
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 7px;
+  border: 1px solid #c9ced5;
   border-radius: 5px;
-  background: var(--surface);
+  background: #fafbfc;
   color: var(--ink);
   font-size: 11px;
 }
 .filters > button {
-  min-height: 29px;
-  padding: 3px 7px;
+  justify-self: start;
   color: var(--primary);
-  font-size: 10px;
+  font-size: 11px;
   cursor: pointer;
 }
 .filters p {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   margin: 0;
   color: var(--muted);
   font-size: 10px;
@@ -149,26 +165,27 @@
 }
 .choice {
   display: grid;
-  flex: 0 0 14px;
+  flex: 0 0 16px;
   place-items: center;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--line);
+  width: 16px;
+  height: 16px;
+  border: 1px solid #b8bfc8;
   border-radius: 50%;
   background: var(--surface);
-  color: var(--primary);
+  color: white;
 }
 .selection[data-state="checked"] .choice {
   border-color: var(--primary);
+  background: var(--primary);
 }
 .number {
   color: var(--ink);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 .updated {
-  padding: 1px 5px;
+  padding: 2px 5px;
   border-radius: 4px;
   background: var(--accent-soft);
   color: var(--primary);
@@ -184,114 +201,123 @@
   border-radius: 50%;
   background: currentColor;
 }
-.iconButton {
+.saveButton,
+.teacherName > .teacherSave {
   display: inline-flex;
-  flex: 0 0 28px;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 1px solid #d4d8de;
   border-radius: 5px;
-  color: var(--muted);
+  background: var(--surface);
+  color: var(--secondary-foreground);
+  font-size: 10px;
+  font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
 }
-.iconButton:hover {
+.saveButton:hover,
+.teacherSave:hover {
   background: var(--secondary);
   color: var(--ink);
 }
-.iconButton[aria-pressed="true"] {
+.saveButton[aria-pressed="true"],
+.teacherSave[aria-pressed="true"] {
+  border-color: var(--accent-border);
   color: var(--primary);
+  background: var(--accent-soft);
 }
-.iconButton:disabled {
-  opacity: 0.3;
+.saveButton:disabled {
+  opacity: 0.4;
   cursor: default;
 }
-.iconButton:focus-visible,
-.selection:focus-visible {
+.saveButton:focus-visible,
+.teacherSave:focus-visible,
+.filterToggle:focus-visible {
   outline: 2px solid var(--ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 .teachers {
   display: grid;
-  gap: 5px;
-  margin-block: 5px;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
+  padding: 12px;
 }
 .teacher {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
   min-width: 0;
 }
 .teacherInfo {
   display: grid;
-  flex: 1;
   min-width: 0;
-  gap: 2px;
+  gap: 8px;
 }
 .teacherName {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 8px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  overflow-wrap: anywhere;
 }
 .teacherName :global([data-directory-identity]) {
-  width: auto;
   flex: 1;
+  min-width: 0;
 }
-.savedTeacher {
-  flex-shrink: 0;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: var(--secondary);
-  color: var(--secondary-foreground);
+.teacherName :global([data-directory-identity] > span) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.teacherSave {
+  min-height: 28px;
+  padding: 3px 5px;
   font-size: 9px;
-  font-weight: 400;
 }
 .tags {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.5;
 }
 .tags > span {
-  padding: 0 4px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f1f3f5;
   color: var(--secondary-foreground);
 }
 .tags small {
   font-size: 9px;
 }
 .scores {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 .score {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
-  gap: 3px;
-  padding: 2px 5px;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 4px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 5px;
   color: var(--muted);
-  background: var(--surface);
-  font-size: 9px;
+  background: #fafbfc;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
 .score b {
-  font-size: 10px;
+  font-size: 12px;
+  font-weight: 650;
 }
 .score small {
-  font-size: 8px;
+  font-size: 9px;
   opacity: 0.8;
 }
 .score[data-tone="positive"] {
@@ -313,33 +339,62 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 6px;
-  color: var(--muted);
+  gap: 4px 10px;
+  padding: 8px 12px 0;
+  border-top: 1px solid var(--line);
+  color: var(--secondary-foreground);
   font-size: 10px;
   line-height: 1.6;
 }
 .timestamp {
-  margin-top: 3px;
+  padding: 3px 12px 9px;
   color: var(--muted);
-  font-size: 9px;
-  line-height: 1.5;
+  font-size: 10px;
+  line-height: 1.6;
 }
 .muted {
   color: var(--muted);
   font-size: 11px;
 }
-@media (pointer: coarse) {
-  .iconButton {
-    min-width: 36px;
-    min-height: 36px;
-  }
-  .selection {
-    min-height: 36px;
-  }
-}
 @media (max-width: 600px) {
+  .picker {
+    padding: 8px;
+  }
+  .eyebrow {
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 10px;
+  }
+  .filterToggle {
+    font-size: 10px;
+  }
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 10px;
+  }
   .cards {
-    grid-template-columns: minmax(0, 1fr);
-    max-height: 282px;
+    max-height: 360px;
+  }
+  .cardTop {
+    padding: 7px 9px;
+    gap: 5px;
+  }
+  .teachers {
+    padding: 10px;
+    gap: 12px;
+  }
+  .teachers > .teacher + .teacher {
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+  }
+  .saveButton {
+    font-size: 9px;
+    padding-inline: 5px;
+  }
+  .schedule {
+    padding-inline: 10px;
+  }
+  .timestamp {
+    padding-inline: 10px;
   }
 }
