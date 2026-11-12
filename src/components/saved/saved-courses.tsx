@@ -3,7 +3,17 @@
 import { ProjectInfo } from "@/components/layout/project-info";
 import projectStyles from "@/components/layout/project-info.module.css";
 import Link from "next/link";
-import { BookOpen, GraduationCap, HardDrive, Star, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  FileText,
+  GraduationCap,
+  HardDrive,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { useSavedSyllabi } from "@/hooks/use-saved-syllabi";
+import { syllabusHasUpdate } from "@/lib/syllabus/saved";
+import { SavedSyllabi } from "./saved-syllabi";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMascot } from "@/components/brand/brand-mascot";
@@ -148,8 +158,13 @@ export function SavedCourses() {
     setEnrollmentWatch,
     setEnrollmentWatchInterval,
   } = usePreferences();
+  const { savedSyllabi } = useSavedSyllabi();
+  const syllabusUpdates = savedSyllabi.filter(syllabusHasUpdate).length;
   const savedCount =
-    saved.length + savedSections.length + savedInstructors.length;
+    saved.length +
+    savedSections.length +
+    savedInstructors.length +
+    savedSyllabi.length;
   return (
     <>
       <AppHeader active="saved" />
@@ -180,7 +195,9 @@ export function SavedCourses() {
                 ? "courses"
                 : savedSections.length
                   ? "sections"
-                  : "instructors"
+                  : savedInstructors.length
+                    ? "instructors"
+                    : "syllabi"
             }
             className={styles.tabs}
           >
@@ -203,7 +220,24 @@ export function SavedCourses() {
                 {text(locale, "Instructors", "教师")}
                 <span>{savedInstructors.length}</span>
               </TabsTrigger>
+              <TabsTrigger value="syllabi">
+                <FileText size={14} />
+                {text(locale, "Syllabi", "大纲")}
+                <span>{savedSyllabi.length}</span>
+                {syllabusUpdates ? (
+                  <b className={styles.syllabusUpdates}>
+                    {text(
+                      locale,
+                      `${syllabusUpdates} updates`,
+                      `${syllabusUpdates} 份更新`,
+                    )}
+                  </b>
+                ) : null}
+              </TabsTrigger>
             </TabsList>
+            <TabsContent value="syllabi" className={styles.tabContent}>
+              <SavedSyllabi locale={locale} />
+            </TabsContent>
             <TabsContent value="courses" className={styles.tabContent}>
               {saved.length ? (
                 <div className="course-list">

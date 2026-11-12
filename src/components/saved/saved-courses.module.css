@@ -1,11 +1,17 @@
 .tabs {
   gap: 18px;
 }
+.syllabusUpdates {
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 600;
+}
 
 .tabList {
   width: 100%;
   justify-content: flex-start;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
   border-bottom: 1px solid var(--line);
