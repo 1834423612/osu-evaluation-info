@@ -11,6 +11,7 @@ export const STORAGE_RULES: Record<string, Rule> = {
   saved: { version: 1, kind: "array" },
   "saved-sections": { version: 1, kind: "array" },
   "saved-instructors": { version: 1, kind: "array" },
+  "saved-syllabi": { version: 1, kind: "array" },
   "watch-sections": { version: 1, kind: "object" },
   locale: { version: 1, kind: "setting", allowed: ["en", "zh"] },
   "enrollment-watch": {
