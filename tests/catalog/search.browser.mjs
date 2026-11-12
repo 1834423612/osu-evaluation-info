@@ -133,6 +133,8 @@ try {
         requests.push(url);
         const q = url.searchParams.get("q") ?? "",
           subject = url.searchParams.get("subject");
+        if (q === "offline")
+          return route.fulfill({ status: 503, json: { error: "Unavailable" } });
         let found =
           q === "american AND experiment"
             ? [engineering, experiment]
@@ -210,6 +212,12 @@ try {
         "no horizontal overflow",
       );
     }
+    const outcomes = () =>
+      page.evaluate(() =>
+        window.searchEvents
+          .filter((event) => event.name === "course_search_results")
+          .map((event) => event.properties),
+      );
     await visit(
       "american experiment",
       "&campus=all&component=lec&instruction-mode=dl",
@@ -219,6 +227,9 @@ try {
       await page.locator(".course-code").innerText(),
       /CIVICLL 2110/,
     );
+    assert.equal((await outcomes()).length, 1);
+    assert.equal((await outcomes())[0].status, "matches");
+    assert.equal((await outcomes())[0].filter_count, 3);
     assert(
       requests.some(
         (url) =>
@@ -261,6 +272,11 @@ try {
       () => new URL(location.href).searchParams.get("cursor") === "r:1:12",
     );
     const secondCodes = await page.locator(".course-code").allTextContents();
+    assert.equal(
+      (await outcomes()).length,
+      1,
+      "pagination is not a new search result load",
+    );
     assert.equal(new Set([...firstCodes, ...secondCodes]).size, 24);
     await page
       .getByRole("button", {
@@ -278,6 +294,7 @@ try {
     );
     await visit("ENG2040");
     assert.equal(await page.locator(".course-card").count(), 0);
+    assert.equal((await outcomes())[0].status, "no_matches");
     assert(await page.locator('[data-search-suggestion="ENGR 2040"]').count());
     await page.locator(".results-area").scrollIntoViewIfNeeded();
     await page.screenshot({
@@ -297,6 +314,7 @@ try {
     );
     await visit("PHILOS 2465", "&subject=MATH&campus=all");
     assert.equal(await page.locator(".course-card").count(), 0);
+    assert.equal((await outcomes())[0].status, "filter_conflict");
     await page
       .getByRole("button", {
         name: locale === "zh" ? "移除学科筛选" : "Remove subject filter",
@@ -308,6 +326,11 @@ try {
         ?.textContent.includes("PHILOS 2465"),
     );
     assert.equal(new URL(page.url()).searchParams.get("campus"), "all");
+    await page.goto(`${base}/?q=offline&term=1272`, {
+      waitUntil: "networkidle",
+    });
+    await page.locator(".error-state").waitFor();
+    assert.equal((await outcomes())[0].status, "error");
     assert.deepEqual(errors, []);
     console.log(
       `PASS search ${width}px ${locale}: real transport, shared keywords, subject names, prefixes, suggestions, filters, pagination and browser Back`,

@@ -39,28 +39,35 @@ for (let page = 1; ; page++) {
     throw new Error("Incomplete analytics pagination");
   await new Promise((resolve) => setTimeout(resolve, 350));
 }
-const propertyMap = new Map();
-let propertyRows = 0;
-for (let page = 1; ; page++) {
-  const result = await read("/event-data", {
-    event: "course_search",
-    page: String(page),
-    pageSize: "500",
-  });
-  for (const event of result.data) {
-    const props = propertyMap.get(event.eventId) ?? {};
-    for (const item of event.eventProperties) {
-      propertyRows++;
-      props[item.dataKey] =
-        item.stringValue ?? item.numberValue ?? item.dateValue;
+async function readProperties(eventName) {
+  const properties = new Map();
+  let rows = 0;
+  for (let page = 1; ; page++) {
+    const result = await read("/event-data", {
+      event: eventName,
+      page: String(page),
+      pageSize: "500",
+    });
+    if (result.isCapped)
+      throw new Error(`Umami capped ${eventName} properties`);
+    for (const event of result.data) {
+      const props = properties.get(event.eventId) ?? {};
+      for (const item of event.eventProperties) {
+        rows++;
+        props[item.dataKey] =
+          item.stringValue ?? item.numberValue ?? item.dateValue;
+      }
+      properties.set(event.eventId, props);
     }
-    propertyMap.set(event.eventId, props);
+    if (rows >= result.count) break;
+    if (!result.data.length || page >= 1000)
+      throw new Error(`Incomplete ${eventName} property pagination`);
+    await new Promise((resolve) => setTimeout(resolve, 350));
   }
-  if (propertyRows >= result.count) break;
-  if (!result.data.length || page >= 1000)
-    throw new Error("Incomplete search-property pagination");
-  await new Promise((resolve) => setTimeout(resolve, 350));
+  return { properties, rows };
 }
+const submissions = await readProperties("course_search");
+const outcomes = await readProperties("course_search_results");
 const counts = (values) =>
   Object.fromEntries(
     [
@@ -73,7 +80,7 @@ const counts = (values) =>
 const searches = events
   .filter((event) => event.eventName === "course_search")
   .map((event) => {
-    const props = propertyMap.get(event.id) ?? {};
+    const props = submissions.properties.get(event.id) ?? {};
     return {
       at: event.createdAt,
       hostname: event.hostname,
@@ -87,12 +94,33 @@ const productionEvents = events.filter(
 const productionSearches = searches.filter(
   (event) => event.hostname === site.domain,
 );
+const resultLoads = events
+  .filter((event) => event.eventName === "course_search_results")
+  .map((event) => {
+    const props = outcomes.properties.get(event.id) ?? {};
+    return {
+      at: event.createdAt,
+      hostname: event.hostname,
+      query: props.search_term ?? null,
+      status: props.status ?? "unknown",
+      resultCount: props.result_count ?? null,
+      totalCourses: props.total_courses ?? null,
+      hasMore: props.has_more ?? null,
+      complete: props.complete ?? null,
+      term: props.term ?? null,
+      campus: props.campus ?? null,
+    };
+  });
+const productionResultLoads = resultLoads.filter(
+  (event) => event.hostname === site.domain,
+);
 const report = {
   site: { name: site.name, domain: site.domain, createdAt: site.createdAt },
   coverage: {
     through: new Date(end).toISOString(),
     eventsFetched: events.length,
-    searchPropertyRows: propertyRows,
+    searchPropertyRows: submissions.rows,
+    outcomePropertyRows: outcomes.rows,
     unlabelledSearches: searches.filter((row) => !row.query).length,
   },
   stats,
@@ -113,6 +141,13 @@ const report = {
     events: productionEvents.length,
     searches: productionSearches.length,
     queryCounts: counts(productionSearches.map((row) => row.query)),
+    resultLoads: productionResultLoads.length,
+    resultStatuses: counts(productionResultLoads.map((row) => row.status)),
+    confirmedEmptyQueries: counts(
+      productionResultLoads
+        .filter((row) => row.status === "no_matches")
+        .map((row) => row.query),
+    ),
     eventNames: counts(
       productionEvents
         .filter((event) => event.eventType === 2)
@@ -120,8 +155,15 @@ const report = {
     ),
   },
   searches,
+  resultLoads,
 };
 const output = process.argv[2] ?? "/tmp/osu-search-audit.json";
 await writeFile(output, JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ ...report, searches: undefined }, null, 2));
+console.log(
+  JSON.stringify(
+    { ...report, searches: undefined, resultLoads: undefined },
+    null,
+    2,
+  ),
+);
 console.log(`Search report: ${output}`);

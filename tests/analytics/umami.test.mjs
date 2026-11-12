@@ -3,6 +3,14 @@ import { describe, it } from "node:test";
 import { normalizeCourseSearch } from "../../src/lib/analytics.ts";
 
 describe("Umami course search labels", () => {
+  it("recognizes long subject names, separators and incomplete numbers consistently", () => {
+    assert.deepEqual(normalizeCourseSearch("PHILOSOPHY 2465"), {
+      searchTerm: "PHILOSOPHY 2465",
+      searchType: "course_code",
+    });
+    assert.equal(normalizeCourseSearch("cse 22").searchType, "course_code");
+    assert.equal(normalizeCourseSearch("math-1151").searchTerm, "MATH 1151");
+  });
   it("normalizes spaced and compact course codes to one label", () => {
     assert.deepEqual(normalizeCourseSearch(" math1151 "), {
       searchTerm: "MATH 1151",

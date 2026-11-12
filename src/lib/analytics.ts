@@ -13,7 +13,7 @@ export function normalizeCourseSearch(
     .slice(0, 80);
   if (!query) return null;
   const courseCode = query.match(
-    /^([a-z]{2,8})\s*(\d{3,5}(?:\.\d{1,3})?[a-z]{0,2})$/i,
+    /^([a-z][a-z-]{1,19}?)\s*[-:#]?\s*(\d{1,6}(?:\.\d{1,3})?[a-z]{0,2})$/i,
   );
   return courseCode
     ? {

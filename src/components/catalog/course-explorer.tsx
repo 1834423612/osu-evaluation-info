@@ -33,6 +33,9 @@ import { brand } from "@/lib/brand";
 import brandStyles from "@/components/brand/brand-identity.module.css";
 import { FilterPanel } from "./filter-panel";
 import { SearchContext } from "./search-context";
+import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
+import { courseSearchOutcome } from "@/lib/catalog/search-analytics";
+import { debugServiceControlled } from "@/lib/debug/services";
 import { CourseCard } from "./course-card";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
 import { Button } from "@/components/ui/button";
@@ -212,6 +215,16 @@ export function CourseExplorer() {
     params.delete(PAGE_HISTORY_PARAM);
     inflight.current = false;
     async function load() {
+      const started = performance.now();
+      function trackOutcome(data: CatalogResponse | null) {
+        if (debugServiceControlled("catalog")) return;
+        const properties = courseSearchOutcome(
+          params,
+          data,
+          performance.now() - started,
+        );
+        if (properties) trackUmamiEvent("course_search_results", properties);
+      }
       setLoading(true);
       setError(false);
       setPageIndex(restoredPage.pageIndex);
@@ -225,11 +238,13 @@ export function CourseExplorer() {
           renderedQuery.current = catalogQuery;
           setResult(data);
           setCourses(data.courses);
+          trackOutcome(data);
         }
       } catch {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && current === generation.current) {
           setError(true);
           setCourses([]);
+          trackOutcome(null);
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);

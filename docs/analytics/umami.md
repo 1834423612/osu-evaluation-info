@@ -22,6 +22,26 @@ referrers while preserving the five standard UTM parameters. Raw form contents
 are not copied into generic interaction events. The tracker respects the
 browser's Do Not Track signal.
 
+Completed first-page queries also emit `course_search_results`, including URL
+searches, filter changes, suggestion choices and successful retries. Pagination,
+cancelled requests and Dev Tools simulations are excluded. This is a result-load
+metric, not a one-to-one conversion event for form submissions.
+
+| Property                           | Meaning                                                                |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| `status`                           | `matches`, `no_matches`, `continuation`, `filter_conflict`, or `error` |
+| `result_count` / `total_courses`   | Courses shown on the page / known matching total (`-1` if unknown)     |
+| `complete` / `has_more`            | Candidate scan was complete / another result page is available         |
+| `search_term` / `search_type`      | Same normalized input labels as the submission event                   |
+| `match_kind`                       | Recognized course code, number, subject, or keywords                   |
+| `term` / `campus` / `filter_count` | Selected offering scope, without copying arbitrary filter values       |
+| `duration_ms`                      | Time to load results, rounded and capped at two minutes                |
+
+Treat only `no_matches` as a confirmed empty result. `continuation` is an
+unfinished search window; a network failure or conflicting filter is a different
+problem. Existing submission-only history cannot retroactively provide these
+outcomes. No visitor IDs, exception messages or API credentials enter this event.
+
 Load `recorder.js` with the same website ID to collect session replays and
 heatmap input. In the Umami website settings, enable Replays and Heatmaps and
 choose their sample and masking settings. These server-side settings are
@@ -49,6 +69,9 @@ so developer traffic does not inflate the result. It omits visitor/session IDs,
 locations, referrers and credentials. Keep the generated report outside the
 public repository. Search submission events alone do not establish whether a
 search succeeded; result instrumentation is required to measure that outcome.
+The audit reports production `resultStatuses` and `confirmedEmptyQueries` when
+new result events exist. An empty status map means no measured outcomes, not
+zero failed searches. Result loads and submissions should not share a denominator.
 
 API contracts: [Umami 3.4.1 event data](https://github.com/umami-software/umami/blob/v3.4.1/src/app/api/websites/%5BwebsiteId%5D/event-data/route.ts)
 and [API-key authentication](https://umami.is/blog/umami-v3.4).
