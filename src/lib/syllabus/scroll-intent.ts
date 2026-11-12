@@ -90,13 +90,13 @@ export function scrollPreviewPanel(anchor: Element, delta: number) {
   panel.scrollTop = part.next;
   return true;
 }
-/** Register on the reader root so every nested list/document follows one intent. */
+/** Long reading regions share preview intent; choice lists keep native gestures. */
 export function attachPreviewScrolling(reader: HTMLElement) {
   const nested = (target: EventTarget | null) => {
     if (
       !(target instanceof Element) ||
       target.closest(
-        "input,textarea,select,[contenteditable=true],[data-debug-tools],[data-translation-popover]",
+        "input,textarea,select,[contenteditable=true],[data-debug-tools],[data-translation-popover],[data-native-syllabus-scroll]",
       )
     )
       return null;

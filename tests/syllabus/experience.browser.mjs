@@ -355,6 +355,29 @@ try {
     "rgb(186, 12, 47)",
   );
   const secondCard = page.locator('[data-syllabus-card="example124"]');
+  const choices = page.locator("[data-native-syllabus-scroll]");
+  const coursePanel = page.locator(".course-detail-panel");
+  await choices.evaluate((node) => {
+    node.scrollTop = 0;
+  });
+  const outerBeforeChoices = await coursePanel.evaluate(
+    (node) => node.scrollTop,
+  );
+  await choices.hover();
+  await page.mouse.wheel(0, 240);
+  await page.waitForTimeout(250);
+  assert(
+    await choices.evaluate((node) => node.scrollTop > 0),
+    "Fast wheel stays in the syllabus choices",
+  );
+  assert.equal(
+    await coursePanel.evaluate((node) => node.scrollTop),
+    outerBeforeChoices,
+    "Choice scrolling must not also move the outer panel",
+  );
+  await choices.evaluate((node) => {
+    node.scrollTop = 0;
+  });
   await secondCard.click({
     position: { x: 20, y: (await secondCard.boundingBox()).height - 12 },
   });

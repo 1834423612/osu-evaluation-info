@@ -199,6 +199,7 @@ export function SyllabusSectionPicker({
       ) : null}
       <RadioGroup.Root
         className={styles.cards}
+        data-native-syllabus-scroll
         value={value}
         onValueChange={onChange}
         aria-label={text(locale, "Choose a section syllabus", "选择班次大纲")}
