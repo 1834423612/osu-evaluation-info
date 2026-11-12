@@ -34,14 +34,20 @@
   border-radius: 0;
   background: transparent;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
 }
 .tabList [data-slot="tabs-trigger"] {
   flex: 0 0 auto;
   min-height: 40px;
+  height: auto;
   gap: 6px;
   padding: 8px 0;
   color: var(--muted);
   font-size: 12px;
+}
+.tabList [data-slot="tabs-trigger"]::after {
+  bottom: 0;
 }
 .tabList [data-slot="tabs-trigger"][data-state="active"] {
   color: var(--primary);
