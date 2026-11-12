@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useSyllabusScroll } from "@/hooks/use-syllabus-scroll";
 import { EmptyResult } from "@/components/brand/empty-result";
 import Link from "next/link";
 import {
@@ -65,6 +66,7 @@ function RelatedLinks({
 }
 export function SavedSyllabi({ locale }: { locale: Locale }) {
   const { savedSyllabi, toggle } = useSavedSyllabi();
+  const scrollRef = useSyllabusScroll();
   const [selected, setSelected] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [status, setStatus] = useState("");
@@ -237,7 +239,11 @@ export function SavedSyllabi({ locale }: { locale: Locale }) {
             </SheetDescription>
             {chosen ? <RelatedLinks item={chosen} locale={locale} /> : null}
           </SheetHeader>
-          <div className={styles.readerBody} data-syllabus-reader>
+          <div
+            ref={scrollRef}
+            className={styles.readerBody}
+            data-syllabus-reader
+          >
             {chosen ? (
               <SyllabusReader
                 key={chosen.id}

@@ -1,8 +1,10 @@
-/** Consume only the distance available in a scroller; preserve the remainder. */
-export function splitScrollDelta(top: number, height: number, delta: number) {
-  const next = Math.max(0, Math.min(Math.max(0, height), top + delta));
-  return { next, remainder: delta - (next - top) };
-}
+import { splitScrollDelta } from "./scroll-math.ts";
+import {
+  beginPreviewTouch,
+  previewScrollIntent,
+  scrollPreviewPanel,
+} from "./scroll-intent.ts";
+export { splitScrollDelta } from "./scroll-math.ts";
 
 /** Browsers do not reliably chain scrolling across an iframe boundary. */
 export function attachSyllabusScrollChain(frame: HTMLIFrameElement) {
@@ -45,10 +47,30 @@ export function attachSyllabusScrollChain(frame: HTMLIFrameElement) {
         : event.deltaMode === 2
           ? root.clientHeight
           : 1;
-    if (forward(event.deltaY * unit)) event.preventDefault();
+    const delta = event.deltaY * unit;
+    if (
+      (previewScrollIntent(frame, delta, performance.now()) &&
+        scrollPreviewPanel(frame, delta)) ||
+      forward(delta)
+    ) {
+      event.preventDefault();
+      return;
+    }
+    // Apply ordinary wheel deltas in this document too: browser wheel latching
+    // can otherwise keep targeting the outer panel after a fast gesture.
+    const own = splitScrollDelta(
+      root.scrollTop,
+      root.scrollHeight - root.clientHeight,
+      delta,
+    );
+    if (own.next !== root.scrollTop) {
+      root.scrollTop = own.next;
+      event.preventDefault();
+    }
   };
   let lastY: number | null = null;
   const start = (event: TouchEvent) => {
+    beginPreviewTouch(frame, performance.now());
     lastY = event.touches.length === 1 ? event.touches[0].clientY : null;
   };
   const move = (event: TouchEvent) => {
@@ -57,7 +79,14 @@ export function attachSyllabusScrollChain(frame: HTMLIFrameElement) {
       return;
     }
     const nextY = event.touches[0].clientY;
-    if (lastY !== null && forward(lastY - nextY) && event.cancelable)
+    const delta = lastY === null ? 0 : lastY - nextY;
+    if (
+      lastY !== null &&
+      event.cancelable &&
+      ((previewScrollIntent(frame, delta, performance.now(), true) &&
+        scrollPreviewPanel(frame, delta)) ||
+        forward(delta))
+    )
       event.preventDefault();
     lastY = nextY;
   };

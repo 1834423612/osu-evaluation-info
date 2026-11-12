@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSyllabusScroll } from "@/hooks/use-syllabus-scroll";
 import { EmptyResult } from "@/components/brand/empty-result";
 import { ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export default function SyllabusPanel({
   focusClassNumber?: string | null;
 }) {
   const { subject, catalogNumber, termCode } = course;
+  const scrollRef = useSyllabusScroll();
   const [result, setResult] = useState<SyllabusResult<SyllabusEntry[]> | null>(
     null,
   );
@@ -74,7 +76,7 @@ export default function SyllabusPanel({
   });
 
   return (
-    <div className={styles.panel} data-syllabus-reader>
+    <div ref={scrollRef} className={styles.panel} data-syllabus-reader>
       {error ? (
         <div className={styles.notice} role="status">
           <p>
