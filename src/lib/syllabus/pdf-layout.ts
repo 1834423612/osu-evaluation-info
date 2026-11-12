@@ -150,7 +150,7 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
         style.lineHeight = `${(lineHeight / fontSize) * 100}%`;
       style.color = computed.color;
       style.textAlign = computed.textAlign;
-      style.textDecoration = tag === "a" ? "none" : computed.textDecorationLine;
+      style.textDecoration = computed.textDecorationLine;
       if (computed.backgroundColor !== "rgba(0, 0, 0, 0)")
         style.backgroundColor = computed.backgroundColor;
       style.marginTop = `${parseFloat(computed.marginTop) + parseFloat(computed.paddingTop)}px`;
@@ -195,6 +195,20 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
           "data-pdfmake",
           JSON.stringify({ headlineLevel: Number(tag[1]) }),
         );
+      if (
+        /^h[1-6]$/.test(tag) &&
+        parseFloat(computed.borderBottomWidth) > 0 &&
+        computed.borderBottomStyle !== "none"
+      ) {
+        target.setAttribute(
+          "data-syllabus-heading-rule",
+          JSON.stringify({
+            width: source.clientWidth * 0.75,
+            lineWidth: parseFloat(computed.borderBottomWidth) * 0.75,
+            color: computed.borderBottomColor,
+          }),
+        );
+      }
       if (tag === "img") {
         target.setAttribute("src", (source as HTMLImageElement).src);
         style.width = `${source.getBoundingClientRect().width}px`;

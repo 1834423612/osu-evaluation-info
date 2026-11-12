@@ -1,6 +1,7 @@
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import { officialSyllabusUrl } from "./normalize.ts";
 import { prepareSyllabusPdfLayout } from "./pdf-layout.ts";
+import { normalizeSyllabusPdfLinks, syllabusPdfColor } from "./pdf-content.ts";
 import type { SyllabusDocument } from "./types.ts";
 
 export function syllabusPdfFileName(document: SyllabusDocument) {
@@ -50,6 +51,46 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
     >["window"],
     tableAutoSize: true,
     collapseMargins: true,
+    removeExtraBlanks: true,
+    customTag: ({
+      element,
+      ret,
+    }: {
+      element: HTMLElement;
+      ret: Record<string, unknown>;
+    }) => {
+      const rule = element.getAttribute("data-syllabus-heading-rule");
+      if (!rule) return ret;
+      const { width, lineWidth, color } = JSON.parse(rule) as {
+        width: number;
+        lineWidth: number;
+        color: string;
+      };
+      const margin = ret.margin;
+      const headlineLevel = ret.headlineLevel;
+      delete ret.margin;
+      delete ret.headlineLevel;
+      return {
+        stack: [
+          ret,
+          {
+            canvas: [
+              {
+                type: "line",
+                x1: 0,
+                y1: lineWidth / 2,
+                x2: width,
+                y2: lineWidth / 2,
+                lineWidth,
+                lineColor: syllabusPdfColor(color),
+              },
+            ],
+          },
+        ],
+        margin,
+        headlineLevel,
+      };
+    },
     defaultStyles: {
       h1: { margin: 0 },
       h2: { margin: 0 },
@@ -62,6 +103,7 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
     },
   };
   const converted = htmlToPdfmake(layout.html, conversionOptions);
+  normalizeSyllabusPdfLinks(converted);
   const definition: TDocumentDefinitions = {
     pageSize: "LETTER",
     // 48 CSS px at 96 dpi = 36 PDF points: matches the official .doc container.
