@@ -50,12 +50,16 @@ both returned fields strictly, combine offering variants per campus, and travers
 at most 12 pages with a 15-second between-page budget. Incomplete reads remain
 marked partial. `catalog-number` facets represent levels such as `2xxx`, not exact
 catalog numbers. Sort values remain `subject`, `-subject`, `catalogNumber`, and
-`-catalogNumber`. The newest published searchable term is the default.
+`-catalogNumber`. Text searches additionally support local `relevance` sorting.
+The newest published searchable term is the default. Subject-name recognition,
+keyword ranking and explicit suggestions are described in [course search](search.md).
 
-A live cursor is `page:offset` within grouped courses. Browser windows are bounded
+A browsing cursor is `page:offset` within grouped courses; ranked text searches use
+`r:upstream-page:offset` within a bounded candidate window. Browser pages are bounded
 to 12–24 courses; mounted results remain bounded. Mirror `m:` cursors stay bound to
 their published snapshot and filters. Official `totalItems` counts sections;
-`totalCourses` is exact only for exact searches or complete mirror snapshots.
+`totalCourses` is exact only for exact searches, complete uncapped ranked scans,
+or complete mirror snapshots.
 
 ## Local evaluation enrichment and database fallback
 
