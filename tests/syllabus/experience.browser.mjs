@@ -807,6 +807,17 @@ try {
     0,
   );
   assert.equal(empty.errors.length, 0, empty.errors.join("\n"));
+  const feedback = empty.page.locator(
+    '[data-empty-result][data-layout="stack"]',
+  );
+  await feedback.scrollIntoViewIfNeeded();
+  const mascot = await feedback.locator("img").boundingBox();
+  const message = await feedback.locator("div").last().boundingBox();
+  assert(
+    mascot.width <= 64 && mascot.y + mascot.height <= message.y,
+    "Missing syllabus illustration sits above the message",
+  );
+  await empty.page.screenshot({ path: `${output}/unpublished-390.png` });
   await empty.context.close();
   console.log(
     "Empty results: expressions rotate on re-entry and unpublished sections remain visible without readable documents",

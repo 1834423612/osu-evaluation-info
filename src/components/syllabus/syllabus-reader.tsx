@@ -64,7 +64,7 @@ export function SyllabusReader({
   if (error)
     return (
       <div className={styles.notice} role="status">
-        <EmptyResult size={40}>
+        <EmptyResult layout="stack" size={56}>
           <p>
             {error === "restricted"
               ? text(
@@ -195,7 +195,7 @@ export function SyllabusReader({
           />
         </>
       ) : (
-        <EmptyResult>
+        <EmptyResult layout="stack" size={56}>
           {text(
             locale,
             "No readable sections were returned. Check the files on the official page.",
