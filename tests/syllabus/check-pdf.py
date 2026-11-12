@@ -21,4 +21,12 @@ with pdfplumber.open(sys.argv[1]) as document:
             # pdfmake includes the normal inter-word space in each word annotation.
             assert link["x1"] - max(char["x1"] for char in text) < max(char["size"] for char in text) * 0.5 + 1, (number, "link extends beyond text", link)
     assert any("Buckeye" in font for font in fonts), fonts
+    if "--art-reference" in sys.argv:
+        first = document.pages[0]
+        assert first.images and 34 <= first.images[0]["top"] <= 44, "opening logo must use the page margin, not extra blank rows"
+        miranda = first.search("Miranda Holmes")[0]
+        qualifications = first.search("Professional Qualifications")[0]
+        assert 17 <= qualifications["top"] - miranda["top"] <= 19, "16px/24px CSS text must keep its 18pt baseline rhythm"
+        for page in document.pages:
+            assert not page.extract_text().split("OSU · Simple Syllabus")[0].rstrip().endswith("Week Topic"), "table header must stay with a body row"
     print(json.dumps({"pages": len(document.pages), "links": links, "fonts": sorted(fonts), "letterMarginsAndLinkBounds": "passed"}))

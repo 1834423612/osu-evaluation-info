@@ -59,6 +59,21 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
       element: HTMLElement;
       ret: Record<string, unknown>;
     }) => {
+      if (element.tagName === "TABLE" && ret.table) {
+        const table = ret.table as Record<string, unknown>;
+        const rows = [...element.querySelectorAll("tr")];
+        const headers = rows.findIndex(
+          (row) =>
+            ![...row.cells].every(
+              (cell) =>
+                cell.tagName === "TH" ||
+                Boolean(cell.querySelector("strong,b")),
+            ),
+        );
+        table.headerRows = headers < 0 ? rows.length : headers;
+        table.keepWithHeaderRows = 1;
+        table.dontBreakRows = true;
+      }
       const rule = element.getAttribute("data-syllabus-heading-rule");
       if (!rule) return ret;
       const { width, lineWidth, color } = JSON.parse(rule) as {
@@ -113,7 +128,7 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
       subject: document.entry.subtitle,
       creator: "WahO! — browser-local syllabus export",
     },
-    defaultStyle: { font: "Roboto", fontSize: 12, lineHeight: 1.5 },
+    defaultStyle: { font: "Roboto", fontSize: 12, lineHeight: 1.28 },
     pageBreakBefore: (node, container) =>
       Boolean(
         node.headlineLevel && !container.getFollowingNodesOnPage().length,

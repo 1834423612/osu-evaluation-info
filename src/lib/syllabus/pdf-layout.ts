@@ -2,6 +2,7 @@ import { officialSyllabusFrame } from "./official-render.ts";
 import { readSyllabusAssetBytes, syllabusAssetKind } from "./asset-policy.ts";
 import type { SyllabusDocument } from "./types.ts";
 import decompress from "woff2-encoder/decompress";
+import { pdfFontHeightRatio } from "./pdf-typography.ts";
 
 const fontOrigin = "https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2";
 type Face = { key: string; file: string; url: string };
@@ -132,6 +133,15 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
       if (computed.display === "none" || computed.visibility === "hidden")
         return null;
       const tag = source.tagName.toLowerCase();
+      // Empty Angular layout placeholders become full text lines in pdfmake.
+      // Their browser height is zero; omit them rather than exporting blank rows.
+      if (
+        tag !== "br" &&
+        tag !== "img" &&
+        !source.textContent?.trim() &&
+        !source.querySelector("img,table,hr")
+      )
+        return null;
       const target = document.createElement(
         tag.startsWith("app-") || tag === "section" || tag === "main"
           ? "div"
@@ -154,6 +164,9 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
       if (computed.backgroundColor !== "rgba(0, 0, 0, 0)")
         style.backgroundColor = computed.backgroundColor;
       style.marginTop = `${parseFloat(computed.marginTop) + parseFloat(computed.paddingTop)}px`;
+      // The page margin already provides the logo's opening space.
+      if (source.matches('p:has(img[alt="The Ohio State University"])'))
+        style.marginTop = "0px";
       style.marginBottom = `${parseFloat(computed.marginBottom) + parseFloat(computed.paddingBottom)}px`;
       style.marginLeft = `${parseFloat(computed.marginLeft) + parseFloat(computed.paddingLeft)}px`;
       style.marginRight = `${parseFloat(computed.marginRight) + parseFloat(computed.paddingRight)}px`;
@@ -246,12 +259,22 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
       caption.remove();
     }
     const loaded = await Promise.all(
-      [...faces.values()].map(async (face) => ({
-        ...face,
+      [...faces.values()].map(async (face) => {
         // Reconstruct transformed WOFF2 glyphs before pdfmake/fontkit subsets them.
-        data: base64(await decompress(await assetBytes(face.url, 2_000_000))),
-      })),
+        const bytes = await decompress(await assetBytes(face.url, 2_000_000));
+        return {
+          ...face,
+          data: base64(bytes),
+          heightRatio: pdfFontHeightRatio(bytes),
+        };
+      }),
     );
+    const ratios = new Map(loaded.map((face) => [face.key, face.heightRatio]));
+    for (const element of root.querySelectorAll<HTMLElement>("*")) {
+      const ratio = ratios.get(element.style.fontFamily) ?? 1.171875;
+      if (element.style.lineHeight.endsWith("%"))
+        element.style.lineHeight = `${parseFloat(element.style.lineHeight) / ratio}%`;
+    }
     return { html: root.innerHTML, fonts: loaded };
   } finally {
     frame.remove();
