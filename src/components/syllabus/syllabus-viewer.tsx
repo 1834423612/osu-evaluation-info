@@ -13,7 +13,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -392,13 +391,7 @@ export const SyllabusViewer = forwardRef<
                     onClick={() => navigate(section.id)}
                     title={section.title}
                   >
-                    <span className={styles.chapterNumber}>
-                      {index < current ? (
-                        <Check size={12} />
-                      ) : (
-                        String(index + 1).padStart(2, "0")
-                      )}
-                    </span>
+                    <span className={styles.chapterNumber}>{index + 1}</span>
                     <span>
                       {sectionLabel(section, sections.indexOf(section), locale)}
                     </span>
@@ -407,15 +400,6 @@ export const SyllabusViewer = forwardRef<
                 </li>
               ))}
             </ol>
-            <div className={styles.outlineProgress}>
-              <span>
-                {text(locale, "Reading progress", "阅读进度")}
-                <b>{position.percent}%</b>
-              </span>
-              <div>
-                <i style={{ width: `${position.percent}%` }} />
-              </div>
-            </div>
           </nav>
         ) : null}
         <div className={styles.canvas}>
