@@ -1,5 +1,12 @@
 # Official class catalog
 
+Text queries default to `GET /api/catalog/search`, a typo-tolerant index over the
+complete published PostgreSQL catalog. It returns `sourceMode: "index"`, its sync
+time, matched totals, per-course evidence and version-pinned `s:` cursors. See
+[the search engine](search.md) for retrieval, filters, lifecycle and evaluation.
+It never proxies OSU. The direct transport below still supplies broad browsing,
+live verification, course-detail refreshes, official facets and enrollment.
+
 Browser requests first discover public OSU endpoint configuration from the existing
 application routes. These discovery handlers return static configuration and never
 request official course data. The browser then builds the official query, fetches

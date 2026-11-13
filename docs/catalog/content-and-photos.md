@@ -1,9 +1,10 @@
 # OSU course and faculty services
 
-The catalog uses the public OSU content endpoints discovered through the existing
-application routes. Browsers fetch official course/section data directly; see
-[the catalog transport contract](api.md). Subject/catalog checks and pagination
-remain exact, including queries where a prerequisite mentions another course.
+Text retrieval uses the [complete published catalog index](search.md). Live
+details and seats still use public OSU endpoints discovered through the existing
+application routes; browsers fetch those directly. See [the transport contract](api.md).
+Approximate retrieval keeps actual subject/catalog/campus identities and never
+assigns ratings using a fuzzy course code or a prerequisite mention.
 
 Faculty photos use the same discovery pattern. `GET /api/instructors/photo`
 returns a public, cacheable dictionary:
