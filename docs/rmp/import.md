@@ -59,10 +59,11 @@ The course detail API queries accepted profiles for the selected campus and a ve
 
 ## Maintenance order
 
-For an authorized recurring job, run collection, mapping, and optional SQLite supplement reconciliation sequentially. A nonzero exit must stop the dependent steps. Refresh the official catalog before mapping when current teaching facts are needed. Existing commands are ready for a scheduler; this change does not install a recurring automation.
+After a completed authorized RMP collection or import, run mapping again. The same command reevaluates every campus from current source data and preserves manual decisions. A nonzero exit must stop dependent steps. Refresh the official catalog first when new teaching facts are needed. The existing scheduled catalog workflow also refreshes these mappings; no separate RMP collection automation is installed.
 
 ```sh
 pnpm rmp:collect --confirm-authorization && pnpm rmp:mappings
+pnpm rmp:mappings --coverage-only
 # Optional while retaining the legacy source archive:
 pnpm rmp:supplement
 ```

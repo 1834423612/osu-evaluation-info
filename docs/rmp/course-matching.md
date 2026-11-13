@@ -53,7 +53,10 @@ which adds active official `instructor_course` evidence for this exact campus an
 course. History queries also work when the current section list has no usernames
 or cannot be refreshed. Accepted profile results remain bounded to 120 per request.
 
-Source reads use a read-only repeatable snapshot. Large RMP payloads are paged and
+Source reads use a read-only repeatable snapshot. Official catalog/evaluation,
+department and name-history reads are bounded batches; snapshot readers use the
+published generation/term primary-key prefix. Empty sections still advance the
+cursor, and all instructors in a section remain together. Large RMP payloads are paged and
 ASCII-encoded with SHA-256 checks. Stage inserts are bounded; derived identity and
 course updates commit together. Every staged course row is compared with storage
 before commit. Unchanged evidence avoids update churn and duplicate refresh hashes.
@@ -61,10 +64,33 @@ before commit. Unchanged evidence avoids update churn and duplicate refresh hash
 ## Run and audit
 
 ```sh
-python3 -m pip install -r scripts/rmp/requirements.txt
+python3 -m venv .cache/rmp-python
+. .cache/rmp-python/bin/activate
+python -m pip install -r scripts/rmp/requirements.txt
+pnpm rmp:mappings --coverage-only
 pnpm rmp:mappings --dry-run --audit-report /tmp/rmp-audit.json
 pnpm rmp:mappings --audit-report /tmp/rmp-applied.json
 ```
+
+After any RMP collection/import, rerun the same mapping command. It rereads
+current source reviews, official facts and labels across every campus; there is
+no campus-specific invocation or list of manually repaired professors to replay.
+Activate the existing `.cache/rmp-python` environment in later terminal sessions,
+or invoke its Python executable directly. Reconciliation itself makes no RMP
+network requests.
+
+`--coverage-only` quickly reads stored results in a read-only transaction without
+taking the writer lock, running matching, or installing schemas. It returns
+`overall` and `campuses`, each with `total`, `linked`, `unlinked`, `pending`,
+`no_candidate`, `rejected` and distinct `official_instructors`. Counts use active
+RMP profile IDs. Multiple RMP profiles may belong to one official instructor;
+profile totals cannot be described as deduplicated real people. One profile in
+several campuses is counted once globally, so campus totals can overlap. Profiles
+without a school are retained under `UNASSIGNED`.
+
+Full/dry-run audit reports include the proposed counts at
+`summary.profile_coverage`. This includes profiles without any reviews, and
+prioritizes accepted links over pending candidates to avoid double counting.
 
 The default `--term-window 0` reads all available history. `--dry-run` never
 installs schemas or changes mapping rows. JSON reports include every profile/
