@@ -1,4 +1,5 @@
 import { queryDatabase } from "@/lib/db";
+import { verifiedOfficialProfileSource } from "./profile-source";
 import {
   directoryHasDepartmentProfile,
   hasDirectoryRoleEvidence,
@@ -72,7 +73,7 @@ export function isVerifiedDirectoryPerson(
       person.source === "content-api-v2" ||
       person.source === "department-profile") &&
     (person.source !== "department-profile" ||
-      person.sourceUrl === `https://math.osu.edu/people/${expectedIdentity}`) &&
+      verifiedOfficialProfileSource(person.sourceUrl, expectedIdentity)) &&
     typeof person.person?.name === "string" &&
     person.person.name.length > 0 &&
     person.person.name.length <= 180 &&
@@ -137,7 +138,7 @@ export async function writeDirectoryPerson(
       result.source !== "content-api-v2" &&
       result.source !== "department-profile") ||
     (result.source === "department-profile" &&
-      result.sourceUrl !== `https://math.osu.edu/people/${identity}`)
+      !verifiedOfficialProfileSource(result.sourceUrl, identity))
   )
     return false;
 

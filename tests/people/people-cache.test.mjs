@@ -20,6 +20,12 @@ const databaseText = stripTypeScriptTypes(
     `const queryDatabase = (...args) => globalThis[Symbol.for("osu-directory-cache-test")].queryDatabase(...args);`,
   )
   .replace(
+    '"./profile-source"',
+    JSON.stringify(
+      new URL("../../src/lib/people/profile-source.ts", import.meta.url).href,
+    ),
+  )
+  .replace(
     '"./directory"',
     JSON.stringify(
       new URL("../../src/lib/people/directory.ts", import.meta.url).href,

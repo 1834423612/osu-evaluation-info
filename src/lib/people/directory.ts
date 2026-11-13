@@ -499,7 +499,7 @@ export function searchSocketIo(
   });
 }
 
-async function searchLegacy(
+export async function searchLegacy(
   term: string,
   deadline: number,
 ): Promise<unknown[] | null> {
