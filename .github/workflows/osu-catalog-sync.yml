@@ -54,12 +54,21 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm catalog:prune
 
+      - name: Refresh RMP identity and course evidence
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/rmp-mapping-runtime"
+          "$RUNNER_TEMP/rmp-mapping-runtime/bin/pip" install --disable-pip-version-check -r scripts/rmp/requirements.txt
+          "$RUNNER_TEMP/rmp-mapping-runtime/bin/python" scripts/rmp/sync_rmp_mappings.py --require-schema
+
       - name: Summarize catalog failure
         if: failure()
         shell: bash
         run: |
           {
-            echo 'Catalog synchronization or maintenance failed. The previous publication is preserved.'
+            echo 'Catalog synchronization or maintenance failed. Inspect the failed step; published snapshots and source RMP records are retained.'
             if [[ -f "$RUNNER_TEMP/catalog-sync.log" ]]; then
               echo '```text'
               tail -n 20 "$RUNNER_TEMP/catalog-sync.log"
