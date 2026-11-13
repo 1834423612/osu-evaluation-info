@@ -1,7 +1,7 @@
 name: Refresh saved RMP data
 on:
   schedule:
-    - cron: "9 */8 * * *"
+    - cron: "30 3 * * 6"
       timezone: "America/New_York"
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
   refresh:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 150
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
       - name: Resume bounded incremental source collection
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python scripts/rmp/collect_rmp_osu.py --confirm-authorization --max-requests 180 --min-interval 10 --refresh-days 7
+        run: python scripts/rmp/collect_rmp_osu.py --confirm-authorization --max-requests 600 --batch-size 20 --min-interval 10 --refresh-days 7
       - name: Reconcile source identities and course labels
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
