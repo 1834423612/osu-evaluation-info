@@ -73,3 +73,12 @@
     padding: 11px 16px 13px;
   }
 }
+.libraryLink {
+  display: block;
+  width: fit-content;
+  margin-top: 6px;
+  color: var(--primary);
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

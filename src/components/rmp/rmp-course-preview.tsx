@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useEffect, useRef, useState } from "react";
 import { Gauge, MessageCircle } from "lucide-react";
@@ -133,7 +134,7 @@ export function RmpCoursePreview({
           </p>
         </>
       ) : (
-        <p className={styles.empty}>
+        <div className={styles.empty}>
           {state?.key !== key
             ? text(locale, "Loading student voices…", "正在汇总学生评价…")
             : insight?.status === "unavailable" ||
@@ -143,12 +144,22 @@ export function RmpCoursePreview({
                   "RMP reviews are temporarily unavailable",
                   "RMP 评价暂不可用",
                 )
-              : text(
-                  locale,
-                  "No matched course reviews yet",
-                  "暂无匹配的课程评价",
-                )}
-        </p>
+              : text(locale, "No verified reviews yet", "暂无已确认评价")}
+          {state?.key === key && insight?.status !== "unavailable" ? (
+            <Link
+              className={styles.libraryLink}
+              href={{
+                pathname: "/rmp",
+                query: {
+                  q: `${course.subject}${course.catalogNumber}`,
+                  campus: course.campusCode,
+                },
+              }}
+            >
+              {text(locale, "Search other RMP profiles", "查找其他 RMP 档案")}
+            </Link>
+          ) : null}
+        </div>
       )}
     </div>
   );

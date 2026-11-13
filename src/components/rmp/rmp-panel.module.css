@@ -254,6 +254,14 @@
   font-weight: 600;
   margin: 0;
 }
+.fullHistory {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 8px 0;
+  color: var(--primary);
+  font-size: 11px;
+}
 .reviewPreview {
   min-width: 0;
 }

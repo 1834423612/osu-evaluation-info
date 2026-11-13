@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { debugFetch } from "@/lib/debug/services";
 
@@ -28,6 +29,7 @@ import { InstructorDirectoryIdentity } from "@/components/people/people-director
 import { TranslateText } from "@/components/translation/translate-text";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { DataSourceBadge } from "@/components/ui/data-source-badge";
+import { CourseRmpLeads } from "./course-leads";
 import styles from "./rmp-panel.module.css";
 
 function score(value: number | null) {
@@ -135,16 +137,16 @@ export default function RmpPanel({
       <p className={styles.note}>
         {text(
           locale,
-          `Reviews for ${course.subject} ${course.catalogNumber} from teachers identified in current courses or official course history. Recent averages use the past two years of data.`,
-          `展示当前科目或 OSU 官方课程历史记录中所有教师的 ${course.subject} ${course.catalogNumber} 评论。近期均分采用近两年样本。`,
+          `Verified teachers · ${course.subject} ${course.catalogNumber} · Averages from the past two years.`,
+          `已确认教师 · ${course.subject} ${course.catalogNumber} · 均分取近两年评价。`,
         )}
       </p>
       <p className={styles.caution}>
         <AlertTriangle size={15} aria-hidden="true" />
         {text(
           locale,
-          "Unofficial Rate My Professors reviews. Profiles may include self-ratings, and student opinions can be strongly subjective or unrepresentative.",
-          "以下为 Rate My Professors 非官方评论；资料可能包含教师自评，学生观点也可能较主观或无法代表多数体验。",
+          "Unofficial student opinions from Rate My Professors.",
+          "Rate My Professors 非官方学生主观评价。",
         )}
       </p>
       {course.sectionsPartial ? (
@@ -190,15 +192,15 @@ export default function RmpPanel({
                 <strong>
                   {text(
                     locale,
-                    "No course-matched reviews yet",
-                    "暂未匹配到本课程评论",
+                    "No verified instructor reviews",
+                    "暂无已确认教师的课程评价",
                   )}
                 </strong>
                 <p>
                   {text(
                     locale,
-                    "We couldn't find RMP reviews connected to the instructors for this course. Other courses' ratings are kept separate.",
-                    "暂未找到与本课程教师关联的 RMP 评论。其他课程的评分不会混入这里。",
+                    "Check the other RMP profiles below.",
+                    "也可查看下方其他 RMP 档案。",
                   )}
                 </p>
               </div>
@@ -217,6 +219,7 @@ export default function RmpPanel({
                 subject={course.subject}
               />
             ))}
+          <CourseRmpLeads query={query} locale={locale} key={query} />
           <footer className={styles.footer}>
             {text(
               locale,
@@ -482,6 +485,19 @@ function InstructorReviews({
                 `${instructor.name} 的课程评论`,
               )}
             </h5>
+            <Link
+              className={styles.fullHistory}
+              href={`/rmp/${instructor.professorId}`}
+              target="_blank"
+              rel="noopener"
+            >
+              {text(
+                locale,
+                "This teacher’s reviews across all courses",
+                "查看该教师全部课程评价",
+              )}{" "}
+              <ArrowUpRight size={12} />
+            </Link>
             <div
               className={
                 showAllReviews ? styles.reviewViewport : styles.reviewPreview
