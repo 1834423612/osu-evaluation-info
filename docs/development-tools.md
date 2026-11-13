@@ -111,3 +111,18 @@ and `GUIDE_TEST_DEBUG_KEY` to match. It uses the same external Playwright setup 
 the translation browser tests (`PLAYWRIGHT_MODULE` and, if needed,
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE`). API data is mocked; production debug
 authentication is exercised against the real endpoint.
+
+## UI 文案
+
+常规页面只保留简短的状态、事实和操作。不要重复数据来源标签，
+不要在每次搜索后解释内部检索规则，也不要加入赞美功能或装饰性的长段落。
+有实际歧义、失败或操作风险时给出必要提示；较长的来源和计算解释放在
+数据与方法页面或对应 info 面板。两种语言都遵守同样的简洁要求。
+
+## Production compiler
+
+`pnpm build` explicitly uses Next.js webpack. On 2026-11-13 the local Next.js
+16.4.3 Turbopack production build remained at compilation without a diagnostic,
+while webpack completed production compilation and type generation successfully.
+The production browser checks use that generated build. Development continues
+to use the existing dev command.
