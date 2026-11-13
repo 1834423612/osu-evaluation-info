@@ -94,51 +94,53 @@ export function RmpCoursePreview({
               <AlertTriangle size={12} aria-hidden="true" />{" "}
               {text(
                 locale,
-                "Instructor identity / teaching link unconfirmed",
-                "教师身份或任课关联待确认",
+                "Unconfirmed reviews · Excluded from course scores",
+                "待确认评价 · 不计入课程评分",
               )}
             </p>
           ) : null}
-          <div
-            className={styles.difficulty}
-            data-period={insight.difficultyPeriod}
-          >
-            <Gauge size={13} aria-hidden="true" />
-            <span>{text(locale, "Difficulty", "课程难度")}</span>
-            <strong>
-              {difficulty === null ? "—" : difficulty.toFixed(1)}
-              <small> / 5</small>
-            </strong>
-            <span className={styles.meter} aria-hidden="true">
-              <i
-                style={{
-                  width: `${difficulty === null ? 0 : ((difficulty - 1) / 4) * 100}%`,
-                }}
-              />
-            </span>
-            <small>
-              {difficulty === null
-                ? text(locale, "No recent ratings", "暂无近期评分")
-                : insight.difficultyPeriod === "historical"
-                  ? text(
-                      locale,
-                      `${insight.difficultyCount} all-time · May be outdated`,
-                      `${insight.difficultyCount} 条历史 · 可能过时`,
-                    )
-                  : text(
-                      locale,
-                      `${insight.difficultyCount} ratings · 2 years`,
-                      `近两年 ${insight.difficultyCount} 条`,
-                    )}
-            </small>
-          </div>
+          {insight.identityBasis !== "unconfirmed" ? (
+            <div
+              className={styles.difficulty}
+              data-period={insight.difficultyPeriod}
+            >
+              <Gauge size={13} aria-hidden="true" />
+              <span>{text(locale, "Difficulty", "课程难度")}</span>
+              <strong>
+                {difficulty === null ? "—" : difficulty.toFixed(1)}
+                <small> / 5</small>
+              </strong>
+              <span className={styles.meter} aria-hidden="true">
+                <i
+                  style={{
+                    width: `${difficulty === null ? 0 : ((difficulty - 1) / 4) * 100}%`,
+                  }}
+                />
+              </span>
+              <small>
+                {difficulty === null
+                  ? text(locale, "No recent ratings", "暂无近期评分")
+                  : insight.difficultyPeriod === "historical"
+                    ? text(
+                        locale,
+                        `${insight.difficultyCount} all-time · May be outdated`,
+                        `${insight.difficultyCount} 条历史 · 可能过时`,
+                      )
+                    : text(
+                        locale,
+                        `${insight.difficultyCount} ratings · 2 years`,
+                        `近两年 ${insight.difficultyCount} 条`,
+                      )}
+              </small>
+            </div>
+          ) : null}
           {insight.tags.length ? (
             <RmpWordCloud tags={insight.tags} locale={locale} seed={key} />
-          ) : (
+          ) : insight.identityBasis !== "unconfirmed" ? (
             <p className={styles.empty}>
               {text(locale, "No review tags yet", "暂无评价标签")}
             </p>
-          )}
+          ) : null}
           <p className={styles.note}>
             {text(
               locale,

@@ -24,9 +24,11 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
     ).values(),
   ];
   const confirmed = allProfiles.filter(
-    (item) => item.association !== "unconfirmed" && item.reviewCount > 0,
+    (item) => item.association === "verified" && item.reviewCount > 0,
   );
-  const professors = confirmed.length
+  // Unconfirmed profiles retain their own scores, but never enter course totals.
+  const professors = confirmed;
+  const displayed = confirmed.length
     ? confirmed
     : allProfiles.filter((item) => item.reviewCount > 0);
   const tags = new Map<string, { tag: string; count: number }>();
@@ -80,10 +82,10 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
     status: summary.status,
     identityBasis: confirmed.length
       ? "verified"
-      : professors.length
+      : displayed.length
         ? "unconfirmed"
         : "none",
-    profileCount: professors.length,
+    profileCount: displayed.length,
     quality: qualityCount ? qualityTotal / qualityCount : null,
     qualityCount,
     tags: [...tags.values()]
@@ -100,7 +102,7 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
       : historicalCount
         ? "historical"
         : "none",
-    reviewCount: professors.reduce((sum, item) => sum + item.reviewCount, 0),
+    reviewCount: displayed.reduce((sum, item) => sum + item.reviewCount, 0),
     matchedInstructorCount: summary.matchedInstructorCount,
     requestedInstructorCount: summary.requestedInstructorCount,
     recentSince: summary.recentSince,

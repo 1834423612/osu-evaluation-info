@@ -8,6 +8,7 @@ import { createRmpPreviewClient } from "../../src/lib/rmp/preview-client.ts";
 
 const professor = (id, difficulty, count, tags) => ({
   professorId: id,
+  association: "verified",
   recentDifficulty: difficulty,
   recentDifficultyCount: count,
   reviewCount: count,
@@ -172,7 +173,7 @@ test("list previews batch and share requests without fetching one endpoint per c
   assert.equal(calls.length, 1);
 });
 
-test("confirmed course reviews take priority; unconfirmed-only courses retain scores with provenance", () => {
+test("unconfirmed profiles never enter course scores, including when they are the only available reviews", () => {
   const verified = {
     ...professor("v", 2, 2, []),
     association: "verified",
@@ -194,9 +195,26 @@ test("confirmed course reviews take priority; unconfirmed-only courses retain sc
   const fallback = aggregateRmpInsights({
     instructors: [{ ...verified, reviewCount: 0 }, lead],
   });
-  assert.equal(fallback.quality, 1);
-  assert.equal(fallback.difficulty, 5);
+  assert.equal(fallback.quality, null);
+  assert.equal(fallback.qualityCount, 0);
+  assert.equal(fallback.difficulty, null);
+  assert.equal(fallback.difficultyCount, 0);
+  assert.equal(fallback.difficultyPeriod, "none");
   assert.equal(fallback.reviewCount, 20);
   assert.equal(fallback.identityBasis, "unconfirmed");
-  assert.equal(fallback.tags[0].tag, "Caring");
+  assert.deepEqual(fallback.tags, []);
+  assert.equal(lead.recentQuality, 1);
+  assert.equal(lead.recentDifficulty, 5);
+});
+
+test("an absent association cannot silently contribute to a verified total", () => {
+  const profile = {
+    ...professor("unknown", 1, 100, []),
+    recentQuality: 5,
+    recentQualityCount: 100,
+  };
+  delete profile.association;
+  const summary = aggregateRmpInsights({ instructors: [profile] });
+  assert.equal(summary.quality, null);
+  assert.equal(summary.difficulty, null);
 });
