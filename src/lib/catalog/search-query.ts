@@ -13,6 +13,8 @@ const STOP = new Set([
   "on",
   "at",
 ]);
+// Legacy live-only hints. The primary engine derives its vocabulary and
+// subject abbreviations from the full published catalog without this table.
 const ALIASES: Record<string, string> = {
   cs: "CSE",
   compsci: "CSE",

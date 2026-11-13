@@ -172,6 +172,31 @@ export function createCatalogTransport(
 
   const requestLive: typeof fetch = async (input, init = {}) => {
     const local = new URL(String(input), "https://catalog.invalid");
+    if (local.pathname === "/api/catalog/search") {
+      const response = await fetcher(local.pathname + local.search, {
+        ...init,
+        cache: "no-store",
+        signal: init.signal
+          ? AbortSignal.any([init.signal, AbortSignal.timeout(30000)])
+          : AbortSignal.timeout(30000),
+      });
+      if (!response.ok) return response;
+      const result = (await response.json()) as CatalogResponse;
+      if (!Array.isArray(result.courses) || result.courses.length > 24)
+        throw new Error("Invalid indexed search response");
+      await enrich(result.courses, init.signal);
+      const available = result.courses.filter(
+        (course) =>
+          course.evaluation && course.evaluation.status !== "unavailable",
+      ).length;
+      result.evaluationStatus =
+        available === result.courses.length
+          ? "available"
+          : available
+            ? "partial"
+            : "unavailable";
+      return Response.json(result);
+    }
     const resource = (Object.keys(PATHS) as CatalogResource[]).find(
       (key) => PATHS[key] === local.pathname,
     );

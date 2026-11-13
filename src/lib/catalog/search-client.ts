@@ -2,6 +2,7 @@ import { cacheBypassed } from "../debug/flags.ts";
 import { debugServiceControlled } from "../debug/services.ts";
 import { fetchCatalogResource } from "./browser-transport.ts";
 import { createSmartCatalogSearch } from "./smart-search.ts";
+import { createIndexedCatalogSearch } from "../search/client.ts";
 import type { CatalogFacet } from "./types";
 
 const cache = new Map<
@@ -34,7 +35,11 @@ export function fetchCatalogFacets(term: string) {
   }
   return saved.promise;
 }
-export const searchCatalogWithRelated = createSmartCatalogSearch(
+const liveSearch = createSmartCatalogSearch(
   fetchCatalogResource,
   fetchCatalogFacets,
+);
+export const searchCatalogWithRelated = createIndexedCatalogSearch(
+  fetchCatalogResource,
+  liveSearch,
 );

@@ -1,4 +1,5 @@
 "use client";
+import { SearchMatch } from "./search-match";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
@@ -340,6 +341,7 @@ function CoursePreview({
 
 export function CourseCard({
   course,
+  showSearchMatch = false,
   locale,
   saved,
   onSave,
@@ -349,6 +351,7 @@ export function CourseCard({
   onEnrollmentWatchIntervalChange,
 }: {
   course: CatalogCourse;
+  showSearchMatch?: boolean;
   locale: Locale;
   saved: boolean;
   onSave: (course: CatalogCourse) => void;
@@ -740,6 +743,9 @@ export function CourseCard({
       }}
       aria-label={`${course.subject} ${course.catalogNumber}: ${course.title}`}
     >
+      {showSearchMatch ? (
+        <SearchMatch evidence={course.searchMatch} locale={locale} />
+      ) : null}
       <div className="course-main">
         <div className="course-content">
           <div className="course-eyeline">

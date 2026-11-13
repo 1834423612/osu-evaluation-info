@@ -55,6 +55,12 @@
   color: var(--muted);
   font-size: 10px;
 }
+.suggestions > summary {
+  margin-bottom: 7px;
+  color: #365e52;
+  font-size: 11px;
+  cursor: pointer;
+}
 .suggestions > div {
   display: flex;
   flex-wrap: wrap;

@@ -26,8 +26,8 @@ export const methodology: MethodologyCopy = {
       id: "classes",
       title: "Current classes",
       paragraphs: [
-        "Your browser retrieves course details, sections, meeting times, and enrollment from Ohio State’s official class service. The displayed time records retrieval, not university publication. Availability can change afterward.",
-        "Official result counts refer to sections, not unique courses. A course can span several result windows; expanding its sections retrieves the complete current offering. Future classes may still lack a teacher or schedule.",
+        "Search matches titles, subjects, descriptions and close spellings against the complete synced OSU catalog. The sync time is shown, and approximate matches are labelled. A search suggestion never changes the course or teacher identity used for ratings.",
+        "Opening a course refreshes official details in your browser; seat checks are separate live requests. Counts distinguish sections from campus-specific course entries. These are retrieval or sync times, not university publication times. Future classes may still lack a teacher or schedule.",
       ],
       link: {
         label: "Ohio State class search",

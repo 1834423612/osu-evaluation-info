@@ -73,6 +73,25 @@ function catalogParams(value: string) {
   return params.toString();
 }
 
+function catalogFilterFacets(indexed: CatalogFacet[], live: CatalogFacet[]) {
+  const labels = new Map(
+    live.map((facet) => [
+      facet.slug,
+      new Map(facet.items.map((item) => [item.value, item.label])),
+    ]),
+  );
+  const merged = new Map(live.map((facet) => [facet.slug, facet]));
+  for (const facet of indexed)
+    merged.set(facet.slug, {
+      ...facet,
+      items: facet.items.map((item) => ({
+        ...item,
+        label: labels.get(facet.slug)?.get(item.value) ?? item.label,
+      })),
+    });
+  return [...merged.values()];
+}
+
 function restorePageState(history: string | null, cursor: string | null) {
   if (history) {
     try {
@@ -380,11 +399,18 @@ export function CourseExplorer() {
         "ratingSource",
         "focusSection",
         "relatedFrom",
+        "searchMode",
       ].includes(key),
   );
   const filters = (
     <FilterPanel
-      facets={baseFacets.length ? baseFacets : (result?.filters ?? [])}
+      facets={
+        result?.sourceMode === "index"
+          ? catalogFilterFacets(result.filters, baseFacets)
+          : baseFacets.length
+            ? baseFacets
+            : (result?.filters ?? [])
+      }
       params={new URLSearchParams(query)}
       locale={locale}
       onChange={updateParam}
@@ -632,6 +658,10 @@ export function CourseExplorer() {
                 locale={locale}
                 onChoose={chooseSearch}
                 onClearSubject={() => updateParam("subject", "")}
+                onSwitchMode={(mode) =>
+                  updateParam("searchMode", mode === "live" ? "live" : "")
+                }
+                liveMode={searchParams.get("searchMode") === "live"}
               />
             ) : null}
             <div className="results-context">
@@ -643,8 +673,8 @@ export function CourseExplorer() {
                     ·{" "}
                     {text(
                       locale,
-                      result.sourceMode === "mirror" ? "Synced" : "Fetched",
-                      result.sourceMode === "mirror" ? "同步于" : "获取于",
+                      result.sourceMode !== "official" ? "Synced" : "Fetched",
+                      result.sourceMode !== "official" ? "同步于" : "获取于",
                     )}{" "}
                     {new Date(
                       result.snapshotAt ?? result.fetchedAt,
@@ -659,21 +689,27 @@ export function CourseExplorer() {
               </span>
               <span className="source-status">
                 <span className="source-dot" />
-                {result?.sourceMode === "mirror"
-                  ? `${text(locale, "OSU snapshot", "OSU 快照")} · ${new Date(result.snapshotAt ?? result.fetchedAt).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" })}`
-                  : text(locale, "Official OSU data", "OSU 官方数据")}
+                {result?.sourceMode === "index"
+                  ? text(locale, "Synced catalog index", "已同步课程目录索引")
+                  : result?.sourceMode === "mirror"
+                    ? `${text(locale, "OSU snapshot", "OSU 快照")} · ${new Date(result.snapshotAt ?? result.fetchedAt).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" })}`
+                    : text(locale, "Official OSU data", "OSU 官方数据")}
               </span>
             </div>
             {!loading && result ? (
               <p className="official-disclaimer">
                 {text(
                   locale,
-                  result.sourceMode === "mirror"
-                    ? "Showing a synced official snapshot. Confirm current details in Buckeye Link."
-                    : "Fetched from OSU's official course service. Confirm current details in Buckeye Link.",
-                  result.sourceMode === "mirror"
-                    ? "当前展示官方同步快照；最新课程与选课情况请以 Buckeye Link 为准。"
-                    : "课程信息实时获取自 OSU 官方；最新课程与选课情况请以 Buckeye Link 为准。",
+                  result.sourceMode === "index"
+                    ? "Results come from the synced OSU catalog. Open a course to refresh its official details; seat checks remain live."
+                    : result.sourceMode === "mirror"
+                      ? "Showing a synced official snapshot. Confirm current details in Buckeye Link."
+                      : "Fetched from OSU's official course service. Confirm current details in Buckeye Link.",
+                  result.sourceMode === "index"
+                    ? "结果来自已同步的 OSU 目录；打开课程可刷新官方详情，空位信息仍单独实时查询。"
+                    : result.sourceMode === "mirror"
+                      ? "当前展示官方同步快照；最新课程与选课情况请以 Buckeye Link 为准。"
+                      : "课程信息实时获取自 OSU 官方；最新课程与选课情况请以 Buckeye Link 为准。",
                 )}
               </p>
             ) : null}
@@ -725,6 +761,7 @@ export function CourseExplorer() {
                   <CourseCard
                     key={course.id}
                     course={course}
+                    showSearchMatch
                     locale={locale}
                     saved={saved.some((item) => item.id === course.id)}
                     enrollmentWatch={enrollmentWatch}
@@ -782,20 +819,24 @@ export function CourseExplorer() {
                   <p>
                     {text(
                       locale,
-                      "The official source could not be reached. Your search is preserved.",
-                      "暂时无法连接官方数据源，你的搜索条件已保留。",
+                      "Course search could not be completed. Your query and filters are preserved.",
+                      "课程搜索暂未完成，你的搜索条件已保留。",
                     )}
                   </p>
                 </div>
                 <Button
                   variant="outline"
                   onClick={() =>
-                    courses.length
-                      ? void loadPage("current")
-                      : setRetry((value) => value + 1)
+                    searchParams.get("cursor")
+                      ? updateParam("q", searchParams.get("q") ?? "")
+                      : courses.length
+                        ? void loadPage("current")
+                        : setRetry((value) => value + 1)
                   }
                 >
-                  {text(locale, "Retry", "重试")}
+                  {searchParams.get("cursor")
+                    ? text(locale, "Restart search", "重新搜索")
+                    : text(locale, "Retry", "重试")}
                 </Button>
               </div>
             ) : null}
