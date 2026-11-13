@@ -5,6 +5,7 @@ import {
   ChevronDown,
   FileChartColumn,
   LibraryBig,
+  MessageSquare,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { text, type Locale } from "@/lib/i18n";
@@ -34,6 +35,21 @@ export function ResourcesMenu({
           sideOffset={10}
           collisionPadding={10}
         >
+          <DropdownMenu.Item asChild>
+            <Link href="/rmp">
+              <MessageSquare size={17} />
+              <span>
+                <b>{text(locale, "RMP faculty library", "RMP 教师库")}</b>
+                <small>
+                  {text(
+                    locale,
+                    "All profiles and course reviews",
+                    "全部档案与课程评价",
+                  )}
+                </small>
+              </span>
+            </Link>
+          </DropdownMenu.Item>
           <DropdownMenu.Item asChild>
             <Link href="/reference">
               <LibraryBig size={17} />

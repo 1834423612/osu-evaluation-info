@@ -26,7 +26,7 @@ import styles from "./language-controls.module.css";
 export function AppHeader({
   active = "explore",
 }: {
-  active?: "explore" | "saved" | "methodology" | "reference";
+  active?: "explore" | "saved" | "methodology" | "reference" | "rmp";
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
@@ -124,7 +124,11 @@ export function AppHeader({
           <div className="header-actions">
             <ResourcesMenu
               locale={locale}
-              active={active === "methodology" || active === "reference"}
+              active={
+                active === "methodology" ||
+                active === "reference" ||
+                active === "rmp"
+              }
             />
             <Button
               variant="outline"

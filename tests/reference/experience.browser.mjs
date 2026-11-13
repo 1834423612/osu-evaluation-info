@@ -82,7 +82,7 @@ try {
           exact: true,
         })
         .click();
-      assert.equal(await page.getByRole("menuitem").count(), 2);
+      assert.equal(await page.getByRole("menuitem").count(), 3);
       await page.screenshot({
         path: `${output}/resources-${locale}-${width}.png`,
       });
