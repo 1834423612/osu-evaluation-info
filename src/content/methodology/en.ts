@@ -60,7 +60,7 @@ export const methodology: MethodologyCopy = {
       title: "Match courses and people carefully",
       paragraphs: [
         "Course history matches subject, catalog number, and campus. An official teacher score requires an exact OSU email within that course. Similar names alone never establish a match. Staff labels come from the official people directory; RMP reviews retain their own source and matching context.",
-        "RMP quality, difficulty, and tags are unofficial student reports, separate from SEI and SSLE. Unconfirmed profiles remain accessible in the RMP library and separate course leads; they do not enter verified-instructor summaries.",
+        "RMP is calculated separately from SEI and SSLE. Course summaries prefer verified instructor and teaching links. When only unconfirmed profiles have reviews, their scores and comments remain visible with a warning. Read course reviews inline; use the RMP library for other courses.",
       ],
     },
     {

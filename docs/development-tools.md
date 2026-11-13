@@ -126,3 +126,10 @@ authentication is exercised against the real endpoint.
 while webpack completed production compilation and type generation successfully.
 The production browser checks use that generated build. Development continues
 to use the existing dev command.
+
+## 大纲结构只读审计
+
+`node --env-file=.env.local scripts/syllabus/audit-schedules.mjs [输出 JSON 路径]`
+按 100 条一批遍历全部保留文档版本，统计表格、周次、日期、原文回退及长主题。
+在只读事务中执行；默认输出 `.cache/syllabus-schedule-audit.json`。
+该报告用于检查新出现的官方大纲结构，不触发重抓、关联或删除。
