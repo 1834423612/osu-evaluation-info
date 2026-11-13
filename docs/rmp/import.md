@@ -44,7 +44,7 @@ pnpm rmp:mappings --dry-run
 pnpm rmp:mappings
 ```
 
-`osu_rmp.instructor_identity` uses the official OSU `name.number` as its key. `instructor_course` retains term, campus, course, and source evidence. `professor_identity_map` links stable RMP IDs to OSU identities without changing collector source tables. Automatic acceptance requires a unique exact normalized name plus campus, department, and overlapping course evidence. Ambiguous candidates remain unaccepted; a matching name alone is insufficient. Complete official snapshots update evidence, while incomplete catalog imports cannot erase prior evidence.
+`osu_rmp.instructor_identity` uses the official OSU `name.number` as its key. `instructor_course` retains term, campus, course, and source evidence. `professor_identity_map` links stable RMP IDs to OSU identities without changing collector source tables. Automatic acceptance requires a unique exact normalized name plus campus, academic subject/department, and overlapping course evidence. Ambiguous candidates remain unaccepted; a matching name alone is insufficient. Complete official snapshots update evidence, while incomplete catalog imports cannot erase prior evidence.
 
 Manual decisions are retained across refreshes and recorded in `mapping_decision_log`:
 
@@ -55,7 +55,7 @@ pnpm rmp:mappings --reject RMP_ID:lastname.123 --reason 'Different instructor'
 
 Review the evidence before accepting. The mapping installer applies additive migrations and builds the large course/recent-review index concurrently. Recurring collection does not require reimporting or migrating all reviews.
 
-The course detail API queries only accepted current instructors, the selected campus, and an exact normalized course. It returns independent recent quality/difficulty sample sizes over two years and at most three dated comments per profile. Historical totals remain visible. RMP samples never enter the official SEI/SSLE scores. Catalog result lists do not load RMP comments. Query inputs, database pool size, statement duration, response caches, and concurrent photo requests are bounded.
+The course detail API queries accepted profiles for the selected campus and a verified canonical course. Course pages explicitly include official course-history teachers; individual teacher scores retain the selected-teacher scope. Accepted subject aliases are resolved through the derived course mapping, and catalog numbers are never fuzzy-matched. It returns independent recent quality/difficulty sample sizes over two years and at most three dated comments per profile. Historical totals remain visible. RMP samples never enter the official SEI/SSLE scores. Catalog result lists do not load RMP comments. Query inputs, database pool size, statement duration, response caches, and concurrent photo requests are bounded.
 
 ## Maintenance order
 
