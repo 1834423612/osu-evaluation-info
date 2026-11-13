@@ -1,5 +1,4 @@
 "use client";
-import { useRef, useState } from "react";
 import { Info, X, ArrowUpRight } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { reference as en } from "@/content/reference/en";
@@ -18,21 +17,11 @@ export function ReferenceInfo({
 }) {
   const copy = locale === "zh" ? zh : en;
   const topic = copy.topics.find((topic) => topic.id === id)!;
-  const trigger = useRef<HTMLButtonElement>(null);
-  const [container, setContainer] = useState<HTMLElement | null>(null);
   return (
-    <Dialog.Root
-      onOpenChange={(open) => {
-        if (open)
-          setContainer(
-            trigger.current?.closest<HTMLElement>('[role="dialog"]') ?? null,
-          );
-      }}
-    >
+    <Dialog.Root>
       <Dialog.Trigger asChild>
         <button
           type="button"
-          ref={trigger}
           className={styles.info}
           data-reference-info={id}
           aria-label={text(
@@ -45,7 +34,7 @@ export function ReferenceInfo({
           <Info size={13} />
         </button>
       </Dialog.Trigger>
-      <Dialog.Portal container={container}>
+      <Dialog.Portal>
         <Dialog.Overlay
           className={styles.overlay}
           onClick={(event) => event.stopPropagation()}
