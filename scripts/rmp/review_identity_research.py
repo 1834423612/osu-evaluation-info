@@ -37,6 +37,53 @@ def safe_json_value(value):
     return value
 
 
+def decode_verified_payload(encoded, digest):
+    try:
+        decoded = base64.b64decode(encoded)
+        if hashlib.sha256(decoded).hexdigest() != digest:
+            raise ValueError("Payload hash mismatch")
+        return decoded
+    except Exception as error:
+        raise ValueError(
+            "Stored source observation failed integrity validation"
+        ) from error
+
+
+def read_observation_payload(conn, pid, key, encoded, digest):
+    """Never repair truncated JSON/base64; reread the same immutable observation."""
+    try:
+        return decode_verified_payload(encoded, digest)
+    except ValueError:
+        pass
+    encoded, expected, size = conn.execute(
+        """SELECT encode(convert_to(data::text,'UTF8'),'base64'),
+      encode(sha256(convert_to(data::text,'UTF8')),'hex'),octet_length(data::text)
+      FROM osu_rmp.identity_research_observation WHERE professor_id=%s AND evidence_sha256=%s""",
+        (pid, key),
+    ).fetchone()
+    if expected != digest:
+        raise RuntimeError("Source observation changed during replay")
+    try:
+        return decode_verified_payload(encoded, digest)
+    except ValueError:
+        pass
+    fragments = []
+    for offset in range(1, size + 1, 3000):
+        part = conn.execute(
+            """SELECT encode(substring(convert_to(data::text,'UTF8') FROM %s FOR 3000),'base64')
+          FROM osu_rmp.identity_research_observation WHERE professor_id=%s AND evidence_sha256=%s""",
+            (offset, pid, key),
+        ).fetchone()[0]
+        try:
+            fragments.append(base64.b64decode(part))
+        except Exception as error:
+            raise RuntimeError("A source evidence fragment is incomplete") from error
+    decoded = b"".join(fragments)
+    if len(decoded) != size or hashlib.sha256(decoded).hexdigest() != digest:
+        raise RuntimeError("Source evidence fragments failed integrity validation")
+    return decoded
+
+
 def stored_observations():
     """Rebuild an audit on another machine from its saved server-side evidence."""
     conn = connect_database(load_dsn(None))
@@ -49,21 +96,17 @@ def stored_observations():
                 """WITH chosen AS (
               SELECT DISTINCT professor_id FROM osu_rmp.identity_research_observation
               WHERE professor_id>%s ORDER BY professor_id LIMIT 10)
-              SELECT p.professor_id,encode(convert_to(o.data::text,'UTF8'),'base64'),
+              SELECT p.professor_id,o.evidence_sha256,encode(convert_to(o.data::text,'UTF8'),'base64'),
                 encode(sha256(convert_to(o.data::text,'UTF8')),'hex')
-              FROM chosen p CROSS JOIN LATERAL (SELECT data FROM osu_rmp.identity_research_observation
+              FROM chosen p CROSS JOIN LATERAL (SELECT evidence_sha256,data FROM osu_rmp.identity_research_observation
                 WHERE professor_id=p.professor_id ORDER BY last_checked_at DESC,evidence_sha256 DESC LIMIT 1) o
               ORDER BY p.professor_id""",
                 (after,),
             ).fetchall()
             if not rows:
                 break
-            for pid, encoded, digest in rows:
-                decoded = base64.b64decode(encoded)
-                if hashlib.sha256(decoded).hexdigest() != digest:
-                    raise RuntimeError(
-                        "Stored source observation failed integrity validation"
-                    )
+            for pid, key, encoded, digest in rows:
+                decoded = read_observation_payload(conn, pid, key, encoded, digest)
                 result[pid] = json.loads(decoded)
             after = rows[-1][0]
         conn.execute("COMMIT")

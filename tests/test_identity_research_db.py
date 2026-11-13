@@ -1,11 +1,16 @@
 import os
+import hashlib
+import base64
 from pathlib import Path
 import sys
 import unittest
 from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts/rmp"))
-from review_identity_research import withdraw_changed_tool_links
+from review_identity_research import (
+    withdraw_changed_tool_links,
+    read_observation_payload,
+)
 from sync_rmp_mappings import connect_database, load_dsn
 
 
@@ -14,6 +19,53 @@ from sync_rmp_mappings import connect_database, load_dsn
     "Explicit database test opt-in required",
 )
 class ResearchDecisionDatabaseTests(unittest.TestCase):
+    def test_truncated_batch_and_single_row_transport_recover_verified_fragments(self):
+        conn = connect_database(load_dsn(None))
+        schema = "rmp_research_test_" + uuid4().hex
+
+        class Scoped:
+            fragments = 0
+
+            def execute(self, sql, params=()):
+                cursor = conn.execute(sql.replace("osu_rmp", schema), params)
+                if "octet_length" in sql:
+                    row = cursor.fetchone()
+
+                    class BrokenRow:
+                        def fetchone(self):
+                            return ("broken", row[1], row[2])
+
+                    return BrokenRow()
+                self.fragments += 1
+                return cursor
+
+        scoped = Scoped()
+        try:
+            conn.execute("CREATE SCHEMA " + schema)
+            conn.execute(
+                "CREATE TABLE "
+                + schema
+                + ".identity_research_observation(professor_id bigint,evidence_sha256 text,data jsonb)"
+            )
+            conn.execute(
+                "INSERT INTO "
+                + schema
+                + ".identity_research_observation VALUES(1,'key',jsonb_build_object('value',repeat('中文é',4000)))"
+            )
+            expected, digest = conn.execute(
+                "SELECT convert_to(data::text,'UTF8'),encode(sha256(convert_to(data::text,'UTF8')),'hex') FROM "
+                + schema
+                + ".identity_research_observation"
+            ).fetchone()
+            result = read_observation_payload(scoped, 1, "key", "broken", digest)
+            self.assertEqual(result, bytes(expected))
+            self.assertGreater(scoped.fragments, 1)
+            self.assertEqual(hashlib.sha256(result).hexdigest(), digest)
+        finally:
+            assert schema.startswith("rmp_research_test_")
+            conn.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE")
+            conn.close()
+
     def test_revises_only_contradicted_tool_decisions_and_preserves_human_overrides(
         self,
     ):
