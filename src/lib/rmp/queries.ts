@@ -44,6 +44,7 @@ export const COURSE_SQL = `
     stats.recent_quality, stats.recent_difficulty,
     stats.recent_quality_count, stats.recent_difficulty_count,
     stats.historical_difficulty, stats.historical_difficulty_count,
+    stats.historical_quality, stats.historical_quality_count,
     stats.latest_review_date, stats.refreshed_at,
     coalesce(comments.reviews, '[]'::jsonb) AS reviews,
     coalesce(tags.top_tags, '[]'::jsonb) AS top_tags
@@ -67,6 +68,14 @@ export const COURSE_SQL = `
         WHERE r.difficulty_rating BETWEEN 1 AND 5
           AND (r.review_date <= CURRENT_DATE OR r.review_date IS NULL)
       )::int AS historical_difficulty_count,
+      avg(coalesce((r.helpful_rating+r.clarity_rating)/2,r.helpful_rating,r.clarity_rating)) FILTER (
+        WHERE coalesce((r.helpful_rating+r.clarity_rating)/2,r.helpful_rating,r.clarity_rating) BETWEEN 1 AND 5
+          AND (r.review_date <= CURRENT_DATE OR r.review_date IS NULL)
+      )::float8 AS historical_quality,
+      count(*) FILTER (
+        WHERE coalesce((r.helpful_rating+r.clarity_rating)/2,r.helpful_rating,r.clarity_rating) BETWEEN 1 AND 5
+          AND (r.review_date <= CURRENT_DATE OR r.review_date IS NULL)
+      )::int AS historical_quality_count,
       max(r.review_date)::text AS latest_review_date,
       max(r.updated_at)::text AS refreshed_at
     FROM osu_rmp.course_review_query r

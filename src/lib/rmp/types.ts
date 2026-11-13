@@ -30,6 +30,8 @@ export type RmpInstructor = {
   recentDifficulty: number | null;
   recentQualityCount: number;
   recentDifficultyCount: number;
+  historicalQuality: number | null;
+  historicalQualityCount: number;
   historicalDifficulty: number | null;
   historicalDifficultyCount: number;
   latestReviewDate: string | null;

@@ -137,8 +137,8 @@ export default function RmpPanel({
       <p className={styles.note}>
         {text(
           locale,
-          `${course.subject} ${course.catalogNumber} · Averages from the past two years.`,
-          `${course.subject} ${course.catalogNumber} · 均分取近两年评价。`,
+          `${course.subject} ${course.catalogNumber} · Recent ratings first; historical averages are labeled.`,
+          `${course.subject} ${course.catalogNumber} · 近两年优先，历史均分单独标注。`,
         )}
       </p>
       <p className={styles.caution}>
@@ -264,6 +264,15 @@ function InstructorReviews({
   const reviewViewportRef = useRef<HTMLDivElement>(null);
   const pageRequest = useRef<AbortController | null>(null);
   useEffect(() => () => pageRequest.current?.abort(), []);
+  const historicalQuality =
+    instructor.recentQuality === null && instructor.historicalQuality != null;
+  const historicalDifficulty =
+    instructor.recentDifficulty === null &&
+    instructor.historicalDifficulty != null;
+  const quality =
+    instructor.recentQuality ?? instructor.historicalQuality ?? null;
+  const difficulty =
+    instructor.recentDifficulty ?? instructor.historicalDifficulty ?? null;
   const commonTags = instructor.topTags.slice(0, 5);
   const siblingProfiles = summary.instructors.filter(
     (item) =>
@@ -399,23 +408,29 @@ function InstructorReviews({
           <span className={styles.summaryScore}>
             <strong
               data-tone={
-                instructor.recentQuality === null
+                quality === null
                   ? "none"
-                  : instructor.recentQuality >= 4.2
+                  : quality >= 4.2
                     ? "positive"
-                    : instructor.recentQuality <= 3.3
+                    : quality <= 3.3
                       ? "caution"
                       : "mixed"
               }
             >
-              {score(instructor.recentQuality)}
+              {score(quality)}
             </strong>
             <small>
-              {text(
-                locale,
-                `${instructor.recentReviewCount} recent · ${instructor.reviewCount} total`,
-                `近两年 ${instructor.recentReviewCount} 条 · 总计 ${instructor.reviewCount} 条`,
-              )}
+              {historicalQuality
+                ? text(
+                    locale,
+                    `Historical · ${instructor.reviewCount} reviews`,
+                    `历史评分 · ${instructor.reviewCount} 条`,
+                  )
+                : text(
+                    locale,
+                    `${instructor.recentReviewCount} recent · ${instructor.reviewCount} total`,
+                    `近两年 ${instructor.recentReviewCount} 条 · 总计 ${instructor.reviewCount} 条`,
+                  )}
             </small>
           </span>
           <span className={styles.disclosureCue}>
@@ -464,14 +479,32 @@ function InstructorReviews({
       <CollapsibleContent data-rmp-review-content>
         <dl className={styles.stats}>
           <div>
-            <dt>{text(locale, "Recent quality", "近期教学评价")}</dt>
-            <dd>{score(instructor.recentQuality)}</dd>
-            <small>n = {instructor.recentQualityCount}</small>
+            <dt>
+              {historicalQuality
+                ? text(locale, "Historical quality", "历史教学评价")
+                : text(locale, "Recent quality", "近期教学评价")}
+            </dt>
+            <dd>{score(quality)}</dd>
+            <small>
+              n ={" "}
+              {historicalQuality
+                ? instructor.historicalQualityCount
+                : instructor.recentQualityCount}
+            </small>
           </div>
           <div>
-            <dt>{text(locale, "Recent difficulty", "近期难度")}</dt>
-            <dd>{score(instructor.recentDifficulty)}</dd>
-            <small>n = {instructor.recentDifficultyCount}</small>
+            <dt>
+              {historicalDifficulty
+                ? text(locale, "Historical difficulty", "历史难度")
+                : text(locale, "Recent difficulty", "近期难度")}
+            </dt>
+            <dd>{score(difficulty)}</dd>
+            <small>
+              n ={" "}
+              {historicalDifficulty
+                ? instructor.historicalDifficultyCount
+                : instructor.recentDifficultyCount}
+            </small>
           </div>
           <div>
             <dt>

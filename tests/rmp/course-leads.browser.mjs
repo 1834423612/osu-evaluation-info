@@ -90,6 +90,16 @@ try {
         },
       });
     });
+    const source = await (
+      await context.request.get(
+        base +
+          "/api/rmp/course?subject=MATH&catalog=1131&campus=MNS&scope=course-history",
+      )
+    ).json();
+    const teacher = source.instructors.find(
+      (item) => item.professorId === "1117448",
+    );
+    assert(teacher?.reviewCount > 0);
     await page.goto(base + "/saved", { waitUntil: "networkidle" });
     await page.locator('[data-analytics-action="course_open"]').click();
     await page
@@ -103,6 +113,14 @@ try {
     await card.waitFor();
     assert((await card.innerText()).includes("身份待确认"));
     assert.equal(await card.getAttribute("data-association"), "unconfirmed");
+    if (teacher.recentQuality === null)
+      assert(
+        (await card.innerText()).includes(
+          `历史评分 · ${teacher.reviewCount} 条`,
+        ),
+      );
+    const quality = teacher.recentQuality ?? teacher.historicalQuality;
+    assert((await card.innerText()).includes(`${quality.toFixed(2)} / 5`));
     const toggle = card.getByRole("button", {
       name: "查看 Pamela Foster 的评论",
       exact: true,
@@ -131,7 +149,7 @@ try {
     assert.equal(await link.getAttribute("href"), "/rmp/1117448");
     assert.equal(await link.getAttribute("target"), "_blank");
     const all = card.getByRole("button", {
-      name: "查看全部 5 条评论",
+      name: `查看全部 ${teacher.reviewCount} 条评论`,
       exact: true,
     });
     if (await all.count()) {
@@ -141,8 +159,11 @@ try {
       );
       await all.click();
       const payload = await (await response).json();
-      assert.equal(payload.total, 5);
-      await card.locator("[data-rmp-review]").nth(4).waitFor();
+      assert.equal(payload.total, teacher.reviewCount);
+      await card
+        .locator("[data-rmp-review]")
+        .nth(Math.min(6, teacher.reviewCount) - 1)
+        .waitFor();
     }
     await leads.scrollIntoViewIfNeeded();
     assert(

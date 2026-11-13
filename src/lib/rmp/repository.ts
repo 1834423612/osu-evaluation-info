@@ -31,6 +31,8 @@ type CourseRow = {
   recent_difficulty: number | null;
   recent_quality_count: number;
   recent_difficulty_count: number;
+  historical_quality: number | null;
+  historical_quality_count: number;
   historical_difficulty: number | null;
   historical_difficulty_count: number;
   latest_review_date: string | null;
@@ -87,6 +89,8 @@ export async function getCourseRmp(
         recentDifficulty: row.recent_difficulty,
         recentQualityCount: row.recent_quality_count,
         recentDifficultyCount: row.recent_difficulty_count,
+        historicalQuality: row.historical_quality,
+        historicalQualityCount: row.historical_quality_count,
         historicalDifficulty: row.historical_difficulty,
         historicalDifficultyCount: row.historical_difficulty_count,
         latestReviewDate: row.latest_review_date,
