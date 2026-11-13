@@ -20,7 +20,7 @@ from matching_data import (
     reference_data,
     execute_json_batches,
 )
-from identity_research import evaluate_profile, fold
+from identity_research import evaluate_profile, fold, compatible_name_index, compatible_official_users
 from mapping_coverage import stored_profile_coverage
 
 
@@ -248,6 +248,7 @@ def run(args):
                 )
             after = batch[-1][:3]
         lexicon, _inventory = reference_data(conn, course_rows)
+        family_names = compatible_name_index(identities)
         results = []
         reserved = defaultdict(list)
         for pid, user, state, owned in conn.execute(
@@ -267,7 +268,7 @@ def run(args):
                 identities,
                 facts,
                 lexicon,
-                exact[fold(p["first_name"] + " " + p["last_name"])],
+                exact[fold(p["first_name"] + " " + p["last_name"])] | compatible_official_users(p, family_names),
             )
             if pid in reserved and reserved[pid] != [(result["username"], "accepted")]:
                 result.update(

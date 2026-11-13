@@ -9,7 +9,7 @@ if __package__:
 else:
     from course_matching import resolve_course
 
-VERSION = "official-identity-research-v4"
+VERSION = "official-identity-research-v6"
 
 
 def fold(value):
@@ -20,6 +20,37 @@ def fold(value):
 
 def name_words(value):
     return [fold(part) for part in re.findall(r"[^\W\d_]+", value or "", re.UNICODE)]
+
+
+def compatible_name_index(identities):
+    """Index official names, retaining middle-name and compound-family ambiguity."""
+    result = {}
+    for user, item in identities.items():
+        for name in item.get("names", []):
+            parts = name_words(name)
+            if parts and parts[-1] in {"jr", "sr", "ii", "iii", "iv"}:
+                parts = parts[:-1]
+            if len(parts) < 2:
+                continue
+            for split in range(max(1, len(parts) - 4), len(parts)):
+                key = (parts[0], "".join(parts[split:]))
+                result.setdefault(key, []).append(
+                    (user, parts[0], " ".join(parts[1:split]))
+                )
+    return result
+
+
+def compatible_official_users(profile, index):
+    given = name_words(profile["first_name"])
+    if not given:
+        return set()
+    return {
+        user
+        for user, first, middle in index.get((given[0], fold(profile["last_name"])), [])
+        if compatible_name(
+            profile, {"first": first, "middle": middle, "last": profile["last_name"]}
+        )
+    }
 
 
 def compatible_name(profile, person):
@@ -141,7 +172,7 @@ def evaluate_profile(profile, observation, identities, facts, lexicon, exact_use
             and (
                 compatible_name(profile, person)
                 if person and not historical_name_match
-                else historical_name_match
+                else historical_name_match or user in exact_users
             )
         )
         own = [fact for fact in facts.get(user, []) if fact[0] in campuses]
@@ -210,6 +241,20 @@ def evaluate_profile(profile, observation, identities, facts, lexicon, exact_use
                 if re.search(r"\b" + label + r"\b", org, re.I):
                     source_campuses.add(code)
         scope = sorted(campuses & ({f[0] for f in own} | source_campuses))
+        known_campuses = {fact[0] for fact in facts.get(user, [])} | source_campuses
+        campus_source = "official-teaching-or-directory"
+        if (
+            not scope
+            and not known_campuses
+            and len(users) == 1
+            and person
+            and department
+            and len(campuses) == 1
+            and not observation.get("possibly_truncated")
+        ):
+            # Resolve the university person without claiming an official campus assignment.
+            scope = sorted(campuses)
+            campus_source = "rmp-school-with-unique-official-university-account"
         explicit_faculty = bool(
             person
             and set(person.get("context_roles", person.get("roles", [])))
@@ -231,6 +276,9 @@ def evaluate_profile(profile, observation, identities, facts, lexicon, exact_use
             "user": user,
             "name_match": name_ok,
             "campus_codes": scope,
+            "campus_source": campus_source,
+            "official_campus_verified": campus_source
+            == "official-teaching-or-directory",
             "department_match": department,
             "course_matches": sorted(set(course_matches)),
             "directory_account_observed": person is not None,
@@ -254,9 +302,13 @@ def evaluate_profile(profile, observation, identities, facts, lexicon, exact_use
             "verified_name_campus_course"
             if selected["course_matches"]
             else (
-                "verified_name_campus_department"
-                if selected["department_match"]
-                else "verified_faculty_name_campus"
+                "verified_unique_university_account"
+                if not selected["official_campus_verified"]
+                else (
+                    "verified_name_campus_department"
+                    if selected["department_match"]
+                    else "verified_faculty_name_campus"
+                )
             )
         )
     elif len(eligible) > 1:
@@ -279,9 +331,9 @@ def evaluate_profile(profile, observation, identities, facts, lexicon, exact_use
         "classification": classification((selected or {}).get("person")),
         "evidence": {
             "version": VERSION,
-            "rmp_name":profile['first_name']+' '+profile['last_name'],
-            "rmp_department":profile.get('department'),
-            "rmp_campuses":sorted(campuses),
+            "rmp_name": profile["first_name"] + " " + profile["last_name"],
+            "rmp_department": profile.get("department"),
+            "rmp_campuses": sorted(campuses),
             "source_url": "https://www.osu.edu/search/?q="
             + observation.get("query", "").replace(" ", "%20"),
             "query_status": observation.get("status"),

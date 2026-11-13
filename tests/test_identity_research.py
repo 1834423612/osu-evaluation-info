@@ -4,19 +4,53 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts/rmp"))
 from course_matching import SubjectLexicon
-from identity_research import compatible_name, evaluate_profile, classification
-from review_identity_research import safe_json_value,merge_observation
+from identity_research import (
+    compatible_name,
+    evaluate_profile,
+    classification,
+    compatible_name_index,
+    compatible_official_users,
+)
+from review_identity_research import safe_json_value, merge_observation
 
 
 class IdentityResearchTests(unittest.TestCase):
     def test_later_outage_preserves_previously_observed_identity_evidence(self):
-        observations={}
-        person={'user':'example.1','name':'Alex Example','first':'Alex','last':'Example','roles':['lecturer'],'appointments':[]}
-        merge_observation(observations,1,{'status':'available','source':'osu-search','checked_at':'2026-11-12T00:00:00Z','candidates':[person]})
-        merge_observation(observations,1,{'status':'unavailable','source':'osu-search','checked_at':'2026-11-13T00:00:00Z','candidates':[]})
-        self.assertEqual(len(observations[1]['candidates']),1)
-        self.assertEqual(len(observations[1]['sources']),2)
-        self.assertEqual(observations[1]['candidates'][0]['observed_at'],'2026-11-12T00:00:00Z')
+        observations = {}
+        person = {
+            "user": "example.1",
+            "name": "Alex Example",
+            "first": "Alex",
+            "last": "Example",
+            "roles": ["lecturer"],
+            "appointments": [],
+        }
+        merge_observation(
+            observations,
+            1,
+            {
+                "status": "available",
+                "source": "osu-search",
+                "checked_at": "2026-11-12T00:00:00Z",
+                "candidates": [person],
+            },
+        )
+        merge_observation(
+            observations,
+            1,
+            {
+                "status": "unavailable",
+                "source": "osu-search",
+                "checked_at": "2026-11-13T00:00:00Z",
+                "candidates": [],
+            },
+        )
+        self.assertEqual(len(observations[1]["candidates"]), 1)
+        self.assertEqual(len(observations[1]["sources"]), 2)
+        self.assertEqual(
+            observations[1]["candidates"][0]["observed_at"], "2026-11-12T00:00:00Z"
+        )
+
     def test_provider_controls_are_replaced_before_jsonb_storage(self):
         self.assertEqual(
             safe_json_value({"title": "A\x00B", "items": ["\ud800"]}),
@@ -96,6 +130,48 @@ class IdentityResearchTests(unittest.TestCase):
         ]
         self.assertEqual(self.evaluate()["state"], "unresolved")
 
+    def test_unique_account_with_department_keeps_rmp_campus_provenance_explicit(self):
+        self.facts = {}
+        self.person["appointments"] = [
+            {"title": "Lecturer", "organization": "Mathematics"}
+        ]
+        result = self.evaluate()
+        self.assertEqual(result["reason"], "verified_unique_university_account")
+        candidate = result["evidence"]["candidates"][0]
+        self.assertFalse(candidate["official_campus_verified"])
+        self.assertEqual(candidate["campus_codes"], ["MNS"])
+
+    def test_middle_name_omission_preserves_official_account_ambiguity(self):
+        index = compatible_name_index(
+            {
+                "example.1": {"names": ["Alex Taylor Example"]},
+                "example.2": {"names": ["Alex Morgan Example"]},
+            }
+        )
+        self.assertEqual(
+            compatible_official_users(self.profile, index), {"example.1", "example.2"}
+        )
+        self.profile["first_name"] = "Alex T."
+        self.assertEqual(compatible_official_users(self.profile, index), {"example.1"})
+
+    def test_compound_family_name_and_structural_suffix_are_indexed(self):
+        index = compatible_name_index(
+            {"van-example.1": {"names": ["Alex Taylor Van Example Jr."]}}
+        )
+        self.profile["last_name"] = "Van Example"
+        self.assertEqual(
+            compatible_official_users(self.profile, index), {"van-example.1"}
+        )
+
+    def test_department_without_campus_cannot_choose_between_compatible_accounts(self):
+        self.facts = {}
+        self.person["appointments"] = [
+            {"title": "Lecturer", "organization": "Mathematics"}
+        ]
+        self.assertEqual(
+            self.evaluate(("example.1", "example.2"))["state"], "unresolved"
+        )
+
     def test_department_and_teaching_campus_can_verify_identity_without_same_course(
         self,
     ):
@@ -174,11 +250,16 @@ class IdentityResearchTests(unittest.TestCase):
 
     def test_newest_positive_central_appointment_is_used(self):
         import copy
-        self.person['observed_at']='2026-11-12T00:00:00Z'
-        current=copy.deepcopy(self.person)
-        current.update(observed_at='2026-11-13T00:00:00Z',roles=['professor'],appointments=[{'title':'Professor','organization':'Mathematics'}])
-        self.observation['candidates'].append(current)
-        self.assertEqual(self.evaluate()['classification']['category'],'professor')
+
+        self.person["observed_at"] = "2026-11-12T00:00:00Z"
+        current = copy.deepcopy(self.person)
+        current.update(
+            observed_at="2026-11-13T00:00:00Z",
+            roles=["professor"],
+            appointments=[{"title": "Professor", "organization": "Mathematics"}],
+        )
+        self.observation["candidates"].append(current)
+        self.assertEqual(self.evaluate()["classification"]["category"], "professor")
 
     def test_source_failure_is_not_reported_as_not_found(self):
         self.observation = {"status": "unavailable", "candidates": []}
