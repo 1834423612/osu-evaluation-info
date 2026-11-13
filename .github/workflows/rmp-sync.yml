@@ -1,0 +1,45 @@
+name: Refresh saved RMP data
+on:
+  schedule:
+    - cron: "9 */8 * * *"
+      timezone: "America/New_York"
+permissions:
+  contents: read
+concurrency:
+  group: rmp-source-sync
+  cancel-in-progress: false
+jobs:
+  refresh:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install collector dependencies
+        run: pip install --disable-pip-version-check -r scripts/rmp/requirements.txt
+      - name: Resume bounded incremental source collection
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/rmp/collect_rmp_osu.py --confirm-authorization --max-requests 180 --min-interval 10 --refresh-days 7
+      - name: Reconcile source identities and course labels
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if python scripts/rmp/sync_rmp_mappings.py --require-schema > "$RUNNER_TEMP/rmp-mapping.log" 2>&1; then
+              cat "$RUNNER_TEMP/rmp-mapping.log"
+              exit 0
+            fi
+            cat "$RUNNER_TEMP/rmp-mapping.log"
+            if ! grep -q "Another RMP mapping refresh is already running" "$RUNNER_TEMP/rmp-mapping.log"; then
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "::notice::Another mapping refresh is active; saved source data is retained and the regular catalog job will reconcile it."
