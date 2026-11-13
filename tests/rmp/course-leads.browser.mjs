@@ -103,9 +103,13 @@ try {
     await card.waitFor();
     assert((await card.innerText()).includes("身份待确认"));
     assert.equal(await card.getAttribute("data-association"), "unconfirmed");
-    await card
-      .getByRole("button", { name: "查看 Pamela Foster 的评论", exact: true })
-      .click();
+    const toggle = card.getByRole("button", {
+      name: "查看 Pamela Foster 的评论",
+      exact: true,
+    });
+    await toggle.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${output}/course-identity-${width}.png` });
+    await toggle.click();
     await card.locator("[data-rmp-review-content]").waitFor();
     assert((await card.innerText()).includes("课程评论"));
     const review = card.locator("[data-rmp-review]").first();
@@ -125,6 +129,20 @@ try {
     });
     assert.equal(await link.getAttribute("href"), "/rmp/1117448");
     assert.equal(await link.getAttribute("target"), "_blank");
+    const all = card.getByRole("button", {
+      name: "查看全部 5 条评论",
+      exact: true,
+    });
+    if (await all.count()) {
+      const response = page.waitForResponse(
+        (r) =>
+          new URL(r.url()).pathname === "/api/rmp/course/reviews" && r.ok(),
+      );
+      await all.click();
+      const payload = await (await response).json();
+      assert.equal(payload.total, 5);
+      await card.locator("[data-rmp-review]").nth(4).waitFor();
+    }
     await leads.scrollIntoViewIfNeeded();
     assert(
       await page.evaluate(

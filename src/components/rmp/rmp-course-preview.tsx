@@ -77,9 +77,13 @@ export function RmpCoursePreview({
         </span>
         {insight?.status === "available" ? (
           <span className={styles.coverage}>
-            {insight.profileCount ?? insight.matchedInstructorCount}{" "}
-            {text(locale, "instructors", "位教师")} · {insight.reviewCount}{" "}
-            {text(locale, "reviews", "条评价")}
+            {insight.identityBasis === "unconfirmed"
+              ? insight.profileCount
+              : insight.matchedInstructorCount}{" "}
+            {insight.identityBasis === "unconfirmed"
+              ? text(locale, "profiles", "份档案")
+              : text(locale, "instructors", "位教师")}{" "}
+            · {insight.reviewCount} {text(locale, "reviews", "条评价")}
           </span>
         ) : null}
       </div>
