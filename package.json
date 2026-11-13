@@ -18,6 +18,7 @@
     "db:translation:init": "node --env-file-if-exists=.env.local scripts/translation/setup_usage.mjs",
     "translation:status": "node --env-file-if-exists=.env.local scripts/translation/manage.mjs status",
     "translation:manage": "node --env-file-if-exists=.env.local scripts/translation/manage.mjs",
+    "rmp:library:migrate": "node scripts/rmp/setup_library.mjs",
     "rmp:collect": "python3 scripts/rmp/collect_rmp_osu.py",
     "rmp:mappings": "python3 scripts/rmp/sync_rmp_mappings.py",
     "rmp:research:scan": "node scripts/rmp/scan_directory.mjs",
