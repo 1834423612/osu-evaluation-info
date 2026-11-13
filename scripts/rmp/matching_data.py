@@ -9,8 +9,10 @@ import base64
 
 if __package__:
     from .course_matching import VERSION, SubjectLexicon, course_parts, course_token, resolve_course
+    from .mapping_coverage import summarize_profile_coverage
 else:
     from course_matching import VERSION, SubjectLexicon, course_parts, course_token, resolve_course
+    from mapping_coverage import summarize_profile_coverage
 
 
 def reference_data(conn, course_rows):
@@ -91,6 +93,23 @@ def audit_course_links(professors, reviews, candidates, identities, schools, inv
     before = {item[0]: item[1] for item in existing if item[2] == "accepted"}
     candidate_profiles = {item["professor_id"] for item in candidates}
     profile_index = {int(p["legacy_id"]): p for p in professors}
+    accepted_scopes = {item["professor_id"]: set(item["campus_codes"])
+                       for item in candidates if item["state"] == "accepted"}
+    rejected_pairs = {(pid, user) for pid, user, state, method in reviewed
+                      if state == "rejected" and method == "manual"}
+    pending_profiles = {item["professor_id"] for item in candidates
+                        if (item["professor_id"], item["username"]) not in rejected_pairs}
+    rejected_profiles = {pid for pid, _user in rejected_pairs}
+    profile_rows = []
+    for pid, profile in profile_index.items():
+        campuses = {schools[sid] for sid in profile["school_ids"] if sid in schools} or {None}
+        for campus in campuses:
+            accepted = [proposed[pid]] if pid in proposed and campus and (
+                pid in manual_profiles or campus in accepted_scopes.get(pid, set())
+            ) else []
+            profile_rows.append((pid, campus, accepted, pid in pending_profiles or pid in proposed,
+                                 pid in rejected_profiles))
+    profile_coverage = summarize_profile_coverage(profile_rows, set(schools.values()))
     raw = defaultdict(lambda: {"names": set(), "reviews": 0})
     for professor, name, count in reviews:
         item = raw[int(professor), course_token(name)]
@@ -148,6 +167,7 @@ def audit_course_links(professors, reviews, candidates, identities, schools, inv
         coverage[category] += source["reviews"]
     summary = {
         "version": VERSION, "profiles": len(professors), "active_reviews": sum(row[2] for row in reviews),
+        "profile_coverage": profile_coverage,
         "profile_course_labels": len(raw), "campus_course_records": len(records),
         "course_states": dict(states), "course_reasons_review_weighted_by_campus": dict(reasons),
         "identity_review_coverage": dict(identity_states), "end_to_end_review_coverage": dict(coverage),

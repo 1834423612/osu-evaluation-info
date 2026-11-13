@@ -17,9 +17,11 @@ from typing import Any
 if __package__:
     from .course_matching import SubjectLexicon, course_token, resolve_course
     from .matching_data import reference_data, review_groups, audit_course_links, save_course_links, load_professors, execute_json_batches
+    from .mapping_coverage import stored_profile_coverage
 else:
     from course_matching import SubjectLexicon, course_token, resolve_course
     from matching_data import reference_data, review_groups, audit_course_links, save_course_links, load_professors, execute_json_batches
+    from mapping_coverage import stored_profile_coverage
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = ROOT / "db" / "schemas" / "rmp-app.sql"
@@ -116,6 +118,8 @@ def parse_args(argv: list[str] | None = None):
     parser.add_argument("--require-schema", action="store_true",
                         help="Require installed migrations; never run DDL (scheduled refreshes).")
     parser.add_argument("--audit-report", metavar="PATH", help="Write the full course/identity coverage audit as JSON.")
+    parser.add_argument("--coverage-only", action="store_true",
+                        help="Read stored profile totals and missing counts for every campus; never write or install schemas.")
     parser.add_argument("--dry-run", action="store_true", help="Report candidates without changing mapping rows.")
     parser.add_argument(
         "--export-candidates",
@@ -133,6 +137,8 @@ def parse_args(argv: list[str] | None = None):
         parser.error("--term-window must be between 0 and 16.")
     if args.export_candidates and not args.dry_run:
         parser.error("--export-candidates requires --dry-run.")
+    if args.coverage_only and (args.accept or args.reject or args.export_candidates):
+        parser.error("--coverage-only cannot change decisions or export candidate proposals.")
     try:
         args.decisions = parse_decisions(args.accept, args.reject)
     except ValueError as exc:
@@ -676,6 +682,18 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     locked = False
     try:
+        if args.coverage_only:
+            conn.execute("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            if not conn.execute("SELECT to_regclass('osu_rmp.professor_identity_map') IS NOT NULL").fetchone()[0]:
+                raise RuntimeError("Install the RMP application schema before reading mapping coverage.")
+            coverage = stored_profile_coverage(conn)
+            conn.execute("COMMIT")
+            print(json.dumps(coverage, ensure_ascii=False, sort_keys=True, indent=2))
+            if args.audit_report:
+                destination = Path(args.audit_report)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text(json.dumps(coverage, ensure_ascii=False, sort_keys=True, indent=2), encoding="utf-8")
+            return 0
         locked = bool(conn.execute("SELECT pg_try_advisory_lock(%s)", (LOCK_ID,)).fetchone()[0])
         if not locked:
             print("[error] Another RMP mapping refresh is already running.", file=sys.stderr)
