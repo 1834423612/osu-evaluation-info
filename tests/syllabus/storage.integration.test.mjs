@@ -8,6 +8,8 @@ import {
   saveDocument,
   savePage,
   saveTerms,
+  extendRunTerms,
+  termIsAvailableForSync,
 } from "../../scripts/syllabus/store.mjs";
 import { parseSyncOptions } from "../../scripts/syllabus/sync.mjs";
 import {
@@ -63,6 +65,15 @@ test(
         await readFile(
           new URL(
             "../../db/migrations/syllabus/003-permanent-archive.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
+      await scoped.query(
+        await readFile(
+          new URL(
+            "../../db/migrations/syllabus/004-canonical-archives.sql",
             import.meta.url,
           ),
           "utf8",
@@ -187,6 +198,8 @@ test(
       const changed = structuredClone(document);
       changed.components[0].html += "<p>Updated grading policy</p>";
       await saveDocument(scoped, changed);
+      await saveDocument(scoped, document); // rechecking an old version must not promote it
+
       await assert.rejects(
         scoped.query("DELETE FROM osu_syllabus.document_versions"),
         /PERMANENT_ARCHIVE/,
@@ -246,6 +259,112 @@ test(
           termCode: "1272",
         }),
         null,
+      );
+      const replacement = randomUUID();
+      await scoped.query(
+        "INSERT INTO osu_syllabus.sync_runs(id,status,terms) VALUES($1,'running',$2)",
+        [replacement, JSON.stringify([term])],
+      );
+      await scoped.query(
+        "INSERT INTO osu_syllabus.sync_partitions(run_id,term_id) VALUES($1,$2)",
+        [replacement, term.id],
+      );
+      await savePage(scoped, replacement, term, 0, {
+        entries: [second],
+        total: 1,
+        pageSize: 1,
+        hasMore: false,
+      });
+      assert.equal(
+        (
+          await syllabusBackupEntries({
+            subject: "ART",
+            catalogNumber: "2000",
+            termCode: "1268",
+          })
+        ).data.length,
+        1,
+        "removed entry stays out of the latest complete index",
+      );
+      assert.equal(
+        (await scoped.query("SELECT count(*)::int n FROM osu_syllabus.entries"))
+          .rows[0].n,
+        2,
+        "removed source entry remains archived",
+      );
+      assert(
+        (await syllabusBackupDocument("example123")).data,
+        "saved document still readable after removal from the latest index",
+      );
+      const empty = randomUUID();
+      await scoped.query(
+        "INSERT INTO osu_syllabus.sync_runs(id,status,terms) VALUES($1,'running',$2)",
+        [empty, JSON.stringify([term])],
+      );
+      await scoped.query(
+        "INSERT INTO osu_syllabus.sync_partitions(run_id,term_id) VALUES($1,$2)",
+        [empty, term.id],
+      );
+      await assert.rejects(
+        savePage(scoped, empty, term, 0, {
+          entries: [],
+          total: 0,
+          pageSize: 1,
+          hasMore: false,
+        }),
+        /Empty replacement/,
+      );
+      const future = {
+        ...term,
+        id: randomUUID(),
+        code: "1272",
+        name: "Spring 2027",
+        published: true,
+      };
+      await saveTerms(scoped, [future]);
+      assert.equal(
+        (
+          await scoped.query(
+            "SELECT source_status FROM osu_syllabus.term_archives WHERE term_id=$1",
+            [term.id],
+          )
+        ).rows[0].source_status,
+        "not-listed",
+      );
+      assert.equal(
+        (
+          await scoped.query(
+            "SELECT run_id FROM osu_syllabus.index_heads WHERE term_id=$1",
+            [term.id],
+          )
+        ).rows[0].run_id,
+        replacement,
+      );
+      assert.equal(termIsAvailableForSync(term, [future]), false);
+      const extended = await extendRunTerms(
+        scoped,
+        { id: replacement, terms: [term] },
+        [future],
+      );
+      assert.deepEqual(
+        extended.terms.map((t) => t.id),
+        [term.id, future.id],
+        "new term joins an old document checkpoint immediately",
+      );
+      await saveTerms(scoped, [term, future]);
+      assert.equal(
+        termIsAvailableForSync(term, [term, future]),
+        true,
+        "returned old term is eligible again",
+      );
+      assert.equal(
+        (
+          await scoped.query(
+            "SELECT source_status FROM osu_syllabus.term_archives WHERE term_id=$1",
+            [term.id],
+          )
+        ).rows[0].source_status,
+        "listed",
       );
     } finally {
       global.osuEvaluationPool = previousPool;

@@ -5,12 +5,64 @@ import { cleanOfficialSyllabusHtml } from "../../src/lib/syllabus/official-rende
 export class SyllabusIndexChangedError extends Error {}
 
 export async function saveTerms(client, terms) {
-  for (const term of terms)
-    await client.query(
-      `INSERT INTO osu_syllabus.terms(id,code,name,data,ever_published) VALUES($1,$2,$3,$4,$5)
-     ON CONFLICT(id) DO UPDATE SET code=excluded.code,name=excluded.name,data=excluded.data,ever_published=osu_syllabus.terms.ever_published OR excluded.ever_published,checked_at=now()`,
-      [term.id, term.code, term.name, JSON.stringify(term), term.published],
+  if (!terms.length)
+    throw new Error(
+      "Empty official term discovery; existing archives retained.",
     );
+  await client.query("BEGIN");
+  try {
+    for (const term of terms)
+      await client.query(
+        `INSERT INTO osu_syllabus.terms(id,code,name,data,ever_published) VALUES($1,$2,$3,$4,$5)
+     ON CONFLICT(id) DO UPDATE SET code=excluded.code,name=excluded.name,data=excluded.data,ever_published=osu_syllabus.terms.ever_published OR excluded.ever_published,checked_at=now()`,
+        [term.id, term.code, term.name, JSON.stringify(term), term.published],
+      );
+    await client.query(
+      "INSERT INTO osu_syllabus.term_discoveries(data) VALUES($1)",
+      [JSON.stringify(terms)],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  }
+}
+
+export function termIsAvailableForSync(term, discovered) {
+  return discovered.some((item) => item.id === term.id && item.published);
+}
+
+export async function extendRunTerms(client, run, discovered) {
+  await client.query("BEGIN");
+  try {
+    const saved = (
+      await client.query(
+        "SELECT terms FROM osu_syllabus.sync_runs WHERE id=$1 AND status IN ('running','partial') FOR UPDATE",
+        [run.id],
+      )
+    ).rows[0];
+    if (!saved) throw new Error("Syllabus checkpoint is no longer resumable.");
+    const ids = new Set(saved.terms.map((term) => term.id));
+    const additions = discovered.filter(
+      (term) => term.published && term.code && !ids.has(term.id),
+    );
+    const terms = [...saved.terms, ...additions];
+    for (const term of additions)
+      await client.query(
+        "INSERT INTO osu_syllabus.sync_partitions(run_id,term_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
+        [run.id, term.id],
+      );
+    if (additions.length)
+      await client.query(
+        "UPDATE osu_syllabus.sync_runs SET terms=$2 WHERE id=$1",
+        [run.id, JSON.stringify(terms)],
+      );
+    await client.query("COMMIT");
+    return { ...run, terms };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  }
 }
 
 export async function savePage(client, runId, term, page, result) {
@@ -30,6 +82,18 @@ export async function savePage(client, runId, term, page, result) {
     )
       throw new SyllabusIndexChangedError(
         "Syllabus pagination changed; the previous publication is preserved.",
+      );
+    if (
+      result.total === 0 &&
+      (
+        await client.query(
+          "SELECT 1 FROM osu_syllabus.sync_partitions WHERE term_id=$1 AND published_at IS NOT NULL AND expected_count>0 LIMIT 1",
+          [term.id],
+        )
+      ).rowCount
+    )
+      throw new SyllabusIndexChangedError(
+        "Empty replacement index; retaining the last complete archive pending verification.",
       );
     await client.query(
       `INSERT INTO osu_syllabus.entry_observations(run_id,term_id,code,data)

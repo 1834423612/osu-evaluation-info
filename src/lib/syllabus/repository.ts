@@ -45,7 +45,11 @@ export async function syllabusBackupEntries(
       data: SyllabusEntry;
       fetched_at: Date;
     }>(
-      "SELECT data, fetched_at FROM osu_syllabus.entries WHERE term_code=$1 AND subject=$2 AND catalog_number=$3 ORDER BY class_number,code LIMIT 501",
+      `SELECT o.data,o.fetched_at FROM osu_syllabus.index_heads h
+       JOIN osu_syllabus.entry_observations o USING(run_id,term_id)
+       JOIN osu_syllabus.entries e ON e.code=o.code
+       WHERE e.term_code=$1 AND e.subject=$2 AND e.catalog_number=$3
+       ORDER BY e.class_number,e.code LIMIT 501`,
       [
         query.termCode,
         query.subject.toUpperCase(),
@@ -76,7 +80,7 @@ export async function syllabusBackupDocument(
       data: SyllabusDocument;
       checked_at: Date;
     }>(
-      "SELECT data,checked_at FROM osu_syllabus.document_versions WHERE code=$1 ORDER BY checked_at DESC LIMIT 1",
+      "SELECT data,checked_at FROM osu_syllabus.document_versions WHERE code=$1 ORDER BY osu_syllabus.official_modified(data->>'modifiedAt') DESC NULLS LAST,first_fetched_at DESC,content_hash DESC LIMIT 1",
       [code],
     );
     const row = result.rows[0];

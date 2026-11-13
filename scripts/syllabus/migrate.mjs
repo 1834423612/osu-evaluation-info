@@ -41,8 +41,24 @@ try {
         "utf8",
       ),
     );
+  if (
+    !(
+      await client.query(
+        "SELECT 1 FROM osu_syllabus.schema_versions WHERE version=4",
+      )
+    ).rowCount
+  )
+    await client.query(
+      await readFile(
+        new URL(
+          "../../db/migrations/syllabus/004-canonical-archives.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
   await client.query("COMMIT");
-  console.log("Syllabus schema version 3 is ready.");
+  console.log("Syllabus schema version 4 is ready.");
 } catch (error) {
   await client.query("ROLLBACK").catch(() => {});
   console.error(

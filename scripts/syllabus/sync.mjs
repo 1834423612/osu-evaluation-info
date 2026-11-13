@@ -17,6 +17,8 @@ import {
   savePage,
   saveTerms,
   SyllabusIndexChangedError,
+  termIsAvailableForSync,
+  extendRunTerms,
 } from "./store.mjs";
 
 export function parseSyncOptions(args) {
@@ -100,7 +102,7 @@ export async function syncSyllabus(options) {
       !installed.rows[0].installed ||
       !(
         await client.query(
-          "SELECT 1 FROM osu_syllabus.schema_versions WHERE version=1",
+          "SELECT 1 FROM osu_syllabus.schema_versions WHERE version=4",
         )
       ).rowCount
     )
@@ -148,6 +150,7 @@ export async function syncSyllabus(options) {
         throw error;
       }
     }
+    run = await extendRunTerms(client, run, discovered);
     runId = run.id;
     await client.query(
       "UPDATE osu_syllabus.sync_runs SET status='running',error=NULL WHERE id=$1",
@@ -160,6 +163,20 @@ export async function syncSyllabus(options) {
           [runId, term.id],
         )
       ).rows[0];
+      if (!termIsAvailableForSync(term, discovered)) {
+        await client.query(
+          "UPDATE osu_syllabus.sync_partitions SET unavailable_at=now() WHERE run_id=$1 AND term_id=$2",
+          [runId, term.id],
+        );
+        console.log(
+          `${term.name}: no longer published in official discovery; retained the last complete archive.`,
+        );
+        continue;
+      }
+      await client.query(
+        "UPDATE osu_syllabus.sync_partitions SET unavailable_at=NULL WHERE run_id=$1 AND term_id=$2",
+        [runId, term.id],
+      );
       if (partition.published_at) continue;
       try {
         for (let page = partition.next_page; page <= 2000; page++) {
@@ -216,7 +233,7 @@ export async function syncSyllabus(options) {
     for (;;) {
       const batch = (
         await client.query(
-          "SELECT o.code,o.data FROM osu_syllabus.entry_observations o JOIN osu_syllabus.sync_partitions p USING(run_id,term_id) WHERE o.run_id=$1 AND p.published_at IS NOT NULL AND o.document_status IS NULL ORDER BY o.code LIMIT 50",
+          "SELECT o.code,o.data FROM osu_syllabus.entry_observations o JOIN osu_syllabus.sync_partitions p USING(run_id,term_id) JOIN osu_syllabus.terms t ON t.id=o.term_id WHERE o.run_id=$1 AND p.published_at IS NOT NULL AND p.unavailable_at IS NULL AND o.document_status IS NULL ORDER BY t.code DESC,o.code LIMIT 50",
           [runId],
         )
       ).rows;
@@ -265,7 +282,7 @@ export async function syncSyllabus(options) {
     }
     const counts = (
       await client.query(
-        "SELECT document_status,count(*)::int AS count FROM osu_syllabus.entry_observations WHERE run_id=$1 GROUP BY document_status",
+        "SELECT o.document_status,count(*)::int AS count FROM osu_syllabus.entry_observations o JOIN osu_syllabus.sync_partitions p USING(run_id,term_id) WHERE o.run_id=$1 AND p.unavailable_at IS NULL GROUP BY o.document_status",
         [runId],
       )
     ).rows;
