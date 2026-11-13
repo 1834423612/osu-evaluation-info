@@ -696,23 +696,6 @@ export function CourseExplorer() {
                     : text(locale, "Official OSU data", "OSU 官方数据")}
               </span>
             </div>
-            {!loading && result ? (
-              <p className="official-disclaimer">
-                {text(
-                  locale,
-                  result.sourceMode === "index"
-                    ? "Results come from the synced OSU catalog. Open a course to refresh its official details; seat checks remain live."
-                    : result.sourceMode === "mirror"
-                      ? "Showing a synced official snapshot. Confirm current details in Buckeye Link."
-                      : "Fetched from OSU's official course service. Confirm current details in Buckeye Link.",
-                  result.sourceMode === "index"
-                    ? "结果来自已同步的 OSU 目录；打开课程可刷新官方详情，空位信息仍单独实时查询。"
-                    : result.sourceMode === "mirror"
-                      ? "当前展示官方同步快照；最新课程与选课情况请以 Buckeye Link 为准。"
-                      : "课程信息实时获取自 OSU 官方；最新课程与选课情况请以 Buckeye Link 为准。",
-                )}
-              </p>
-            ) : null}
             {!loading && result?.capped ? (
               <p className="query-limit-note">
                 <CircleAlert size={15} />
