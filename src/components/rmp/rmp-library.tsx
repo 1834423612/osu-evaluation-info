@@ -146,8 +146,8 @@ export function RmpLibrary({
         <p className={styles.notice}>
           {text(
             locale,
-            "RMP names and course labels are user supplied. Unconfirmed profiles are kept separate from official ratings.",
-            "RMP 姓名与课程代码由用户填写；待确认档案不计入官方评分。",
+            "Names and course labels come from RMP. Unconfirmed identities are marked.",
+            "姓名与课程标注来自 RMP，身份待确认的档案单独标记。",
           )}
         </p>
         {loading ? (
