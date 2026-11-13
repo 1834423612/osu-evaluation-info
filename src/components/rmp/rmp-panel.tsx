@@ -21,6 +21,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { CatalogCourse } from "@/lib/catalog/types";
+import { groupCourseRmp } from "@/lib/rmp/course-groups";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { CourseRmpSummary } from "@/lib/rmp/types";
 import { REVIEW_PAGE_SIZE, reviewPagination } from "@/lib/rmp/pagination";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
@@ -53,19 +55,16 @@ export default function RmpPanel({
   locale: Locale;
 }) {
   const usernames = [
-    ...new Set([
-      ...course.sections.flatMap((section) =>
+    ...new Set(
+      course.sections.flatMap((section) =>
         section.instructors.flatMap((instructor) => {
           const identity = nameDotNumberFromEmail(instructor.email);
           return identity ? [identity] : [];
         }),
       ),
-      ...(course.evaluation?.instructors.flatMap((instructor) =>
-        instructor.nameDotNumber ? [instructor.nameDotNumber] : [],
-      ) ?? []),
-    ]),
+    ),
   ]
-    .toSorted((a, b) => a.localeCompare(b))
+    .sort()
     .slice(0, 120);
   const params = new URLSearchParams({
     subject: course.subject,
@@ -104,6 +103,7 @@ export default function RmpPanel({
   const loaded = result?.query === query;
   const summary = loaded ? result.summary : null;
   const unavailable = loaded && (!summary || summary.status === "unavailable");
+  const groups = groupCourseRmp(summary?.instructors ?? [], course);
   return (
     <section
       className={styles.panel}
@@ -203,18 +203,65 @@ export default function RmpPanel({
               <SearchX size={22} strokeWidth={1.5} aria-hidden="true" />
             </div>
           ) : null}
-          {summary.instructors
-            .filter((instructor) => instructor.reviewCount > 0)
-            .map((instructor) => (
-              <InstructorReviews
-                key={`${instructor.professorId}:${query}`}
-                instructor={instructor}
-                summary={summary}
-                locale={locale}
-                courseQuery={query}
-                subject={course.subject}
-              />
-            ))}
+          {summary.status === "available" ? (
+            <Tabs
+              key={`${course.id}:${query}`}
+              defaultValue={groups.current.length ? "current" : "history"}
+              className={styles.groupTabs}
+            >
+              <TabsList
+                className={styles.groupTabList}
+                aria-label={text(
+                  locale,
+                  "RMP instructor groups",
+                  "RMP 教师分区",
+                )}
+              >
+                <TabsTrigger value="current">
+                  {text(locale, "This term’s teachers", "本学期教师")}
+                  <span>{groups.current.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="history">
+                  {text(locale, "Historical reviews", "历史评价")}
+                  <span>{groups.history.length}</span>
+                </TabsTrigger>
+              </TabsList>
+              {(["current", "history"] as const).map((period) => (
+                <TabsContent
+                  key={period}
+                  value={period}
+                  data-rmp-period={period}
+                >
+                  {groups[period].length ? (
+                    groups[period].map((instructor) => (
+                      <InstructorReviews
+                        key={`${instructor.professorId}:${query}`}
+                        instructor={instructor}
+                        summary={summary}
+                        locale={locale}
+                        courseQuery={query}
+                        subject={course.subject}
+                      />
+                    ))
+                  ) : (
+                    <p className={styles.empty}>
+                      {period === "current"
+                        ? text(
+                            locale,
+                            "No reviews for this term’s teachers.",
+                            "本学期教师暂无评价。",
+                          )
+                        : text(
+                            locale,
+                            "No historical profiles.",
+                            "暂无历史档案。",
+                          )}
+                    </p>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          ) : null}
           <footer className={styles.footer}>
             {text(
               locale,
