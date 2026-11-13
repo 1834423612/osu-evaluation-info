@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSyllabusDocuments } from "@/hooks/use-syllabus-documents";
+import { selectReadableSyllabus } from "@/lib/syllabus/selection";
 import { useSyllabusScroll } from "@/hooks/use-syllabus-scroll";
 import { EmptyResult } from "@/components/brand/empty-result";
 import { ExternalLink, LoaderCircle } from "lucide-react";
@@ -64,10 +66,17 @@ export default function SyllabusPanel({
     result?.data.filter((entry) =>
       entryMatches(entry, { subject, catalogNumber, termCode }, classNumbers),
     ) ?? [];
-  const chosen =
-    entries.find((entry) => entry.code === selected) ??
-    entries.find((entry) => matchedClass(entry) === focusClassNumber) ??
-    entries[0];
+  const documentState = useSyllabusDocuments(entries);
+  const chosen = selectReadableSyllabus(
+    entries,
+    documentState.documents,
+    selected,
+    entries.find((entry) => matchedClass(entry) === focusClassNumber)
+      ?.classNumber,
+  );
+  const checking = entries.some(
+    (entry) => documentState.documents[entry.code] === undefined,
+  );
   const choices = entries.flatMap((entry) => {
     const section = course.sections.find(
       (section) => section.classNumber === matchedClass(entry),
@@ -110,6 +119,7 @@ export default function SyllabusPanel({
         <>
           <SyllabusSectionPicker
             course={course}
+            documentState={documentState}
             items={choices}
             value={chosen?.code ?? ""}
             onChange={setSelected}
@@ -117,6 +127,11 @@ export default function SyllabusPanel({
           />
           {chosen ? (
             <SyllabusReader key={chosen.code} entry={chosen} locale={locale} />
+          ) : checking ? (
+            <p className={styles.loading} role="status">
+              <LoaderCircle size={16} className="spin" />
+              {text(locale, "Checking published syllabi…", "正在核验可用大纲…")}
+            </p>
           ) : (
             <EmptyResult layout="stack" size={64}>
               {text(

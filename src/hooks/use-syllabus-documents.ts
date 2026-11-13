@@ -52,5 +52,12 @@ export function useSyllabusDocuments(entries: SyllabusEntry[]) {
         ? state.values
         : (empty as Record<string, SyllabusResult<SyllabusDocument> | null>),
     missing: new Set(state.key === key ? state.missing : []),
+    unavailable: new Set(
+      state.key === key
+        ? Object.keys(state.values).filter(
+            (code) => state.values[code] === null,
+          )
+        : [],
+    ),
   };
 }

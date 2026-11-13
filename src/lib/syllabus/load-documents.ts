@@ -31,6 +31,7 @@ export async function loadSyllabusDocuments(
         const result = await syllabusClient.document(entry.code, signal, {
           fresh,
         });
+        if (!result.data.components.length) throw new SyllabusError("missing");
         if (!documentMatchesEntry(result.data, entry as SyllabusEntry))
           throw new Error("Syllabus identity mismatch");
         if (!signal.aborted) onResult(entry.code, result);

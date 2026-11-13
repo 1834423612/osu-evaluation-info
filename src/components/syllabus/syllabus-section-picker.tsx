@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { RadioGroup } from "radix-ui";
 import { useSavedSyllabi } from "@/hooks/use-saved-syllabi";
-import { useSyllabusDocuments } from "@/hooks/use-syllabus-documents";
+import type { useSyllabusDocuments } from "@/hooks/use-syllabus-documents";
 import { useSyllabusTeachers } from "@/hooks/use-syllabus-teachers";
 import {
   DEFAULT_SYLLABUS_FILTERS,
@@ -32,17 +32,17 @@ export function SyllabusSectionPicker({
   onChange,
   locale,
   course,
+  documentState,
 }: {
   items: { entry: SyllabusEntry; section: CatalogSection }[];
   value: string;
   onChange: (value: string) => void;
   locale: Locale;
   course: CatalogCourse;
+  documentState: ReturnType<typeof useSyllabusDocuments>;
 }) {
   const { savedSyllabi, toggle } = useSavedSyllabi();
-  const { documents, missing } = useSyllabusDocuments(
-    items.map((item) => item.entry),
-  );
+  const { documents, missing, unavailable } = documentState;
   const teachers = useSyllabusTeachers(
     course,
     course.sections.flatMap((section) => section.instructors),
@@ -56,7 +56,7 @@ export function SyllabusSectionPicker({
     items,
     course.sections,
     teachers,
-    missing,
+    unavailable,
     filters,
   );
   const active =
@@ -256,8 +256,12 @@ export function SyllabusSectionPicker({
                     <span className={styles.unpublished}>
                       {text(
                         locale,
-                        "No published syllabus found",
-                        "未找到已发布大纲",
+                        entry && !missing.has(entry.code)
+                          ? "Temporarily unavailable"
+                          : "No published syllabus found",
+                        entry && !missing.has(entry.code)
+                          ? "暂无法读取"
+                          : "未找到已发布大纲",
                       )}
                     </span>
                   ) : !matches ? (
