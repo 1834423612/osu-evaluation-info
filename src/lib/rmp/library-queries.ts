@@ -43,3 +43,12 @@ export const LIBRARY_REVIEWS_SQL = `WITH matching AS (
     'thumbsUp',thumbs_up_total,'thumbsDown',thumbs_down_total,
     'teacherReply',CASE WHEN nullif(teacher_note->>'comment','') IS NOT NULL THEN jsonb_build_object('comment',teacher_note->>'comment','date',teacher_note->>'createdAt') END
   ) ORDER BY osu_rmp.review_day(date_text) DESC NULLS LAST,legacy_id DESC),'[]'::jsonb) reviews FROM page`;
+
+export const LIBRARY_SUPPLEMENTS_SQL = `SELECT source_key AS key,
+  coalesce(payload#>>'{record,course}','') course,coalesce(payload#>>'{record,comment}','') comment,
+  payload#>>'{record,date}' date,
+  CASE WHEN jsonb_typeof(payload#>'{record,quality}')='number' THEN (payload#>>'{record,quality}')::float8 END quality,
+  CASE WHEN jsonb_typeof(payload#>'{record,difficulty}')='number' THEN (payload#>>'{record,difficulty}')::float8 END difficulty
+  FROM osu_rmp.legacy_supplement WHERE kind='review' AND matched_review_id IS NULL AND professor_id=$1::bigint
+  AND ($2::text IS NULL OR btrim(coalesce(payload#>>'{record,course}',''))=$2)
+  ORDER BY source_key LIMIT 1000`;

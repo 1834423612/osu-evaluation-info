@@ -41,6 +41,14 @@ export type RmpLibraryReview = {
   thumbsDown: number;
 };
 export type RmpProfileDetail = {
+  supplements: {
+    key: string;
+    course: string;
+    comment: string;
+    date: string | null;
+    quality: number | null;
+    difficulty: number | null;
+  }[];
   profile: RmpProfile;
   courses: {
     code: string;

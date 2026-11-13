@@ -229,6 +229,47 @@ export function RmpProfilePage({
                     <span />
                   )}
                 </nav>
+                {data.supplements?.length ? (
+                  <details className={styles.supplements}>
+                    <summary>
+                      {text(
+                        locale,
+                        "Unverified historical supplements",
+                        "未核验的历史补充",
+                      )}{" "}
+                      · {data.supplements.length}
+                    </summary>
+                    <p>
+                      {text(
+                        locale,
+                        "Possible duplicates; excluded from review counts and averages.",
+                        "重复关系待核实，不计入评价数量和均分。",
+                      )}
+                    </p>
+                    {data.supplements.map((item) => (
+                      <article key={item.key} className={styles.review}>
+                        <div className={styles.reviewMeta}>
+                          <strong>
+                            {item.course ||
+                              text(locale, "Course unspecified", "未注明课程")}
+                          </strong>
+                          <time>{item.date}</time>
+                        </div>
+                        <div className={styles.reviewScores}>
+                          <span>
+                            {text(locale, "Recorded quality", "记录评分")}{" "}
+                            {rating(item.quality)}
+                          </span>
+                          <span>
+                            {text(locale, "Difficulty", "难度")}{" "}
+                            {rating(item.difficulty)}
+                          </span>
+                        </div>
+                        <p className={styles.comment}>{item.comment}</p>
+                      </article>
+                    ))}
+                  </details>
+                ) : null}
               </section>
             </div>
           </>

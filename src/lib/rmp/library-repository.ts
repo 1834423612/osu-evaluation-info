@@ -12,6 +12,7 @@ import {
   LIBRARY_PROFILE_JOINS,
   LIBRARY_COURSES_SQL,
   LIBRARY_REVIEWS_SQL,
+  LIBRARY_SUPPLEMENTS_SQL,
 } from "./library-queries";
 import type {
   RmpProfile,
@@ -78,10 +79,14 @@ export async function getRmpProfileDetail(
         [id, course, 12, offset],
       )
     ).rows[0];
+    const supplements = await connection.query<
+      RmpProfileDetail["supplements"][number]
+    >(LIBRARY_SUPPLEMENTS_SQL, [id, course]);
     await connection.query("COMMIT");
     return {
       profile,
       courses: courses.rows,
+      supplements: supplements.rows,
       ...page,
       nextOffset:
         offset + page.reviews.length < page.total

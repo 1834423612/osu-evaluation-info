@@ -7,6 +7,7 @@ import {
   LIBRARY_REVIEWS_SQL,
   LIBRARY_PROFILE_FIELDS,
   LIBRARY_PROFILE_JOINS,
+  LIBRARY_SUPPLEMENTS_SQL,
 } from "../../src/lib/rmp/library-queries.ts";
 test(
   "RMP library serves every saved profile and original course labels",
@@ -102,6 +103,42 @@ test(
             24,
             0,
           ]);
+        },
+      );
+      await t.test(
+        "unreconciled historical supplements stay visible without entering canonical counts",
+        async () => {
+          const example = (
+            await c.query(
+              "SELECT professor_id FROM osu_rmp.legacy_supplement WHERE kind='review' AND matched_review_id IS NULL LIMIT 1",
+            )
+          ).rows[0];
+          if (!example) return;
+          const records = await c.query(LIBRARY_SUPPLEMENTS_SQL, [
+            example.professor_id,
+            null,
+          ]);
+          assert(records.rows.length > 0);
+          assert(
+            records.rows.every(
+              (row) =>
+                typeof row.comment === "string" &&
+                typeof row.course === "string",
+            ),
+          );
+          const raw = (
+            await c.query(
+              "SELECT count(*)::int n FROM osu_rmp.review WHERE professor_id=$1",
+              [example.professor_id],
+            )
+          ).rows[0].n;
+          const grouped = await c.query(LIBRARY_COURSES_SQL, [
+            example.professor_id,
+          ]);
+          assert.equal(
+            grouped.rows.reduce((n, row) => n + row.count, 0),
+            raw,
+          );
         },
       );
       await c.query("ROLLBACK");

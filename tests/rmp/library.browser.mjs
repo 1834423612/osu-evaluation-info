@@ -104,6 +104,24 @@ try {
       assert.deepEqual(errors, []);
       await context.close();
     }
+  const extraContext = await browser.newContext({
+    viewport: { width: 390, height: 900 },
+  });
+  await extraContext.addInitScript(() => {
+    localStorage.setItem("course-atlas:locale:v1", "zh");
+    localStorage.setItem("course-atlas:translation-guide:v1", "done");
+  });
+  const extra = await extraContext.newPage();
+  active = extra;
+  await extra.goto(base + "/rmp/582282", { waitUntil: "networkidle" });
+  const supplements = extra
+    .locator("details")
+    .filter({ has: extra.locator("summary", { hasText: "未核验的历史补充" }) });
+  await supplements.locator("summary").click();
+  assert.equal(await supplements.locator("article").count(), 2);
+  await supplements.scrollIntoViewIfNeeded();
+  await extra.screenshot({ path: output + "/historical-supplements-390.png" });
+  await extraContext.close();
   console.log(
     "RMP library: real unconfirmed profiles, original course filters, review pagination, browser back and bilingual 320/390/768/1440px layouts passed",
   );
