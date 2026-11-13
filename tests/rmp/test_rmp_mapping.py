@@ -224,12 +224,18 @@ class RmpMappingTests(unittest.TestCase):
             {"computerscience": {"computerscienceengr"}})
         self.assertEqual(candidates[0]["state"], "candidate")
 
-    def test_manual_accept_reserves_identity_without_overriding_manual_record(self):
+    def test_manual_accept_does_not_claim_an_account_exclusively_across_profiles(self):
         candidates = [{"professor_id": 101, "username": "smith.1", "state": "accepted",
                        "campus_codes": ["COL"], "evidence": {}}]
         apply_manual_reservations(candidates, [{"professor_id": 100, "username": "smith.1",
                                                 "campus_codes": ["COL"]}])
-        self.assertEqual(candidates[0]["state"], "candidate")
+        self.assertEqual(candidates[0]["state"], "accepted")
+        self.assertNotIn("manual_decision_reserved",candidates[0]["evidence"])
+
+    def test_manual_accept_still_reserves_its_own_profile(self):
+        candidates=[{"professor_id":100,"username":"smith.2","state":"accepted","campus_codes":["COL"],"evidence":{}}]
+        apply_manual_reservations(candidates,[{"professor_id":100,"username":"smith.1","campus_codes":["COL"]}])
+        self.assertEqual(candidates[0]["state"],"candidate")
         self.assertTrue(candidates[0]["evidence"]["manual_decision_reserved"])
 
     def test_manual_decision_syntax_and_conflict_validation(self):

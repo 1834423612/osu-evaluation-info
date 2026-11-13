@@ -92,18 +92,11 @@ def should_auto_accept(
 def apply_manual_reservations(
     candidates: list[dict[str, Any]], reserved: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    """Do not let a scheduled evidence refresh overwrite a reviewed campus decision."""
-    campuses: dict[str, set[str]] = defaultdict(set)
-    profiles: set[int] = set()
-    for item in reserved:
-        professor_id = int(item["professor_id"])
-        username = str(item["username"])
-        profiles.add(professor_id)
-        campuses[username].update(str(campus) for campus in item.get("campus_codes", []))
+    """Reserve reviewed profiles; independent RMP profiles can share an OSU account."""
+    profiles = {int(item['professor_id']) for item in reserved}
     for item in candidates:
         if item["state"] == "accepted" and (
             int(item["professor_id"]) in profiles
-            or campuses[str(item["username"])] & set(item["campus_codes"])
         ):
             item["state"] = "candidate"
             item["evidence"]["manual_decision_reserved"] = True
@@ -642,10 +635,9 @@ def _manual_candidates(args, candidates: list[dict[str, Any]]) -> None:
     """Reserve identities named by this invocation before automatic upserts."""
     accepted = {(professor, username) for professor, username, state in args.decisions if state == "accepted"}
     accepted_profiles = {professor for professor, _, state in args.decisions if state == "accepted"}
-    accepted_users = {username for _, username, state in args.decisions if state == "accepted"}
     for item in candidates:
         if item["state"] == "accepted" and (
-            item["professor_id"] in accepted_profiles or item["username"] in accepted_users
+            item["professor_id"] in accepted_profiles
         ) and (item["professor_id"], item["username"]) not in accepted:
             item["state"] = "candidate"
             item["evidence"]["manual_decision_reserved"] = True
@@ -674,14 +666,8 @@ def _write_manual_decisions(conn, decisions: list[tuple[int, str, str]], reason:
             conflicts = conn.execute(
                 """SELECT m.professor_id,m.name_dot_number,m.method FROM osu_rmp.professor_identity_map m
                    WHERE m.state='accepted' AND NOT (m.professor_id=%s AND m.name_dot_number=%s)
-                     AND (m.professor_id=%s OR (m.name_dot_number=%s AND EXISTS (
-                       SELECT 1 FROM osu_rmp.professor_school previous
-                       JOIN osu_rmp.school previous_school ON previous_school.legacy_id=previous.school_id
-                       JOIN osu_rmp.professor_school chosen ON chosen.professor_id=%s
-                       JOIN osu_rmp.school chosen_school ON chosen_school.legacy_id=chosen.school_id
-                       WHERE previous.professor_id=m.professor_id
-                         AND previous_school.campus_code=chosen_school.campus_code)))""",
-                (professor_id, username, professor_id, username, professor_id),
+                     AND m.professor_id=%s""",
+                (professor_id, username, professor_id),
             ).fetchall()
             if any(row[2] == "manual" for row in conflicts):
                 raise RuntimeError(f"Manual mapping conflict for {professor_id}:{username}.")
