@@ -80,7 +80,7 @@ export function CourseRmpLeads({
           </p>
           <div className={styles.scores}>
             <span>
-              {text(locale, "This course on RMP", "RMP 本课程")}{" "}
+              {text(locale, "RMP course · All time", "RMP 本课程 · 历年")}{" "}
               <b>{rating(p.courseQuality)}</b>/5
             </span>
             <span>
