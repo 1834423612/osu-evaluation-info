@@ -162,6 +162,75 @@
   text-align: left;
   font-size: 11px;
 }
+.sessions {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+.session,
+.sessionDetails {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
+.session > strong {
+  color: var(--secondary-foreground);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.sessionDetails summary {
+  color: var(--secondary-foreground);
+  font-size: 11px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.sessionDetails summary span {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.sessionDetails[open] summary {
+  margin-bottom: 7px;
+}
+.blocks {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  margin-top: 5px;
+}
+.blocks p {
+  color: var(--secondary-foreground);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.blocks [data-reading="true"] {
+  position: relative;
+  padding-left: 12px;
+}
+.blocks [data-reading="true"]::before {
+  position: absolute;
+  left: 0;
+  content: "•";
+  color: var(--muted);
+}
+.blocks a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.topicDetails summary {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.7;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.topicDetails[open] summary {
+  margin-bottom: 6px;
+  color: var(--muted);
+}
 @media (max-width: 600px) {
   .tabList {
     gap: 14px;

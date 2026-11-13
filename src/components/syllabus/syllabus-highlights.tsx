@@ -12,6 +12,9 @@ import { extractSyllabusSections } from "@/lib/syllabus/content";
 import {
   extractSyllabusSchedule,
   syllabusSectionBody,
+  scheduleBlockText,
+  type ScheduleBlock,
+  type SchedulePart,
 } from "@/lib/syllabus/insights";
 import type { SyllabusDocument } from "@/lib/syllabus/types";
 import { text, type Locale } from "@/lib/i18n";
@@ -104,7 +107,70 @@ export function SyllabusHighlights({
                         </span>
                         <div>
                           <span className={styles.dot} />
-                          <p>{item.topic}</p>
+                          {item.topic ? (
+                            item.topic.length > 240 ? (
+                              <details className={styles.topicDetails}>
+                                <summary>
+                                  {item.topic
+                                    .slice(0, 140)
+                                    .replace(/\s+\S*$/, "")}
+                                  …
+                                </summary>
+                                <p>
+                                  <ScheduleText
+                                    parts={
+                                      item.topicParts ?? [{ text: item.topic }]
+                                    }
+                                  />
+                                </p>
+                              </details>
+                            ) : (
+                              <p>
+                                <ScheduleText
+                                  parts={
+                                    item.topicParts ?? [{ text: item.topic }]
+                                  }
+                                />
+                              </p>
+                            )
+                          ) : null}
+                          <ScheduleBlocks blocks={item.blocks} />
+                          {item.sessions.length ? (
+                            <div className={styles.sessions}>
+                              {item.sessions.map((session, sessionIndex) => {
+                                const short =
+                                  session.blocks.length === 1 &&
+                                  scheduleBlockText(session.blocks[0]).length <=
+                                    140;
+                                return short ? (
+                                  <div
+                                    className={styles.session}
+                                    key={sessionIndex}
+                                  >
+                                    <strong>{session.label}</strong>
+                                    <ScheduleBlocks blocks={session.blocks} />
+                                  </div>
+                                ) : (
+                                  <details
+                                    className={styles.sessionDetails}
+                                    key={sessionIndex}
+                                  >
+                                    <summary>
+                                      <strong>{session.label}</strong>
+                                      <span>
+                                        {text(
+                                          locale,
+                                          `${session.blocks.length} items`,
+                                          `${session.blocks.length} 项`,
+                                        )}
+                                      </span>
+                                    </summary>
+                                    <ScheduleBlocks blocks={session.blocks} />
+                                  </details>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </div>
                       </li>
                     ))}
@@ -137,5 +203,44 @@ export function SyllabusHighlights({
         ))}
       </Tabs>
     </section>
+  );
+}
+
+function ScheduleText({ parts }: { parts: SchedulePart[] }) {
+  return parts.map((part, index) =>
+    part.href ? (
+      <a key={index} href={part.href} target="_blank" rel="noopener noreferrer">
+        {part.text}
+      </a>
+    ) : (
+      <span key={index}>
+        {part.text
+          .split(/(https?:\/\/[^\s<>“”]+)/g)
+          .map((piece, pieceIndex) => {
+            if (!/^https?:\/\//.test(piece)) return piece;
+            const href = piece.replace(/[.,;!?)\]]+$/, "");
+            return (
+              <span key={pieceIndex}>
+                <a href={href} target="_blank" rel="noopener noreferrer">
+                  {href}
+                </a>
+                {piece.slice(href.length)}
+              </span>
+            );
+          })}
+      </span>
+    ),
+  );
+}
+function ScheduleBlocks({ blocks }: { blocks: ScheduleBlock[] }) {
+  if (!blocks?.length) return null;
+  return (
+    <div className={styles.blocks}>
+      {blocks.map((block, index) => (
+        <p key={index} data-reading={block.reading}>
+          <ScheduleText parts={block.parts} />
+        </p>
+      ))}
+    </div>
   );
 }
