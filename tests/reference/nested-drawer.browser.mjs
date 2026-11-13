@@ -81,9 +81,18 @@ try {
         if (url.pathname === "/api/catalog/course")
           return route.fulfill({
             json: {
-              course,
+              course: {
+                ...course,
+                title: "Software I revised",
+                description: "Updated software description.",
+                archive: {
+                  reason: "not-in-latest-snapshot",
+                  snapshotAt: "2026-11-13T12:00:00Z",
+                },
+              },
               complete: true,
-              sourceMode: "official",
+              sourceMode: "mirror",
+              snapshotAt: "2026-11-13T12:00:00Z",
               fetchedAt: new Date().toISOString(),
               source: "fixture",
             },
@@ -124,6 +133,17 @@ try {
           name: locale === "zh" ? "开课班次" : "Class sections",
           exact: true,
         })
+        .waitFor();
+      await page
+        .getByRole("heading", { name: "Software I revised", exact: true })
+        .waitFor();
+      await page
+        .getByText(
+          locale === "zh"
+            ? "最近目录未收录 · 显示已保存课程"
+            : "Not in the latest catalog · Showing the saved course",
+          { exact: true },
+        )
         .waitFor();
       for (const topic of ["components", "instruction-modes"]) {
         const trigger = page
