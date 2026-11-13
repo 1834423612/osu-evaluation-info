@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       catalog,
       term,
       campus,
+      includeArchived: params.get("archive") === "1",
     });
     if (!result)
       return Response.json(

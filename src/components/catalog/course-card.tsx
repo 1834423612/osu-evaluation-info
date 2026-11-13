@@ -565,13 +565,13 @@ export function CourseCard({
               <p className="detail-note snapshot-note">
                 {text(
                   locale,
-                  `Backup snapshot from ${new Date(detailSource.snapshotAt ?? "").toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}; the official course service was unavailable.`,
-                  `官方课程服务暂不可用，以下为数据库备份（同步于 ${new Date(detailSource.snapshotAt ?? "").toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" })}）。`,
+                  `Saved snapshot · ${new Date(detailSource.snapshotAt ?? "").toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`,
+                  `备份资料 · ${new Date(detailSource.snapshotAt ?? "").toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" })}`,
                 )}
               </p>
             ) : null}
             <TranslateText
-              text={course.description}
+              text={current.description}
               locale={locale}
               className="full-description"
             />
@@ -626,6 +626,21 @@ export function CourseCard({
                   {text(locale, "Retry", "重试")}
                 </button>
               </div>
+            ) : null}
+            {current.archive ? (
+              <p className="detail-note" role="status">
+                {current.archive.reason === "term-not-listed"
+                  ? text(
+                      locale,
+                      "Archived term · Latest saved complete snapshot",
+                      "学期已归档 · 显示最近完整副本",
+                    )
+                  : text(
+                      locale,
+                      "Not in the latest catalog · Showing the saved course",
+                      "最近目录未收录 · 显示已保存课程",
+                    )}
+              </p>
             ) : null}
             <SectionsPanel
               course={current}
@@ -740,7 +755,7 @@ export function CourseCard({
           void openTab("sections", true);
         }
       }}
-      aria-label={`${course.subject} ${course.catalogNumber}: ${course.title}`}
+      aria-label={`${course.subject} ${course.catalogNumber}: ${current.title}`}
     >
       {showSearchMatch ? (
         <SearchMatch evidence={course.searchMatch} locale={locale} />
@@ -776,11 +791,11 @@ export function CourseCard({
               aria-expanded={Boolean(tab)}
               aria-controls={tab ? detailId : undefined}
             >
-              {course.title || `${course.subject} ${course.catalogNumber}`}
+              {current.title || `${course.subject} ${course.catalogNumber}`}
             </button>
           </h2>
           <TranslateText
-            text={course.description}
+            text={current.description}
             locale={locale}
             className="course-description"
             preview
@@ -884,7 +899,7 @@ export function CourseCard({
                   {courseDetailEyeline(current, locale)}
                 </span>
                 <DrawerTitle>
-                  {course.title || `${course.subject} ${course.catalogNumber}`}
+                  {current.title || `${course.subject} ${course.catalogNumber}`}
                 </DrawerTitle>
                 <DrawerDescription>
                   {text(
@@ -949,7 +964,7 @@ export function CourseCard({
                   {courseDetailEyeline(current, locale)}
                 </span>
                 <SheetTitle>
-                  {course.title || `${course.subject} ${course.catalogNumber}`}
+                  {current.title || `${course.subject} ${course.catalogNumber}`}
                 </SheetTitle>
                 <SheetDescription id={`${detailId}-description`}>
                   {text(

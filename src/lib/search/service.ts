@@ -3,6 +3,7 @@ import { getDatabasePool } from "@/lib/db";
 import {
   FIND_CATALOG_SNAPSHOT_SQL,
   LATEST_CATALOG_TERM_SQL,
+  LIST_CATALOG_TERMS_SQL,
 } from "@/lib/catalog/snapshot-policy";
 import type { CatalogSearch } from "@/lib/catalog/types";
 import { createIndexCache } from "./index-cache";
@@ -44,23 +45,16 @@ async function publication(term?: string, run?: string) {
       }>(FIND_CATALOG_SNAPSHOT_SQL, [selected, run ?? null])
     ).rows[0];
     if (!row) throw new Error("Published search generation unavailable");
-    const labels = (
-      await pool.query<{ term_code: string; label: string }>(
-        "SELECT term_code,max(data->>'term') label FROM osu_catalog.course_snapshots WHERE last_seen_run=$1::uuid GROUP BY term_code",
-        [row.id],
+    const terms = (
+      await pool.query<import("../catalog/types").CatalogTerm>(
+        LIST_CATALOG_TERMS_SQL,
       )
     ).rows;
     return {
       run: row.id,
       term: selected,
       snapshotAt: new Date(row.completed_at).toISOString(),
-      terms: [...row.terms]
-        .sort()
-        .reverse()
-        .map((code) => ({
-          code,
-          label: labels.find((item) => item.term_code === code)?.label || code,
-        })),
+      terms,
     };
   })();
   const entry = { expires: Date.now() + 30000, promise };
@@ -102,9 +96,8 @@ export async function searchPublishedCatalog(input: CatalogSearch) {
       }
     },
   );
-  return hydrateSearchPage(
-    getDatabasePool(),
-    corpus,
-    searchCorpus(corpus, input),
-  );
+  return hydrateSearchPage(getDatabasePool(), corpus, {
+    ...searchCorpus(corpus, input),
+    terms: selected.terms,
+  });
 }

@@ -2,6 +2,8 @@ import "server-only";
 import {
   FIND_CATALOG_SNAPSHOT_SQL,
   LATEST_CATALOG_TERM_SQL,
+  LIST_CATALOG_TERMS_SQL,
+  FIND_COURSE_ARCHIVE_SQL,
 } from "./snapshot-policy";
 import type { PoolClient } from "pg";
 import { getDatabasePool, isDatabaseConfigured } from "@/lib/db";
@@ -253,8 +255,14 @@ export async function searchCatalogMirror(
         ? `m:${Buffer.from(JSON.stringify({ run: snapshot.id, term, campus, subject, sort, keys: [last.k1, last.k2, last.k3] } satisfies MirrorCursor)).toString("base64url")}`
         : null;
     const snapshotAt = new Date(snapshot.completed_at).toISOString();
-    const terms: CatalogTerm[] =
-      official?.terms ?? (await getMirrorTerms(connection, snapshot));
+    const terms: CatalogTerm[] = [
+      ...new Map(
+        [
+          ...(await connection.query<CatalogTerm>(LIST_CATALOG_TERMS_SQL)).rows,
+          ...(official?.terms ?? []),
+        ].map((term) => [term.code, term]),
+      ).values(),
+    ].sort((a, b) => b.code.localeCompare(a.code));
     const filters: CatalogFacet[] =
       official?.filters ??
       (await getMirrorFacets(connection, snapshot.id, term, campus, subject));
@@ -284,29 +292,6 @@ export async function searchCatalogMirror(
   } finally {
     connection.release();
   }
-}
-
-async function getMirrorTerms(
-  connection: CatalogConnection,
-  snapshot: Snapshot,
-): Promise<CatalogTerm[]> {
-  const result = await connection.query<{
-    term_code: string;
-    label: string | null;
-  }>(
-    `
-    SELECT term_code,MAX(NULLIF(data->>'term','')) AS label
-    FROM osu_catalog.course_snapshots WHERE last_seen_run=$1::uuid AND term_code=ANY($2::text[])
-    GROUP BY term_code`,
-    [snapshot.id, snapshot.terms],
-  );
-  const labels = new Map(result.rows.map((row) => [row.term_code, row.label]));
-  return [...snapshot.terms]
-    .sort((a, b) => b.localeCompare(a))
-    .map((code) => ({
-      code,
-      label: labels.get(code) || code,
-    }));
 }
 
 async function getMirrorFacets(
@@ -361,6 +346,7 @@ export async function getCatalogCourseMirror(input: {
   catalog: string;
   term?: string;
   campus?: string;
+  includeArchived?: boolean;
 }) {
   if (!isDatabaseConfigured()) return null;
   const connection = await getDatabasePool()
@@ -374,12 +360,22 @@ export async function getCatalogCourseMirror(input: {
       await connection.query("COMMIT");
       return null;
     }
-    const snapshot = await findSnapshot(connection, term);
+    const head = await findSnapshot(connection, term);
+    const campus = (input.campus ?? "col").toUpperCase();
+    const snapshot = input.includeArchived
+      ? ((
+          await connection.query<Snapshot>(FIND_COURSE_ARCHIVE_SQL, [
+            term,
+            input.subject.toUpperCase(),
+            input.catalog.toUpperCase(),
+            campus,
+          ])
+        ).rows[0] ?? head)
+      : head;
     if (!snapshot) {
       await connection.query("COMMIT");
       return null;
     }
-    const campus = (input.campus ?? "col").toUpperCase();
     const rows = await connection.query<{
       campus_code: string;
       course_data: Record<string, unknown>[];
@@ -447,6 +443,20 @@ export async function getCatalogCourseMirror(input: {
       course.sectionsPartial = false;
     }
     const snapshotAt = new Date(snapshot.completed_at).toISOString();
+    const sourceState = (
+      await connection.query<{ source_status: string }>(
+        "SELECT source_status FROM osu_catalog.term_archives WHERE term_code=$1",
+        [term],
+      )
+    ).rows[0]?.source_status;
+    if (course && (snapshot.id !== head?.id || sourceState === "not-listed"))
+      course.archive = {
+        reason:
+          snapshot.id !== head?.id
+            ? "not-in-latest-snapshot"
+            : "term-not-listed",
+        snapshotAt,
+      };
     await connection.query("COMMIT");
     return {
       course,

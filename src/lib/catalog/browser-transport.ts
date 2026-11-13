@@ -235,6 +235,7 @@ export function createCatalogTransport(
     const snapshot = () => {
       const url = new URL(local);
       url.searchParams.set("mode", "snapshot");
+      if (resource === "course") url.searchParams.set("archive", "1");
       return fetcher(url.pathname + url.search, { ...init, cache: "no-store" });
     };
     let result;
@@ -267,6 +268,13 @@ export function createCatalogTransport(
             term: search.term,
             campus: search.campus,
           });
+          if (!result.course) {
+            const response = await snapshot();
+            if (response.ok) {
+              const archived = await response.json();
+              if (archived.course) result = archived;
+            }
+          }
         } else {
           const catalog = await client.searchOfficialCatalog({
             ...search,

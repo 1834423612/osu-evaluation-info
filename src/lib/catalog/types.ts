@@ -60,6 +60,10 @@ export type CatalogAvailability = {
   fetchedAt: string | null;
 };
 export type CatalogCourse = {
+  archive?: {
+    reason: "term-not-listed" | "not-in-latest-snapshot";
+    snapshotAt: string;
+  };
   searchMatch?: import("../search/types").SearchEvidence;
   availability?: CatalogAvailability;
   id: string;
@@ -89,7 +93,12 @@ export type CatalogFacet = {
   title: string;
   items: { value: string; label: string; count: number; selected: boolean }[];
 };
-export type CatalogTerm = { code: string; label: string };
+export type CatalogTerm = {
+  code: string;
+  label: string;
+  sourceStatus?: "listed" | "not-listed" | "unknown";
+  snapshotAt?: string;
+};
 export type CatalogResponse = {
   searchInfo?: {
     engine?: string;

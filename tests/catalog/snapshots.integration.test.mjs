@@ -65,6 +65,15 @@ it(
           "utf8",
         ),
       );
+      await scoped.query(
+        await readFile(
+          new URL(
+            "../../db/migrations/catalog/004-term-archives.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
       const find = async (connection, pinned = null) =>
         (
           await connection.query(

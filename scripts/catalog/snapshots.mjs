@@ -7,11 +7,21 @@ export async function publishCatalogSnapshot(
   runId,
   expected,
   distinct,
+  discovery = null,
 ) {
+  if (
+    discovery &&
+    (!Array.isArray(discovery.terms) ||
+      !discovery.terms.length ||
+      discovery.terms.some((term) => !/^\d{4}$/.test(term)) ||
+      !Number.isFinite(Date.parse(discovery.checkedAt)))
+  )
+    throw new Error("Invalid official term discovery.");
   await withPageTransaction(client, async () => {
     const completed = await client.query(
       `
-      UPDATE osu_catalog.sync_runs r SET status='complete',completed_at=now(),fetched_hits=$2,distinct_sections=$3
+      UPDATE osu_catalog.sync_runs r SET status='complete',completed_at=now(),fetched_hits=$2,distinct_sections=$3,
+        source_terms=$4::jsonb,source_terms_checked_at=$5::timestamptz
       WHERE r.id=$1 AND r.status='running' AND r.expected_sections=$2 AND $3>0 AND $3<=$2
         AND EXISTS(SELECT 1 FROM osu_catalog.snapshot_versions v WHERE v.run_id=r.id AND v.published_at IS NULL)
         AND NOT EXISTS(SELECT 1 FROM osu_catalog.sync_partitions p WHERE p.run_id=r.id AND (NOT p.complete OR p.expected_sections<>p.fetched_sections))
@@ -27,7 +37,13 @@ export async function publishCatalogSnapshot(
               AND c.term_code=s.term_code AND c.course_id=s.course_id AND c.offering_number=s.offering_number
               AND c.campus_code=s.campus_code AND c.subject=s.subject AND c.catalog_number=s.catalog_number)))
       RETURNING r.id`,
-      [runId, expected, distinct],
+      [
+        runId,
+        expected,
+        distinct,
+        discovery ? JSON.stringify([...new Set(discovery.terms)].sort()) : null,
+        discovery?.checkedAt ?? null,
+      ],
     );
     if (completed.rowCount !== 1)
       throw catalogError(

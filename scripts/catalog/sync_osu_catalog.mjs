@@ -87,6 +87,10 @@ async function main() {
     const available = searchableTerms(
       await fetchOfficialJson("searchableTermsV2", { signal }),
     );
+    const discovery = {
+      terms: available.map((term) => term.strm),
+      checkedAt: new Date().toISOString(),
+    };
     const terms = available.filter(
       (t) => !requestedTerm || requestedTerm === t.strm,
     );
@@ -175,7 +179,13 @@ async function main() {
             )
           ).rows[0].n,
         );
-        await publishCatalogSnapshot(client, runId, plan.expectedTotal, count);
+        await publishCatalogSnapshot(
+          client,
+          runId,
+          plan.expectedTotal,
+          count,
+          discovery,
+        );
         console.log(
           `Complete: ${plan.expectedTotal} official hits reconciled exactly, ${count} distinct sections (${plan.expectedTotal - count} duplicate hits); run ${runId}`,
         );

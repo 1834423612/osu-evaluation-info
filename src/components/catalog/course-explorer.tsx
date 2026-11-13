@@ -477,6 +477,9 @@ export function CourseExplorer() {
                   {result?.terms.map((term) => (
                     <SelectItem key={term.code} value={term.code}>
                       {localizedTerm(term.label, locale)}
+                      {term.sourceStatus === "not-listed"
+                        ? text(locale, " · Archived", " · 归档")
+                        : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

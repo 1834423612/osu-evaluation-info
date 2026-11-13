@@ -34,6 +34,7 @@ it(
       for (const file of [
         "db/schemas/catalog.sql",
         "db/migrations/catalog/002-versioned-snapshots.sql",
+        "db/migrations/catalog/004-term-archives.sql",
       ]) {
         await client.query(
           (
@@ -45,7 +46,7 @@ it(
         );
       }
       await client.query(
-        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(3)`,
+        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(4)`,
       );
       const preload = join(directory, "preload.mjs");
       await writeFile(
