@@ -69,5 +69,8 @@ def stored_profile_coverage(conn):
         if not batch:
             break
         rows.extend(batch)
-        after = batch[-1][0]
+        next_id = batch[-1][0]
+        if next_id <= after:
+            raise RuntimeError("RMP coverage pagination did not advance")
+        after = next_id
     return summarize_profile_coverage(rows, campuses)

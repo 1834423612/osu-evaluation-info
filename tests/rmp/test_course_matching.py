@@ -4,7 +4,7 @@ import unittest
 
 from scripts.rmp.course_matching import SubjectLexicon, course_parts, course_token, resolve_course
 from scripts.rmp.matching_data import audit_course_links, load_professors
-from scripts.rmp.sync_rmp_mappings import catalog_candidates, collect_catalog_facts
+from scripts.rmp.sync_rmp_mappings import catalog_candidates, collect_catalog_facts, refresh_fingerprint
 
 
 class CourseMatchingTests(unittest.TestCase):
@@ -109,6 +109,32 @@ class CourseMatchingTests(unittest.TestCase):
         self.assertEqual([row["state"] for row in candidates], ["accepted", "accepted"])
         self.assertEqual({row["professor_id"] for row in candidates}, {1, 2})
         self.assertTrue(all(row["evidence"]["identity_candidate_count"] == 1 for row in candidates))
+
+    def test_new_subject_and_review_only_profile_are_linked_without_code_changes(self):
+        observations = [
+            {"email": "field.1@osu.edu", "display_name": "Avery Field", "term_code": "1272",
+             "class_number": "10001", "campus_code": "MNS", "subject": "ABC", "catalog_number": "1234"},
+            {"email": "tides.2@osu.edu", "display_name": "Dana Tides", "term_code": "1272",
+             "class_number": "10002", "campus_code": "MNS", "subject": "MSE", "catalog_number": "4410"},
+        ]
+        identities, facts = collect_catalog_facts(observations)
+        for username, identity in identities.items():
+            identity["course_facts"] = [fact for fact in facts if fact[0] == username]
+        labels = [("ABC", "Alpha Sciences"), ("MSE", "Marine Signal Engineering")]
+        first = {"legacy_id": 11, "first_name": "Avery", "last_name": "Field", "department": "Alpha Sciences",
+                 "course_codes": [{"courseName": "AS1234"}], "school_ids": [1]}
+        incoming = {"legacy_id": 12, "first_name": "Dana", "last_name": "Tides", "department": "Marine Signal Engineering",
+                    "course_codes": [], "review_codes": ["mar sig eng4410"], "school_ids": [1]}
+        baseline = catalog_candidates([first], {"field.1": identities["field.1"]}, {1: "MNS"}, {},
+                                      subject_lexicon=SubjectLexicon(labels[:1]))
+        updated = catalog_candidates([first, incoming], identities, {1: "MNS"}, {},
+                                     subject_lexicon=SubjectLexicon(labels))
+        repeated = catalog_candidates([incoming, first], identities, {1: "MNS"}, {},
+                                      subject_lexicon=SubjectLexicon(list(reversed(labels))))
+        self.assertEqual(baseline[0]["state"], "accepted")
+        self.assertEqual({row["professor_id"]: row["state"] for row in updated}, {11: "accepted", 12: "accepted"})
+        self.assertEqual(updated[1]["course_matches"], ["MSE4410"])
+        self.assertEqual(refresh_fingerprint(updated, []), refresh_fingerprint(repeated, []))
 
 
 if __name__ == "__main__":

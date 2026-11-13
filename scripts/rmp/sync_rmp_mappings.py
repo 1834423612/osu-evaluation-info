@@ -314,31 +314,47 @@ def catalog_rows(conn, term_window: int) -> tuple[list[dict[str, Any]], list[str
     ).fetchall()
     if not selected:
         return [], []
-    rows = dict_rows(conn.execute(
-        """WITH selected_terms AS (
-                 SELECT * FROM jsonb_to_recordset(%s::jsonb) AS x(term_code text,run_id uuid)
+    rows = []
+    # The snapshot primary key begins with generation/term. Keep those equality
+    # predicates fixed so each page is an index seek rather than a corpus sort.
+    for term, run_id in selected:
+        after = ""
+        while True:
+            batch = dict_rows(conn.execute(
+            """WITH batch AS MATERIALIZED (
+                 SELECT s.term_code,s.class_number,s.campus_code,s.subject,s.catalog_number,s.fetched_at,
+                        s.data->'meetings' AS meetings
+                 FROM osu_catalog.section_snapshots s
+                 WHERE s.last_seen_run=%s::uuid AND s.term_code=%s AND s.class_number>%s
+                   AND s.subject ~ '^[A-Z][A-Z-]{1,19}$'
+                   AND s.catalog_number ~ '^[0-9]{3,5}([.][0-9]{1,3})?[A-Z]{0,2}$'
+                 ORDER BY s.class_number LIMIT 500
              )
              SELECT s.term_code, s.class_number, s.campus_code, s.subject,
                     s.catalog_number, s.fetched_at,
                     instructor->>'email' AS email,
                     instructor->>'displayName' AS display_name
-             FROM selected_terms t
-             JOIN osu_catalog.section_snapshots s ON s.term_code = t.term_code AND s.last_seen_run = t.run_id
-             CROSS JOIN LATERAL jsonb_array_elements(
-                 CASE WHEN jsonb_typeof(s.data->'meetings') = 'array'
-                      THEN s.data->'meetings' ELSE '[]'::jsonb END
-             ) meeting
-             CROSS JOIN LATERAL jsonb_array_elements(
+             FROM batch s
+             LEFT JOIN LATERAL jsonb_array_elements(
+                 CASE WHEN jsonb_typeof(s.meetings) = 'array'
+                      THEN s.meetings ELSE '[]'::jsonb END
+             ) meeting ON true
+             LEFT JOIN LATERAL jsonb_array_elements(
                  CASE WHEN jsonb_typeof(meeting->'instructors') = 'array'
                       THEN meeting->'instructors' ELSE '[]'::jsonb END
-             ) instructor
-             WHERE s.subject ~ '^[A-Z][A-Z-]{1,19}$'
-               AND s.catalog_number ~ '^[0-9]{3,5}([.][0-9]{1,3})?[A-Z]{0,2}$'
-               AND instructor->>'email' IS NOT NULL
-               AND instructor->>'displayName' IS NOT NULL
-             ORDER BY s.term_code DESC, s.fetched_at DESC""",
-        (json.dumps([{"term_code": term, "run_id": str(run_id)} for term, run_id in selected]),),
-    ))
+             ) instructor ON true
+             ORDER BY s.term_code,s.class_number""",
+                (str(run_id), term, after),
+            ))
+            if not batch:
+                break
+            next_key = batch[-1]["class_number"]
+            if next_key == after:
+                raise RuntimeError("Official catalog pagination did not advance")
+            after = next_key
+            # Empty sections still advance the keyset; only real teacher facts
+            # enter the model. Meetings/instructors in a section stay together.
+            rows.extend(row for row in batch if row["email"] and row["display_name"])
     return rows, [r[0] for r in selected]
 
 
@@ -370,8 +386,10 @@ def evaluation_rows(conn, term_window: int) -> tuple[list[dict[str, Any]], list[
     ).fetchall()]
     if not terms:
         return [], []
-    rows = dict_rows(conn.execute(
-        """SELECT DISTINCT t.label AS term_code,t.sort_key AS term_sort_key,
+    unique_rows, after = {}, 0
+    while True:
+        batch = dict_rows(conn.execute(
+        """SELECT e.id AS evidence_id,t.label AS term_code,t.sort_key AS term_sort_key,
                    s.class_number,s.campus_code,su.code AS subject,
                    c.catalog AS catalog_number,e.updated_at AS fetched_at,
                    i.name_dot_number || '@osu.edu' AS email,
@@ -385,31 +403,54 @@ def evaluation_rows(conn, term_window: int) -> tuple[list[dict[str, Any]], list[
             LEFT JOIN LATERAL (
                 SELECT first_name,last_name FROM osu_eval.instructor_name_observation
                 WHERE instructor_id=i.id AND term_id=t.id
-                ORDER BY last_seen_run_id DESC LIMIT 1
+                ORDER BY last_seen_run_id DESC,first_name,last_name LIMIT 1
             ) n ON true
-            WHERE t.label=ANY(%s) AND EXISTS (
+            WHERE t.label=ANY(%s) AND e.id>%s AND EXISTS (
                 SELECT 1 FROM osu_eval.evaluation_source_state es
                 WHERE es.evaluation_id=e.id AND es.active
-            )""", (terms,)
-    ))
-    for row in rows:
+            ) ORDER BY e.id LIMIT 1000""", (terms, after)
+        ))
+        if not batch:
+            break
+        next_id = batch[-1]["evidence_id"]
+        if next_id <= after:
+            raise RuntimeError("Official evaluation pagination did not advance")
+        after = next_id
+        for row in batch:
+            row.pop("evidence_id")
+            # Preserve the former SELECT DISTINCT semantics across page bounds.
+            unique_rows.setdefault(tuple(row.items()), row)
+    for row in unique_rows.values():
         row["source"] = "official_evaluation"
-    return rows, terms
+    return list(unique_rows.values()), terms
 
 
 def official_departments(conn) -> tuple[dict[str, set[str]], dict[str, int]]:
     exists = conn.execute("SELECT to_regclass('osu_eval.instructor') IS NOT NULL").fetchone()[0]
     if not exists:
         return {}, {}
-    rows = conn.execute(
-        """SELECT i.name_dot_number,
+    rows, after = [], ""
+    while True:
+        batch = conn.execute(
+        """WITH selected AS MATERIALIZED (
+               SELECT id,name_dot_number FROM osu_eval.instructor WHERE name_dot_number>%s
+               ORDER BY name_dot_number LIMIT 500
+             )
+             SELECT i.name_dot_number,
                     array_remove(array_agg(DISTINCT s.department), NULL) AS departments,
                     min(i.id) AS instructor_id
-             FROM osu_eval.instructor i
+             FROM selected i
              LEFT JOIN osu_eval.evaluation e ON e.instructor_id = i.id
              LEFT JOIN osu_eval.section s ON s.id = e.section_id
-             GROUP BY i.name_dot_number"""
-    ).fetchall()
+             GROUP BY i.name_dot_number ORDER BY i.name_dot_number""", (after,)
+        ).fetchall()
+        if not batch:
+            break
+        next_name = batch[-1][0]
+        if next_name == after:
+            raise RuntimeError("Official department pagination did not advance")
+        after = next_name
+        rows.extend(batch)
     departments: dict[str, set[str]] = {}
     instructor_ids: dict[str, int] = {}
     for username, values, instructor_id in rows:
@@ -435,17 +476,19 @@ def include_official_name_history(conn, identities: dict[str, dict[str, Any]]) -
         "SELECT to_regclass('osu_eval.instructor_name_observation') IS NOT NULL"
     ).fetchone()[0]:
         return
-    aliases = conn.execute(
+    usernames = sorted(identities)
+    for offset in range(0, len(usernames), 500):
+        aliases = conn.execute(
         """SELECT i.name_dot_number,
                   array_agg(DISTINCT n.first_name || ' ' || n.last_name)
            FROM osu_eval.instructor i
            JOIN osu_eval.instructor_name_observation n ON n.instructor_id=i.id
            WHERE i.name_dot_number=ANY(%s)
            GROUP BY i.name_dot_number""",
-        (list(identities),),
-    ).fetchall()
-    for username, values in aliases:
-        identities[username]["names"] = sorted(set(identities[username]["names"]) | set(values))
+            (usernames[offset:offset + 500],),
+        ).fetchall()
+        for username, values in aliases:
+            identities[username]["names"] = sorted(set(identities[username]["names"]) | set(values))
 
 
 def collect_catalog_facts(rows: list[dict[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[tuple[Any, ...]]]:

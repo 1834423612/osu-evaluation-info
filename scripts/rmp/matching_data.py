@@ -21,18 +21,32 @@ def reference_data(conn, course_rows):
     ).fetchone()[0] else set()
     # Read only the newest complete published generation for each term. An
     # unfinished refresh must never supply a partial course/subject universe.
-    rows = conn.execute("""
-        WITH selected AS (
+    rows = []
+    has_catalog = conn.execute("SELECT to_regclass('osu_catalog.snapshot_versions') IS NOT NULL").fetchone()[0]
+    selected = conn.execute("""
           SELECT DISTINCT ON (term.code) term.code,v.run_id
           FROM osu_catalog.snapshot_versions v JOIN osu_catalog.sync_runs r ON r.id=v.run_id
           CROSS JOIN LATERAL jsonb_array_elements_text(r.terms) term(code)
           WHERE v.published_at IS NOT NULL AND r.status='complete'
           ORDER BY term.code,v.published_at DESC
-        )
-        SELECT DISTINCT c.campus_code,c.subject,c.catalog_number,c.data->>'subjectDesc'
-        FROM selected t JOIN osu_catalog.course_snapshots c
-          ON c.last_seen_run=t.run_id AND c.term_code=t.code
-    """).fetchall() if conn.execute("SELECT to_regclass('osu_catalog.snapshot_versions') IS NOT NULL").fetchone()[0] else []
+        """).fetchall() if has_catalog else []
+    for term, run_id in selected:
+        after = ("", "", "")
+        while True:
+            batch = conn.execute("""SELECT c.course_id,c.offering_number,c.campus_code,
+                c.subject,c.catalog_number,coalesce(c.data->>'subjectDesc','')
+                FROM osu_catalog.course_snapshots c
+                WHERE c.last_seen_run=%s::uuid AND c.term_code=%s
+                  AND (c.course_id,c.offering_number,c.campus_code)>(%s,%s,%s)
+                ORDER BY c.course_id,c.offering_number,c.campus_code LIMIT 1000""",
+                (str(run_id), term, *after)).fetchall()
+            if not batch:
+                break
+            next_key = batch[-1][:3]
+            if next_key == after:
+                raise RuntimeError("Official reference pagination did not advance")
+            after = next_key
+            rows.extend((campus, subject, catalog, label) for _cid, _offer, campus, subject, catalog, label in batch)
     inventory = defaultdict(set)
     for campus, subject, catalog, label in rows:
         labels.add((subject, label or subject))
@@ -73,7 +87,10 @@ def load_professors(conn):
                 raise ValueError("RMP profile course payload must be an array")
             result.append({"legacy_id": pid, "first_name": first, "last_name": last,
                            "department": department, "course_codes": codes, "school_ids": schools})
-        after = rows[-1][0]
+        next_id = rows[-1][0]
+        if next_id <= after:
+            raise RuntimeError("RMP profile pagination did not advance")
+        after = next_id
 
 
 def audit_course_links(professors, reviews, candidates, identities, schools, inventory, lexicon, existing, decisions=()):
