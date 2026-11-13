@@ -40,4 +40,5 @@ export type CourseRmpInput = {
   catalogNumber: string;
   campus: string;
   usernames: string[];
+  instructorScope?: "selected" | "course-history";
 };

@@ -55,7 +55,8 @@ export async function getCourseRmp(
     recentSince,
     refreshedAt: null,
   };
-  if (!input.usernames.length) return empty;
+  if (!input.usernames.length && input.instructorScope !== "course-history")
+    return empty;
   const key = JSON.stringify([input, recentSince, !!options.preview]);
   const cached = cache.get(key);
   if (!options.bypassCache && cached && cached.expiresAt > Date.now())
@@ -72,6 +73,7 @@ export async function getCourseRmp(
         `${input.subject}${input.catalogNumber}`.replace(/[\s_-]/g, ""),
         recentSince,
         !options.preview,
+        input.instructorScope === "course-history",
       ]);
       const instructors: RmpInstructor[] = result.rows.map((row) => ({
         professorId: row.professor_id,
@@ -138,7 +140,7 @@ export async function getInstructorRmpReviews(
   if (!/^\d{1,18}$/.test(rawProfessorId))
     throw new RangeError("Invalid RMP professor ID.");
   const offset = normalizeReviewOffset(rawOffset);
-  if (!input.usernames.length)
+  if (!input.usernames.length && input.instructorScope !== "course-history")
     return { reviews: [], total: 0, nextOffset: null };
   const result = await queryDatabase<{ total: number; reviews: RmpReview[] }>(
     REVIEW_PAGE_SQL,
@@ -149,6 +151,7 @@ export async function getInstructorRmpReviews(
       REVIEW_PAGE_SIZE,
       rawProfessorId,
       offset,
+      input.instructorScope === "course-history",
     ],
   );
   const row = result.rows[0] ?? { total: 0, reviews: [] };

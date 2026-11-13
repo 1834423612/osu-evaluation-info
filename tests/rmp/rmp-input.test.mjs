@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { normalizeRmpInput } from "../../src/lib/rmp/input.ts";
+import { normalizeRmpInput, parseRmpScope } from "../../src/lib/rmp/input.ts";
 
 const selection = {
   subject: "CSE",
@@ -10,6 +10,18 @@ const selection = {
 };
 
 describe("RMP course selection", () => {
+  it("expands verified course history only with an explicit scope", () => {
+    assert.equal(normalizeRmpInput(selection).instructorScope, undefined);
+    assert.equal(
+      normalizeRmpInput({ ...selection, instructorScope: "course-history" })
+        .instructorScope,
+      "course-history",
+    );
+    assert.equal(parseRmpScope(null), undefined);
+    assert.equal(parseRmpScope("selected"), "selected");
+    for (const value of ["", "all", "teachers", false, {}])
+      assert.throws(() => parseRmpScope(value), RangeError);
+  });
   it("normalizes official identities and deduplicates before querying", () => {
     assert.deepEqual(
       normalizeRmpInput({

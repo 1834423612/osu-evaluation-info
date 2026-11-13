@@ -42,6 +42,7 @@ export function RmpCoursePreview({
     catalogNumber: course.catalogNumber,
     campus: course.campusCode,
     usernames,
+    instructorScope: "course-history",
   });
   useEffect(() => {
     const element = ref.current;
@@ -52,10 +53,6 @@ export function RmpCoursePreview({
         if (!entries.some((entry) => entry.isIntersecting)) return;
         observer.disconnect();
         const input = JSON.parse(key);
-        if (!input.usernames.length) {
-          setState({ key, value: null });
-          return;
-        }
         void rmpPreviews.request(input).then((value) => {
           if (!cancelled) setState({ key, value });
         });
@@ -137,12 +134,10 @@ export function RmpCoursePreview({
         </>
       ) : (
         <p className={styles.empty}>
-          {state?.key !== key && usernames.length
+          {state?.key !== key
             ? text(locale, "Loading student voices…", "正在汇总学生评价…")
             : insight?.status === "unavailable" ||
-                (usernames.length > 0 &&
-                  state?.key === key &&
-                  state.value === null)
+                (state?.key === key && state.value === null)
               ? text(
                   locale,
                   "RMP reviews are temporarily unavailable",

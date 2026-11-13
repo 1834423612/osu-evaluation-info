@@ -53,6 +53,10 @@ try {
         .click();
       const response = await responsePromise;
       const summary = await response.json();
+      assert.equal(
+        new URL(response.url()).searchParams.get("scope"),
+        "course-history",
+      );
       assert.equal(summary.status, "available", query);
       const panel = page.locator("[data-analytics-area=rmp_reviews]");
       await panel.locator("[data-rmp-card]").first().waitFor();
@@ -74,6 +78,7 @@ try {
         campus: "MNS",
         status: summary.status,
         instructors: summary.matchedInstructorCount,
+        requestedInstructors: summary.requestedInstructorCount,
         reviewCount,
         api: response.status(),
       });
@@ -81,6 +86,20 @@ try {
         `${width}px ${query}: ${reviewCount} course-specific reviews`,
       );
     }
+    const historical = await page.request.get(
+      `${base}/api/rmp/course?subject=MATH&catalog=1131&campus=MNS&scope=course-history`,
+    );
+    const history = await historical.json();
+    assert.equal(history.status, "available");
+    const selected = await page.request.get(
+      `${base}/api/rmp/course?subject=MATH&catalog=1131&campus=MNS`,
+    );
+    assert.equal((await selected.json()).status, "no-data");
+    const teacher = history.instructors.find((row) => row.reviewCount > 0);
+    const reviewPage = await page.request.get(
+      `${base}/api/rmp/course/reviews?subject=MATH&catalog=1131&campus=MNS&scope=course-history&professor=${teacher.professorId}`,
+    );
+    assert.equal((await reviewPage.json()).total, teacher.reviewCount);
     assert.deepEqual(errors, []);
     await context.close();
   }

@@ -69,6 +69,7 @@ export default function RmpPanel({
     subject: course.subject,
     catalog: course.catalogNumber,
     campus: course.campusCode,
+    scope: "course-history",
   });
   for (const identity of usernames) params.append("instructor", identity);
   const query = params.toString();
@@ -264,6 +265,9 @@ function InstructorReviews({
   const [pageError, setPageError] = useState(false);
   const reviewViewportRef = useRef<HTMLDivElement>(null);
   const commonTags = instructor.topTags.slice(0, 5);
+  const siblingProfiles = summary.instructors.filter(
+    (item) => item.nameDotNumber === instructor.nameDotNumber,
+  ).length;
   const { pageCount, reachableCount } = reviewPagination(
     instructor.reviewCount,
   );
@@ -407,6 +411,15 @@ function InstructorReviews({
         </a>
       </div>
       <InstructorEmail locale={locale} username={instructor.nameDotNumber} />
+      {siblingProfiles > 1 ? (
+        <p className={styles.note}>
+          {text(
+            locale,
+            `RMP #${instructor.professorId} · ${siblingProfiles} separate profiles for this verified instructor`,
+            `RMP #${instructor.professorId} · 本教师关联 ${siblingProfiles} 个独立档案`,
+          )}
+        </p>
+      ) : null}
       {commonTags.length ? (
         <ul
           className={styles.tagCloud}

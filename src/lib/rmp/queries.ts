@@ -1,11 +1,16 @@
 // Shared by serving code and database integration checks.
 export const COURSE_SQL = `
-  WITH matched AS (
+  WITH selected_instructors AS (
+    SELECT unnest($1::text[]) AS name_dot_number
+    UNION
+    SELECT name_dot_number FROM osu_rmp.instructor_course
+    WHERE $6::boolean AND active AND campus_code=$2 AND course_key=$3
+  ), matched AS (
     SELECT DISTINCT m.professor_id, m.name_dot_number, i.display_name
     FROM osu_rmp.professor_identity_map m
     JOIN osu_rmp.instructor_identity i USING (name_dot_number)
     JOIN osu_rmp.professor p ON p.legacy_id = m.professor_id AND p.active
-    WHERE m.state = 'accepted' AND m.name_dot_number = ANY($1::text[])
+    WHERE m.state = 'accepted' AND m.name_dot_number IN (SELECT name_dot_number FROM selected_instructors)
       AND (m.method='manual' OR m.evidence->'campus_codes' ? $2)
       AND EXISTS (
         SELECT 1 FROM osu_rmp.professor_school ps
@@ -85,7 +90,10 @@ export const REVIEW_PAGE_SQL = `
     FROM osu_rmp.professor_identity_map m
     JOIN osu_rmp.professor p ON p.legacy_id=m.professor_id AND p.active
     WHERE m.professor_id=$5::bigint AND m.state='accepted'
-      AND m.name_dot_number=ANY($1::text[])
+      AND (m.name_dot_number=ANY($1::text[]) OR ($7::boolean AND EXISTS (
+        SELECT 1 FROM osu_rmp.instructor_course ic WHERE ic.name_dot_number=m.name_dot_number
+          AND ic.active AND ic.campus_code=$2 AND ic.course_key=$3
+      )))
       AND (m.method='manual' OR m.evidence->'campus_codes' ? $2)
       AND EXISTS (
         SELECT 1 FROM osu_rmp.professor_school ps

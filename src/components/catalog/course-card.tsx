@@ -667,43 +667,42 @@ export function CourseCard({
               <p className="inline-error" role="status">
                 {text(
                   locale,
-                  "Current instructors could not be loaded. RMP reviews are unavailable.",
-                  "当前授课教师暂时无法获取，无法展示对应的 RMP 评论。",
+                  "Current sections could not be refreshed. Verified course history remains available.",
+                  "当前班次暂无法刷新，仍可查看已核实的课程历史评价。",
                 )}{" "}
                 <button onClick={() => void openTab("ratings", true)}>
                   {text(locale, "Retry", "重试")}
                 </button>
               </p>
-            ) : (
-              <Tabs
-                value={ratingSource}
-                onValueChange={setRatingSource}
-                className="rating-source-tabs"
+            ) : null}
+            <Tabs
+              value={ratingSource}
+              onValueChange={setRatingSource}
+              className="rating-source-tabs"
+            >
+              <TabsList
+                aria-label={text(locale, "Evaluation source", "评价来源")}
               >
-                <TabsList
-                  aria-label={text(locale, "Evaluation source", "评价来源")}
-                >
-                  <TabsTrigger value="official">
-                    <LucideShieldCheck size={13} aria-hidden="true" />
-                    {text(locale, "OSU official", "OSU 官方评价")}
-                  </TabsTrigger>
-                  <TabsTrigger value="rmp">
-                    <AlertTriangle size={13} aria-hidden="true" />
-                    {text(locale, "RMP · student reviews", "RMP · 学生评论")}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="official">
-                  <EvaluationPanel
-                    summary={current.evaluation}
-                    locale={locale}
-                    subject={current.subject}
-                  />
-                </TabsContent>
-                <TabsContent value="rmp">
-                  <RmpPanel course={current} locale={locale} />
-                </TabsContent>
-              </Tabs>
-            )}
+                <TabsTrigger value="official">
+                  <LucideShieldCheck size={13} aria-hidden="true" />
+                  {text(locale, "OSU official", "OSU 官方评价")}
+                </TabsTrigger>
+                <TabsTrigger value="rmp">
+                  <AlertTriangle size={13} aria-hidden="true" />
+                  {text(locale, "RMP · student reviews", "RMP · 学生评论")}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="official">
+                <EvaluationPanel
+                  summary={current.evaluation}
+                  locale={locale}
+                  subject={current.subject}
+                />
+              </TabsContent>
+              <TabsContent value="rmp">
+                <RmpPanel course={current} locale={locale} />
+              </TabsContent>
+            </Tabs>
           </div>
         </TabsContent>
         <TabsContent value="syllabus">

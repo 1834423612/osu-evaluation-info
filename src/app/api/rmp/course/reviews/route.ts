@@ -1,5 +1,6 @@
 import { getInstructorRmpReviews } from "@/lib/rmp/repository";
 import { parseReviewOffset } from "@/lib/rmp/pagination";
+import { parseRmpScope } from "@/lib/rmp/input";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,7 @@ export async function GET(request: Request) {
         catalogNumber: params.get("catalog") ?? "",
         campus: params.get("campus") ?? "",
         usernames: params.getAll("instructor"),
+        instructorScope: parseRmpScope(params.get("scope")),
       },
       params.get("professor") ?? "",
       offset,

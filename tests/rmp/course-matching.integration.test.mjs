@@ -17,6 +17,10 @@ test(
       statement_timeout: 20000,
     });
     await client.connect();
+    const queryCourse = (params, history = false) =>
+      client.query(COURSE_SQL, [...params, history]);
+    const queryReviews = (params, history = false) =>
+      client.query(REVIEW_PAGE_SQL, [...params, history]);
     try {
       await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
       await t.test(
@@ -86,17 +90,13 @@ test(
             AND m.raw_course_token=osu_rmp.review_course_token(r.class_name)))`,
               [row.professor_id, row.campus_code, row.course_key],
             );
-            const summary = await client.query(COURSE_SQL, [
-              ...params,
-              "2024-11-13",
-              true,
-            ]);
+            const summary = await queryCourse([...params, "2024-11-13", true]);
             const profile = summary.rows.find(
               (p) => p.professor_id === row.professor_id,
             );
             assert.equal(profile?.review_count, expected.rows[0].total);
             assert(profile.review_count > 0);
-            const first = await client.query(REVIEW_PAGE_SQL, [
+            const first = await queryReviews([
               ...params,
               6,
               row.professor_id,
@@ -108,7 +108,7 @@ test(
               Math.min(6, profile.review_count),
             );
             if (profile.review_count > 6) {
-              const second = await client.query(REVIEW_PAGE_SQL, [
+              const second = await queryReviews([
                 ...params,
                 6,
                 row.professor_id,
@@ -134,7 +134,7 @@ test(
               "WST",
             ].find((code) => !schools.rows.some((s) => s.campus_code === code));
             if (!unauthorized) return;
-            const wrongCampus = await client.query(REVIEW_PAGE_SQL, [
+            const wrongCampus = await queryReviews([
               [row.name_dot_number],
               unauthorized,
               row.course_key,
@@ -154,7 +154,7 @@ test(
             WHERE active AND campus_code='MNS' AND course_key=$1`,
               [course],
             );
-            const summary = await client.query(COURSE_SQL, [
+            const summary = await queryCourse([
               instructors.rows.map((row) => row.name_dot_number),
               "MNS",
               course,
@@ -173,7 +173,7 @@ test(
           WHERE m.raw_course_token='BIO1101' AND m.course_key='BIOLOGY1101' AND m.state='accepted' AND i.state='accepted'`);
           assert(biology.rows.length > 0);
           for (const row of biology.rows) {
-            const summary = await client.query(COURSE_SQL, [
+            const summary = await queryCourse([
               [row.name_dot_number],
               row.campus_code,
               "BIOLOGY1101",
@@ -186,6 +186,39 @@ test(
                   profile.professor_id === row.professor_id &&
                   profile.review_count > 0,
               ),
+            );
+          }
+        },
+      );
+      await t.test(
+        "course history includes only verified campus/course teachers and leaves individual scores scoped",
+        async () => {
+          const course = [[], "MNS", "MATH1151", "2024-11-13", true];
+          const selected = await queryCourse(course);
+          assert.equal(selected.rows.length, 0);
+          const history = await queryCourse(course, true);
+          const withReviews = history.rows.filter(
+            (row) => row.review_count > 0,
+          );
+          assert(withReviews.length >= 2);
+          for (const row of withReviews) {
+            const individual = await queryCourse([
+              [row.name_dot_number],
+              "MNS",
+              "MATH1151",
+              "2024-11-13",
+              true,
+            ]);
+            assert(
+              individual.rows.every(
+                (profile) => profile.name_dot_number === row.name_dot_number,
+              ),
+            );
+            const page = [[], "MNS", "MATH1151", 6, row.professor_id, 0];
+            assert.equal((await queryReviews(page)).rows[0].total, 0);
+            assert.equal(
+              (await queryReviews(page, true)).rows[0].total,
+              row.review_count,
             );
           }
         },

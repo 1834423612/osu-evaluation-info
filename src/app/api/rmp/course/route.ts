@@ -1,5 +1,6 @@
 import { debugBypassRequest } from "@/lib/debug/server";
 import { getCourseRmp } from "@/lib/rmp/repository";
+import { parseRmpScope } from "@/lib/rmp/input";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,7 @@ export async function GET(request: Request) {
         catalogNumber: params.get("catalog") ?? "",
         campus: params.get("campus") ?? "",
         usernames: params.getAll("instructor"),
+        instructorScope: parseRmpScope(params.get("scope")),
       },
       { bypassCache: debugBypassRequest(request) },
     );
