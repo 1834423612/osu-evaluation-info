@@ -59,6 +59,15 @@ test(
           "utf8",
         ),
       );
+      await scoped.query(
+        await readFile(
+          new URL(
+            "../../db/migrations/syllabus/003-permanent-archive.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
       await saveTerms(scoped, [term]);
       await saveTerms(scoped, [
         { ...term, published: false, status: "historic" },
@@ -178,6 +187,30 @@ test(
       const changed = structuredClone(document);
       changed.components[0].html += "<p>Updated grading policy</p>";
       await saveDocument(scoped, changed);
+      await assert.rejects(
+        scoped.query("DELETE FROM osu_syllabus.document_versions"),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query("UPDATE osu_syllabus.document_versions SET data='{}'"),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query("UPDATE osu_syllabus.entry_observations SET data='{}'"),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query("TRUNCATE osu_syllabus.document_versions"),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query("DELETE FROM osu_syllabus.entries"),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query("DELETE FROM osu_syllabus.entry_observations"),
+        /PERMANENT_ARCHIVE/,
+      );
       assert.equal(
         (
           await scoped.query(

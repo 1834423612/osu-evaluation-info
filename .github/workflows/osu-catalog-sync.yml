@@ -49,11 +49,6 @@ jobs:
         shell: bash
         run: pnpm catalog:sync 2>&1 | tee "$RUNNER_TEMP/catalog-sync.log"
 
-      - name: Reclaim retired catalog snapshots
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: pnpm catalog:prune
-
       - name: Refresh RMP identity and course evidence
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

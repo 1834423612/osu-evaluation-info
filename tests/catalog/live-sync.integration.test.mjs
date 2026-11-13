@@ -45,7 +45,7 @@ it(
         );
       }
       await client.query(
-        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(2)`,
+        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(3)`,
       );
       const preload = join(directory, "preload.mjs");
       await writeFile(

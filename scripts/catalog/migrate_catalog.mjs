@@ -30,6 +30,10 @@ try {
   );
   const migrations = [
     {
+      version: 3,
+      file: "../../db/migrations/catalog/003-permanent-archive.sql",
+    },
+    {
       version: 2,
       file: "../../db/migrations/catalog/002-versioned-snapshots.sql",
     },

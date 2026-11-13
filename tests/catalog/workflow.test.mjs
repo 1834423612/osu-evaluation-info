@@ -35,9 +35,10 @@ it("catalog automation only accepts the four-hour scheduled event", async () => 
   assert.match(source, /test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
   assert.match(source, /run: bash scripts\/ci\/setup-catalog-runtime.sh/);
   const sync = source.indexOf("run: pnpm catalog:sync");
-  const prune = source.indexOf("run: pnpm catalog:prune");
-  assert.ok(
-    sync >= 0 && prune > sync,
-    "cleanup must follow successful synchronization",
+  assert.ok(sync >= 0);
+  assert.doesNotMatch(
+    source,
+    /catalog:prune/,
+    "scheduled synchronization must retain every archived generation",
   );
 });

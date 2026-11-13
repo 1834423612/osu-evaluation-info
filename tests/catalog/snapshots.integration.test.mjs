@@ -72,6 +72,15 @@ it(
             ["1272", pinned],
           )
         ).rows[0]?.id;
+      await scoped.query(
+        await readFile(
+          new URL(
+            "../../db/migrations/catalog/003-permanent-archive.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
       assert.equal(
         await find(client),
         old,
@@ -207,10 +216,42 @@ it(
         batchSize: 1,
         wait: async () => {},
       });
-      assert.equal(pruned.runId, old);
-      assert.equal(pruned.deletedRows, 2);
+      assert.equal(pruned.runId, undefined);
+      assert.equal(pruned.deletedRows, 0);
       assert.equal(pruned.complete, true);
-      assert.equal(await find(client, old), undefined);
+      assert.equal(await find(client, old), old);
+      await assert.rejects(
+        scoped.query(
+          "UPDATE osu_catalog.snapshot_versions SET published_at=NULL WHERE run_id=$1",
+          [old],
+        ),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query(
+          "DELETE FROM osu_catalog.course_snapshots WHERE last_seen_run=$1",
+          [old],
+        ),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query(
+          "UPDATE osu_catalog.section_snapshots SET data='{}' WHERE last_seen_run=$1",
+          [old],
+        ),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query(
+          "DELETE FROM osu_catalog.snapshot_versions WHERE run_id=$1",
+          [old],
+        ),
+        /PERMANENT_ARCHIVE/,
+      );
+      await assert.rejects(
+        scoped.query("TRUNCATE osu_catalog.section_snapshots"),
+        /PERMANENT_ARCHIVE/,
+      );
       assert.equal(await find(client), next);
       assert.equal(
         (
@@ -237,14 +278,14 @@ it(
       const partialCleanup = await pruneCatalogSnapshots(scoped, {
         budgetMs: 0,
       });
-      assert.equal(partialCleanup.runId, broken);
-      assert.equal(partialCleanup.complete, false);
+      assert.equal(partialCleanup.runId, undefined);
+      assert.equal(partialCleanup.complete, true);
       const abandoned = await pruneCatalogSnapshots(scoped, {
         batchSize: 1,
         wait: async () => {},
       });
-      assert.equal(abandoned.runId, broken);
-      assert.equal(abandoned.deletedRows, 2);
+      assert.equal(abandoned.runId, undefined);
+      assert.equal(abandoned.deletedRows, 0);
       assert.equal(abandoned.complete, true);
       assert.equal(await find(client), next);
       assert.equal(
