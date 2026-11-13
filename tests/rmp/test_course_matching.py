@@ -95,6 +95,21 @@ class CourseMatchingTests(unittest.TestCase):
             def execute(self, *args): return Result([(1, "Sam", "Ocean", "Biology", "W10=", "0" * 64, [1])])
         with self.assertRaises(ValueError): load_professors(Corrupt())
 
+    def test_distinct_rmp_profiles_can_reference_one_verified_official_identity(self):
+        identities, facts = collect_catalog_facts([
+            {"email": "ocean.7@osu.edu", "display_name": "Sam Ocean", "term_code": "1272",
+             "class_number": "12345", "campus_code": "MNS", "subject": "COSENG", "catalog_number": "3100"},
+        ])
+        identities["ocean.7"]["course_facts"] = facts
+        profiles = [{"legacy_id": pid, "first_name": "Sam", "last_name": "Ocean",
+                     "department": "Celestial Ocean Engineering", "course_codes": [{"courseName": "COE3100"}],
+                     "school_ids": [1]} for pid in [1, 2]]
+        candidates = catalog_candidates(profiles, identities, {1: "MNS"},
+                         {"ocean.7": {"mansfieldcampus"}}, subject_lexicon=self.lexicon)
+        self.assertEqual([row["state"] for row in candidates], ["accepted", "accepted"])
+        self.assertEqual({row["professor_id"] for row in candidates}, {1, 2})
+        self.assertTrue(all(row["evidence"]["identity_candidate_count"] == 1 for row in candidates))
+
 
 if __name__ == "__main__":
     unittest.main()

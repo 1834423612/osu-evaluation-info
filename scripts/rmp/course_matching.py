@@ -8,7 +8,7 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import Iterable
 
-VERSION = "catalog-evidence-v2"
+VERSION = "catalog-evidence-v3"
 STOP = {"and", "of", "the", "department", "school", "college", "for", "in"}
 
 

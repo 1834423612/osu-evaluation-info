@@ -135,11 +135,10 @@ class RmpMappingTests(unittest.TestCase):
     def test_four_signals_and_unique_evidence_are_required_for_auto_accept(self):
         self.assertEqual(confidence_score(name_exact=True, campus_match=True, department_match=True, course_overlap=1), 100)
         base = dict(name_exact=True, campus_match=True, department_match=True, course_overlap=1,
-                    unique_for_professor=True, unique_for_identity=True)
+                    unique_for_professor=True)
         self.assertTrue(should_auto_accept(**base))
         for key, value in (("name_exact", False), ("campus_match", False), ("department_match", False),
-                           ("course_overlap", 0), ("unique_for_professor", False),
-                           ("unique_for_identity", False)):
+                           ("course_overlap", 0), ("unique_for_professor", False)):
             with self.subTest(key=key):
                 altered = dict(base)
                 altered[key] = value

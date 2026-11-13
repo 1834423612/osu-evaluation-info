@@ -74,9 +74,8 @@ def should_auto_accept(
     department_match: bool,
     course_overlap: int,
     unique_for_professor: bool,
-    unique_for_identity: bool,
 ) -> bool:
-    """Require four exact signals and an unambiguous identity at each campus."""
+    """Require four signals and exactly one official identity per source profile."""
     return all(
         (
             name_exact,
@@ -84,7 +83,6 @@ def should_auto_accept(
             department_match,
             course_overlap > 0,
             unique_for_professor,
-            unique_for_identity,
         )
     )
 
@@ -504,7 +502,6 @@ def catalog_candidates(
 
     potential: list[dict[str, Any]] = []
     professor_counts: Counter[int] = Counter()
-    identity_campus_counts: Counter[tuple[str, str]] = Counter()
     for profile in professors:
         professor_id = int(profile["legacy_id"])
         full_name = f"{profile.get('first_name') or ''} {profile.get('last_name') or ''}"
@@ -576,15 +573,12 @@ def catalog_candidates(
             # do not compete with a complete, exact identity candidate.
             if qualifying_campuses:
                 professor_counts[professor_id] += 1
-                for campus in qualifying_campuses:
-                    identity_campus_counts[username, campus] += 1
     for entry in potential:
+        entry["identity_candidate_count"] = professor_counts[entry["professor_id"]]
         accepted = should_auto_accept(
             name_exact=entry["name_exact"], campus_match=entry["campus_match"],
             department_match=entry["department_match"], course_overlap=len(entry["course_matches"]) if entry["qualifying_campuses"] else 0,
             unique_for_professor=professor_counts[entry["professor_id"]] == 1,
-            unique_for_identity=all(identity_campus_counts[entry["username"], campus] == 1
-                                    for campus in entry["campus_codes"]),
         )
         entry["state"] = "accepted" if accepted else "candidate"
         entry["score"] = confidence_score(
