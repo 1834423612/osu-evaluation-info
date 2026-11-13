@@ -37,6 +37,7 @@ export const LIBRARY_REVIEWS_SQL = `WITH matching AS (
   SELECT (SELECT count(*)::int FROM matching) total,coalesce(jsonb_agg(jsonb_build_object(
     'id',legacy_id::text,'course',coalesce(class_name,''),'date',osu_rmp.review_day(date_text)::text,
     'quality',coalesce((helpful_rating+clarity_rating)/2,helpful_rating,clarity_rating),'difficulty',difficulty_rating,
+    'helpfulness',helpful_rating,'clarity',clarity_rating,
     'comment',coalesce(comment,''),'tags',osu_rmp.tag_array(rating_tags),'active',active,
     'wouldTakeAgain',would_take_again,'grade',grade,'attendance',attendance_mandatory,
     'textbook',textbook_use,'online',is_for_online_class,'forCredit',is_for_credit,

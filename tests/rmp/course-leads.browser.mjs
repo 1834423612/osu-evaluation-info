@@ -108,6 +108,17 @@ try {
       .click();
     await card.locator("[data-rmp-review-content]").waitFor();
     assert((await card.innerText()).includes("课程评论"));
+    const review = card.locator("[data-rmp-review]").first();
+    await review.waitFor();
+    assert((await review.innerText()).includes("帮助度"));
+    assert((await review.innerText()).includes("清晰度"));
+    const feedback = review.locator('[aria-label="RMP 原站反馈（只读）"]');
+    assert.equal(await feedback.locator("button, a, input").count(), 0);
+    const details = review.locator("summary");
+    if (await details.count()) {
+      await details.click();
+      assert(await review.locator("details[open] dl").isVisible());
+    }
     const link = card.getByRole("link", {
       name: "查看该教师全部课程评价",
       exact: true,

@@ -3,6 +3,16 @@ export type RmpReview = {
   date: string | null;
   quality: number | null;
   difficulty: number | null;
+  helpfulness: number | null;
+  clarity: number | null;
+  grade: string | null;
+  attendance: string | null;
+  textbook: string | null;
+  online: boolean | null;
+  forCredit: boolean | null;
+  thumbsUp: number | null;
+  thumbsDown: number | null;
+  teacherReply: { comment: string; date: string | null } | null;
   comment: string;
   tags: string[];
   wouldTakeAgain: boolean | null;

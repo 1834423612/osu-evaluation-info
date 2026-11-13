@@ -1,3 +1,4 @@
+import type { RmpReview } from "./types";
 export type RmpProfile = {
   id: string;
   name: string;
@@ -21,24 +22,9 @@ export type RmpLibraryResult = {
   total: number;
   nextOffset: number | null;
 };
-export type RmpLibraryReview = {
-  teacherReply: { comment: string; date: string | null } | null;
-  id: string;
+export type RmpLibraryReview = RmpReview & {
   course: string;
-  date: string | null;
-  quality: number | null;
-  difficulty: number | null;
-  comment: string;
-  tags: string[];
   active: boolean;
-  wouldTakeAgain: boolean | null;
-  grade: string | null;
-  attendance: string | null;
-  textbook: string | null;
-  online: boolean | null;
-  forCredit: boolean | null;
-  thumbsUp: number;
-  thumbsDown: number;
 };
 export type RmpProfileDetail = {
   supplements: {

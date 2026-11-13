@@ -26,7 +26,7 @@ import { REVIEW_PAGE_SIZE, reviewPagination } from "@/lib/rmp/pagination";
 import { nameDotNumberFromEmail } from "@/lib/evaluations/scoring";
 import { text, type Locale } from "@/lib/i18n";
 import { InstructorDirectoryIdentity } from "@/components/people/people-directory-lookup";
-import { TranslateText } from "@/components/translation/translate-text";
+import { RmpReviewContent } from "./review-content";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import { RmpIdentityBadge } from "./library-shared";
@@ -559,55 +559,8 @@ function InstructorReviews({
                         )}
                       </span>
                     ) : null}
-                    <span
-                      className={styles.reviewQuality}
-                      data-tone={
-                        review.quality === null
-                          ? "none"
-                          : review.quality >= 4
-                            ? "positive"
-                            : review.quality < 3
-                              ? "caution"
-                              : "mixed"
-                      }
-                    >
-                      {text(locale, "Quality", "评价")} {score(review.quality)}
-                    </span>
-                    <span
-                      className={styles.reviewDifficulty}
-                      data-tone={
-                        review.difficulty === null
-                          ? "none"
-                          : review.difficulty >= 4
-                            ? "caution"
-                            : review.difficulty < 2.5
-                              ? "positive"
-                              : "mixed"
-                      }
-                    >
-                      {text(locale, "Difficulty", "难度")}{" "}
-                      {score(review.difficulty)}
-                    </span>
                   </div>
-                  {review.comment ? (
-                    <TranslateText text={review.comment} locale={locale} />
-                  ) : (
-                    <p>
-                      {text(locale, "No written comment.", "未填写文字评论。")}
-                    </p>
-                  )}
-                  {review.tags.length ? (
-                    <ul
-                      className={styles.tags}
-                      aria-label={text(locale, "Review tags", "评论标签")}
-                    >
-                      {review.tags.map((tag) => (
-                        <li key={tag} data-tone={tagTone(tag)}>
-                          {tag}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
+                  <RmpReviewContent review={review} locale={locale} />
                 </div>
               ))}
               {showAllReviews && loadingPage && !reviews.length ? (

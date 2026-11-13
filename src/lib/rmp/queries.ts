@@ -27,6 +27,16 @@ const profiles = (history: number) => `selected_instructors AS (
     AND NOT EXISTS(SELECT 1 FROM confirmed c WHERE c.professor_id=p.legacy_id)
 )`;
 
+// Keep preview and paginated review payloads identical, including false and zero.
+const reviewFields = (alias: string) => `
+  'helpfulness',${alias}.helpful_rating,'clarity',${alias}.clarity_rating,
+  'grade',${alias}.grade,'attendance',${alias}.attendance_mandatory,
+  'textbook',${alias}.textbook_use,'online',${alias}.is_for_online_class,
+  'forCredit',${alias}.is_for_credit,'thumbsUp',${alias}.thumbs_up_total,
+  'thumbsDown',${alias}.thumbs_down_total,
+  'teacherReply',CASE WHEN nullif(${alias}.teacher_note->>'comment','') IS NOT NULL THEN
+    jsonb_build_object('comment',${alias}.teacher_note->>'comment','date',${alias}.teacher_note->>'createdAt') END`;
+
 export const COURSE_SQL = `
   WITH ${profiles(6)}
   SELECT m.professor_id::text, m.name_dot_number, m.display_name, m.association,
@@ -69,9 +79,10 @@ export const COURSE_SQL = `
       'quality', coalesce((recent.helpful_rating + recent.clarity_rating) / 2,
         recent.helpful_rating, recent.clarity_rating),
       'difficulty', recent.difficulty_rating,
-      'comment', left(coalesce(recent.comment, ''), 4000),
+      'comment', coalesce(recent.comment, ''),
       'tags', recent.rating_tags,
-      'wouldTakeAgain', recent.would_take_again
+      'wouldTakeAgain', recent.would_take_again,
+      ${reviewFields("recent")}
     ) ORDER BY recent.review_date DESC NULLS LAST, recent.legacy_id DESC) AS reviews
     FROM (
       SELECT r.* FROM osu_rmp.course_review_query r
@@ -111,8 +122,9 @@ export const REVIEW_PAGE_SQL = `
       'quality',coalesce((page.helpful_rating+page.clarity_rating)/2,
         page.helpful_rating,page.clarity_rating),
       'difficulty',page.difficulty_rating,
-      'comment',left(coalesce(page.comment,''),4000),
-      'tags',page.rating_tags,'wouldTakeAgain',page.would_take_again
+      'comment',coalesce(page.comment,''),
+      'tags',page.rating_tags,'wouldTakeAgain',page.would_take_again,
+      ${reviewFields("page")}
     ) ORDER BY page.review_date DESC NULLS LAST,page.legacy_id DESC)
       FILTER (WHERE page.legacy_id IS NOT NULL),'[]'::jsonb) AS reviews
   FROM page
