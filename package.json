@@ -22,6 +22,7 @@
     "rmp:mappings": "python3 scripts/rmp/sync_rmp_mappings.py",
     "rmp:research:scan": "node scripts/rmp/scan_directory.mjs",
     "rmp:research:web": "node scripts/rmp/research_web_profiles.mjs",
+    "rmp:research:pdf": "python3 scripts/rmp/research_pdf_profiles.py",
     "rmp:research:review": "python3 scripts/rmp/review_identity_research.py",
     "rmp:supplement": "python3 scripts/rmp/import_rmp_supplement.py",
     "typecheck": "next typegen && tsc --noEmit",

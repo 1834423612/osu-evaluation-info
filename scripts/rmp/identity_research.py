@@ -74,13 +74,23 @@ def merge_people(profile, candidates):
         grouped.setdefault(person["user"], []).append(person)
     result = {}
     for user, people in grouped.items():
-        people=sorted(people,key=lambda p:p.get('observed_at',''),reverse=True)
+        people = sorted(people, key=lambda p: p.get("observed_at", ""), reverse=True)
         matching = [p for p in people if compatible_name(profile, p)]
         base = dict((matching or people)[0])
         central = [
             p for p in people if not p.get("source_url") and p.get("appointments")
         ]
-        jobs = (central or [p for p in people if p.get("appointments")] or [base])[0]
+        current_web = [
+            p
+            for p in people
+            if p.get("appointments") and p.get("source_kind") != "historical-document"
+        ]
+        jobs = (
+            central
+            or current_web
+            or [p for p in people if p.get("appointments")]
+            or [base]
+        )[0]
         base["appointments"] = jobs.get("appointments", [])
         base["roles"] = (
             jobs.get("roles", [])
@@ -88,6 +98,9 @@ def merge_people(profile, candidates):
             else sorted({r for p in people for r in p.get("roles", [])})
         )
         base["appointment_source"] = jobs.get("source_url") or "official-directory"
+        base["appointment_source_kind"] = jobs.get(
+            "source_kind", "current-directory-or-profile"
+        )
         base["campuses"] = sorted({c for p in people for c in p.get("campuses", [])})
         base["context_roles"] = sorted({r for p in people for r in p.get("roles", [])})
         base["context_organizations"] = sorted(
@@ -96,6 +109,7 @@ def merge_people(profile, candidates):
                 for p in people
                 for job in p.get("appointments", [])
             }
+            | {org for p in people for org in p.get("context_organizations", [])}
         )
         base["source_urls"] = sorted(
             {p["source_url"] for p in people if p.get("source_url")}
@@ -107,6 +121,15 @@ def merge_people(profile, candidates):
 
 def classification(person):
     jobs = person.get("appointments", []) if person else []
+    if person and person.get("appointment_source_kind") == "historical-document":
+        return {
+            "category": "unknown",
+            "roles": [],
+            "appointments": [],
+            "historical_appointments": jobs,
+            "source_scope": "historical-document",
+            "source_url": person.get("appointment_source"),
+        }
     text = " ".join(job.get("title", "") for job in jobs).lower()
     roles = set(person.get("roles", [])) if person else set()
     category = (

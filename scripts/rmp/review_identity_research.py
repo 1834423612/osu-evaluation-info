@@ -20,7 +20,12 @@ from matching_data import (
     reference_data,
     execute_json_batches,
 )
-from identity_research import evaluate_profile, fold, compatible_name_index, compatible_official_users
+from identity_research import (
+    evaluate_profile,
+    fold,
+    compatible_name_index,
+    compatible_official_users,
+)
 from mapping_coverage import stored_profile_coverage
 
 
@@ -121,11 +126,24 @@ def merge_observation(observations, pid, item):
     else:
         existing = observations[pid]
         existing["sources"].append(item)
-    existing=observations[pid]
-    existing['status']='available' if any(s['status']=='available' for s in existing['sources']) else 'unavailable'
-    existing['candidates']=[{**p,'observed_at':source.get('checked_at',''),'source_provider':source.get('source')}
-      for source in existing['sources'] for p in source['candidates']]
-    existing['possibly_truncated']=any(s.get('possibly_truncated') for s in existing['sources'])
+    existing = observations[pid]
+    existing["status"] = (
+        "available"
+        if any(s["status"] == "available" for s in existing["sources"])
+        else "unavailable"
+    )
+    existing["candidates"] = [
+        {
+            **p,
+            "observed_at": source.get("checked_at", ""),
+            "source_provider": source.get("source"),
+        }
+        for source in existing["sources"]
+        for p in source["candidates"]
+    ]
+    existing["possibly_truncated"] = any(
+        s.get("possibly_truncated") for s in existing["sources"]
+    )
 
 
 def withdraw_changed_tool_links(conn):
@@ -157,7 +175,7 @@ def run(args):
         for line in Path(journal).read_text().splitlines():
             item = json.loads(line)
             if item.get("cache_saved"):
-                merge_observation(observations,int(item['professor_id']),item)
+                merge_observation(observations, int(item["professor_id"]), item)
     if args.web_journal:
         web = []
         for line in Path(args.web_journal).read_text().splitlines():
@@ -165,7 +183,7 @@ def run(args):
             if item.get("parser_version") == 2:
                 web.append(item)
         for item in web:
-            url=item['url']
+            url = item["url"]
             by_profile = defaultdict(list)
             for row in item["records"]:
                 by_profile[int(row["professor_id"])].append(row["person"])
@@ -195,6 +213,45 @@ def run(args):
                         observations[pid].setdefault("web_search_batches", []).append(
                             batch
                         )
+    if args.pdf_journal:
+        from research_pdf_profiles import clean_organization
+
+        for line in Path(args.pdf_journal).read_text().splitlines():
+            item = json.loads(line)
+            if item.get("parser_version") not in ("pdf-contact-v1", "pdf-contact-v2"):
+                continue
+            if item.get("parser_version") == "pdf-contact-v1" and item["records"]:
+                continue
+            by_profile = defaultdict(list)
+            for row in item["records"]:
+                person = row["person"]
+                person["context_organizations"] = [
+                    clean_organization(org)
+                    for org in person.get("context_organizations", [])
+                ]
+                for job in person.get("appointments", []):
+                    job["organization"] = clean_organization(job.get("organization"))
+                by_profile[int(row["professor_id"])].append(person)
+            for pid in item["profiles"]:
+                merge_observation(
+                    observations,
+                    int(pid),
+                    {
+                        "professor_id": str(pid),
+                        "source": "official-pdf",
+                        "source_url": item["url"],
+                        "query": item["url"],
+                        "document_sha256": item.get("sha256"),
+                        "status": (
+                            "available"
+                            if item["status"] in ("available", "partial")
+                            else "unavailable"
+                        ),
+                        "source_status": item["status"],
+                        "candidates": by_profile[int(pid)],
+                        "checked_at": item["checked_at"],
+                    },
+                )
     conn = connect_database(load_dsn(None))
     locked = False
     try:
@@ -268,7 +325,8 @@ def run(args):
                 identities,
                 facts,
                 lexicon,
-                exact[fold(p["first_name"] + " " + p["last_name"])] | compatible_official_users(p, family_names),
+                exact[fold(p["first_name"] + " " + p["last_name"])]
+                | compatible_official_users(p, family_names),
             )
             if pid in reserved and reserved[pid] != [(result["username"], "accepted")]:
                 result.update(
@@ -448,6 +506,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--web-journal")
     parser.add_argument("--web-index")
+    parser.add_argument("--pdf-journal")
     parser.add_argument("--install-schema", action="store_true")
     parser.add_argument("--apply", action="store_true")
     run(parser.parse_args())
