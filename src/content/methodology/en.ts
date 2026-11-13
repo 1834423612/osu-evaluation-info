@@ -59,15 +59,15 @@ export const methodology: MethodologyCopy = {
       id: "matching",
       title: "Match courses and people carefully",
       paragraphs: [
-        "Course history matches subject, catalog number, and campus. A teacher’s score requires an exact OSU email within that course. Similar names alone never establish a match. Staff labels come from the official people directory; RMP reviews retain their own source and matching context.",
-        "RMP quality, difficulty, and tags are unofficial student reports. They remain separate from SEI and SSLE, with the time window and available sample shown alongside them.",
+        "Course history matches subject, catalog number, and campus. An official teacher score requires an exact OSU email within that course. Similar names alone never establish a match. Staff labels come from the official people directory; RMP reviews retain their own source and matching context.",
+        "RMP quality, difficulty, and tags are unofficial student reports, separate from SEI and SSLE. Unconfirmed profiles remain accessible in the RMP library and separate course leads; they do not enter verified-instructor summaries.",
       ],
     },
     {
       id: "syllabi",
       title: "Published documents and your choices",
       paragraphs: [
-        "Syllabi match the term, course, and class section. The university’s document update time is shown in your browser’s time zone; retrieval time is labelled separately. An archived copy is identified. PDF creation runs on your device using the published layout and fonts.",
+        "Syllabi match the term, course, and class section. The university’s document update time is shown in your browser’s time zone; retrieval time is labelled separately. Saved archives remain available after a term or course is removed. PDF creation runs on your device using the published layout and fonts.",
         "Favorites and preferences stay in this browser. An updated saved syllabus keeps its notification until you explicitly mark it read. This is an independent explorer; confirm registration and degree requirements with Buckeye Link and university advising.",
       ],
     },
