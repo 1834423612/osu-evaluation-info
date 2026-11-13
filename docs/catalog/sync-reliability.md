@@ -31,9 +31,9 @@ Its original publication failure had another cause: Spring 2027 section `37846` 
 - `checkpoints.mjs`: six-hour checkpoint limit, structural/integrity checks, and atomic replacement with a full plan.
 - `writer.mjs`: conflict-safe bulk page writes and compare-and-set checkpoints in one retried transaction.
 - `snapshots.mjs`: atomic publication only after coverage and full parent identity validation.
-- `prune_snapshots.mjs`: bounded published-version retention and conservative cleanup of abandoned invalid generations after replacement coverage exists.
+- `prune_snapshots.mjs`: compatibility no-op; all saved generations are permanent archives.
 
-These changes use schema version 2. They require no production DDL or in-place data repair. Existing published versions and historical evaluation/RMP tables stay intact. See [operations](operations.md) for retry limits, upstream consistency limits, and verification commands.
+Schema version 3 adds database protection for permanent catalog archives. Install it explicitly with `pnpm catalog:migrate`. Existing published versions and historical evaluation/RMP tables stay intact. See [operations](operations.md) for retention, retry limits, upstream consistency limits, and verification commands.
 
 ## Verification
 
