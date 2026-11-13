@@ -126,6 +126,7 @@ export function RmpReviewContent({
         ) : null}
         <div
           className={styles.feedback}
+          role="group"
           aria-label={text(
             locale,
             "Feedback recorded on RMP (read only)",
@@ -138,6 +139,7 @@ export function RmpReviewContent({
           )}
         >
           <span
+            role="img"
             aria-label={text(
               locale,
               `Thumbs up: ${review.thumbsUp ?? "unknown"}`,
@@ -148,6 +150,7 @@ export function RmpReviewContent({
             {review.thumbsUp ?? "—"}
           </span>
           <span
+            role="img"
             aria-label={text(
               locale,
               `Thumbs down: ${review.thumbsDown ?? "unknown"}`,

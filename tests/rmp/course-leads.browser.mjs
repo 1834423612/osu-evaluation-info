@@ -118,6 +118,7 @@ try {
     assert((await review.innerText()).includes("清晰度"));
     const feedback = review.locator('[aria-label="RMP 原站反馈（只读）"]');
     assert.equal(await feedback.locator("button, a, input").count(), 0);
+    assert.equal(await feedback.getByRole("img").count(), 2);
     const details = review.locator("summary");
     if (await details.count()) {
       await details.click();
