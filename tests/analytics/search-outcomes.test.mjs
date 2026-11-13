@@ -68,3 +68,22 @@ test("omits browsing, pagination and simulated responses", () => {
     null,
   );
 });
+test("attributes tolerant results and limited live fallback to their actual engine", () => {
+  const result = {
+    ...empty,
+    courses: [{ searchMatch: { mode: "fuzzy" } }],
+    searchInfo: { ...empty.searchInfo, engine: "bm25-1" },
+  };
+  const event = courseSearchOutcome(params(), result, 1);
+  assert.equal(event.search_engine, "bm25-1");
+  assert.equal(event.fuzzy_results, 1);
+  assert.equal(event.index_fallback, "none");
+  assert.equal(
+    courseSearchOutcome(
+      params(),
+      { ...result, searchInfo: { fallbackReason: "unavailable" } },
+      1,
+    ).index_fallback,
+    "unavailable",
+  );
+});

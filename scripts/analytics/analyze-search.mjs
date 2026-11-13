@@ -109,6 +109,9 @@ const resultLoads = events
       complete: props.complete ?? null,
       term: props.term ?? null,
       campus: props.campus ?? null,
+      engine: props.search_engine ?? "legacy",
+      fuzzyResults: props.fuzzy_results ?? null,
+      indexFallback: props.index_fallback ?? null,
     };
   });
 const productionResultLoads = resultLoads.filter(
@@ -143,6 +146,12 @@ const report = {
     queryCounts: counts(productionSearches.map((row) => row.query)),
     resultLoads: productionResultLoads.length,
     resultStatuses: counts(productionResultLoads.map((row) => row.status)),
+    resultEngines: counts(productionResultLoads.map((row) => row.engine)),
+    indexFallbacks: counts(
+      productionResultLoads
+        .filter((row) => row.indexFallback && row.indexFallback !== "none")
+        .map((row) => row.indexFallback),
+    ),
     confirmedEmptyQueries: counts(
       productionResultLoads
         .filter((row) => row.status === "no_matches")

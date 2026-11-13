@@ -15,6 +15,7 @@ const CONTROLS = new Set([
   "focusSection",
   "relatedFrom",
   "mode",
+  "searchMode",
 ]);
 
 /** One completed first-page result load; submissions and result loads are distinct metrics. */
@@ -50,6 +51,11 @@ export function courseSearchOutcome(
     search_type: query.searchType,
     status,
     match_kind: result?.searchInfo?.kind ?? "unknown",
+    search_engine: result?.searchInfo?.engine ?? "official",
+    index_fallback: result?.searchInfo?.fallbackReason ?? "none",
+    fuzzy_results:
+      result?.courses.filter((course) => course.searchMatch?.mode === "fuzzy")
+        .length ?? 0,
     result_count: result?.courses.length ?? 0,
     total_courses: result?.totalCourses ?? -1,
     has_more: result?.hasMore ?? false,

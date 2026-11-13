@@ -27,15 +27,17 @@ searches, filter changes, suggestion choices and successful retries. Pagination,
 cancelled requests and Dev Tools simulations are excluded. This is a result-load
 metric, not a one-to-one conversion event for form submissions.
 
-| Property                           | Meaning                                                                |
-| ---------------------------------- | ---------------------------------------------------------------------- |
-| `status`                           | `matches`, `no_matches`, `continuation`, `filter_conflict`, or `error` |
-| `result_count` / `total_courses`   | Courses shown on the page / known matching total (`-1` if unknown)     |
-| `complete` / `has_more`            | Candidate scan was complete / another result page is available         |
-| `search_term` / `search_type`      | Same normalized input labels as the submission event                   |
-| `match_kind`                       | Recognized course code, number, subject, or keywords                   |
-| `term` / `campus` / `filter_count` | Selected offering scope, without copying arbitrary filter values       |
-| `duration_ms`                      | Time to load results, rounded and capped at two minutes                |
+| Property                           | Meaning                                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------------------------- |
+| `status`                           | `matches`, `no_matches`, `continuation`, `filter_conflict`, or `error`                  |
+| `result_count` / `total_courses`   | Courses shown on the page / known matching total (`-1` if unknown)                      |
+| `complete` / `has_more`            | Candidate scan was complete / another result page is available                          |
+| `search_term` / `search_type`      | Same normalized input labels as the submission event                                    |
+| `match_kind`                       | Recognized course code, number, subject, or keywords                                    |
+| `search_engine` / `fuzzy_results`  | Engine version and count of explicitly fuzzy results on this page                       |
+| `index_fallback`                   | `none`, `unavailable`, or `filter`; separates limited live fallback from indexed search |
+| `term` / `campus` / `filter_count` | Selected offering scope, without copying arbitrary filter values                        |
+| `duration_ms`                      | Time to load results, rounded and capped at two minutes                                 |
 
 Treat only `no_matches` as a confirmed empty result. `continuation` is an
 unfinished search window; a network failure or conflicting filter is a different
