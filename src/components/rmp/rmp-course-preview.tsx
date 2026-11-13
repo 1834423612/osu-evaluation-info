@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 import { useEffect, useRef, useState } from "react";
-import { Gauge, MessageCircle } from "lucide-react";
+import { AlertTriangle, Gauge, MessageCircle } from "lucide-react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { RmpInsight } from "@/lib/rmp/insights";
 import { rmpPreviews } from "@/lib/rmp/preview-client";
@@ -77,7 +77,7 @@ export function RmpCoursePreview({
         </span>
         {insight?.status === "available" ? (
           <span className={styles.coverage}>
-            {insight.matchedInstructorCount}{" "}
+            {insight.profileCount ?? insight.matchedInstructorCount}{" "}
             {text(locale, "instructors", "位教师")} · {insight.reviewCount}{" "}
             {text(locale, "reviews", "条评价")}
           </span>
@@ -85,6 +85,16 @@ export function RmpCoursePreview({
       </div>
       {insight?.status === "available" ? (
         <>
+          {insight.identityBasis === "unconfirmed" ? (
+            <p className={styles.note} data-rmp-unconfirmed>
+              <AlertTriangle size={12} aria-hidden="true" />{" "}
+              {text(
+                locale,
+                "Instructor identity / teaching link unconfirmed",
+                "教师身份或任课关联待确认",
+              )}
+            </p>
+          ) : null}
           <div
             className={styles.difficulty}
             data-period={insight.difficultyPeriod}
@@ -144,7 +154,7 @@ export function RmpCoursePreview({
                   "RMP reviews are temporarily unavailable",
                   "RMP 评价暂不可用",
                 )
-              : text(locale, "No verified reviews yet", "暂无已确认评价")}
+              : text(locale, "No course reviews yet", "暂无课程评价")}
           {state?.key === key && insight?.status !== "unavailable" ? (
             <Link
               className={styles.libraryLink}

@@ -1,26 +1,35 @@
 // Shared by serving code and database integration checks.
+// A name match never verifies a person. Course-history requests also retain
+// same-campus/course RMP profiles whose official teaching link is unconfirmed.
+const profiles = (history: number) => `selected_instructors AS (
+  SELECT unnest($1::text[]) AS name_dot_number
+  UNION
+  SELECT name_dot_number FROM osu_rmp.instructor_course
+  WHERE $${history}::boolean AND active AND campus_code=$2 AND course_key=$3
+), confirmed AS (
+  SELECT m.professor_id,m.name_dot_number,i.display_name,'verified'::text association
+  FROM osu_rmp.professor_identity_map m
+  JOIN osu_rmp.instructor_identity i USING(name_dot_number)
+  JOIN osu_rmp.professor p ON p.legacy_id=m.professor_id AND p.active
+  WHERE m.state='accepted' AND m.name_dot_number IN (SELECT name_dot_number FROM selected_instructors)
+    AND (m.method='manual' OR m.evidence->'campus_codes' ? $2)
+    AND EXISTS(SELECT 1 FROM osu_rmp.professor_school ps JOIN osu_rmp.school s ON s.legacy_id=ps.school_id
+      WHERE ps.professor_id=p.legacy_id AND s.campus_code=$2)
+), matched AS (
+  SELECT * FROM confirmed
+  UNION ALL
+  SELECT p.legacy_id,m.name_dot_number,concat_ws(' ',p.first_name,p.last_name),'unconfirmed'::text
+  FROM osu_rmp.professor p
+  LEFT JOIN osu_rmp.professor_identity_map m ON m.professor_id=p.legacy_id AND m.state='accepted'
+  WHERE $${history}::boolean AND p.active
+    AND EXISTS(SELECT 1 FROM osu_rmp.course_review_query r
+      WHERE r.professor_id=p.legacy_id AND r.campus_code=$2 AND r.matched_course_key=$3)
+    AND NOT EXISTS(SELECT 1 FROM confirmed c WHERE c.professor_id=p.legacy_id)
+)`;
+
 export const COURSE_SQL = `
-  WITH selected_instructors AS (
-    SELECT unnest($1::text[]) AS name_dot_number
-    UNION
-    SELECT name_dot_number FROM osu_rmp.instructor_course
-    WHERE $6::boolean AND active AND campus_code=$2 AND course_key=$3
-  ), matched AS (
-    SELECT DISTINCT m.professor_id, m.name_dot_number, i.display_name
-    FROM osu_rmp.professor_identity_map m
-    JOIN osu_rmp.instructor_identity i USING (name_dot_number)
-    JOIN osu_rmp.professor p ON p.legacy_id = m.professor_id AND p.active
-    WHERE m.state = 'accepted' AND m.name_dot_number IN (SELECT name_dot_number FROM selected_instructors)
-      AND (m.method='manual' OR m.evidence->'campus_codes' ? $2)
-      AND EXISTS (
-        SELECT 1 FROM osu_rmp.professor_school ps
-        JOIN osu_rmp.school s ON s.legacy_id = ps.school_id
-        WHERE ps.professor_id = p.legacy_id AND s.campus_code = $2
-      )
-    ORDER BY m.name_dot_number, m.professor_id
-    LIMIT 120
-  )
-  SELECT m.professor_id::text, m.name_dot_number, m.display_name,
+  WITH ${profiles(6)}
+  SELECT m.professor_id::text, m.name_dot_number, m.display_name, m.association,
     stats.review_count, stats.recent_review_count,
     stats.recent_quality, stats.recent_difficulty,
     stats.recent_quality_count, stats.recent_difficulty_count,
@@ -81,25 +90,12 @@ export const COURSE_SQL = `
       GROUP BY tag ORDER BY count DESC, tag LIMIT 8
     ) ranked
   ) tags ON true
-  ORDER BY m.display_name, m.professor_id
+  ORDER BY (m.association='verified') DESC, m.display_name, m.professor_id
 `;
 
 export const REVIEW_PAGE_SQL = `
-  WITH professor AS (
-    SELECT m.professor_id,m.name_dot_number
-    FROM osu_rmp.professor_identity_map m
-    JOIN osu_rmp.professor p ON p.legacy_id=m.professor_id AND p.active
-    WHERE m.professor_id=$5::bigint AND m.state='accepted'
-      AND (m.name_dot_number=ANY($1::text[]) OR ($7::boolean AND EXISTS (
-        SELECT 1 FROM osu_rmp.instructor_course ic WHERE ic.name_dot_number=m.name_dot_number
-          AND ic.active AND ic.campus_code=$2 AND ic.course_key=$3
-      )))
-      AND (m.method='manual' OR m.evidence->'campus_codes' ? $2)
-      AND EXISTS (
-        SELECT 1 FROM osu_rmp.professor_school ps
-        JOIN osu_rmp.school s ON s.legacy_id=ps.school_id
-        WHERE ps.professor_id=p.legacy_id AND s.campus_code=$2
-      )
+  WITH ${profiles(7)}, professor AS (
+    SELECT professor_id FROM matched WHERE professor_id=$5::bigint
   ), matching AS (
     SELECT r.* FROM professor p
     JOIN osu_rmp.course_review_query r ON r.professor_id=p.professor_id

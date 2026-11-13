@@ -29,7 +29,7 @@ import { InstructorDirectoryIdentity } from "@/components/people/people-director
 import { TranslateText } from "@/components/translation/translate-text";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { DataSourceBadge } from "@/components/ui/data-source-badge";
-import { CourseRmpLeads } from "./course-leads";
+import { RmpIdentityBadge } from "./library-shared";
 import styles from "./rmp-panel.module.css";
 
 function score(value: number | null) {
@@ -137,8 +137,8 @@ export default function RmpPanel({
       <p className={styles.note}>
         {text(
           locale,
-          `Verified teachers · ${course.subject} ${course.catalogNumber} · Averages from the past two years.`,
-          `已确认教师 · ${course.subject} ${course.catalogNumber} · 均分取近两年评价。`,
+          `${course.subject} ${course.catalogNumber} · Averages from the past two years.`,
+          `${course.subject} ${course.catalogNumber} · 均分取近两年评价。`,
         )}
       </p>
       <p className={styles.caution}>
@@ -190,17 +190,13 @@ export default function RmpPanel({
               <SceneMascot scene="rmp-empty" size={88} />
               <div>
                 <strong>
-                  {text(
-                    locale,
-                    "No verified instructor reviews",
-                    "暂无已确认教师的课程评价",
-                  )}
+                  {text(locale, "No course reviews", "暂无本课程评价")}
                 </strong>
                 <p>
                   {text(
                     locale,
-                    "Check the other RMP profiles below.",
-                    "也可查看下方其他 RMP 档案。",
+                    "Browse the RMP library for other courses.",
+                    "可前往 RMP 教师库查看其他课程。",
                   )}
                 </p>
               </div>
@@ -219,7 +215,6 @@ export default function RmpPanel({
                 subject={course.subject}
               />
             ))}
-          <CourseRmpLeads query={query} locale={locale} key={query} />
           <footer className={styles.footer}>
             {text(
               locale,
@@ -267,9 +262,13 @@ function InstructorReviews({
   const [loadingPage, setLoadingPage] = useState(false);
   const [pageError, setPageError] = useState(false);
   const reviewViewportRef = useRef<HTMLDivElement>(null);
+  const pageRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => pageRequest.current?.abort(), []);
   const commonTags = instructor.topTags.slice(0, 5);
   const siblingProfiles = summary.instructors.filter(
-    (item) => item.nameDotNumber === instructor.nameDotNumber,
+    (item) =>
+      !!instructor.nameDotNumber &&
+      item.nameDotNumber === instructor.nameDotNumber,
   ).length;
   const { pageCount, reachableCount } = reviewPagination(
     instructor.reviewCount,
@@ -280,6 +279,8 @@ function InstructorReviews({
     setPageIndex(targetPage);
     reviewViewportRef.current?.scrollTo({ top: 0 });
     if (loadedPages.includes(targetPage)) return;
+    const controller = new AbortController();
+    pageRequest.current = controller;
     setLoadingPage(true);
     setPageError(false);
     try {
@@ -290,7 +291,10 @@ function InstructorReviews({
         "rmp",
         `/api/rmp/course/reviews?${params}`,
         {
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(15_000),
+          ]),
         },
       );
       if (!response.ok) throw new Error("RMP review page unavailable");
@@ -299,12 +303,13 @@ function InstructorReviews({
         total: number;
         nextOffset: number | null;
       } = await response.json();
+      if (controller.signal.aborted) return;
       setPages((current) => ({ ...current, [targetPage]: page.reviews }));
       setLoadedPages((current) => [...current, targetPage]);
     } catch {
-      setPageError(true);
+      if (!controller.signal.aborted) setPageError(true);
     } finally {
-      setLoadingPage(false);
+      if (!controller.signal.aborted) setLoadingPage(false);
     }
   }
   const visiblePages = new Set(
@@ -327,6 +332,8 @@ function InstructorReviews({
     <Collapsible
       className={styles.instructor}
       data-rmp-card
+      data-professor-id={instructor.professorId}
+      data-association={instructor.association}
       open={expanded}
       onOpenChange={setExpanded}
       onClick={(event) => {
@@ -357,13 +364,29 @@ function InstructorReviews({
     >
       <div className={styles.instructorHeading}>
         <div className={styles.identity}>
-          <InstructorDirectoryIdentity
-            name={instructor.name}
-            email={`${instructor.nameDotNumber}@osu.edu`}
-            locale={locale}
-            size={36}
-            subject={subject}
-          />
+          {instructor.nameDotNumber ? (
+            <InstructorDirectoryIdentity
+              name={instructor.name}
+              email={`${instructor.nameDotNumber}@osu.edu`}
+              locale={locale}
+              size={36}
+              subject={subject}
+            />
+          ) : (
+            <strong className={styles.rawName}>{instructor.name}</strong>
+          )}
+          <div className={styles.identityStatus}>
+            <RmpIdentityBadge
+              profile={{ username: instructor.nameDotNumber }}
+              locale={locale}
+            />
+            {instructor.association === "unconfirmed" &&
+            instructor.nameDotNumber ? (
+              <span>
+                {text(locale, "Teaching link unconfirmed", "任课关联待确认")}
+              </span>
+            ) : null}
+          </div>
         </div>
         <CollapsibleTrigger
           className={styles.instructorToggle}
@@ -413,7 +436,9 @@ function InstructorReviews({
           RMP <ArrowUpRight size={13} aria-hidden="true" />
         </a>
       </div>
-      <InstructorEmail locale={locale} username={instructor.nameDotNumber} />
+      {instructor.nameDotNumber ? (
+        <InstructorEmail locale={locale} username={instructor.nameDotNumber} />
+      ) : null}
       {siblingProfiles > 1 ? (
         <p className={styles.note}>
           {text(

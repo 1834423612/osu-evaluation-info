@@ -10,7 +10,8 @@ export type RmpReview = {
 
 export type RmpInstructor = {
   professorId: string;
-  nameDotNumber: string;
+  nameDotNumber: string | null;
+  association: "verified" | "unconfirmed";
   name: string;
   profileUrl: string;
   reviewCount: number;

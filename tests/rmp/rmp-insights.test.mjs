@@ -105,11 +105,13 @@ test("empty ratings stay unknown and public batch inputs are bounded and normali
 test("historical difficulty is sample-weighted only when the course has no recent ratings", () => {
   const first = {
     ...professor("1", null, 0, []),
+    reviewCount: 5,
     historicalDifficulty: 2,
     historicalDifficultyCount: 5,
   };
   const second = {
     ...professor("2", null, 0, []),
+    reviewCount: 15,
     historicalDifficulty: 4,
     historicalDifficultyCount: 15,
   };
@@ -168,4 +170,33 @@ test("list previews batch and share requests without fetching one endpoint per c
   assert.equal(calls[0].length, 2);
   await client.request(input);
   assert.equal(calls.length, 1);
+});
+
+test("confirmed course reviews take priority; unconfirmed-only courses retain scores with provenance", () => {
+  const verified = {
+    ...professor("v", 2, 2, []),
+    association: "verified",
+    recentQuality: 4,
+    recentQualityCount: 2,
+  };
+  const lead = {
+    ...professor("u", 5, 20, [{ tag: "Caring", count: 3 }]),
+    association: "unconfirmed",
+    recentQuality: 1,
+    recentQualityCount: 20,
+  };
+  const mixed = aggregateRmpInsights({ instructors: [verified, lead] });
+  assert.equal(mixed.quality, 4);
+  assert.equal(mixed.difficulty, 2);
+  assert.equal(mixed.identityBasis, "verified");
+  assert.equal(mixed.profileCount, 1);
+  assert.equal(mixed.reviewCount, 2);
+  const fallback = aggregateRmpInsights({
+    instructors: [{ ...verified, reviewCount: 0 }, lead],
+  });
+  assert.equal(fallback.quality, 1);
+  assert.equal(fallback.difficulty, 5);
+  assert.equal(fallback.reviewCount, 20);
+  assert.equal(fallback.identityBasis, "unconfirmed");
+  assert.equal(fallback.tags[0].tag, "Caring");
 });

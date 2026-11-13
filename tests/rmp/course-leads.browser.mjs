@@ -98,18 +98,21 @@ try {
     await page
       .getByRole("tab", { name: "RMP · 学生评论", exact: true })
       .click();
-    const leads = page.locator("[data-rmp-leads]");
-    await page.locator('[data-rmp-lead="1117448"]').waitFor();
-    assert((await leads.innerText()).includes("身份待确认"));
-    assert((await leads.innerText()).includes("任课关联待确认"));
-    const link = page
-      .locator('[data-rmp-lead="1117448"]')
-      .getByRole("link", { name: "MATH1131", exact: true });
-    assert(
-      (await link.getAttribute("href")).includes(
-        "/rmp/1117448?course=MATH1131",
-      ),
-    );
+    const leads = page.locator('[data-analytics-area="rmp_reviews"]');
+    const card = leads.locator('[data-professor-id="1117448"]');
+    await card.waitFor();
+    assert((await card.innerText()).includes("身份待确认"));
+    assert.equal(await card.getAttribute("data-association"), "unconfirmed");
+    await card
+      .getByRole("button", { name: "查看 Pamela Foster 的评论", exact: true })
+      .click();
+    await card.locator("[data-rmp-review-content]").waitFor();
+    assert((await card.innerText()).includes("课程评论"));
+    const link = card.getByRole("link", {
+      name: "查看该教师全部课程评价",
+      exact: true,
+    });
+    assert.equal(await link.getAttribute("href"), "/rmp/1117448");
     assert.equal(await link.getAttribute("target"), "_blank");
     await leads.scrollIntoViewIfNeeded();
     assert(
@@ -124,7 +127,7 @@ try {
     await context.close();
   }
   console.log(
-    "Course leads: real Mansfield matches, identity/teaching warnings, separate profile links and 320/390/768/1440px layouts passed",
+    "Inline RMP reviews: real Mansfield matches, unconfirmed identity, secondary profile links and 320/390/768/1440px layouts passed",
   );
 } catch (error) {
   await active

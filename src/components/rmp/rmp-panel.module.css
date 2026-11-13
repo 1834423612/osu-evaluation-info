@@ -528,6 +528,20 @@
   line-height: 1.7;
   margin-top: 14px;
 }
+.rawName {
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.identityStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
 @media (max-width: 480px) {
   .heading h3 {
     font-size: 12px;

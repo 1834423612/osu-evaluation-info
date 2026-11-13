@@ -3,6 +3,8 @@ import type { CourseRmpInput, CourseRmpSummary } from "./types";
 
 export type RmpInsight = {
   status: CourseRmpSummary["status"];
+  identityBasis: "verified" | "unconfirmed" | "none";
+  profileCount: number;
   tags: { tag: string; count: number }[];
   difficulty: number | null;
   quality: number | null;
@@ -16,11 +18,17 @@ export type RmpInsight = {
 };
 
 export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
-  const professors = [
+  const allProfiles = [
     ...new Map(
       summary.instructors.map((item) => [item.professorId, item]),
     ).values(),
   ];
+  const confirmed = allProfiles.filter(
+    (item) => item.association !== "unconfirmed" && item.reviewCount > 0,
+  );
+  const professors = confirmed.length
+    ? confirmed
+    : allProfiles.filter((item) => item.reviewCount > 0);
   const tags = new Map<string, { tag: string; count: number }>();
   let qualityTotal = 0,
     qualityCount = 0;
@@ -70,6 +78,12 @@ export function aggregateRmpInsights(summary: CourseRmpSummary): RmpInsight {
   }
   return {
     status: summary.status,
+    identityBasis: confirmed.length
+      ? "verified"
+      : professors.length
+        ? "unconfirmed"
+        : "none",
+    profileCount: professors.length,
     quality: qualityCount ? qualityTotal / qualityCount : null,
     qualityCount,
     tags: [...tags.values()]

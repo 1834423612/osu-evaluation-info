@@ -18,12 +18,12 @@ const MAX_ENTRIES = 100;
 const cache = new Map<string, { expiresAt: number; value: CourseRmpSummary }>();
 const pending = new Map<string, Promise<CourseRmpSummary>>();
 
-// Each LATERAL lookup starts from a selected, accepted profile. No raw reviews
-// are read for catalog result lists or for another course/campus.
+// Summaries and pagination share profile selection; reviews stay course/campus scoped.
 
 type CourseRow = {
   professor_id: string;
-  name_dot_number: string;
+  name_dot_number: string | null;
+  association: RmpInstructor["association"];
   display_name: string;
   review_count: number;
   recent_review_count: number;
@@ -78,6 +78,7 @@ export async function getCourseRmp(
       const instructors: RmpInstructor[] = result.rows.map((row) => ({
         professorId: row.professor_id,
         nameDotNumber: row.name_dot_number,
+        association: row.association,
         name: row.display_name,
         profileUrl: `https://www.ratemyprofessors.com/professor/${row.professor_id}`,
         reviewCount: row.review_count,
@@ -102,7 +103,11 @@ export async function getCourseRmp(
           : "no-data",
         instructors,
         matchedInstructorCount: new Set(
-          instructors.map((item) => item.nameDotNumber),
+          instructors.flatMap((item) =>
+            item.association === "verified" && item.nameDotNumber
+              ? [item.nameDotNumber]
+              : [],
+          ),
         ).size,
         refreshedAt: refreshed.at(-1) ?? null,
       };
@@ -130,7 +135,7 @@ export async function getCourseRmp(
   }
 }
 
-/** Return a bounded page of course-specific reviews behind an accepted profile mapping. */
+/** Return a bounded page of course-specific reviews using the same scoped profile selection as the summary. */
 export async function getInstructorRmpReviews(
   rawInput: CourseRmpInput,
   rawProfessorId: string,

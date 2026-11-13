@@ -191,7 +191,7 @@ test(
         },
       );
       await t.test(
-        "course history includes only verified campus/course teachers and leaves individual scores scoped",
+        "course history includes unconfirmed profiles while individual scores stay scoped",
         async () => {
           const course = [[], "MNS", "MATH1151", "2024-11-13", true];
           const selected = await queryCourse(course);
@@ -201,7 +201,9 @@ test(
             (row) => row.review_count > 0,
           );
           assert(withReviews.length >= 2);
-          for (const row of withReviews) {
+          for (const row of withReviews.filter(
+            (row) => row.association === "verified",
+          )) {
             const individual = await queryCourse([
               [row.name_dot_number],
               "MNS",
