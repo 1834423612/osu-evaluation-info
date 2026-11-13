@@ -85,3 +85,8 @@ all live catalog/seat traffic goes straight from the browser to OSU. This backen
 keeps cached evaluation/directory access and explicit database-only backup reads.
 No proxy retry is used when a direct request fails. See
 [the API contract](api.md#discovery-and-browser-transport).
+
+## 同步生命周期
+
+学期归档、当前目录删改和收藏恢复规则见[生命周期说明](lifecycle.md)。
+升级后执行 `pnpm catalog:migrate` 安装第 4 版学期归档视图及官方学期观察字段。
