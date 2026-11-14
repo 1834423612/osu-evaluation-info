@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { safeSearchTerm } from "../analytics/privacy.ts";
+import { normalizeCourseSearch } from "../analytics.ts";
 export const eventTypes = [
   "page_view",
   "search",
@@ -15,7 +16,7 @@ export const productEventSchema = z
     type: z.enum(eventTypes),
     path: z.string().max(300),
     entity: z.string().max(320).optional(),
-    term: z.string().max(80).optional(),
+    term: z.string().max(2000).optional(),
     status: z
       .enum([
         "matches",
@@ -32,7 +33,7 @@ export const productEventSchema = z
   .transform((v) => ({
     ...v,
     path: telemetryPath(v.path),
-    term: v.term ? safeSearchTerm(v.term) : undefined,
+    term: v.term ? safeSearchTerm(normalizeCourseSearch(v.term)?.searchTerm??v.term) : undefined,
   }));
 export type ProductEvent = z.infer<typeof productEventSchema>;
 export const telemetryBatchSchema = z.object({

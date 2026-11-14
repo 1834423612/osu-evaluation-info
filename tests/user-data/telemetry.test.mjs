@@ -43,6 +43,11 @@ test("ambiguous instructor names never become a cross-profile popularity identit
     "course:1268-MATH-1151-COL",
   );
 });
+test("search events normalize code labels and retain bounded description fragments",()=>{
+  const base={id:randomUUID(),type:"search",path:"/",capturedAt:new Date().toISOString()};
+  assert.equal(productEventSchema.parse({...base,term:"math1151"}).term,"MATH 1151");
+  assert.equal(productEventSchema.parse({...base,term:"history of modern society ".repeat(10)}).term.length,80);
+});
 test("network addresses require an explicitly trusted proxy header; arbitrary forwarding and lists are rejected", () => {
   const headers = new Headers({
     "x-forwarded-for": "203.0.113.1",

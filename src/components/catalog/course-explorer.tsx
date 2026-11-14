@@ -207,7 +207,7 @@ export function CourseExplorer() {
     window.history.pushState(null, "", `/?${params}`);
   }
   function chooseSearch(query: string, clearSubject = false) {
-    recordProductEvents([{ type: "search", term: query }]);
+    if(query.trim())recordProductEvents([{ type: "search", term: query }]);
     recordSearchHistory(query, searchParams.toString());
     if (!clearSubject) {
       updateParam("q", query);
