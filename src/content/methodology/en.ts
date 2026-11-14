@@ -47,7 +47,7 @@ export const methodology: MethodologyCopy = {
       title: "Recent evidence carries more weight",
       paragraphs: [
         "Within each instrument, the combined score weights reported means by response count and time, with a two-year half-life. Two-year-old evidence carries half the weight of current evidence. Term chart points use response weighting only.",
-        "Coverage describes the amount and spread of evidence, not a statistical confidence interval. Responses are not unique people, and a team-taught section can produce a record for each evaluated teacher.",
+        "Coverage describes the amount and spread of evidence, not a statistical confidence interval. Responses are not unique people, and a team-taught section can produce an instructor-section record for each evaluated teacher.",
       ],
       facts: [
         "A directional signal needs 30 raw and 30 time-weighted responses, 2 instructor-section records, 2 terms, and an observation within 2 years.",
