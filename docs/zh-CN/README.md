@@ -13,6 +13,8 @@
 
 ## 课程目录
 
+- [课程更新记录](catalog/changes.md)
+
 - [官方课程接口与浏览器传输](catalog/api.md)
 - [课程内容与教师照片](catalog/content-and-photos.md)
 - [课程展示与选课人数审计：2026-11-07](catalog/display-audit-2026-11-07.md)

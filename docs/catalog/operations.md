@@ -91,3 +91,7 @@ No proxy retry is used when a direct request fails. See
 ## Sync lifecycle
 
 See [retention and recovery](lifecycle.md) for term archives, current-catalog changes and saved-course recovery. Run `pnpm catalog:migrate` after upgrading to install version 4 term heads and official discovery observations.
+
+## Course update history
+
+Catalog migration 5 adds append-only change history. After publication, comparisons run per term and may be retried independently; a failed comparison cannot invalidate the complete catalog. See [course updates](changes.md) for backfill budgets, API bounds and detection-time semantics.

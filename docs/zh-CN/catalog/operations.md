@@ -30,3 +30,7 @@ CATALOG_DATABASE_TEST=1 node --test tests/catalog/*.test.mjs
 ```sh
 CATALOG_LIVE_TEST=1 node --test tests/catalog/live-sync.integration.test.mjs
 ```
+
+## 课程更新记录
+
+课程第 5 版迁移增加只追加的变化记录；完整目录发布后按学期对比，可独立续跑，不因对比失败使目录失效。回填预算、接口限制和检测时间口径见 [课程更新记录](changes.md)。

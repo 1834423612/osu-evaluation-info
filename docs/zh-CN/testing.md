@@ -49,6 +49,8 @@ RMP_RESEARCH_DATABASE_TEST=1 python3 -m unittest tests.test_identity_research_db
 
 ## 浏览器验证
 
+课程更新脚本使用 `CHANGES_TEST_BASE_URL`／`CHANGES_TEST_OUTPUT`；`CATALOG_CHANGES_REAL_TEST=1` 额外只读检查实际数据库分页。
+
 先启动开发服务，或 build 后 start。`.browser.mjs` 是独立脚本，不包含在 `pnpm test` 中；需安装 Playwright、Chromium 及其系统依赖。环境无法解析模块时，`PLAYWRIGHT_MODULE` 可指定绝对模块文件 URL，`PLAYWRIGHT_CHROMIUM_EXECUTABLE` 可指定浏览器程序。
 
 | 分类 | 地址／输出变量                                   | 数据与网络                                           |
@@ -114,6 +116,10 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 | [tests/catalog/transactions.test.mjs](../../tests/catalog/transactions.test.mjs)                           | 单元   | 事务提交、回滚与版本边界         |
 | [tests/catalog/watch-selection.test.mjs](../../tests/catalog/watch-selection.test.mjs)                     | 单元   | 班次监控选择与本机偏好           |
 | [tests/catalog/workflow.test.mjs](../../tests/catalog/workflow.test.mjs)                                   | 单元   | 计划任务和同步运行约束           |
+
+| [tests/catalog/changes.test.mjs](../../tests/catalog/changes.test.mjs) | 单元 | 变化筛选和固定游标校验 |
+| [tests/catalog/changes.integration.test.mjs](../../tests/catalog/changes.integration.test.mjs) | 集成 | 完整快照变化、基线、噪声和只追加保护 |
+| [tests/catalog/changes.browser.mjs](../../tests/catalog/changes.browser.mjs) | 浏览器 | 响应式更新列表、筛选、跳转及可选真实 API 分页 |
 
 ### evaluations
 

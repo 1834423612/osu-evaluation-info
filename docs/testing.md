@@ -51,6 +51,8 @@ Keep `DATABASE_URL` in the environment or `.env.local`, never copied into a comm
 
 ## Browser scripts
 
+Course-update scripts use `CHANGES_TEST_BASE_URL` / `CHANGES_TEST_OUTPUT`; `CATALOG_CHANGES_REAL_TEST=1` adds read-only pagination checks against the configured database.
+
 Start `pnpm dev`, or `pnpm build` followed by `pnpm start`. Browser scripts are standalone `.browser.mjs` files and are not run by `pnpm test`. Install Playwright and its Chromium/runtime dependencies in the testing environment. The scripts accept `PLAYWRIGHT_MODULE` as an absolute module file URL when it is not resolvable from the project, plus optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
 
 | Area       | Base URL / output variables                      | Data and network                                                                       |
@@ -116,6 +118,10 @@ Each row identifies the script's primary check. Open the file for fixtures, exac
 | [tests/catalog/transactions.test.mjs](../tests/catalog/transactions.test.mjs)                           | Unit        | catalog page transaction recovery                                                                               |
 | [tests/catalog/watch-selection.test.mjs](../tests/catalog/watch-selection.test.mjs)                     | Unit        | remembers only selected identities, scoped to course/term/campus, with stable snapshots                         |
 | [tests/catalog/workflow.test.mjs](../tests/catalog/workflow.test.mjs)                                   | Unit        | catalog automation only accepts the four-hour scheduled event                                                   |
+
+| [tests/catalog/changes.test.mjs](../tests/catalog/changes.test.mjs) | Unit | Update-filter and pinned-cursor validation |
+| [tests/catalog/changes.integration.test.mjs](../tests/catalog/changes.integration.test.mjs) | Integration | Published snapshot diffs, baselines, noise and append-only history |
+| [tests/catalog/changes.browser.mjs](../tests/catalog/changes.browser.mjs) | Browser | Responsive update feed, forms, links and optional real API pagination |
 
 ### evaluations
 

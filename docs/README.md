@@ -13,6 +13,8 @@ Run commands from the repository root. English is the default; the Chinese tree 
 
 ## Catalog
 
+- [Course update history](catalog/changes.md)
+
 - [Official class catalog](catalog/api.md)
 - [OSU course and faculty services](catalog/content-and-photos.md)
 - [Course display and official enrollment audit](catalog/display-audit-2026-11-07.md)
