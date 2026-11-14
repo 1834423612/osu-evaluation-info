@@ -14,6 +14,7 @@ const CONTROLS = new Set([
   "ratingSource",
   "focusSection",
   "relatedFrom",
+  "via",
   "mode",
   "searchMode",
 ]);

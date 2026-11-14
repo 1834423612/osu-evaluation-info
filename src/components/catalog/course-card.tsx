@@ -1,4 +1,5 @@
 "use client";
+import { PageShare } from "@/components/sharing/page-share";
 import { SearchMatch } from "./search-match";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
@@ -590,6 +591,7 @@ export function CourseCard({
               {text(locale, "Syllabus", "教学大纲")}
             </TabsTrigger>
           </TabsList>
+          <PageShare locale={locale} course={current} compact />
           <span className="detail-term">
             {localizedTerm(course.term, locale)}
           </span>
@@ -839,6 +841,7 @@ export function CourseCard({
             preview
           />
           <div className="course-meta">
+            <PageShare locale={locale} course={current} />
             <span>
               <GraduationCap size={13} />
               {courseAcademicCareerLabel(current, locale)}

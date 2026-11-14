@@ -21,18 +21,8 @@ const dayNames = [
   "saturday",
   "sunday",
 ];
-export const FILTER_KEYS = [
-  "class-session",
-  "academic-career",
-  "gen-categories",
-  "academic-program",
-  "instruction-mode",
-  "class-attribute",
-  "class-attribute-value",
-  "component",
-  "catalog-number",
-  "evening",
-];
+import { FILTER_KEYS } from "./filter-keys.ts";
+export { FILTER_KEYS } from "./filter-keys.ts";
 
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {

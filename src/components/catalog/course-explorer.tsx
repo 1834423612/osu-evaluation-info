@@ -37,6 +37,7 @@ import { SearchContext } from "./search-context";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { courseSearchOutcome } from "@/lib/catalog/search-analytics";
 import { debugServiceControlled } from "@/lib/debug/services";
+import { SharedCourseFallback } from "./shared-course-fallback";
 import { CourseCard } from "./course-card";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ function catalogParams(value: string) {
     "ratingSource",
     "focusSection",
     "relatedFrom",
+    "via",
   ])
     params.delete(key);
   return params.toString();
@@ -401,6 +403,7 @@ export function CourseExplorer() {
         "ratingSource",
         "focusSection",
         "relatedFrom",
+        "via",
         "searchMode",
       ].includes(key),
   );
@@ -434,6 +437,7 @@ export function CourseExplorer() {
   return (
     <>
       <AppHeader />
+      <SharedCourseFallback courses={courses} />
       <main className="explorer-shell">
         <div className={`page-heading ${brandStyles.hero}`}>
           <div className={brandStyles.heroCopy}>

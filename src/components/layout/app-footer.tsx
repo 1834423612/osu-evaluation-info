@@ -1,5 +1,6 @@
 "use client";
 
+import { PageShare } from "@/components/sharing/page-share";
 import Link from "next/link";
 import { ArrowUpRight, Globe2, Heart } from "lucide-react";
 import { GitHubMark } from "@/components/brand/github-mark";
@@ -39,6 +40,7 @@ export function AppFooter() {
         <OpenSourceNotice locale={locale} compact />
       </div>
       <div className={`footer-links ${styles.links}`}>
+        <PageShare locale={locale} />
         <Link href="/methodology">
           {text(locale, "Behind the data", "数据与方法")}
         </Link>

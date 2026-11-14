@@ -11,6 +11,7 @@ const files = [
   "20261114_share_requests.sql",
   "20261114_sync.sql",
   "20261114_transfers.sql",
+  "20261114_page_links.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),
