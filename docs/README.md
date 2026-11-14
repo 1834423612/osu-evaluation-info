@@ -55,6 +55,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 
 - [WahO! branding](design/branding.md)
 - [Interface motion](design/interface-motion.md)
+- [Sharing, saved items and telemetry design — proposal, November 14, 2026](design/sharing-sync-analytics.md)
 
 ## Analytics
 

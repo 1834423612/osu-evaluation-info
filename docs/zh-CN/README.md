@@ -55,6 +55,7 @@
 
 - [品牌资源与元数据](design/branding.md)
 - [界面动效与焦点](design/interface-motion.md)
+- [分享、收藏同步与统计设计：2026-11-14 待实施方案](design/sharing-sync-analytics.md)
 
 ## 访问统计
 
