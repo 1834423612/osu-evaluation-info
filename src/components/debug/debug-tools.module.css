@@ -1,15 +1,18 @@
 .tools {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 88px);
-  left: 12px;
+  top: auto;
+  left: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
   z-index: 150;
   max-width: calc(100vw - 24px);
   color: var(--ink);
   margin: 0;
   padding: 0;
   border: 0;
-  right: auto;
-  bottom: auto;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   overflow: visible;
   background: transparent;
   pointer-events: auto;
@@ -43,7 +46,7 @@
   max-height: min(74dvh, 720px, calc(100dvh - 150px));
   overflow-y: auto;
   overscroll-behavior: contain;
-  margin-top: 6px;
+  margin-bottom: 6px;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
