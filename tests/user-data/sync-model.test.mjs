@@ -13,7 +13,18 @@ import {
   setSavedScope,
   savedScope,
   scopedSavedKey,
+  setAuthenticatedAccount,
+  assertAuthenticatedAccount,
 } from "../../src/lib/saved/scope.ts";
+test("an account change invalidates in-flight workspace access before a new account can use it", () => {
+  setAuthenticatedAccount("a");
+  setSavedScope("a");
+  assert.doesNotThrow(() => assertAuthenticatedAccount("a"));
+  setAuthenticatedAccount("b");
+  assert.equal(savedScope(), null);
+  assert.throws(() => assertAuthenticatedAccount("a"));
+  setAuthenticatedAccount(null);
+});
 const item = snapshot.items[0],
   key = itemKey(item);
 function response(records = [], receipts = [], cursor = 1) {

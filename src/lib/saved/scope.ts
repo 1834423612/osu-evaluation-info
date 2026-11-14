@@ -1,4 +1,12 @@
 let account: string | null = null;
+let authenticated: string | null = null;
+export function setAuthenticatedAccount(value: string | null) {
+  authenticated = value;
+  if (account !== value) setSavedScope(null);
+}
+export function assertAuthenticatedAccount(value: string) {
+  if (authenticated !== value) throw new Error("account_changed");
+}
 export function savedScope() {
   return account;
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { authClient } from "@/lib/auth/client";
-import { setSavedScope } from "@/lib/saved/scope";
+import { setSavedScope, setAuthenticatedAccount } from "@/lib/saved/scope";
 import { SYNC_EVENT, readSyncState, syncCycle } from "@/lib/sync/client";
 import { debugFlag } from "@/lib/debug/flags";
 export function SyncProvider() {
@@ -9,6 +9,7 @@ export function SyncProvider() {
   const accountId = session?.user.emailVerified ? session.user.id : null;
   useEffect(() => {
     if (isPending) return;
+    setAuthenticatedAccount(accountId);
     let stopped = false,
       running = false,
       retryAfter = 0,
@@ -74,6 +75,7 @@ export function SyncProvider() {
       window.removeEventListener("online", schedule);
       document.removeEventListener("visibilitychange", schedule);
       setSavedScope(null);
+      setAuthenticatedAccount(null);
     };
   }, [accountId, isPending]);
   return null;

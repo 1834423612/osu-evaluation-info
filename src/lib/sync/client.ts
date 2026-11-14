@@ -5,7 +5,12 @@ import {
   importLocalItems,
 } from "../saved/local.ts";
 import { itemKey, type ExchangeItem } from "../saved/exchange.ts";
-import { savedScope, setSavedScope, scopedSavedKey } from "../saved/scope.ts";
+import {
+  savedScope,
+  setSavedScope,
+  scopedSavedKey,
+  assertAuthenticatedAccount,
+} from "../saved/scope.ts";
 import { applySyncedItems } from "../saved/provenance.ts";
 import { debugFlag } from "../debug/flags.ts";
 import { SAVED_WORKSPACE_KEY, SAVED_STORAGE_KEYS } from "../saved/workspace.ts";
@@ -18,6 +23,7 @@ function changed() {
 }
 export { readSyncState };
 function validAccount(id: string) {
+  assertAuthenticatedAccount(id);
   if (savedScope() !== id) throw new Error("account_changed");
 }
 async function exchange(accountId: string, body: Record<string, unknown>) {
@@ -101,6 +107,7 @@ export type MergePreview = {
   conflicts: number;
 };
 export async function previewMerge(accountId: string): Promise<MergePreview> {
+  assertAuthenticatedAccount(accountId);
   if (debugFlag("factory")) throw new Error("simulation");
   const local = readLocalItems(),
     response = await exchange(accountId, { cursor: 0, operations: [] }),
@@ -126,6 +133,7 @@ export async function enableSync(
   preview: MergePreview,
   once = false,
 ) {
+  assertAuthenticatedAccount(accountId);
   if (debugFlag("factory")) throw new Error("simulation");
   if (preview.response.accountId !== accountId)
     throw new Error("account_changed");
@@ -133,6 +141,7 @@ export async function enableSync(
   if (!token) throw new Error("busy");
   try {
     const previous = await readSyncState(accountId);
+    assertAuthenticatedAccount(accountId);
     if (previous.initialized && !previous.needsReview) {
       await updateSyncState(accountId, (s) => {
         s.enabled = true;
