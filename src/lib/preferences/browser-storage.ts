@@ -1,3 +1,8 @@
+import {
+  isSavedStorageKey,
+  readSavedWorkspace,
+  writeSavedArray,
+} from "../saved/workspace.ts";
 import { migrateBrowserStorage } from "./storage-migrations.ts";
 import {
   DEFAULT_DEBUG_FLAGS,
@@ -6,6 +11,7 @@ import {
 } from "../debug/flags.ts";
 
 let initialized = false;
+const savedBases = new Map<string, string | null>();
 const overlays = {
   local: new Map<string, string>(),
   session: new Map<string, string>(),
@@ -57,7 +63,7 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
       ...[...overlay.keys()].filter(shadowed),
     ]),
   ];
-  return {
+  const physical: Storage = {
     get length() {
       return keys().length;
     },
@@ -82,6 +88,34 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
       for (const key of keys()) {
         if (shadowed(key)) overlay.delete(key);
       }
+    },
+  };
+  return {
+    get length() {
+      return physical.length;
+    },
+    key: physical.key,
+    clear: physical.clear,
+    getItem(key) {
+      if (kind !== "local" || !isSavedStorageKey(key))
+        return physical.getItem(key);
+      const raw = readSavedWorkspace(physical).records[key];
+      savedBases.set(key, raw);
+      return raw;
+    },
+    setItem(key, value) {
+      if (kind !== "local" || !isSavedStorageKey(key))
+        return physical.setItem(key, value);
+      const base = savedBases.has(key)
+        ? savedBases.get(key)!
+        : readSavedWorkspace(physical).records[key];
+      writeSavedArray(physical, key, value, base);
+      savedBases.set(key, readSavedWorkspace(physical).records[key]);
+    },
+    removeItem(key) {
+      if (kind !== "local" || !isSavedStorageKey(key))
+        return physical.removeItem(key);
+      this.setItem(key, "[]");
     },
   };
 }
