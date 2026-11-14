@@ -311,3 +311,11 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | --- | --- | --- |
 | [tests/user-data/transfers.integration.test.mjs](../../tests/user-data/transfers.integration.test.mjs) | Integration | 真实 SQL 的配对确认、权限、并发租约、过期、幂等完成和只读访问 |
 | [tests/user-data/transfers.browser.mjs](../../tests/user-data/transfers.browser.mjs) | Browser | 真实接口的双浏览器配对、部分导入、刷新恢复、确认响应丢失及 320/390 像素布局 |
+
+页面分享浏览器测试使用 `ALLOW_SERVER_WRITES=1`，创建测试公开链接并在结束时通过所有者接口删除；课程来源请求和外部统计被拦截。数据库测试使用 `USER_DATA_INTEGRATION=1` 和临时 schema，开关及目标地址与其他分享测试一致。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/page-links.test.mjs](../../tests/user-data/page-links.test.mjs) | Unit | 公开 URL 白名单、凭据剔除及课程和详情身份 |
+| [tests/user-data/page-links.integration.test.mjs](../../tests/user-data/page-links.integration.test.mjs) | Integration | 真实 SQL 的规范链接复用、公开快照和独立预览/打开计数 |
+| [tests/user-data/page-links.browser.mjs](../../tests/user-data/page-links.browser.mjs) | Browser | 真实链接创建与清理、爬虫预览、缺失结果时的课程抽屉、文档锚点和取消分享 |

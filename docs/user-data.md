@@ -65,3 +65,11 @@ See [Testing](testing.md) for isolated database tests and mocked browser flows, 
 A private link carries a high-entropy fragment capability. A six-digit pairing code expires after ten minutes and can only request access: the sender must compare the confirmation number shown on the receiving device and approve that device. A code alone never returns the snapshot. No more than three pending receiving devices are admitted per transfer.
 
 Receiving creates a 15-minute lease, bounded by the transfer expiry, so a second device cannot consume the same transfer concurrently. The same browser can resume or refresh its claim. Selected items are persisted locally before completion is acknowledged. If the acknowledgement response is lost, **Confirm completion again** retries the same claim; it does not import a second copy. Import preserves exact syllabus revision state for new items and keeps existing recipient items. Read-only availability checks do not create an anonymous identity.
+
+## Course and page links
+
+Course cards and detail tabs provide **Share**; public pages also expose a footer share button. A supported device opens its native share sheet; other browsers copy the link. Cancelling the native sheet does not copy anything. If attribution is unavailable, the canonical public URL remains the fallback. The link dialog offers manual copy and a fresh device-share action when a browser requires another gesture.
+
+Attributed `/l/` links record metadata previews separately from redirect opens. Recognized preview bots receive escaped Open Graph HTML; prefetches and HEAD requests do not increment opens. These are request counts, not unique people. Repeated creation by the same owner reuses its canonical target. Links preserve public filters, the exact course/term/campus/detail selection, and reference-topic anchors; paging cursors and credentials are excluded. Private workspace routes are not general public page targets.
+
+A course link retains a small public snapshot without emails, live enrollment or section lists. If its course is absent from the current search result window or search fails, that snapshot opens the existing course drawer while official details refresh normally. The attribution parameter does not become a course filter or alter search counts.

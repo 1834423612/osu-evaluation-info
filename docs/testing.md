@@ -313,3 +313,11 @@ Temporary transfer tests use the sharing database/browser flags. The browser tes
 | --- | --- | --- |
 | [tests/user-data/transfers.integration.test.mjs](../tests/user-data/transfers.integration.test.mjs) | Integration | Real SQL pairing approval, ownership, concurrent leases, expiry, idempotent completion and read-only access |
 | [tests/user-data/transfers.browser.mjs](../tests/user-data/transfers.browser.mjs) | Browser | Real API two-browser pairing, partial import, refresh recovery, lost completion response and 320/390px layouts |
+
+Page-link browser tests require `ALLOW_SERVER_WRITES=1`, create synthetic public links and delete them through the owner API in cleanup. Course source requests and external collectors are intercepted. Database tests use `USER_DATA_INTEGRATION=1` and disposable schemas; target/opt-in variables match other sharing tests.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/page-links.test.mjs](../tests/user-data/page-links.test.mjs) | Unit | Public URL allowlist, secret removal and exact course/detail identities |
+| [tests/user-data/page-links.integration.test.mjs](../tests/user-data/page-links.integration.test.mjs) | Integration | Real SQL canonical-link reuse, public snapshots and separate preview/open counters |
+| [tests/user-data/page-links.browser.mjs](../tests/user-data/page-links.browser.mjs) | Browser | Real link creation and removal, bot previews, missing-result course drawers, reference anchors and cancellation |
