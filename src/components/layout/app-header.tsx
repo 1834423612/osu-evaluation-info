@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Bookmark, Languages } from "lucide-react";
-import { ResourcesMenu, ExploreMenu } from "./resources-menu";
+import { Languages } from "lucide-react";
+import { ResourcesMenu, ExploreMenu, PersonalMenu } from "./resources-menu";
 import resourceStyles from "./resources-menu.module.css";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
@@ -33,7 +33,10 @@ export function AppHeader({
     | "reference"
     | "rmp"
     | "updates"
-    | "history";
+    | "history"
+    | "account"
+    | "transfer"
+    | "share";
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
@@ -50,17 +53,23 @@ export function AppHeader({
       ? "explore"
       : pathname === "/history"
         ? "history"
-        : pathname === "/saved" || pathname.startsWith("/share")
+        : pathname === "/saved"
           ? "saved"
-          : pathname === "/reference"
-            ? "reference"
-            : pathname === "/methodology"
-              ? "methodology"
-              : pathname === "/rmp" || pathname.startsWith("/rmp/")
-                ? "rmp"
-                : pathname === "/updates"
-                  ? "updates"
-                  : active;
+          : pathname.startsWith("/share")
+            ? "share"
+            : pathname.startsWith("/transfer")
+              ? "transfer"
+              : pathname === "/account"
+                ? "account"
+                : pathname === "/reference"
+                  ? "reference"
+                  : pathname === "/methodology"
+                    ? "methodology"
+                    : pathname === "/rmp" || pathname.startsWith("/rmp/")
+                      ? "rmp"
+                      : pathname === "/updates"
+                        ? "updates"
+                        : active;
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
     const title = localizedDocumentTitle(locale, pathname);
@@ -112,31 +121,33 @@ export function AppHeader({
             aria-label={text(locale, "Main navigation", "主导航")}
           >
             <ExploreMenu locale={locale} page={current} />
-            <Link
-              href="/saved"
-              className={current === "saved" ? "nav-item active" : "nav-item"}
-              aria-current={current === "saved" ? "page" : undefined}
-            >
-              <Bookmark size={15} />
-              {text(locale, "Saved", "收藏")}
-              <span className="nav-count">{savedCount}</span>
-              {updates ? (
-                <span
-                  className={styles.updateDot}
-                  role="status"
-                  aria-label={text(
-                    locale,
-                    `${updates} syllabus updates`,
-                    `${updates} 份大纲有更新`,
-                  )}
-                  title={text(
-                    locale,
-                    `${updates} syllabus updates`,
-                    `${updates} 份大纲有更新`,
-                  )}
-                />
-              ) : null}
-            </Link>
+            <PersonalMenu
+              locale={locale}
+              page={current}
+              status={
+                <>
+                  {current === "saved" ? (
+                    <span className="nav-count">{savedCount}</span>
+                  ) : null}
+                  {updates ? (
+                    <span
+                      className={styles.updateDot}
+                      role="status"
+                      aria-label={text(
+                        locale,
+                        `${updates} syllabus updates`,
+                        `${updates} 份大纲有更新`,
+                      )}
+                      title={text(
+                        locale,
+                        `${updates} syllabus updates`,
+                        `${updates} 份大纲有更新`,
+                      )}
+                    />
+                  ) : null}
+                </>
+              }
+            />{" "}
           </nav>
           <div className="header-actions">
             <ResourcesMenu locale={locale} page={current} />

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Route } from "next";
 import {
   BookOpen,
@@ -10,6 +11,10 @@ import {
   Search,
   Check,
   History,
+  Bookmark,
+  UserRound,
+  ArrowRightLeft,
+  Link as LinkIcon,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { text, type Locale } from "@/lib/i18n";
@@ -22,17 +27,24 @@ type Page =
   | "reference"
   | "rmp"
   | "updates"
-  | "history";
+  | "history"
+  | "account"
+  | "transfer"
+  | "share";
 function NavigationMenu({
   locale,
   page,
   group,
+  status,
 }: {
   locale: Locale;
   page?: Page;
-  group: "explore" | "guides";
+  group: "explore" | "guides" | "personal";
+  status?: ReactNode;
 }) {
-  const exploring = group === "explore";
+  const exploring = group === "explore",
+    personal = group === "personal",
+    primary = group !== "guides";
   const items: {
     page: Page;
     href: Route;
@@ -64,17 +76,6 @@ function NavigationMenu({
           ),
         },
         {
-          page: "history",
-          href: "/history",
-          Icon: History,
-          title: text(locale, "Recent activity", "最近记录"),
-          detail: text(
-            locale,
-            "Searches and viewed courses",
-            "搜索与浏览过的课程",
-          ),
-        },
-        {
           page: "updates",
           href: "/updates",
           Icon: History,
@@ -86,69 +87,166 @@ function NavigationMenu({
           ),
         },
       ]
-    : [
-        {
-          page: "reference",
-          href: "/reference",
-          Icon: LibraryBig,
-          title: text(locale, "OSU field guide", "OSU 课程说明"),
-          detail: text(
-            locale,
-            "Class formats and rating scales",
-            "授课方式、班次与评价量表",
-          ),
-        },
-        {
-          page: "methodology",
-          href: "/methodology",
-          Icon: FileChartColumn,
-          title: text(locale, "Behind the data", "数据与方法"),
-          detail: text(
-            locale,
-            "Sources, matching and calculations",
-            "数据来源、匹配与计算",
-          ),
-        },
-      ];
+    : personal
+      ? [
+          {
+            page: "saved",
+            href: "/saved",
+            Icon: Bookmark,
+            title: text(locale, "Saved items", "收藏"),
+            detail: text(
+              locale,
+              "Courses, sections, instructors and syllabi",
+              "课程、班次、教师与大纲",
+            ),
+          },
+          {
+            page: "account",
+            href: "/account",
+            Icon: UserRound,
+            title: text(locale, "Account & sync", "账号与同步"),
+            detail: text(
+              locale,
+              "Sign in, devices and cloud favorites",
+              "登录、设备与云端收藏",
+            ),
+          },
+          {
+            page: "history",
+            href: "/history",
+            Icon: History,
+            title: text(locale, "Recent activity", "最近记录"),
+            detail: text(
+              locale,
+              "Searches and viewed courses",
+              "搜索与浏览过的课程",
+            ),
+          },
+          {
+            page: "share",
+            href: "/share",
+            Icon: LinkIcon,
+            title: text(locale, "Open a share code", "打开分享码"),
+            detail: text(
+              locale,
+              "Preview and save a shared collection",
+              "预览并转存收藏清单",
+            ),
+          },
+          {
+            page: "transfer",
+            href: "/transfer",
+            Icon: ArrowRightLeft,
+            title: text(locale, "Temporary transfer", "临时转存"),
+            detail: text(
+              locale,
+              "Send, receive and manage device transfers",
+              "发送、接收与管理设备转存",
+            ),
+          },
+        ]
+      : [
+          {
+            page: "reference",
+            href: "/reference",
+            Icon: LibraryBig,
+            title: text(locale, "OSU field guide", "OSU 课程说明"),
+            detail: text(
+              locale,
+              "Class formats and rating scales",
+              "授课方式、班次与评价量表",
+            ),
+          },
+          {
+            page: "methodology",
+            href: "/methodology",
+            Icon: FileChartColumn,
+            title: text(locale, "Behind the data", "数据与方法"),
+            detail: text(
+              locale,
+              "Sources, matching and calculations",
+              "数据来源、匹配与计算",
+            ),
+          },
+        ];
   const selected = items.some((item) => item.page === page);
-  const Icon = exploring
-    ? page === "rmp"
-      ? MessageSquare
-      : page === "updates"
-        ? History
-        : Search
-    : BookOpen;
+  const Icon = personal
+    ? (items.find((x) => x.page === page)?.Icon ?? Bookmark)
+    : exploring
+      ? page === "rmp"
+        ? MessageSquare
+        : page === "updates"
+          ? History
+          : Search
+      : BookOpen;
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className={`${styles.trigger} ${exploring ? styles.explore : ""}`}
+        className={`${styles.trigger} ${primary ? styles.explore : ""}`}
         data-active={selected}
         data-nav-group={group}
         aria-current={selected ? "true" : undefined}
         aria-label={text(
           locale,
-          exploring ? "Courses and teachers" : "Guides and data",
-          exploring ? "课程与教师" : "课程说明与数据方法",
+          personal
+            ? "Saved items and account"
+            : exploring
+              ? "Courses and teachers"
+              : "Guides and data",
+          personal
+            ? "收藏与账号"
+            : exploring
+              ? "课程与教师"
+              : "课程说明与数据方法",
         )}
       >
         <Icon size={15} aria-hidden="true" />
         <span>
-          {exploring
-            ? page === "history"
-              ? text(locale, "Recent", "最近记录")
-              : page === "updates"
-                ? text(locale, "Updates", "课程更新")
-                : page === "rmp"
-                  ? text(locale, "Teachers", "RMP 教师库")
-                  : text(locale, "Courses", "课程探索")
-            : text(locale, "Guides & data", "课程说明与数据")}
+          {personal
+            ? text(
+                locale,
+                page === "account"
+                  ? "Account"
+                  : page === "transfer"
+                    ? "Transfer"
+                    : page === "history"
+                      ? "Recent"
+                      : page === "share"
+                        ? "Shared"
+                        : "Saved",
+                page === "account"
+                  ? "账号"
+                  : page === "transfer"
+                    ? "转存"
+                    : page === "history"
+                      ? "最近"
+                      : page === "share"
+                        ? "分享"
+                        : "收藏",
+              )
+            : exploring
+              ? text(
+                  locale,
+                  page === "updates"
+                    ? "Updates"
+                    : page === "rmp"
+                      ? "Teachers"
+                      : "Courses",
+                  page === "updates"
+                    ? "课程更新"
+                    : page === "rmp"
+                      ? "RMP 教师库"
+                      : "课程探索",
+                )
+              : text(locale, "Guides & data", "课程说明与数据")}
         </span>
+        {status}
         <ChevronDown size={12} aria-hidden="true" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           className={styles.menu}
-          align={exploring ? "start" : "end"}
+          align={primary ? "start" : "end"}
           sideOffset={8}
           collisionPadding={10}
         >
@@ -190,4 +288,23 @@ export function ResourcesMenu({
   page?: Page;
 }) {
   return <NavigationMenu locale={locale} page={page} group="guides" />;
+}
+
+export function PersonalMenu({
+  locale,
+  page,
+  status,
+}: {
+  locale: Locale;
+  page?: Page;
+  status?: ReactNode;
+}) {
+  return (
+    <NavigationMenu
+      locale={locale}
+      page={page}
+      group="personal"
+      status={status}
+    />
+  );
 }
