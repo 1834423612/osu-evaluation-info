@@ -1,5 +1,7 @@
 # Legacy SQLite Supplements
 
+English · [简体中文](../zh-CN/rmp/supplement.md)
+
 Keep `db/osu_rmp.sqlite` as a local source archive. The supported collector writes
 to PostgreSQL; no SQLite content, snapshots, or exports belong in Git.
 

@@ -1,80 +1,64 @@
-# 课程与大纲：当前目录和永久归档
+# Catalog and syllabus retention
 
-## 如何确定旧学期的最终数据
+English · [简体中文](../zh-CN/catalog/lifecycle.md)
 
-官方没有“今后绝不再修改”的可靠信号，因此本站只记录**最近一次完整核验**，
-不把学期结束日期、一次 404、超时或空响应当作最终版本证明。
-课程记录保存完整发布时刻与官方可查询学期列表的观察时刻；
-大纲另保留官方提供的 `modifiedAt`，不拿备份检查时间替代官方修改时间。
+## Latest verified does not mean final
 
-每个学期对外只选一份归档主版本：**最近成功完成校验的完整版本**。
-不是记录最多的版本，也不把所有历史版本取并集。否则已经修正或删除的
-错误课程会重新出现在当前目录中。内部历史版本继续永久保留，用于审计和恢复；
-这里的“一份主归档”不表示物理删除所有旧版本。
+OSU exposes no reliable signal that a term will never change again. The archive records the latest complete verification, not a final version inferred from dates, a 404, timeout or empty response. Catalog records retain publication and term-discovery observations. Syllabi preserve official `modifiedAt`; a backup check is not an official modification.
 
-## 同步状态与处理
+Each term has one selected archive head: its latest successfully validated complete version. It is neither the largest version nor a union of history, which could restore corrected/deleted courses to the current catalog. Historical versions remain permanently available for audit and recovery.
 
-| 观察到的情况                     | 当前目录                            | 历史副本                                       |
-| -------------------------------- | ----------------------------------- | ---------------------------------------------- |
-| 官方仍列出某学期                 | 持续同步，不按日期冻结              | 每次成功发布保留版本                           |
-| 当前学期修改课程、教师、时间     | 完整校验后切换到新版本              | 旧版本保留                                     |
-| 当前学期删除单门课程或班次       | 新完整目录不再包含它                | 收藏可读取最近包含它的完整副本，并显示归档提示 |
-| 官方学期列表不再列出旧学期       | 标记 `not-listed`，保留该学期主版本 | 不删除、不用空记录覆盖                         |
-| 超时、失败、分页漂移或异常空学期 | 不发布不完整版本                    | 继续使用上次完整版本                           |
-| 旧学期重新出现在官方列表         | 重新允许同步、接受后续更正          | 原归档继续保留                                 |
+| Observation                                                    | Current catalog                            | Retained copy                                                                |
+| -------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| OSU still lists a term                                         | Continue syncing regardless of date        | Keep successful versions                                                     |
+| Course, teacher or schedule changes                            | Publish a newly validated complete version | Keep the prior version                                                       |
+| A course or section disappears                                 | Omit it from the new current version       | Saved items can read the latest complete copy containing it, marked archived |
+| A term disappears from discovery                               | Mark `not-listed`; retain its head         | Do not delete or overwrite with empty records                                |
+| Timeout, failed pagination, count drift or abnormal empty term | Reject incomplete publication              | Serve the last complete version                                              |
+| A term reappears                                               | Resume syncing and accept corrections      | Keep its history                                                             |
 
-缺少可靠观察时保持 `unknown`；不伪装成“已结束”或“最终版”。
-完整性校验能识别抓取不完整，但不能证明官方源本身没有业务错误；
-因此即使合法的新完整目录变小，也保留可恢复的旧副本。
+Without reliable discovery evidence, status stays `unknown`. Completeness checks cannot prove that the official source itself is free of business errors, so even legitimate smaller publications retain recoverable history.
 
-## 课程实现
+## Catalog
 
-先执行 `pnpm catalog:migrate`，数据库版本应为 4。
+Run `pnpm catalog:migrate`; schema version 4 adds term heads and discovery observations.
 
-- `snapshot_versions` 只发布完成全量分区、计数和父子身份校验的 generation。
-- `term_archives` 为每学期选取唯一主版本，另记录最近成功发布所携带的完整官方学期发现结果。
-- 索引搜索与备用浏览均列出所有已归档学期，不局限于最新一轮扫描的学期集合。
-- 默认搜索优先官方仍列出的学期；归档学期可显式选择。
-- 当前目录查询只读取选定主版本；已移除课程不通过历史并集重新出现。
-- 课程详情的归档回退可读取最近包含该课程的完整历史版本，保留完整学期、校区、
-  学科和课程号约束。显示“最近目录未收录”，不冒充当前开课或实时空位。
-- 收藏保留其自身快照；服务器历史版本提供后续可恢复的副本。
-- 完整发布后的课程/班次版本禁止删除、清空和覆盖；旧清理命令保持 no-op。
-
-查询主版本和官方可查询状态：
+- `snapshot_versions` publishes only after all partitions, counts and parent/child identities pass validation.
+- `term_archives` selects one head per term and records complete official discovery from successful publications.
+- Search and mirror browsing list retained terms. Default selection favors a still-listed official term; archives can be selected explicitly.
+- Current reads use the selected head, never a historical union.
+- Detail fallback can recover the latest complete version containing a removed course, constrained by term, campus, subject and full number. It is labelled absent from the latest catalog and cannot supply live seats.
+- Favorites retain their device-local snapshots; server history is an additional recovery source.
+- Published course/section versions cannot be deleted, truncated or overwritten. Legacy cleanup is a no-op.
 
 ```sql
 SELECT term_code,run_id,completed_at,source_status,source_checked_at
 FROM osu_catalog.term_archives ORDER BY term_code DESC;
 ```
 
-## 大纲实现
+## Syllabi
 
-先执行 `pnpm syllabus:migrate`，数据库版本应为 4。
+Run `pnpm syllabus:migrate`; schema version 4 adds complete index heads and term evidence.
 
-- `term_discoveries` 追加保存成功的官方学期发现结果，不覆盖历史观察。
-- `index_heads` 为每学期选择最近完成分页计数校验的完整索引。
-- 当前索引不包含已被官方删除的条目；持久条目和正文历史仍保留，收藏按 code 可以继续读取。
-- 官方不再发布的学期保留旧索引，并跳过无效的旧正文下载。
-- 恢复旧断点时立即追加新发布学期，优先处理新学期正文，不等旧任务全部完成。
-- 异常的全空索引不能替换已有非空完整索引。
-- 正文按官方可解析的修改时间及首次获取时间选取版本；重新检查较旧版本不会把它升为最新版。
-- 正文、索引历史及学期发现证据均受数据库保护。
+- `term_discoveries` appends successful discovery observations.
+- `index_heads` selects the latest fully count-validated index for each term.
+- Removed entries disappear from the current index, while persistent entries and document history remain readable by code.
+- No-longer-published terms retain their indexes and skip invalid old document requests.
+- Resumed checkpoints add newly published terms immediately and prioritize their documents.
+- An abnormal empty index cannot replace a nonempty complete one.
+- Document ordering uses parseable official modification time and first retrieval time; rechecking an older version never promotes it.
+- Documents, indexes and discovery evidence have database protection.
 
 ```sql
 SELECT code,name,run_id,source_status,source_checked_at
 FROM osu_syllabus.term_archives ORDER BY code DESC NULLS LAST;
 ```
 
-大纲正文归档不包含外部图片、字体和上传附件的完整离线镜像；
-尚未抓取或早已从源站删除的内容不能凭空恢复。
+The archive stores HTML and structure, not a complete offline mirror of external images, fonts or attachments. Never-fetched or previously removed content cannot be reconstructed.
 
-## 验证
+## Verification
 
-真实数据库的随机临时 schema 覆盖了：学期消失、当前课程改名和删除、
-失败发布回滚、旧课程显式恢复、旧学期重新出现、索引删项、
-异常空索引、旧正文重新检查，以及旧断点追加新学期。
-测试不会清空业务表。
+Database tests use random temporary schemas. They cover disappearing/reappearing terms, current changes and removals, failed-publication rollback, historical detail recovery, index removals, abnormal empties, old document rechecks and new terms in resumed runs. Business tables are not cleared.
 
 ```sh
 CATALOG_DATABASE_TEST=1 SYLLABUS_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test \
@@ -84,5 +68,4 @@ CATALOG_DATABASE_TEST=1 SYLLABUS_DATABASE_TEST=1 node --env-file-if-exists=.env.
   tests/syllabus/storage.integration.test.mjs
 ```
 
-2026-11-13 还执行了一次真实课程同步：70,550 个官方班次全部核对后发布；
-大纲 8,977 条完整索引已发布，正文任务继续按原有断点处理，已有正文未被覆盖或删除。
+A 2026-11-13 live check reconciled and published 70,550 official sections and a complete 8,977-entry syllabus index. Document work continued from its checkpoint without replacing or deleting retained content. These are dated observations, not current counts.

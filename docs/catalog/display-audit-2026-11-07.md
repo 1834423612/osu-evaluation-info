@@ -1,5 +1,7 @@
 # Course display and official enrollment audit
 
+English · [简体中文](../zh-CN/catalog/display-audit-2026-11-07.md)
+
 The investigation compared the existing read-only directory cache, raw OSU class
 responses, normalization, merging, and the display components.
 
@@ -61,7 +63,7 @@ section `0040`. No database records were changed.
 
 ## November 8 layout and delivery follow-up
 
-Course rows now show a one-line primary role (for example 助教（研究生）), with
+Course rows now show a one-line primary role (for example graduate teaching assistant), with
 additional roles counted and all appointments retained in the popover. Common
 course fees appear in the compact header summary; section-specific charges sit
 with meeting information. Original descriptions remain in expanded section details.

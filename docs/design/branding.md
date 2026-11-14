@@ -1,12 +1,14 @@
-# WahO! / 蛙O！ branding
+# WahO! branding
 
-WahO! / 蛙O！ uses the thinking campus mascot and four expression illustrations across navigation, status messages, browser icons, and sharing previews. `src/lib/brand.ts` is the shared source for the product name, description, scarlet theme color (`#BA0C2F`), warm background (`#FAF8F6`), and public asset paths. `src/components/brand/brand-mascot.tsx` renders the portrait, thinking artwork, and named expressions; `scene-mascot.tsx` selects artwork for random scenes.
+English · [简体中文](../zh-CN/design/branding.md)
+
+WahO! uses the thinking campus mascot and four expression illustrations across navigation, status messages, browser icons, and sharing previews. `src/lib/brand.ts` is the shared source for the product name, description, scarlet theme color (`#BA0C2F`), warm background (`#FAF8F6`), and public asset paths. `src/components/brand/brand-mascot.tsx` renders the portrait, thinking artwork, and named expressions; `scene-mascot.tsx` selects artwork for random scenes.
 
 ## Confirmed identity and typography
 
-- Chinese name: **蛙O！** (Latin uppercase O, full-width exclamation mark).
+- Chinese name: `蛙O！` (Latin uppercase O, full-width exclamation mark).
 - English name: **WahO!** (uppercase W and O).
-- Chinese slogan: **选课不迷路，毕业有蛙助。**
+- Chinese slogan: `选课不迷路，毕业有蛙助。`
 - English slogan: **Hop into better classes. Leap toward your degree.**
 
 `brand.names`, `brand.slogan`, and `brand.context` supply localized copy. Navigation and the footer show the current language's name; browser metadata and the install manifest use the bilingual name. The short install name is WahO!.

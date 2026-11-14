@@ -1,56 +1,50 @@
-# Simple Syllabus：接口、关联与运维
+# Simple Syllabus: protocol, matching and operations
 
-课程/大纲的主归档、当前目录删改、官方旧学期消失及恢复规则，见
-[同步生命周期说明](../catalog/lifecycle.md)。第 4 版迁移新增完整索引主版本与学期发现证据；
-历史正文重新检查不会覆盖较新的已保存版本。
+English · [简体中文](../zh-CN/syllabus/operations.md)
 
-课程卡片和详情的「教学大纲」提供班次级大纲。以教师卡片选择班次，大纲速览展示教材、考核和按周整理的课程安排；下方独立阅读器提供官方版式、清爽阅读、正文搜索、目录跳转、阅读进度、缩放和可用时的全屏阅读。课程列表不会批量预取正文或加载 PDF 库。
+See [catalog and syllabus retention](../catalog/lifecycle.md) for term heads, current removals and recovery. Migration 4 adds complete index heads and term-discovery evidence; rechecking an old document does not replace a newer retained version.
 
-## 已验证的协议
+Course cards and details expose section-level syllabi, teacher/section choices, textbooks, assessment and schedules. The reader supports official layout, semantic reading, search, outline, progress, zoom and supported fullscreen. Course lists do not prefetch every document or load PDF libraries.
 
-依据用户提供的两个 HAR 及 2026-11-10 的匿名实测：PNG 是列表缩略图；正文是已经发布的 HTML 组件，不是 PDF 绘图元数据。HAR 仅用于识别协议，没有导入 session、账号目录、Cookie、认证数据或读取统计。
+## Verified protocol
 
-| 接口                                           | 用途与重要字段                                                                                                                                             |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api2/app-state?locale=en-US`                 | `items[0].state.terms` 提供学期 UUID、名称、状态、发布标记和起止日期。只提取学期字段。                                                                     |
-| `/api2/doc-library-search?term_id=UUID&page=0` | 从 0 开始分页，核对 `pagination.total/returned/page/page_size`；记录包含 `code/entity_id/term_id/title/visibility`。支持 `subject_name`、`course_number`。 |
-| `/api2/doc-full-page-get?code=CODE`            | `items[0].doc_data` 包含正文、发布状态、学期、`published_snapshot_id` 和 `modified`。组件包含顺序、语言、HTML、公开标记与 snapshot。                       |
-| `/api2/doc-png/CODE/...`                       | 列表预览图，不作为正文来源。                                                                                                                               |
-| `/api2/doc-version-check?...`                  | 样本仅有 `id/has_versioning`，无法证明正文未变，不用于跳过归档。                                                                                           |
+Anonymous checks on 2026-11-10 established that PNGs are thumbnails and published HTML components are document content. Protocol samples did not import accounts, cookies, authentication or reading statistics.
 
-只接收已发布、非 working 文档，以及属于发布 snapshot、标记为公开的英语组件。拒绝未知 envelope、无效标识、重复页、分页总数漂移、跨学期结果和过大响应。非数字班次标识保留为 `sectionIdentifier`。
+| Endpoint                                       | Purpose                                                                                                                                                     |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api2/app-state?locale=en-US`                 | `items[0].state.terms`: term UUIDs, labels, status, publication and dates; only term fields are extracted                                                   |
+| `/api2/doc-library-search?term_id=UUID&page=0` | Zero-based pagination checked against total/returned/page/page_size; records include code/entity/term/title/visibility; supports subject_name/course_number |
+| `/api2/doc-full-page-get?code=CODE`            | Published document, term, snapshot, modification and ordered public components                                                                              |
+| `/api2/doc-png/CODE/...`                       | Thumbnail, never body content                                                                                                                               |
+| `/api2/doc-version-check?...`                  | Sample versioning flags cannot prove content unchanged; not an archive-skip signal                                                                          |
 
-AU2026 在样本中已发布；SU2026、SP2026 和 Demo Term 虽存在于学期列表，样本中未发布，不能解释为已有可用大纲。SP2027 的 UUID 和发布时间仍由未来官方返回决定。代码不将 `current` 固定为某学期，也不预设未知学期 UUID。
+Accept only published, nonworking documents and public English components from the published snapshot. Reject unknown envelopes, invalid IDs, repeated/drifting pages, cross-term results and oversized responses. Preserve nondigit section identifiers. Term UUIDs and availability come from discovery, never fixed current-term assumptions. The 2026-11-10 sample published AU2026 but did not establish readable documents for SU2026, SP2026, Demo or future terms.
 
-## 数据获取
+## Retrieval and failure states
 
-1. 浏览器匿名直连官方固定 origin，`credentials: omit`。
-2. CORS、网络或官方读取失败后，调用本站 `/api/syllabus`。
-3. 本站兼容接口先匿名请求官方，失败后才查询数据库，明确返回 `official-direct`、`official-relay` 或 `backup` 及获取/备份时间。
+The browser tries the fixed official origin anonymously with `credentials: omit`. On CORS/network/official failure, `/api/syllabus` tries the same source anonymously before database backup. Responses distinguish `official-direct`, `official-relay` and `backup` with retrieval/backup times.
 
-实测官方 JSON 未开放 CORS，因此目前通常需要兼容接口。Node 默认 User-Agent 会触发正文接口的 CDN 403；使用公开浏览器 User-Agent 可匿名获取 ART 样本，无需抓包凭据或版本 header。HTML 403 被视为服务/CDN 不可用；JSON 401/403 才标记访问受限。失败不显示为「课程没有大纲」。
+The observed JSON service lacked CORS. A public browser User-Agent resolved a Node-default CDN 403 without credentials or version headers. HTML 403 is service/CDN failure; JSON 401/403 is access restriction. Failures do not mean no syllabus exists. The official HTML shell has no document body; no server browser process is used.
 
-兼容接口仅支持固定资源与严格校验的标识，不接受任意目标 URL，也不转发访客 Cookie 或 Authorization。请求有字节上限、超时、队列和并发限制，成功结果短期缓存。
+The relay accepts fixed resources and validated IDs, never arbitrary URLs or visitor authorization. It bounds time, bytes, concurrency and queue size, with short successful-response caches. If protocol or access changes, retain source links and backups while updating the adapter.
 
-官方页面的 HTTP 源码是 Angular 启动壳，没有正文。此次已通过正常匿名 JSON 请求解决兼容问题，未引入服务端浏览器采集进程。未来若权限或协议改变，保留官网入口和历史备份，依据新返回更新适配器。
+## Rendering and PDF
 
-## 官方版式、结构提取和 PDF
+`officialHtml` retains sanitized source DOM, layout classes, images, table widths and permitted inline styles. The isolated iframe uses `public/syllabus/official.css`; scripts and forms are blocked. Its constrained scroll region keeps tools, outline and progress available. Mobile outlines start collapsed and close after a jump.
 
-`officialHtml` 保留清理后的官方 DOM、布局类、图片、表格宽度和允许的内联样式。独立 iframe 使用版本化的 `public/syllabus/official.css`，还原核验过的 BuckeyeSans/BuckeyeSerif 字体、字号、字重、标题边线、段落间距与 300px 校徽。iframe 不允许脚本与表单，正文样式不会影响本站。阅读器限制自身高度，在内部滚动正文，工具栏、目录和进度保持可用；手机默认收起目录，打开后在正文上方展开，点章节后收起。模式切换紧贴正文容器，正文搜索保持固定边框宽度。
+BUX fonts use the [official webfont CDN](https://bux.osu.edu/typography/fonts/): `https://assets.bux.osu.edu/bux-webfonts2/`. On 2026-11-13 it returned `Access-Control-Allow-Origin: *`; the older S3 host did not. CSS, iframe CSP, PDF font URLs and the asset allowlist use the same CDN. Font declarations retain the checked syllabus weights and styles. No local font copies are required while this public source remains usable.
 
-清爽阅读使用单独的语义 HTML。`extractSyllabusSections`、`extractSyllabusHighlights`、`extractSyllabusSchedule` 和 `SyllabusHighlights` 可供收藏、对比或其他页面复用。课程安排支持 Week 段落、周次范围及日期表格，保留原顺序、重复/重叠周次和原文说明，不截断主题；无法识别的正文继续按原文显示。速览可跳转对应正文章节，不推断课程难度、工作量或缺失的评分权重。
+Semantic reading and `extractSyllabusSections`, `extractSyllabusHighlights`, `extractSyllabusSchedule` support other views. Week paragraphs, ranges, tables, dates, line breaks and reading lists preserve order, repeated/overlapping weeks and full source text. Unknown structures remain source content. Extraction never invents difficulty, workload or missing assessment weights.
 
-PDF 库、WOFF2 解码器和导出代码仅在下载时加载，文件完全在浏览器生成。导出使用独立的 816px 官方版式，不受当前过滤、阅读模式和缩放影响；读取计算后的正文字号、字重、颜色、行距及段落间距，加载对应 BuckeyeSans/BuckeyeSerif 字体。在本机把 WOFF2 解码为 SFNT 后交给 pdfmake 子集嵌入，避免 fontkit 对转换过的 WOFF2 复合字形编码失败。实际图片在本机转成 PNG 后嵌入，文字仍可选中，不再将图片替换为 alt 链接。
+PDF code, pdfmake and WOFF2 decoding load on download. Export runs entirely in the browser against an independent 816px official layout, unaffected by current filters, zoom or reading mode. Computed fonts, weight, colors, line/paragraph spacing, padding and flex columns are retained. WOFF2 is decoded to SFNT and subset-embedded; images are converted to PNG while text stays selectable.
 
-纸张为 612 × 792 pt（US Letter），支持多页、表格、文本及链接。预览文档以 816px 为基准，四周 48px 留白；PDF 对应四周 36pt 页边距，正文宽度同为 720px / 540pt。手机预览自适应窄屏留白，导出保持 Letter 尺寸。导出保留水平内边距、同一行的 flex 分栏，并合并相邻外边距；链接装饰采用转换器支持的空默认值，避免空数组嵌套导致 pdfmake 报错。表格 caption 单独处理，避免 ART 时间表中的空 caption 被转换为缺列的一行。页脚包含官方来源链接和页码。导出按 Letter 分页；官方上传附件仍通过官网查看，不假装已并入生成文件。
+US Letter is 612 × 792 pt. The 816px preview's 48px margins map to 36pt, with a 720px/540pt content width. Adjacent margins collapse; links decorate visible text only. Table captions are handled separately. Footer source links and page numbers remain. Uploaded attachments stay available through OSU rather than being presented as merged PDF content.
 
-浏览器支持 `showSaveFilePicker` 时，在点击事件内先请求保存位置，待 PDF 生成并写入、关闭成功后显示「已保存」。取消窗口即结束，不继续下载。明确收到 `SecurityError` / `NotAllowedError` 才表示保存窗口被拒绝，并在支持 Popover 的设备上提示；不支持时仅保留按钮下方的小字链接。普通 Blob 下载无法可靠检测浏览器是否弹出保存窗口，因此不使用定时器、失焦或窗口可见性来猜测，不弹此类 toast。写入失败提供手动保存链接。
+Where supported, `showSaveFilePicker` runs within the click event. Success requires writing and closing; cancellation stops export. Explicit `SecurityError`/`NotAllowedError` can show a save-window warning. Ordinary Blob downloads cannot reveal whether a browser displayed a dialog, so timers, blur and visibility are not used to guess. Failed writes retain a manual save link.
 
-图片/字体先尝试浏览器匿名读取；仅已知的官方 account-image UUID 路径和 BUX 字体路径可通过 `/api/syllabus/assets` 兼容转发。接口拒绝其他 URL、凭据、重定向和非预期文件签名，并限制并发、队列、超时及响应大小。服务端只转发字节，不接收用户文档，不构建 PDF。无法读取的图片会使导出明确失败，避免静默生成缺图文件；第三方图片仍取决于其 CORS 和可用性。
+Images/fonts first use anonymous browser reads. `/api/syllabus/assets` relays only known public account-image UUID paths and BUX font paths, rejecting other URLs, credentials, redirects and bad signatures. It bounds concurrency, queue, time and bytes and never receives user documents or builds PDFs. Unreadable images fail export explicitly. External assets remain source-dependent; database retention does not archive their binary files.
 
-官方版式基于 2026-11-10 的 BUX 样式。外部官方字体和图片仍依赖源服务，字体不可用时回退到系统字体。数据库归档 HTML 和结构，不归档图片、字体或附件的二进制文件。完整离线媒体归档需另加资产存储、校验和及来源记录。
-
-## 数据库和关联
+## Database and matching
 
 ```sh
 pnpm syllabus:migrate
@@ -58,127 +52,62 @@ pnpm syllabus:discover
 pnpm syllabus:sync
 ```
 
-复用 `.env.local` 或环境中的 `DATABASE_URL`。迁移显式执行；每日脚本不执行 DDL，不修改现有课程或教学评价表。迁移 3 将已保存的大纲文档和索引设为永久归档：禁止删除、清空以及覆盖历史正文和索引内容；重复检查仍可刷新检查时间，更新正文会保存新版本。官方删除文档或学期不影响已保存副本。已在旧清理策略下删除的课程版本无法由此恢复。
+Use `DATABASE_URL` from the environment or `.env.local`. Migrations are explicit; scheduled sync performs no DDL or changes to evaluation tables. Migration 3 permanently protects document/index history; later discovery observations and head selection are described in the lifecycle guide. Previously deleted history cannot be recovered by installing protection.
 
-| 表/视图                        | 作用                                                                       |
-| ------------------------------ | -------------------------------------------------------------------------- |
-| `osu_syllabus.terms`           | 学期 UUID、OSU term code、完整学期字段和 `ever_published`。                |
-| `sync_runs`、`sync_partitions` | 学期集合、分页断点、完整索引发布时间与官方不可用记录。                     |
-| `entry_observations`           | 按页暂存、查重和正文处理断点；失败扫描不发布不完整索引。                   |
-| `entries`                      | 持久索引，保留原始班次标识与 term/course/class 自然键，官方删除后仍保留。  |
-| `document_versions`            | 按 code、发布 snapshot、SHA-256 内容散列保存版本；相同内容只刷新检查时间。 |
-| `catalog_links`                | 连接最新已发布完整课程快照，提供课程 ID、offering、校区和匹配方式。        |
+| Object                         | Purpose                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------ |
+| `osu_syllabus.terms`           | Term UUID, OSU code, label and publication metadata                                        |
+| `sync_runs`, `sync_partitions` | Term sets, checkpoints, index publication and source unavailability                        |
+| `entry_observations`           | Page staging, deduplication and document checkpoints                                       |
+| `entries`                      | Persistent raw section identity and term/course/class keys                                 |
+| `document_versions`            | Code, published snapshot and SHA-256 versions; identical content only refreshes check time |
+| `catalog_links`                | Links to published catalog identity, offering, campus and match method                     |
 
-关联必须同时满足学期、学科、完整课程号与真实 class number，小数及 Honors 后缀不合并。实测 `ARCH 4410 s_10356` 对应官方课程库 `10356`，但只在同学期同课程中获得独立班次验证后才接受别名；原始标识不改写。其他未知标识继续保留而不强行绑定。
+Matching requires term, subject, full course number and actual class number. Decimal/Honors suffixes stay distinct. An imported alias such as `s_10356` is accepted only with independent same-term/course section evidence; raw identifiers remain unchanged. Title similarity is insufficient.
 
-`catalog_links` 在版本化课程表存在时创建。若先安装 syllabus 后安装 catalog，再执行一次 `syllabus:migrate` 即可建立视图。没有会因课程快照清理而级联删除大纲的跨 schema 外键。
+If syllabus is installed before the versioned catalog, rerun `syllabus:migrate` to create `catalog_links`. No cross-schema cascade can delete syllabi when course snapshots change.
 
 ```sql
-SELECT match_method, count(*) FROM osu_syllabus.catalog_links GROUP BY match_method;
-SELECT status, started_at, completed_at, error FROM osu_syllabus.sync_runs ORDER BY started_at DESC LIMIT 5;
-SELECT document_status, count(*) FROM osu_syllabus.entry_observations WHERE run_id = $1 GROUP BY document_status;
+SELECT match_method,count(*) FROM osu_syllabus.catalog_links GROUP BY match_method;
+SELECT status,started_at,completed_at,error FROM osu_syllabus.sync_runs ORDER BY started_at DESC LIMIT 5;
+SELECT document_status,count(*) FROM osu_syllabus.entry_observations WHERE run_id=$1 GROUP BY document_status;
 ```
 
-2026-11-10 首次完整索引共 8,972 条；当时课程快照关联 8,420 条数字班次与 66 条经校验的导入别名。剩余记录等待课程库更新或进一步核对，不以标题相似作为证据。这些数量是当次实测值，不是 UI 常量。
+## Schedule and recovery
 
-## 每日同步和恢复
+`.github/workflows/osu-syllabus-sync.yml` targets 03:43 America/New_York daily, using the `DATABASE_URL` Actions secret. Migrate before enabling the schedule. Requests are serial and anonymous, spaced by 350 ms, with bounded retry/backoff for 429/recoverable 5xx. Pages and checkpoints commit together. Index publication follows full term count verification; an advisory lock prevents overlap. Five consecutive document failures stop the run without losing history or resume state.
 
-`.github/workflows/osu-syllabus-sync.yml` 每天纽约时间 03:43 运行一次，使用现有 Actions secret `DATABASE_URL`。先迁移数据库，再推送至启用 Actions 的默认分支；仅本地 Git 提交不会启动远程计划任务。
-
-默认串行匿名请求，间隔 350 ms，对 429 和可恢复 5xx 有有限重试与退避。分页批量写入，断点与数据一起提交；完整学期分页数量核对后，才原子发布索引。独占 advisory lock 防止重叠，正文逐份校验留存。连续 5 次正文失败即停止，保留旧版本和可续跑状态。
-
-已知历史学期即使不再 current，也会保留。官方明确删除或拒绝旧学期时，继续其他学期并保留旧归档。分页漂移或重复项拒绝发布，下次重新扫描失败 generation；未知结构需检查解析器，必要时使用 `--new-run`。
+Historical terms remain retained. Explicit source removal/restriction skips invalid old work and continues other terms. Repeated pages or count drift reject publication; a failed generation is rescanned. Unknown structures require adapter inspection and sometimes an explicit new run.
 
 ```sh
-# 完整建立索引，正文仍待归档
 pnpm syllabus:sync --index-only
-
-# 有限批量验证，下次默认续跑
 pnpm syllabus:sync --max-documents 20
-
-# 显式创建新扫描，旧归档继续保留
 pnpm syllabus:sync --new-run
 ```
 
-`partial` 不代表全部正文已备份。`missing` 包括无可读公开正文的空壳文档，以及官方删除/未发布的记录；`uploaded` 表示还需从官网查看上传文件。不能仅以索引总数判断正文覆盖率。
+`partial` does not mean all documents are archived. `missing` includes unreadable empty shells and removed/unpublished records; `uploaded` requires the official attachment. Index totals alone do not establish body coverage. The first 2026-11-10 index had 8,972 entries, with 8,420 numeric links and 66 verified imported aliases; these are historical observations.
 
-本次完成全量索引和有限批量验证，保存了 19 份可读正文（含两个 ART 2000 班次），未执行全部 8,972 份正文的首次归档。不带限额运行 `pnpm syllabus:sync` 可继续完成；每日工作流也从断点续跑。
+## Choices, updates and scroll gestures
 
-## 验证和后续扩展
+Default selection checks documents in source order and skips unpublished, failed and empty entries. At most two document checks run per course. An earlier slow result cannot cause a default-selection race; manual choices remain selected. Unavailable entries stay below readable choices. Staff/score filters keep nonmatches below, never invent zero scores or mix instruments. Official modification times use the browser timezone with a zone label.
+
+Saved syllabi open directly, retain course/section destinations and check for newer official versions. Opening does not acknowledge an update: clearing the notification is explicit, so an accidental open does not discard it.
+
+Speed never implies outer-panel browsing. One shared controller covers trends, RMP comments and syllabi. A wheel burst/swipe initially belongs to its scroller; no single event applies its leftover to both. At an edge, pausing/restarting or sustained wheel pressure (two events, at least 60 ms and 80px accumulated) can hand off to the panel. A new swipe from the edge can move the panel; reversing an already handed-off touch can read inward again. Short nonoverflowing regions do not trap scrolling. Iframe handoff uses screen coordinates. Fullscreen stays local; choice lists retain their own native scrolling.
+
+## Validation
 
 ```sh
 pnpm test
-SYLLABUS_DATABASE_TEST=1 node --test tests/syllabus/*.test.mjs
-pnpm typecheck
-pnpm lint
-pnpm build
-```
-
-数据库测试使用随机临时 schema，覆盖分页回滚、版本去重、别名关联和备份读取，结束后清理，不清空业务表。浏览器已验证真实 ART 2000、390px 手机阅读和课表搜索、1440px 桌面版式与 Letter PDF 下载；独立进程模拟了官方故障后的真实数据库回退。
-
-本轮新增验证：CSE 1110 的 Week 段落与 ART 2000 的表格时间表、手机目录/模式切换/搜索/全屏、实际下载 PDF 的 Letter 纸张、图片 XObject、Buckeye 字体嵌入和时间表文本完整性。Windows 原生保存窗口检查因浏览器工具无法可靠识别当前 URL 而中止；保存成功、取消、窗口拒绝、写入失败的逻辑有单元测试，但不将原生窗口端到端验证标为完成。
-
-## 是否增加独立大纲页面
-
-建议保留课程搜索作为主要入口，当前先使用嵌入阅读器和全屏能力，不再复制一套按学期/学科/课程/教师筛选的独立大纲库。现有课程结果已有课程详情、教师、班次与评价，重复筛选页会引入筛选状态、空结果和班次绑定的双份维护；AU2026 目前也是唯一已知有公开正文的学期。
-
-收藏页已提供直接阅读侧栏，复用同一个 `SyllabusReader`、`SyllabusViewer` 和下载组件；打开收藏大纲不会触发课程搜索，也没有新建重复页面。侧栏和收藏卡片均提供课程与指定班次链接，使用收藏时已校验的课程、学期、校区与班次标识。未来若需要分享链接，可增加 `/syllabus/[code]` 详情页并继续复用这些组件。
-
-完整独立大纲库可等多学期归档、跨班次比较或按教材反查课程成为明确需求后再增加；届时复用现有课程筛选组件，并将「有大纲」作为可组合筛选条件。当前没有创建该页面。
-
-后续可增加正文版本差异、跨班次教材/评分摘录对比、未匹配记录核对界面，以及带二进制资产的完整离线归档。难度和工作量推断应与原文摘录分开标注，并提供来源位置。
-
-## 滚动、更新时间与收藏提醒
-
-大纲速览、可用列表、文档目录和清爽正文允许原生滚动接续；短内容和到达边界的容器不再阻断外层面板。官方 iframe 单独处理滚轮和单指触摸，仅将未消耗的滚动距离传给外层可滚动区域，保留缩放手势，并在课程面板边界停止，避免背景页面跟随。速览 Tab 只允许水平溢出，指示线放在容器内部。手机目录使用横向紧凑列表。
-
-更新时间来自文档 `modifiedAt`，按浏览器当前时区显示至分钟，并标注该时区；备份时间、核验时间单独标注，缺少官方更新时间时显示「未提供」。索引没有更新时间，因此列表用两个并发任务逐份读取文档，和阅读器共享缓存。教师标签按每位教师的 OSU 身份分别查询 RMP，保持姓名、标签与收藏状态在同一组，不把合授教师评价混在一起。
-
-每位教师复用官方人员目录的任职类型标签，并分别显示 RMP、SEI、SSLE 五分制评分。RMP 为当前课程近两年有效综合评价的样本加权均值；官方评分只接受精确邮箱身份匹配，SEI 和 SSLE 各自显示，不混合量表。缺失评分显示破折号，按真实分数使用绿／黄／红色。人员目录和评分独立加载并共享现有缓存与限流。
-
-大纲卡片整卡可选中，收藏与身份按钮保持独立操作。筛选支持人员类型、评分来源与最低评分，排序可选默认、升序或降序；合授班次只对所选来源的已有教师评分取均值，缺失值不补零。不符合条件的卡片移至后方并标记，不隐藏；未找到已发布文档的班次保留在末尾，采用斜纹和颜色边框，不能选中阅读。索引没有记录不等于官方明确未发布；网络失败和权限拒绝也不当作未发布处理。
-
-PDF 链接的注释和下划线仅作用于可见文字，段落容器和首尾空白不继承链接。拆分文本时显式保留字体、字重和颜色，防止 PDF 库展平嵌套文本后丢失样式；标题灰色分隔线采用浏览器计算后的宽度、颜色与粗细。`tests/syllabus/check-pdf.py` 可用 pdfplumber 检查实际下载文件的 Letter 尺寸、正文留白、Buckeye 字体和链接矩形范围。
-
-`course-atlas:saved-syllabi:v1` 保存大纲身份、精简课程/班次快照、已确认版本与最近核验版本，不保存正文、座位实时状态或媒体。版本同时比较 `snapshotId` 和 `modifiedAt`。网站打开且可见时，每五分钟检查一次，返回页面时也检查；收藏区可手动重新核验。后台没有离线推送服务。官方失败、历史备份、身份不匹配或乱序响应均不能覆盖已有更新提醒。
-
-新收藏以当时读取的版本作为基线；尚未读取正文时，首次官方核验建立基线。之后有更新，在导航、收藏分类和大纲卡片显示红点或标签。打开、关闭、刷新和选择「暂时保留提醒」均不清除提醒；只有显式选择「标为已读」且正在阅读最新官方版本时才确认该版本，防止阅读期间出现的新版本被误消除。
-
-Dev Tools 使用当前模态容器的焦点范围和浏览器顶层 Popover，保持在课程弹窗、筛选导航及全屏阅读中可用。新增「教学大纲与滚动」分区，可手动检查收藏更新、导出版本状态和滚动区域几何信息；滚动诊断不导出正文。
-
-浏览器回归：`node tests/syllabus/experience.browser.mjs`。可通过 `SYLLABUS_TEST_BASE_URL` 指定本地服务，使用已有的 `PLAYWRIGHT_MODULE`、`PLAYWRIGHT_CHROMIUM_EXECUTABLE` 指定浏览器环境；`SYLLABUS_TEST_OUTPUT` 指定截图和 PDF 目录。可选 `SYLLABUS_DOCUMENT_FILE` 读取本地保存的官方文档响应，额外检查真实字体、图片、链接和表格导出。固定夹具覆盖桌面滚轮、手机真实触摸、清爽阅读、教师标签归属、收藏直读、跨刷新通知保留、手动已读、课程班次链接，以及模态和导航中的 Dev Tools 点击与焦点。
-
-## 默认选择与课程安排解析
-
-默认选择先核验文档，按索引顺序跳过未发布、请求失败及空文档，打开第一份可读大纲。
-较早记录未返回时等待其结果，避免默认选择取决于网络返回顺序；用户手动选择后保留选择。
-选择器与阅读面板共享文档核验状态，保留每门课最多两个并发文档请求。
-
-课程安排保留周标题、日期、段落、阅读条目和链接边界，支持周次表格、日期段落、
-`br` 换行、列表、分号串联周次、`W1–2`、Module／Unit 和明确周次表头下的裸数字。
-日期不转换成猜测的周次；长阅读按日期展开，长主题可折叠。无法可靠拆分时展示原文。
-
-只读全量检查所有保留版本：
-
-```sh
+SYLLABUS_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test tests/syllabus/*.test.mjs
+node tests/syllabus/experience.browser.mjs
+node tests/syllabus/source-layout.browser.mjs
+node tests/syllabus/fonts.browser.mjs
 node --env-file=.env.local scripts/syllabus/audit-schedules.mjs .cache/syllabus-schedule-audit.json
 ```
 
-2026-11-13 的检查覆盖 9,578 个文档版本：8,285 个可结构化，1,293 个保留原文，
-后者包含独立研究、实习、自定安排和外链等无固定周表内容。长主题仍保留完整内容。
-此检查不修改任何索引、文档或归档状态。
+Database checks use temporary schemas, not cleared business tables. Browser checks cover responsive source/semantic reading, nested help drawers, PDF download, touch/wheel gestures, saved notifications and Dev Tools focus. Native save-dialog branches have unit coverage; do not infer full native-dialog automation from download tests.
 
-`tests/syllabus/source-layout.browser.mjs` 使用实际 COL AU2026 MATH1151／HISTORY2231
-验证首条记录不可读时的默认选择、日期阅读清单与链接，并在 320／390／768／1440 px 截图。
-环境变量与现有大纲浏览器回归相同。
+Browser settings: `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE`, `SYLLABUS_TEST_BASE_URL`, `SYLLABUS_TEST_OUTPUT`. `SYLLABUS_DOCUMENT_FILE` supplies a saved official response for real-layout checks. The font check can accept a pre-rendered `FONT_TEST_DOCUMENT_FILE` when the browser runner cannot resolve Linux package symlinks.
 
-## 滚动手势归属
-
-快速滚动不再表示“浏览整个面板”。滚轮的一串连续事件或一次触摸滑动归属于开始时的容器；
-正文有剩余空间时优先滚动正文，到边界后不将同一串事件的余量叠加给外层。
-滚轮到边界后，稍停再滚或继续施加边界滚动（至少两次、60 ms、累计 80 px）可转交外层；
-从边界开始下一次触摸可滚动整个面板。没有溢出的短容器不拦截页面滚动。
-课程详情的教学趋势、RMP 评论与大纲共用一个控制器，避免多个监听器同时移动内外容器。
-触摸转交后在同一次手势内反向滑动，仍可重新阅读内层内容。
-原生触摸惯性保留在正文中；跨 iframe 交接使用屏幕坐标，避免外层位移抵消后续触摸距离。
-全屏阅读不向页面转交。选择列表保留原生滚动。
+The read-only structure audit visits all retained versions in batches of 100. Its 2026-11-13 run covered 9,578 versions: 8,285 structured and 1,293 source fallbacks, including independent study, internships and flexible schedules. It never fetches, remaps or deletes data.

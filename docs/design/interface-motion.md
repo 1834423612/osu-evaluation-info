@@ -1,5 +1,7 @@
 # Interface motion
 
+English · [简体中文](../zh-CN/design/interface-motion.md)
+
 Motion uses the shared `--motion-fast`, `--motion-ui`, `--motion-panel`, and easing
 variables in `src/app/globals.css`. Fine-pointer controls use brief visual
 feedback; touch controls use shorter durations and avoid persistent hover

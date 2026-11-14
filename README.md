@@ -1,8 +1,10 @@
-# WahO! / 蛙O！
+# WahO!
 
-**选课不迷路，毕业有蛙助。** / Hop into better classes. Leap toward your degree.
+Hop into better classes. Leap toward your degree.
 
-A responsive, bilingual course explorer built with Next.js App Router, React, TypeScript, Tailwind CSS, and shadcn/ui primitives. The previous application and API were replaced. Existing SEI/SSLE collection and import scripts, raw data, database export, and database contents are retained.
+[Documentation](docs/README.md) · [Testing](docs/testing.md) · [简体中文](README.zh-CN.md)
+
+A responsive, bilingual course explorer built with Next.js App Router, React, TypeScript, Tailwind CSS, and shadcn/ui primitives.
 
 ## Run
 
@@ -15,7 +17,7 @@ pnpm dev
 
 On a new installation, create `.env.local` from `.env.example` and set `DATABASE_URL` for your imported `osu_eval` database before starting.
 
-Open http://localhost:3000. The local environment already has a working database connection; never commit its credentials. Live official course search still works without the database, with explicit unavailable ratings and official search limits.
+Open http://localhost:3000. Keep database credentials outside version control. Live official course search still works without the database, with explicit unavailable ratings and official search limits.
 
 `pnpm dev` also detects the machine's Tailscale IPv4 address, allows that development origin, and prints a Tailscale link (like `http://100.101.11.11:3000`). Other devices on the tailnet can open it, subject to your existing Tailscale access rules. Localhost remains available. The dev server listens on `0.0.0.0`, so ordinary LAN interfaces are also reachable where the firewall permits.
 
@@ -32,7 +34,7 @@ pnpm build
 pnpm start
 ```
 
-CSS is checked by `pnpm lint:css` and included in `pnpm lint`. Keep each selector in a single rule per scope, with one declaration per property. Put base styles before conditional overrides; media queries, interaction states, and keyframes remain separate scopes. CSS Modules isolate component class names, so the same local name in different modules is safe. Reuse shared UI components for repeated visual elements such as data-source badges, and avoid broad descendant rules that override their typography or colors.
+CSS is checked by `pnpm lint:css`; paired documentation, links and the test inventory by `pnpm lint:docs`. Both run as part of `pnpm lint`. Keep each selector in a single rule per scope, with one declaration per property. Put base styles before conditional overrides; media queries, interaction states, and keyframes remain separate scopes. CSS Modules isolate component class names, so the same local name in different modules is safe. Reuse shared UI components for repeated visual elements such as data-source badges, and avoid broad descendant rules that override their typography or colors.
 
 ## Refresh the complete catalog
 
@@ -45,9 +47,13 @@ pnpm catalog:sync
 
 The synchronizer discovers current searchable terms and all campuses, then imports the complete official catalog into a separate `osu_catalog` schema. It pages by subject, reconciles counts, deduplicates class numbers, retries failures, and resumes an interrupted run. A completed run is required for the unrestricted catalog mirror. `--new-run` creates a new refresh instead of resuming an unfinished run. The GitHub workflow runs only on its four-hour schedule (America/New_York), with no push, PR, or manual trigger. Run `pnpm catalog:migrate` explicitly before enabling it on a database; the scheduled job never performs schema migrations.
 
-Text queries search the complete published OSU catalog with a server-side, typo-tolerant index. Results show their sync time and match evidence; opening a course refreshes official details directly in the browser. Broad browsing still uses the live official service with a verified snapshot fallback. Enrollment status and counts come only from separate fresh official reads. Historical SEI and SSLE evaluations come from `osu_eval`, retain source metadata, and are never combined across instruments. Existing evaluation import commands remain available as `db:validate` / `db:import`.
+Complete codes first try one official result page; titles, descriptions and typo-tolerant queries use the published catalog index. Results show their sync time and match evidence; opening a course refreshes official details directly in the browser. Broad browsing still uses the live official service with a verified snapshot fallback. Enrollment status and counts come only from separate fresh official reads. Historical SEI and SSLE evaluations come from `osu_eval`, retain source metadata, and are never combined across instruments. Existing evaluation import commands remain available as `db:validate` / `db:import`.
 
 [The search engine](docs/catalog/search.md) derives subject abbreviations and spelling alternatives from the whole catalog, combines field-weighted BM25 retrieval with explicit match evidence, and supports wrong/reversed numbers, descriptions and split/joined words. Its read-only evaluator sweeps complete published terms instead of testing only manually chosen examples. Search suggestions never alter rating identities.
+
+## Navigation and controls
+
+The Courses menu contains course search (the default homepage) and the RMP faculty library. Guides groups the OSU field guide and data methods. Current pages and parent groups remain selected, including teacher detail routes. Menus and shared choice controls support keyboard navigation and narrow screens.
 
 ## Course syllabi
 
@@ -55,7 +61,7 @@ Course cards and details include term- and section-matched Simple Syllabus docum
 
 ## Project layout
 
-- `src/app`: pages `/`, `/saved`, `/methodology`, and API route handlers.
+- `src/app`: pages `/`, `/rmp`, `/rmp/[id]`, `/saved`, `/reference`, `/methodology`, and API route handlers.
 - `src/components/catalog`: course search, cards, section/week views, and filters.
 - `src/components/layout` and `src/components/brand`: shared navigation, footer, notifications, and mascot.
 - `src/components/evaluations`, `people`, `rmp`, `saved`, and `translation`: feature components with colocated CSS modules.

@@ -1,5 +1,7 @@
 # OSU people directory lookup
 
+English · [简体中文](../zh-CN/people/directory.md)
+
 Instructor lists derive compact roles from all saved official appointment titles
 beside the avatar / name. Professor, Associate Professor, Assistant Professor,
 clinical / practice / visiting appointments, Lecturer, Senior Lecturer, emeritus

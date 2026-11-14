@@ -1,5 +1,7 @@
 # OSU SEI / SSLE database notes
 
+English · [简体中文](../zh-CN/evaluations/model.md)
+
 ## Cross-source identity and refresh architecture
 
 The PostgreSQL database is organized by source ownership rather than by one

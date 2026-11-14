@@ -1,5 +1,7 @@
 # OSU SEI/SSLE full-dataset profiling report
 
+English · [简体中文](../../zh-CN/evaluations/data-quality/profile-report.md)
+
 Source file: `osu_sei_ssle_all.jsonl`  
 SHA-256: `e369886d944210f7e0d1f9938badc03561586566a61851530943a3cf9d180219`  
 File size: 31.86 MB  

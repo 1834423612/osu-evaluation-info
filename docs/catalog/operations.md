@@ -1,5 +1,7 @@
 # Catalog operations
 
+English · [简体中文](../zh-CN/catalog/operations.md)
+
 Run commands from the repository root. Database credentials come from `DATABASE_URL` or `.env.local`.
 
 ## Explicit schema migrations
@@ -86,7 +88,6 @@ keeps cached evaluation/directory access and explicit database-only backup reads
 No proxy retry is used when a direct request fails. See
 [the API contract](api.md#discovery-and-browser-transport).
 
-## 同步生命周期
+## Sync lifecycle
 
-学期归档、当前目录删改和收藏恢复规则见[生命周期说明](lifecycle.md)。
-升级后执行 `pnpm catalog:migrate` 安装第 4 版学期归档视图及官方学期观察字段。
+See [retention and recovery](lifecycle.md) for term archives, current-catalog changes and saved-course recovery. Run `pnpm catalog:migrate` after upgrading to install version 4 term heads and official discovery observations.

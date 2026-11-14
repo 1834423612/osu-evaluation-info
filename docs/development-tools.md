@@ -1,5 +1,7 @@
 # Development tools and local data
 
+English · [简体中文](zh-CN/development-tools.md)
+
 ## Opening the tools
 
 Development builds show a small **DEV** launcher below the header on the left.
@@ -112,12 +114,9 @@ the translation browser tests (`PLAYWRIGHT_MODULE` and, if needed,
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE`). API data is mocked; production debug
 authentication is exercised against the real endpoint.
 
-## UI 文案
+## Product copy
 
-常规页面只保留简短的状态、事实和操作。不要重复数据来源标签，
-不要在每次搜索后解释内部检索规则，也不要加入赞美功能或装饰性的长段落。
-有实际歧义、失败或操作风险时给出必要提示；较长的来源和计算解释放在
-数据与方法页面或对应 info 面板。两种语言都遵守同样的简洁要求。
+Use short labels for state, facts and actions in both languages. Keep source and calculation explanations in the methods page or contextual information drawer. A warning should describe a concrete ambiguity or failure.
 
 ## Production compiler
 
@@ -127,9 +126,10 @@ while webpack completed production compilation and type generation successfully.
 The production browser checks use that generated build. Development continues
 to use the existing dev command.
 
-## 大纲结构只读审计
+## Read-only syllabus structure audit
 
-`node --env-file=.env.local scripts/syllabus/audit-schedules.mjs [输出 JSON 路径]`
-按 100 条一批遍历全部保留文档版本，统计表格、周次、日期、原文回退及长主题。
-在只读事务中执行；默认输出 `.cache/syllabus-schedule-audit.json`。
-该报告用于检查新出现的官方大纲结构，不触发重抓、关联或删除。
+```sh
+node --env-file=.env.local scripts/syllabus/audit-schedules.mjs .cache/syllabus-schedule-audit.json
+```
+
+The tool reads retained document versions in batches of 100 inside a read-only transaction. It reports tables, week/date schedules, source fallback and long topics without fetching, remapping or deleting documents.

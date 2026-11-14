@@ -1,6 +1,8 @@
 # Official class catalog
 
-Text queries default to `GET /api/catalog/search`, a typo-tolerant index over the
+English · [简体中文](../zh-CN/catalog/api.md)
+
+Complete codes first try one official search page. Other text queries use `GET /api/catalog/search`, a typo-tolerant index over the
 complete published PostgreSQL catalog. It returns `sourceMode: "index"`, its sync
 time, matched totals, per-course evidence and version-pinned `s:` cursors. See
 [the search engine](search.md) for retrieval, filters, lifecycle and evaluation.
@@ -115,7 +117,7 @@ node scripts/catalog/sync_osu_catalog.mjs --new-run
 
 Search enrollment fields are placeholders. Normalization clears them even for
 successful official searches. Snapshots and saved courses exclude volatile counts
-and provenance. Official numeric `courseId` is displayed as Course code / 课程代码,
+and provenance. Official numeric `courseId` is displayed as Course code,
 separate from the application composite identity and enrollment class number.
 Credits preserve the min/max unit range.
 

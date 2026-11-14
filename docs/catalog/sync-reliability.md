@@ -1,5 +1,7 @@
 # Catalog sync reliability audit — November 7, 2026
 
+English · [简体中文](../zh-CN/catalog/sync-reliability.md)
+
 ## Evidence
 
 The repository had 15 Actions runs at inspection time. All 9 jobs with logs were downloaded, including the 2 successful automated PR review jobs. The other 6 runs created no jobs and have no job logs or check-run output available through the API. Full retrieved logs and run/job metadata are kept outside Git in `/tmp/osu-actions-audit/`.

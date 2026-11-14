@@ -1,5 +1,7 @@
 # Rate My Professors OSU Collection
 
+English · [简体中文](../zh-CN/rmp/import.md)
+
 Rate My Professors records live in the separate `osu_rmp` PostgreSQL schema. They are third-party student reviews and must not be merged into the official OSU SEI/SSLE tables or score policy.
 
 The collector covers the six OSU campus school records found through RMP search: Columbus (724), Mansfield (726), Lima (725), Marion (723), Newark (2610), and Wooster/ATI (5207). School IDs and search totals can change; the collector stores returned names, IDs, and counts with the run.

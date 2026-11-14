@@ -1,5 +1,7 @@
 # Catalog sync dry-run benchmark — November 5, 2026
 
+English · [简体中文](../zh-CN/catalog/sync-benchmark-2026-11-05.md)
+
 This report records the behavior before the snapshot and enrollment optimizations. For the implemented publication, locking, retention, and schedule behavior, see the [operations guide](operations.md).
 
 The isolated benchmark preserved application availability at the tested write rates, but it showed latency spikes. The current refresh logic also intentionally makes the previous snapshot ineligible while a newer refresh is running or failed. Startup DDL can wait for an exclusive lock. These findings prevent a claim that an hourly refresh has no application impact.

@@ -1,5 +1,7 @@
 # RMP and OSU Instructor Mapping
 
+English · [简体中文](../zh-CN/rmp/mapping.md)
+
 `osu_rmp.professor` and `osu_eval.instructor` keep their source identifiers and
 schemas. The additive mapping layer stores OSU identities by `name_dot_number`,
 official course facts by source and class, and RMP-to-OSU decisions in

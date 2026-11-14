@@ -1,5 +1,7 @@
 # Umami analytics
 
+English · [简体中文](../zh-CN/analytics/umami.md)
+
 The root layout loads Umami through `next/script` when all required public
 settings are configured. Set these values before building or restarting the
 application:

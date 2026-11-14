@@ -1,5 +1,7 @@
 # OSU course and faculty services
 
+English · [简体中文](../zh-CN/catalog/content-and-photos.md)
+
 Text retrieval uses the [complete published catalog index](search.md). Live
 details and seats still use public OSU endpoints discovered through the existing
 application routes; browsers fetch those directly. See [the transport contract](api.md).

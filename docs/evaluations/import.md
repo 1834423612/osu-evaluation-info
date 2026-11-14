@@ -1,5 +1,7 @@
 # OSU SEI/SSLE PostgreSQL import package
 
+English · [简体中文](../zh-CN/evaluations/import.md)
+
 This package was designed against the complete 68,729-row export at
 `data/raw/blue-sei-ssle-su22-su26/osu_sei_ssle_all.jsonl`.
 

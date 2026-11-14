@@ -1,5 +1,7 @@
 # RMP course reconciliation
 
+English · [简体中文](../zh-CN/rmp/course-matching.md)
+
 The matcher reads every active RMP profile, actual review course label and cached
 profile course list. Official references come from complete published catalog
 generations and active evaluation history. No reviews, source labels or RMP IDs

@@ -1,5 +1,7 @@
 # On-demand translation
 
+English · [简体中文](zh-CN/translation.md)
+
 Translation runs inside the existing Next.js server when a user requests it.
 There is no additional process, polling job, or background health checker.
 `src/lib/translation` separates the shared contract, browser adapter, server
@@ -39,8 +41,8 @@ card stays mounted and follows the same control; when that control leaves the
 viewport, the card docks at the screen edge with a button to return to it.
 Scrolling never changes or completes a step. Guided settings remain open while
 changing preferences. Outside taps, Escape, closing details, and rapid toggles
-preserve progress and return to the settings step. Only an explicit “知道了” or
-“跳过” completes the guide; exit controls ignore carried and repeated clicks
+preserve progress and return to the settings step. Only an explicit Done or
+Skip completes the guide; exit controls ignore carried and repeated clicks
 during their first 350 ms.
 
 Progress is stored under `course-atlas:translation-guide:v1`: `settings` resumes

@@ -1,5 +1,7 @@
 # Evaluation data and recommendation methodology
 
+English · [简体中文](../zh-CN/evaluations/methodology.md)
+
 The application queries the configured PostgreSQL `osu_eval` schema. The supplied SQL export contains the same normalized schema and 68,729 instructor-section evaluation records, 7,108 instructor identities and 8,738 course keys. Live verification on 2026-11-03 confirmed 68,729 records and term coverage SU 2022–SU 2026. These are historical evaluation results, not live evaluations of future scheduled classes.
 
 The source is OSU's public Explorance Blue SEI/SSLE report. `source.importedAt` is the latest completed database ingestion time, not the official publication time. No demo records, inferred scores, third-party ratings or fabricated responses are substituted if the database fails. `available`, `no-data` and `unavailable` are separate states.

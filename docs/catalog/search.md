@@ -1,5 +1,7 @@
 # Course search engine
 
+English · [简体中文](../zh-CN/catalog/search.md)
+
 Text queries use a full-catalog index built from validated, published OSU snapshots.
 They do not depend on the official API first returning an exact or AND match.
 The original input remains in the URL. Every result retains its actual course,

@@ -1,5 +1,7 @@
 # Source-assisted identity research
 
+English · [简体中文](../zh-CN/rmp/identity-research.md)
+
 Research starts with active, unlinked RMP profiles across every campus. It queries
 official OSU Search, uses the legacy official people endpoint as a second source,
 and can verify public department/profile pages discovered during research. It
