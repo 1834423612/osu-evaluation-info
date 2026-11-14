@@ -319,3 +319,11 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | [tests/user-data/page-links.test.mjs](../../tests/user-data/page-links.test.mjs) | Unit | 公开 URL 白名单、凭据剔除及课程和详情身份 |
 | [tests/user-data/page-links.integration.test.mjs](../../tests/user-data/page-links.integration.test.mjs) | Integration | 真实 SQL 的规范链接复用、公开快照和独立预览/打开计数 |
 | [tests/user-data/page-links.browser.mjs](../../tests/user-data/page-links.browser.mjs) | Browser | 真实链接创建与清理、爬虫预览、缺失结果时的课程抽屉、文档锚点和取消分享 |
+
+站内统计的数据库测试使用 `USER_DATA_INTEGRATION=1`；浏览器测试拦截统计与其他数据请求，不写真实统计记录。浏览器目标仍使用 `USER_DATA_TEST_BASE_URL`，设备和会话标识仅在独立测试浏览器环境生成。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/telemetry.test.mjs](../../tests/user-data/telemetry.test.mjs) | Unit | 事件字段筛减、查询归一化、教师稳定标识和可信网络请求头 |
+| [tests/user-data/telemetry.integration.test.mjs](../../tests/user-data/telemetry.integration.test.mjs) | Integration | 批量 SQL 幂等确认、每日统计维度、IP 来源；临时 schema |
+| [tests/user-data/telemetry.browser.mjs](../../tests/user-data/telemetry.browser.mjs) | Browser | 模拟收集接口；持久重试、严格模式、跨标签收藏、实际打开课程和关闭统计 |

@@ -321,3 +321,11 @@ Page-link browser tests require `ALLOW_SERVER_WRITES=1`, create synthetic public
 | [tests/user-data/page-links.test.mjs](../tests/user-data/page-links.test.mjs) | Unit | Public URL allowlist, secret removal and exact course/detail identities |
 | [tests/user-data/page-links.integration.test.mjs](../tests/user-data/page-links.integration.test.mjs) | Integration | Real SQL canonical-link reuse, public snapshots and separate preview/open counters |
 | [tests/user-data/page-links.browser.mjs](../tests/user-data/page-links.browser.mjs) | Browser | Real link creation and removal, bot previews, missing-result course drawers, reference anchors and cancellation |
+
+First-party telemetry database checks use `USER_DATA_INTEGRATION=1`. The browser test mocks collectors and other data APIs, writes no live telemetry, and uses `USER_DATA_TEST_BASE_URL` with an isolated browser profile.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/telemetry.test.mjs](../tests/user-data/telemetry.test.mjs) | Unit | Typed event redaction, query normalization, stable instructor keys and trusted network headers |
+| [tests/user-data/telemetry.integration.test.mjs](../tests/user-data/telemetry.integration.test.mjs) | Integration | Atomic batched SQL replay receipts, daily dimensions and IP provenance; disposable schema |
+| [tests/user-data/telemetry.browser.mjs](../tests/user-data/telemetry.browser.mjs) | Browser | Mocked collector; durable retries, Strict Mode, cross-tab favorites, actual course opens and opt-out |
