@@ -801,7 +801,9 @@ export default function SectionsPanel({
       ) : (
         <EmptyResult>
           <strong>
-            {text(locale, "No sections have been posted", "暂无已公布班次")}
+            {course.sectionsPartial
+              ? text(locale, "Section data is not loaded", "班次资料尚未加载")
+              : text(locale, "No sections have been posted", "暂无已公布班次")}
           </strong>
         </EmptyResult>
       )}
