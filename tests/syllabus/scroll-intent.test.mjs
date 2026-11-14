@@ -13,14 +13,21 @@ test("fast wheel bursts stay in the hovered document, including the event that r
 test("a fresh touch swipe at an exhausted boundary can move the panel on small screens", () => {
   const choose = createScrollOwnership(),
     document = {};
-  assert.equal(choose(60, 100, document, true), "inner");
-  assert.equal(choose(200, 130, document, false), "inner");
+  assert.equal(choose(60, 100, document, true, true), "inner");
+  assert.equal(choose(200, 130, document, false, true), "inner");
   choose.begin();
-  assert.equal(choose(30, 160, document, false), "outer");
+  assert.equal(choose(30, 160, document, false, true), "outer");
 });
 test("pointer changes reset ownership without requiring velocity samples", () => {
   const choose = createScrollOwnership();
   assert.equal(choose(200, 100, "one", false), "outer");
   assert.equal(choose(200, 120, "two", true), "inner");
   assert.equal(choose(NaN, 121, "two", true), "inner");
+});
+
+test("sustained wheel pressure at a boundary hands over without trapping the rest of the burst", () => {
+  const choose = createScrollOwnership();
+  assert.equal(choose(200, 0, "body", true), "inner");
+  assert.equal(choose(120, 20, "body", false), "inner");
+  assert.equal(choose(120, 90, "body", false), "outer");
 });

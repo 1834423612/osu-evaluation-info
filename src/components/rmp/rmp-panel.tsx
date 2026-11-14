@@ -616,6 +616,7 @@ function InstructorReviews({
               className={
                 showAllReviews ? styles.reviewViewport : styles.reviewPreview
               }
+              data-rmp-review-viewport={showAllReviews ? "true" : undefined}
               ref={reviewViewportRef}
               tabIndex={showAllReviews ? 0 : undefined}
               aria-label={text(

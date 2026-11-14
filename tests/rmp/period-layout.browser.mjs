@@ -73,6 +73,16 @@ const instructors = [
   profile("1003", names.historical, usernames.historical, "unconfirmed"),
   profile("1004", names.past, usernames.past, "verified"),
 ];
+instructors[0] = {
+  ...instructors[0],
+  reviewCount: 18,
+  recentReviewCount: 18,
+  recentQualityCount: 18,
+  reviews: Array.from({ length: 3 }, (_, i) => ({
+    ...review("1001"),
+    id: `1001${i}`,
+  })),
+};
 const course = {
   id: "1272-MATH-1131-MNS",
   courseId: "001234",
@@ -118,6 +128,56 @@ const summary = {
   recentSince: "2024-11-13",
   refreshedAt: "2026-11-13T12:00:00Z",
 };
+const metric = {
+  instrument: "SEI",
+  score: 4.3,
+  unadjustedScore: 4.2,
+  responseCount: 180,
+  invitedCount: 220,
+  responseRate: 81.8,
+  sectionCount: 8,
+  termCount: 4,
+  firstTerm: "Spring 2023",
+  lastTerm: "Spring 2025",
+  lastTermSortKey: 202501,
+  weightedResponseCount: 90,
+  confidence: "high",
+  recommendation: "positive",
+  trend: Array.from({ length: 4 }, (_, i) => ({
+    term: `Spring ${2022 + i}`,
+    sortKey: (2022 + i) * 100 + 1,
+    score: 3.7 + i * 0.2,
+    responses: 45,
+    sections: 2,
+    responseRate: 80,
+  })),
+};
+const evaluations = {
+  status: "available",
+  primary: metric,
+  metrics: [metric],
+  instructors: [
+    {
+      name: names.current,
+      email: `${usernames.current}@osu.edu`,
+      nameDotNumber: usernames.current,
+      currentlyListed: true,
+      match: "exact-email",
+      primary: metric,
+      metrics: [metric],
+    },
+  ],
+  source: {
+    provider: "OSU",
+    url: "https://osu.edu/",
+    mode: "postgres",
+    importedAt: "2026-11-01T00:00:00Z",
+    latestTerm: "Spring 2025",
+    coverage: "2022–2025",
+  },
+  methodologyVersion: "response-decay-v1",
+};
+course.evaluation = evaluations;
 const browser = await chromium.launch({
   headless: true,
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
@@ -158,12 +218,16 @@ async function geometry(card) {
   assert(result.tagIndent < 1);
 }
 try {
-  for (const locale of ["zh", "en"]) {
-    for (const width of [320, 390, 480, 768, 1440]) {
+  for (const locale of process.env.RMP_TEST_LOCALE
+    ? [process.env.RMP_TEST_LOCALE]
+    : ["zh", "en"]) {
+    for (const width of process.env.RMP_TEST_WIDTH
+      ? [Number(process.env.RMP_TEST_WIDTH)]
+      : [320, 390, 480, 768, 1440]) {
       const context = await browser.newContext({
         viewport: { width, height: 1000 },
-        isMobile: width < 700,
-        hasTouch: width < 700,
+        isMobile: width <= 800,
+        hasTouch: width <= 800,
         reducedMotion: "reduce",
       });
       await context.addInitScript(
@@ -224,11 +288,29 @@ try {
             },
           });
         }
-        if (
-          url.pathname === "/api/rmp/summaries" ||
-          url.pathname === "/api/evaluations"
-        )
+        if (url.pathname === "/api/evaluations")
+          return route.fulfill({
+            json:
+              route.request().method() === "POST"
+                ? { summaries: { [course.id]: evaluations } }
+                : evaluations,
+          });
+        if (url.pathname === "/api/rmp/summaries")
           return route.fulfill({ json: { summaries: {} } });
+        if (url.pathname === "/api/rmp/course/reviews") {
+          const offset = Number(url.searchParams.get("offset") ?? 0);
+          return route.fulfill({
+            json: {
+              reviews: Array.from({ length: 6 }, (_, i) => ({
+                ...review("1001"),
+                id: `1001${offset + i}`,
+                comment: "Clear explanations and useful feedback. ".repeat(5),
+              })),
+              total: 18,
+              nextOffset: offset < 12 ? offset + 6 : null,
+            },
+          });
+        }
         if (url.pathname === "/api/syllabus")
           return route.fulfill({
             json: {
@@ -259,6 +341,55 @@ try {
           exact: true,
         })
         .click();
+      const outer = page.locator(
+        width <= 800
+          ? ".course-detail-drawer > .course-details"
+          : ".course-detail-panel",
+      );
+      const chart = page.locator("[data-trend-chart]").first();
+      await chart.waitFor();
+      await chart.hover();
+      const chartBefore = await outer.evaluate((node) => node.scrollTop);
+      await page.mouse.wheel(0, 140);
+      await page.waitForFunction(
+        ({ selector, before }) =>
+          document.querySelector(selector).scrollTop > before + 20,
+        {
+          selector:
+            width <= 800
+              ? ".course-detail-drawer > .course-details"
+              : ".course-detail-panel",
+          before: chartBefore,
+        },
+      );
+      if (width === 390) {
+        await outer.evaluate((node) => (node.scrollTop = 0));
+        await chart.scrollIntoViewIfNeeded();
+        const box = await chart.boundingBox(),
+          x = box.x + box.width / 2,
+          y = Math.max(box.y + 25, Math.min(780, box.y + box.height / 2));
+        const before = await outer.evaluate((node) => node.scrollTop),
+          touch = await context.newCDPSession(page);
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x, y }],
+        });
+        for (let d = 15; d <= 90; d += 15)
+          await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [{ x, y: y - d }],
+          });
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchEnd",
+          touchPoints: [],
+        });
+        await page.waitForTimeout(350);
+        assert(
+          (await outer.evaluate((node) => node.scrollTop)) > before + 20,
+          "Trend charts must allow vertical page scrolling",
+        );
+        await touch.detach();
+      }
       await page
         .getByRole("tab", {
           name: locale === "zh" ? "RMP · 学生评论" : "RMP · student reviews",
@@ -353,6 +484,117 @@ try {
       });
       await current.click();
       assert.equal(await current.getAttribute("aria-selected"), "true");
+      const reviewCard = panel.locator('[data-professor-id="1001"]');
+      await reviewCard
+        .getByRole("button", {
+          name:
+            locale === "zh"
+              ? `查看 ${names.current} 的评论`
+              : `View ${names.current}'s reviews`,
+          exact: true,
+        })
+        .click();
+      await reviewCard
+        .getByRole("button", {
+          name: locale === "zh" ? "查看全部 18 条评论" : "View all 18 reviews",
+          exact: true,
+        })
+        .click();
+      const viewport = reviewCard.locator("[data-rmp-review-viewport]");
+      await viewport.waitFor();
+      await viewport.hover();
+      await viewport.evaluate((node) => (node.scrollTop = 50));
+      const beforeReading = await outer.evaluate((node) => node.scrollTop);
+      await page.mouse.wheel(0, 240);
+      await page.waitForTimeout(100);
+      assert((await viewport.evaluate((node) => node.scrollTop)) > 150);
+      assert.equal(
+        await outer.evaluate((node) => node.scrollTop),
+        beforeReading,
+      );
+      await viewport.evaluate((node) => (node.scrollTop = node.scrollHeight));
+      await page.waitForTimeout(210);
+      await outer.evaluate(
+        (node) => (node.scrollTop = Math.max(0, node.scrollTop - 180)),
+      );
+      await viewport.hover();
+      const beforeBoundary = await outer.evaluate((node) => node.scrollTop);
+      assert(
+        (await outer.evaluate(
+          (node) => node.scrollHeight - node.clientHeight - node.scrollTop,
+        )) > 100,
+        "The outer panel needs room to test boundary handoff",
+      );
+      await page.mouse.wheel(0, 140);
+      await page.waitForFunction(
+        ({ selector, before }) =>
+          document.querySelector(selector).scrollTop > before + 15,
+        {
+          selector:
+            width <= 800
+              ? ".course-detail-drawer > .course-details"
+              : ".course-detail-panel",
+          before: beforeBoundary,
+        },
+      );
+      if (width === 390) {
+        await viewport.scrollIntoViewIfNeeded();
+        await viewport.evaluate((node) => (node.scrollTop = 100));
+        const bounds = await viewport.boundingBox(),
+          x = bounds.x + bounds.width / 2,
+          y = Math.max(
+            bounds.y + 40,
+            Math.min(780, bounds.y + bounds.height / 2),
+          );
+        const before = await outer.evaluate((node) => node.scrollTop),
+          touch = await context.newCDPSession(page);
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x, y }],
+        });
+        for (let d = 15; d <= 120; d += 15)
+          await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [{ x, y: y - d }],
+          });
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchEnd",
+          touchPoints: [],
+        });
+        await page.waitForTimeout(650);
+        assert((await viewport.evaluate((node) => node.scrollTop)) > 140);
+        assert.equal(await outer.evaluate((node) => node.scrollTop), before);
+        await viewport.evaluate((node) => (node.scrollTop = 0));
+        const position = await viewport.boundingBox(),
+          px = position.x + position.width / 2,
+          py = Math.max(
+            position.y + 40,
+            Math.min(700, position.y + position.height / 2),
+          );
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x: px, y: py }],
+        });
+        for (let d = 15; d <= 60; d += 15)
+          await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [{ x: px, y: py + d }],
+          });
+        for (let d = 45; d >= -45; d -= 15)
+          await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [{ x: px, y: py + d }],
+          });
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchEnd",
+          touchPoints: [],
+        });
+        assert(
+          (await viewport.evaluate((node) => node.scrollTop)) > 20,
+          "Reversing a handed-off touch must keep the inner list usable",
+        );
+        await touch.detach();
+      }
       assert(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth + 1,

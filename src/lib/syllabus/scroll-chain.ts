@@ -41,8 +41,10 @@ export function attachSyllabusScrollChain(frame: HTMLIFrameElement) {
     } else if (scrollPreviewPanel(frame, delta)) event.preventDefault();
   };
   let position: { x: number; y: number } | null = null;
+  let managedTouch = false;
   const start = (event: TouchEvent) => {
     ownership.begin();
+    managedTouch = false;
     position =
       event.touches.length === 1
         ? { x: event.touches[0].screenX, y: event.touches[0].screenY }
@@ -58,9 +60,23 @@ export function attachSyllabusScrollChain(frame: HTMLIFrameElement) {
       dx = position.x - touch.screenX;
     position = { x: touch.screenX, y: touch.screenY };
     if (Math.abs(dx) > Math.abs(dy)) return;
-    const owner = ownership(dy, performance.now(), root, canScrollBy(root, dy));
+    const owner = ownership(
+      dy,
+      performance.now(),
+      root,
+      canScrollBy(root, dy),
+      true,
+    );
     if (owner === "outer" && event.cancelable) {
       scrollPreviewPanel(frame, dy);
+      managedTouch = true;
+      event.preventDefault();
+    } else if (owner === "inner" && managedTouch && event.cancelable) {
+      root.scrollTop = splitScrollDelta(
+        root.scrollTop,
+        root.scrollHeight - root.clientHeight,
+        dy,
+      ).next;
       event.preventDefault();
     }
   };

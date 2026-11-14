@@ -15,6 +15,7 @@ import {
   FileText,
   X,
 } from "lucide-react";
+import { useNestedPanelScroll } from "@/hooks/use-syllabus-scroll";
 import { useCourseDetails } from "@/hooks/use-course-details";
 import {
   useCourseVisible,
@@ -364,6 +365,7 @@ export function CourseCard({
   const { ref: cardRef, visible } = useCourseVisible();
   const isMobile = useMobileViewport();
   const detailId = useId();
+  const scrollPanelRef = useNestedPanelScroll();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const isSelected = searchParams.get("course") === course.id;
   const requestedTab =
@@ -497,11 +499,13 @@ export function CourseCard({
   const detailContent = (
     <div
       id={detailId}
+      ref={scrollPanelRef}
+      data-scroll-panel
       className="course-details"
       onTouchStart={(event) => {
         if (
           (event.target as HTMLElement).closest(
-            "button, input, select, a, textarea, table, [role='slider'], [data-chart], [data-syllabus-reader]",
+            "button, input, select, a, textarea, table, [role='slider'], [data-chart], [data-trend-chart], [data-rmp-review-content], [data-syllabus-reader]",
           )
         ) {
           touchStart.current = null;

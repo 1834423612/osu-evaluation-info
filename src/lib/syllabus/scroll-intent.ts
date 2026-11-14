@@ -5,17 +5,34 @@ export function createScrollOwnership() {
   let last = -Infinity,
     direction = 0,
     target: unknown,
-    owner: "inner" | "outer" = "inner";
+    owner: "inner" | "outer" = "inner",
+    edgeAt = 0,
+    edgeDistance = 0,
+    edgeEvents = 0;
   const choose = (
     delta: number,
     now: number,
     nextTarget: unknown,
     canRead: boolean,
+    touch = false,
   ): "inner" | "outer" => {
     const sign = Math.sign(delta);
     if (!Number.isFinite(delta) || !sign) return owner;
-    if (nextTarget !== target || sign !== direction || now - last > 180)
+    if (nextTarget !== target || sign !== direction || now - last > 180) {
       owner = canRead ? "inner" : "outer";
+      edgeAt = now;
+      edgeDistance = 0;
+      edgeEvents = 0;
+    } else if (owner === "inner" && !canRead && !touch) {
+      if (!edgeEvents) edgeAt = now;
+      edgeDistance += Math.abs(delta);
+      edgeEvents++;
+      if (edgeEvents >= 2 && now - edgeAt >= 60 && edgeDistance >= 80)
+        owner = "outer";
+    } else if (canRead) {
+      edgeEvents = 0;
+      edgeDistance = 0;
+    }
     target = nextTarget;
     direction = sign;
     last = now;
@@ -24,8 +41,11 @@ export function createScrollOwnership() {
   return Object.assign(choose, {
     begin: () => {
       last = -Infinity;
+      owner = "inner";
       target = undefined;
       direction = 0;
+      edgeEvents = 0;
+      edgeDistance = 0;
     },
   });
 }
@@ -42,7 +62,9 @@ export function canScrollBy(node: Element, delta: number) {
 }
 function panelFor(anchor: Element) {
   for (
-    let node = anchor.closest<HTMLElement>("[data-syllabus-reader]");
+    let node = anchor.closest<HTMLElement>(
+      "[data-scroll-panel],[data-syllabus-reader]",
+    );
     node;
     node = node.parentElement
   ) {
@@ -82,17 +104,16 @@ export function attachPreviewScrolling(reader: HTMLElement) {
       node.style.overscrollBehaviorY = "contain";
     }
   };
+  const ignored = (target: EventTarget | null) =>
+    !(target instanceof Element) ||
+    !!target.closest(
+      "input,textarea,select,[contenteditable=true],[data-debug-tools],[data-translation-popover],[data-native-syllabus-scroll]",
+    );
   const nested = (target: EventTarget | null) => {
-    if (
-      !(target instanceof Element) ||
-      target.closest(
-        "input,textarea,select,[contenteditable=true],[data-debug-tools],[data-translation-popover],[data-native-syllabus-scroll]",
-      )
-    )
-      return null;
+    if (ignored(target)) return null;
     const panel = panelFor(reader);
     for (
-      let node: Element | null = target;
+      let node: Element | null = target as Element;
       node && node !== panel;
       node = node.parentElement
     ) {
@@ -111,16 +132,20 @@ export function attachPreviewScrolling(reader: HTMLElement) {
       Math.abs(event.deltaX) > Math.abs(event.deltaY)
     )
       return;
+    if (ignored(event.target)) return;
     const node = nested(event.target);
-    if (!node) return;
-    contain(node);
     const delta =
       event.deltaY *
       (event.deltaMode === 1
         ? 24
         : event.deltaMode === 2
-          ? node.clientHeight
+          ? (node?.clientHeight ?? reader.clientHeight)
           : 1);
+    if (!node) {
+      if (scrollPreviewPanel(reader, delta)) event.preventDefault();
+      return;
+    }
+    contain(node);
     if (
       ownership(delta, performance.now(), node, canScrollBy(node, delta)) ===
       "inner"
@@ -134,8 +159,10 @@ export function attachPreviewScrolling(reader: HTMLElement) {
     } else if (scrollPreviewPanel(reader, delta)) event.preventDefault();
   };
   let position: { x: number; y: number } | null = null;
+  let managedTouch = false;
   const start = (event: TouchEvent) => {
     ownership.begin();
+    managedTouch = false;
     position =
       event.touches.length === 1
         ? { x: event.touches[0].screenX, y: event.touches[0].screenY }
@@ -154,9 +181,23 @@ export function attachPreviewScrolling(reader: HTMLElement) {
     position = { x: touch.screenX, y: touch.screenY };
     const node = nested(event.target);
     if (!node || Math.abs(dx) > Math.abs(dy)) return;
-    const owner = ownership(dy, performance.now(), node, canScrollBy(node, dy));
+    const owner = ownership(
+      dy,
+      performance.now(),
+      node,
+      canScrollBy(node, dy),
+      true,
+    );
     if (owner === "outer" && event.cancelable) {
       scrollPreviewPanel(reader, dy);
+      managedTouch = true;
+      event.preventDefault();
+    } else if (owner === "inner" && managedTouch && event.cancelable) {
+      node.scrollTop = splitScrollDelta(
+        node.scrollTop,
+        node.scrollHeight - node.clientHeight,
+        dy,
+      ).next;
       event.preventDefault();
     }
   };
