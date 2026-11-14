@@ -76,6 +76,7 @@ postgres.env
 __pycache__/
 *.py[cod]
 AGENTS.md
+!/AGENTS.md
 CLAUDE.md
 
 # Imported snapshots are intentionally kept out of application bundles.
