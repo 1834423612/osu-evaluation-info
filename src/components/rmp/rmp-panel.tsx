@@ -418,7 +418,7 @@ function InstructorReviews({
         `${instructor.name} 的 RMP 评论`,
       )}
     >
-      <div className={styles.instructorHeading}>
+      <div className={styles.instructorHeading} data-rmp-heading>
         <div className={styles.identity}>
           {instructor.nameDotNumber ? (
             <InstructorDirectoryIdentity
@@ -431,76 +431,85 @@ function InstructorReviews({
           ) : (
             <strong className={styles.rawName}>{instructor.name}</strong>
           )}
-          <div className={styles.identityStatus}>
-            <RmpIdentityBadge
-              profile={{ username: instructor.nameDotNumber }}
-              locale={locale}
-            />
-            {instructor.association === "unconfirmed" &&
-            instructor.nameDotNumber ? (
-              <span>
-                {text(locale, "Teaching link unconfirmed", "任课关联待确认")}
-              </span>
-            ) : null}
-          </div>
         </div>
-        <CollapsibleTrigger
-          className={styles.instructorToggle}
-          aria-label={text(
-            locale,
-            `${expanded ? "Hide" : "View"} ${instructor.name}'s reviews`,
-            `${expanded ? "收起" : "查看"} ${instructor.name} 的评论`,
-          )}
+        <a
+          className={styles.sourceLink}
+          href={instructor.profileUrl}
+          target="_blank"
+          rel="noreferrer"
         >
-          <span className={styles.summaryScore}>
-            <strong
-              data-tone={
-                quality === null
-                  ? "none"
-                  : quality >= 4.2
-                    ? "positive"
-                    : quality <= 3.3
-                      ? "caution"
-                      : "mixed"
-              }
-            >
-              {score(quality)}
-            </strong>
-            <small>
-              {historicalQuality
-                ? text(
-                    locale,
-                    `Historical · ${instructor.reviewCount} reviews`,
-                    `历史评分 · ${instructor.reviewCount} 条`,
-                  )
-                : text(
-                    locale,
-                    `${instructor.recentReviewCount} recent · ${instructor.reviewCount} total`,
-                    `近两年 ${instructor.recentReviewCount} 条 · 总计 ${instructor.reviewCount} 条`,
-                  )}
-            </small>
-          </span>
-          <span className={styles.disclosureCue}>
-            <span className={styles.expandLabel}>
-              {text(locale, "View reviews", "查看评论")}
-            </span>
-            <span className={styles.collapseLabel}>
-              {text(locale, "Hide reviews", "收起评论")}
-            </span>
-            <ChevronDown
-              className={styles.disclosureIcon}
-              size={15}
-              aria-hidden="true"
-            />
-          </span>
-        </CollapsibleTrigger>
-        <a href={instructor.profileUrl} target="_blank" rel="noreferrer">
           RMP <ArrowUpRight size={13} aria-hidden="true" />
         </a>
       </div>
-      {instructor.nameDotNumber ? (
-        <InstructorEmail locale={locale} username={instructor.nameDotNumber} />
-      ) : null}
+      <div className={styles.identityStatus} data-rmp-identity-status>
+        <RmpIdentityBadge
+          profile={{ username: instructor.nameDotNumber }}
+          locale={locale}
+        />
+        {instructor.association === "unconfirmed" &&
+        instructor.nameDotNumber ? (
+          <span className={styles.linkWarning}>
+            {text(locale, "Teaching link unconfirmed", "任课关联待确认")}
+          </span>
+        ) : null}
+        {instructor.nameDotNumber ? (
+          <InstructorEmail
+            locale={locale}
+            username={instructor.nameDotNumber}
+          />
+        ) : null}
+      </div>
+      <CollapsibleTrigger
+        className={styles.instructorToggle}
+        data-rmp-summary-toggle
+        aria-label={text(
+          locale,
+          `${expanded ? "Hide" : "View"} ${instructor.name}'s reviews`,
+          `${expanded ? "收起" : "查看"} ${instructor.name} 的评论`,
+        )}
+      >
+        <span className={styles.summaryScore}>
+          <strong
+            data-tone={
+              quality === null
+                ? "none"
+                : quality >= 4.2
+                  ? "positive"
+                  : quality <= 3.3
+                    ? "caution"
+                    : "mixed"
+            }
+          >
+            {score(quality)}
+          </strong>
+          <small>
+            {historicalQuality
+              ? text(
+                  locale,
+                  `Historical · ${instructor.reviewCount} reviews`,
+                  `历史评分 · ${instructor.reviewCount} 条`,
+                )
+              : text(
+                  locale,
+                  `${instructor.recentReviewCount} recent · ${instructor.reviewCount} total`,
+                  `近两年 ${instructor.recentReviewCount} 条 · 总计 ${instructor.reviewCount} 条`,
+                )}
+          </small>
+        </span>
+        <span className={styles.disclosureCue}>
+          <span className={styles.expandLabel}>
+            {text(locale, "View reviews", "查看评论")}
+          </span>
+          <span className={styles.collapseLabel}>
+            {text(locale, "Hide reviews", "收起评论")}
+          </span>
+          <ChevronDown
+            className={styles.disclosureIcon}
+            size={15}
+            aria-hidden="true"
+          />
+        </span>
+      </CollapsibleTrigger>
       {siblingProfiles > 1 ? (
         <p className={styles.note}>
           {text(
@@ -803,12 +812,15 @@ function InstructorEmail({
       className={styles.emailReveal}
       type="button"
       data-analytics-action="instructor_email_reveal"
+      aria-pressed={visible}
       onClick={() => setVisible((value) => !value)}
     >
       <Mail size={13} aria-hidden="true" />
-      {visible
-        ? `${username}@osu.edu`
-        : text(locale, "Show OSU email", "显示 OSU 邮箱")}
+      <span>
+        {visible
+          ? `${username}@osu.edu`
+          : text(locale, "Show OSU email", "显示 OSU 邮箱")}
+      </span>
     </button>
   );
 }

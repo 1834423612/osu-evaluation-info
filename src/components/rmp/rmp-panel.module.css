@@ -107,9 +107,11 @@
 .instructorToggle {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
   min-width: 0;
+  padding: 10px 0 0;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -128,8 +130,8 @@
 }
 .instructorHeading {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 10px;
 }
 .identity {
@@ -137,12 +139,12 @@
 }
 .summaryScore {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 1px;
-  margin-left: auto;
-  text-align: right;
+  text-align: left;
   font-variant-numeric: tabular-nums;
 }
 .summaryScore > strong {
@@ -160,8 +162,8 @@
 }
 .summaryScore > small {
   color: var(--muted);
-  font-size: 9px;
-  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.5;
 }
 .disclosureIcon {
   flex: 0 0 auto;
@@ -175,7 +177,6 @@
   justify-content: center;
   gap: 5px;
   min-height: 30px;
-  margin-left: 8px;
   padding: 0 9px;
   border: 1px solid var(--accent-border);
   border-radius: 999px;
@@ -202,10 +203,30 @@
 .emailReveal {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin: 8px 0 0 45px;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--subtle-surface);
   color: var(--primary);
+  text-align: left;
   font-size: 11px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.emailReveal span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.emailReveal svg {
+  flex: 0 0 auto;
+}
+.emailReveal:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 .caution {
   display: flex;
@@ -223,7 +244,7 @@
   flex: 0 0 auto;
   margin-top: 1px;
 }
-.instructorHeading a {
+.sourceLink {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -383,7 +404,7 @@
   flex-wrap: wrap;
   gap: 6px;
   list-style: none;
-  margin: 10px 0 0 45px;
+  margin: 10px 0 0;
   padding: 0;
 }
 .tagCloud li {
@@ -538,7 +559,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  margin-top: 5px;
+  margin-top: 9px;
   color: var(--muted);
   font-size: 10px;
 }
@@ -568,6 +589,26 @@
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+}
+.identity [data-directory-identity] {
+  align-items: flex-start;
+}
+.identity [data-directory-identity] > :first-child {
+  flex-shrink: 0;
+}
+.identity [data-directory-role-trigger] {
+  max-width: 100%;
+}
+.linkWarning {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  line-height: 1.4;
 }
 @media (max-width: 480px) {
   .heading h3 {
@@ -600,37 +641,14 @@
     height: 18px;
   }
   .instructorHeading {
-    grid-template-columns: minmax(0, 1fr) auto;
     gap: 9px;
   }
-  .identity {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .instructorToggle {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: space-between;
-    padding-left: 0;
-    gap: 5px;
-  }
-  .instructorHeading > a {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .summaryScore {
-    align-items: flex-start;
-    text-align: left;
-    margin-left: 0;
-  }
   .disclosureCue {
-    align-self: center;
-    margin-left: 0;
-    padding: 0 7px;
-    font-size: 10px;
+    padding: 0 8px;
+    font-size: 11px;
   }
-  .instructorHeading h4 {
-    font-size: 13px;
+  .emailReveal {
+    min-height: 32px;
   }
   .stats {
     gap: 9px;
