@@ -83,6 +83,13 @@ for (const [en, zh] of pairs)
       }
     }
   }
+// A new source table must have a translated table, not only a translated introduction.
+for (const [en, zh] of pairs) {
+  const count = (source) =>
+    (source?.match(/^\|(?:\s*:?-+:?\s*\|)+\s*$/gm) ?? []).length;
+  if (count(content.get(en)) > count(content.get(zh)))
+    problems.push(`${zh}: missing translated tables from ${en}`);
+}
 const tests = (await walk(resolve(root, "tests"))).filter((p) =>
   /(?:\.(?:test|browser)\.mjs$|(?:^|[\\/])test_[^\\/]+\.py$|[\\/]check-pdf\.py$)/.test(
     p,
