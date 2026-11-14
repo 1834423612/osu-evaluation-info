@@ -2,6 +2,14 @@
 
 English · [简体中文](../zh-CN/analytics/umami.md)
 
+## 3.5 tracking and replay
+
+The tracker enables `data-errors="true"`, performance collection and hash exclusion. `data-release` identifies the website build and `data-environment` identifies its deployment; neither is the Umami service version. Asset URLs include `NEXT_PUBLIC_UMAMI_ASSET_VERSION` (default `3.5.0`) to bypass stale collector assets; the proxy cache key must include this parameter. React error boundaries also report through `captureException`.
+
+When configured, replay defaults to on for every page, including accounts, favorites, history and sharing. The frontend does not override remote sampling, duration or input-masking parameters and does not stop/reload recording on entry to those pages. Browser DNT/GPC, Dev Tools analytics suppression and explicitly saved opt-outs still apply; absent and legacy unspecified replay preferences default to on. Persisted opt-outs are read before mounting collector scripts.
+
+Share capabilities are extracted from URL fragments before collectors start. Generic events do not copy raw form values. Configure and verify input masking in Umami. The replay browser test mocks collector assets rather than sending test contents to the live analytics service.
+
 The root layout loads Umami through `next/script` when all required public
 settings are configured. Set these values before building or restarting the
 application:

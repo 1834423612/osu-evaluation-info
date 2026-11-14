@@ -7,6 +7,7 @@
 ## 从这里开始
 
 - [测试说明](testing.md)
+- [账号、收藏与分享](user-data.md)
 - [开发工具与本地数据](development-tools.md)
 - [按需翻译与调度](translation.md)
 - [翻译节点状态与管理](translation-operations.md)

@@ -279,3 +279,30 @@ Each row identifies the script's primary check. Open the file for fixtures, exac
 | [tests/translation/word-cloud-preference.test.mjs](../tests/translation/word-cloud-preference.test.mjs)                 | Unit        | new and legacy users keep cloud auto-translation off until a dedicated explicit opt-in                       |
 
 Fixture files such as `tests/syllabus/fixtures.mjs` and HTML samples support these tests and are not standalone test commands. `scripts/catalog/benchmark-search.mjs` measures localhost search concurrency; `scripts/search/evaluate.mjs` evaluates corpus recall. Neither is part of the default unit suite.
+
+## Account, favorites and replay checks
+
+`USER_DATA_INTEGRATION=1` enables auth, sharing and sync database tests. They create random disposable tables/schemas and remove them afterward; no real mail is sent. `USER_DATA_TEST_DATABASE_URL` can select a dedicated database; otherwise environment files supply the database. The sharing browser test requires `ALLOW_SERVER_WRITES=1`, creates synthetic guest shares and revokes them in cleanup, retaining audit rows; remote targets additionally require `ALLOW_REMOTE_USER_DATA_TESTS=1`. Sync and replay browser checks intercept auth/sync or collector traffic and do not write server favorites. Browser tests use `USER_DATA_TEST_BASE_URL`; sharing/sync screenshots use `USER_DATA_SCREENSHOT_DIR`.
+
+| Script                                                                                          | Type        | Purpose                                                                                                      |
+| ----------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| [tests/analytics/privacy.test.mjs](../tests/analytics/privacy.test.mjs)                         | Unit        | Replay defaults, all-route eligibility, serialized filtering and capability capture                          |
+| [tests/analytics/replay.browser.mjs](../tests/analytics/replay.browser.mjs)                     | Browser     | All-page recorder mounting, remote-only options and persisted opt-out; collectors mocked                     |
+| [tests/user-data/history.test.mjs](../tests/user-data/history.test.mjs)                         | Unit        | Local history deduplication, retention, bounds and safe navigation                                           |
+| [tests/user-data/workspace.test.mjs](../tests/user-data/workspace.test.mjs)                     | Unit        | Atomic local snapshots, per-field deltas, exact acknowledgements and corrupt-data handling                   |
+| [tests/user-data/local.test.mjs](../tests/user-data/local.test.mjs)                             | Unit        | Import/removal/undo preserve complete snapshots and intervening edits                                        |
+| [tests/user-data/exchange.test.mjs](../tests/user-data/exchange.test.mjs)                       | Unit        | Four-kind exchange validation, limits, public redaction and import identity                                  |
+| [tests/user-data/auth.test.mjs](../tests/user-data/auth.test.mjs)                               | Unit        | Pinned origins, bounded streamed bodies and isolated development namespaces                                  |
+| [tests/user-data/auth.integration.test.mjs](../tests/user-data/auth.integration.test.mjs)       | Integration | Real email-OTP/password/passkey/session/recovery protocols; injected delivery, disposable auth tables        |
+| [tests/user-data/sharing.integration.test.mjs](../tests/user-data/sharing.integration.test.mjs) | Integration | Real SQL capabilities, expiry, codes, ownership, counters, concurrent quotas and retry receipts              |
+| [tests/user-data/sharing.browser.mjs](../tests/user-data/sharing.browser.mjs)                   | Browser     | Creates and revokes synthetic guest shares; partial import, in-place details, retry and mobile management    |
+| [tests/user-data/sync-model.test.mjs](../tests/user-data/sync-model.test.mjs)                   | Unit        | In-flight edits, deletion conflicts, cursor expiry and account workspace keys                                |
+| [tests/user-data/sync.integration.test.mjs](../tests/user-data/sync.integration.test.mjs)       | Integration | Real SQL versioning, replay, concurrent conflicts, deletion, ownership and stale reconciliation              |
+| [tests/user-data/sync.browser.mjs](../tests/user-data/sync.browser.mjs)                         | Browser     | Mocked auth/sync; two independent devices, lost response/reload, conflicts, pause/resume and guest isolation |
+
+```sh
+USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs
+node tests/analytics/replay.browser.mjs
+node tests/user-data/sync.browser.mjs
+ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
+```

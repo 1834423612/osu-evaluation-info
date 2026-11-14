@@ -2,6 +2,8 @@
 
 English · [简体中文](../zh-CN/design/sharing-sync-analytics.md)
 
+> See [Accounts, favorites and sharing](../user-data.md) for shipped behavior and deployment. This document records the design; current authentication supports email codes, passkeys, optional passwords and recovery codes, and replay defaults to on for all pages under remote masking policy.
+
 Status: proposed architecture, researched on November 14, 2026. This document does not describe deployed sharing, authentication or synchronization features. The runtime observations below are dated evidence.
 
 ## Existing implementation and observed risks
@@ -24,13 +26,13 @@ The tracker before-send hook currently sanitizes URL query parameters. Recorder 
 
 ## Product surfaces and permissions
 
-| Surface | Behavior | Access and lifetime |
-| --- | --- | --- |
-| Share current page/course | System share sheet when available; copy-link fallback; course, term, campus, section and active detail context | Ordinary canonical public URL; optional attributed link |
-| Shared saved collection | Separate /share/... page; compact mixed-item list; import all or selected | Read-only snapshot; revocable capability; explicit visibility and expiry |
-| Temporary transfer | Send selected local items between devices without an account | Expiring single-claim transfer; high-entropy link or approved device pairing |
-| Account synchronization | Private, continuous synchronization of selected data categories | Passkey-backed account; device sessions; user-controlled sync |
-| Local history | Recent submitted searches and actually opened courses | Local by default; clear, disable and optional separate history sync |
+| Surface                   | Behavior                                                                                                       | Access and lifetime                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Share current page/course | System share sheet when available; copy-link fallback; course, term, campus, section and active detail context | Ordinary canonical public URL; optional attributed link                      |
+| Shared saved collection   | Separate /share/... page; compact mixed-item list; import all or selected                                      | Read-only snapshot; revocable capability; explicit visibility and expiry     |
+| Temporary transfer        | Send selected local items between devices without an account                                                   | Expiring single-claim transfer; high-entropy link or approved device pairing |
+| Account synchronization   | Private, continuous synchronization of selected data categories                                                | Passkey-backed account; device sessions; user-controlled sync                |
+| Local history             | Recent submitted searches and actually opened courses                                                          | Local by default; clear, disable and optional separate history sync          |
 
 Public sharing must not turn into edit access. Collection recipients get independent copies; later publisher changes do not silently mutate those copies. A publisher may explicitly publish a new snapshot. Collaborative editing and live subscriptions would require separate permissions and conflict semantics.
 
@@ -81,20 +83,20 @@ Use an operation-based protocol with a local IndexedDB outbox, a server cursor a
 
 Each operation includes an idempotency key, account/workspace, device ID, per-device sequence, entity key, operation kind and base revision. The server validates ownership, applies a bounded batch in a transaction and returns accepted/rejected/conflicting operations plus the next server sequence. Unrelated items can commit while conflicting items remain pending. Server order, not device wall-clock time, defines synchronization order.
 
-| Situation | Required result |
-| --- | --- |
-| First login with both local and cloud items | Preview the union, deduplicate by entity identity, preserve local originals until the cloud confirms persistence |
-| Two devices add different items | Merge both |
-| Same import or request retried | Return the prior result; do not duplicate saves or popularity counts |
-| Delete on one device, stale device reconnects | Keep the tombstone; a stale snapshot cannot recreate the item |
-| Intentional re-add after observing deletion | New explicit add operation against the observed tombstone |
-| Concurrent delete and edit | Preserve both versions in a conflict; do not silently discard either user's action |
-| Concurrent changes to different safe fields | Merge those fields |
-| Competing collection rename or note edits | Keep alternatives; ask to use local, cloud or keep both |
-| Device clock wrong | No loss; timestamps are display metadata only |
-| Partial failure or full local storage | Keep pending data and an actionable failure state; never show synchronized |
-| Damaged/failed local read | Treat as unavailable input, not an empty authoritative collection |
-| Logout, account switch or disabled sync | Keep local and account workspaces separate; never upload account A's private cache to B |
+| Situation                                     | Required result                                                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| First login with both local and cloud items   | Preview the union, deduplicate by entity identity, preserve local originals until the cloud confirms persistence |
+| Two devices add different items               | Merge both                                                                                                       |
+| Same import or request retried                | Return the prior result; do not duplicate saves or popularity counts                                             |
+| Delete on one device, stale device reconnects | Keep the tombstone; a stale snapshot cannot recreate the item                                                    |
+| Intentional re-add after observing deletion   | New explicit add operation against the observed tombstone                                                        |
+| Concurrent delete and edit                    | Preserve both versions in a conflict; do not silently discard either user's action                               |
+| Concurrent changes to different safe fields   | Merge those fields                                                                                               |
+| Competing collection rename or note edits     | Keep alternatives; ask to use local, cloud or keep both                                                          |
+| Device clock wrong                            | No loss; timestamps are display metadata only                                                                    |
+| Partial failure or full local storage         | Keep pending data and an actionable failure state; never show synchronized                                       |
+| Damaged/failed local read                     | Treat as unavailable input, not an empty authoritative collection                                                |
+| Logout, account switch or disabled sync       | Keep local and account workspaces separate; never upload account A's private cache to B                          |
 
 Deletion tombstones and operation receipts are retained for a proposed minimum of 180 days. Devices offline beyond the supported cursor horizon perform a full reconciliation and review old pending changes; they do not blindly replay stale additions. Compaction records the minimum valid cursor. Account deletion and revoked-device rules take precedence over offline queues.
 
@@ -110,15 +112,15 @@ Users can disable sync per device and separately choose whether to sync history.
 
 Add a user-data schema separate from the official catalog, syllabus archive and evaluation tables. The authentication library owns its authentication tables; domain data uses the existing bounded PostgreSQL pool or an explicitly budgeted adapter pool.
 
-| Logical tables | Purpose and constraints |
-| --- | --- |
-| Accounts, credentials, sessions, devices | Opaque IDs, credential uniqueness, revocation and recovery |
+| Logical tables                                  | Purpose and constraints                                                                                                |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Accounts, credentials, sessions, devices        | Opaque IDs, credential uniqueness, revocation and recovery                                                             |
 | Collections, saved items, collection membership | Owner-scoped uniqueness by kind and canonical entity key; collection membership does not duplicate the underlying save |
-| Operations, receipts, tombstones, conflicts | Unique operation IDs, indexed account/server cursors, exact base versions |
-| Shared snapshots, capabilities, code aliases | Immutable payload version, scope, expiry, revocation; no dependency on a public listing |
-| Transfers and claims | Hashed secrets, claim owner, lease and completion state |
-| Event outbox and entity aggregates | Deduplicated business facts and eventually updated popularity counts |
-| Security events and diagnostic reports | Separate retention, privileged access, deletion and explicit consent metadata |
+| Operations, receipts, tombstones, conflicts     | Unique operation IDs, indexed account/server cursors, exact base versions                                              |
+| Shared snapshots, capabilities, code aliases    | Immutable payload version, scope, expiry, revocation; no dependency on a public listing                                |
+| Transfers and claims                            | Hashed secrets, claim owner, lease and completion state                                                                |
+| Event outbox and entity aggregates              | Deduplicated business facts and eventually updated popularity counts                                                   |
+| Security events and diagnostic reports          | Separate retention, privileged access, deletion and explicit consent metadata                                          |
 
 The API groups are share creation/revocation/read, transfer create/approve/claim/acknowledge, sync push/pull/resolve and account/device management. All mutations validate a strict schema, item and body limits, same-origin requests and scope. Import/export formats have a schema version and deterministic migration. Treat imported titles, links and notes as untrusted data; no arbitrary HTML or server-side URL fetching.
 
@@ -132,15 +134,15 @@ Proposed performance targets, to be measured rather than advertised as guarantee
 
 Keep recent submitted searches and actual course opens locally. Proposed defaults: 100 search entries, 200 course visits, 90-day retention. Deduplicate consecutive entries and preserve term/campus context. Do not record every keystroke, hover, prefetch, automatic pagination or capability URL. Provide remove-one, clear-all, disable and export controls. History synchronization is a separate opt-in.
 
-| Metric | Meaning |
-| --- | --- |
-| Link preview | Metadata request, including an identifiable bot class; not a human open |
-| Share open | Client-confirmed public share render, deduplicated per bounded visit window |
-| Transfer use | Successful claim/import completion; not a preview |
-| Saved entity count | Active unique owner/entity saves; multiple collections and devices count once |
-| Anonymous saves | Device-scoped observations, labelled separately from account totals |
+| Metric                      | Meaning                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| Link preview                | Metadata request, including an identifiable bot class; not a human open            |
+| Share open                  | Client-confirmed public share render, deduplicated per bounded visit window        |
+| Transfer use                | Successful claim/import completion; not a preview                                  |
+| Saved entity count          | Active unique owner/entity saves; multiple collections and devices count once      |
+| Anonymous saves             | Device-scoped observations, labelled separately from account totals                |
 | Search result click-through | Actual course opens divided by recorded result impressions for the same request ID |
-| Imported items | Successfully committed new items, excluding already-saved items and retries |
+| Imported items              | Successfully committed new items, excluding already-saved items and retries        |
 
 An account is not guaranteed to be a unique person. IP and browser fingerprints cannot make that guarantee either. Do not label device estimates as people. A local-only browser cannot provide an authoritative server inventory; opt-outs, offline edits and abuse prevent an exact site-wide human favorite total.
 
@@ -164,17 +166,17 @@ Run optional probes in bounded idle batches, cancel on navigation, avoid main-th
 
 ## Umami 3.5 compatibility and replay investigation
 
-| Capability | Application integration | Umami deployment or dashboard |
-| --- | --- | --- |
-| Browser errors | Keep data-errors; add caught-error reporting from error boundaries and selected catch paths, deduplicated and redacted | Error issues, occurrence filters and session/replay links |
-| Release/environment | Bundled build SHA, optionally a release tag; explicit production/staging/development value | Filter issues by actual running app build |
-| Central configuration | One initialization source; document attribute precedence over umamiConfig | Version-compatible tracker and recorder |
-| Identity | Optional analytics-specific opaque account pseudonym after permission; reset safely on logout/account switch | Distinct IDs and corrected session attribution; never email, credential ID or recovery code |
-| Replays and heatmaps | One recorder, scoped blocking, consent gate; validate custom controls, portals, iframes and scroll roots | Sampling, duration, masking, new player/navigation and heatmap fixes |
-| Performance | Retain performance collection; correlate confirmed search/sync latency through typed events | Updated background/prerender CWV and reporting |
-| Analytics API | Preserve explicit date ranges for reproducible audits; support period shortcuts and visitId when available | Error endpoints, tightened API permissions and updated client contracts |
-| Session privacy/network | Keep site identity separate from analytics salt; use only intentional supported rotation | Explicit APP_SECRET, TRUSTED_PROXIES and optional ENABLE_CLIENT_SALT |
-| Reports/security | Define goals, funnels, journeys, retention and boards for search → course → save/import; audit read permissions | Chart/calendar/time-zone fixes, admin security/2FA, share revocation, cache/query fixes |
+| Capability              | Application integration                                                                                                | Umami deployment or dashboard                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Browser errors          | Keep data-errors; add caught-error reporting from error boundaries and selected catch paths, deduplicated and redacted | Error issues, occurrence filters and session/replay links                                   |
+| Release/environment     | Bundled build SHA, optionally a release tag; explicit production/staging/development value                             | Filter issues by actual running app build                                                   |
+| Central configuration   | One initialization source; document attribute precedence over umamiConfig                                              | Version-compatible tracker and recorder                                                     |
+| Identity                | Optional analytics-specific opaque account pseudonym after permission; reset safely on logout/account switch           | Distinct IDs and corrected session attribution; never email, credential ID or recovery code |
+| Replays and heatmaps    | One recorder, scoped blocking, consent gate; validate custom controls, portals, iframes and scroll roots               | Sampling, duration, masking, new player/navigation and heatmap fixes                        |
+| Performance             | Retain performance collection; correlate confirmed search/sync latency through typed events                            | Updated background/prerender CWV and reporting                                              |
+| Analytics API           | Preserve explicit date ranges for reproducible audits; support period shortcuts and visitId when available             | Error endpoints, tightened API permissions and updated client contracts                     |
+| Session privacy/network | Keep site identity separate from analytics salt; use only intentional supported rotation                               | Explicit APP_SECRET, TRUSTED_PROXIES and optional ENABLE_CLIENT_SALT                        |
+| Reports/security        | Define goals, funnels, journeys, retention and boards for search → course → save/import; audit read permissions        | Chart/calendar/time-zone fixes, admin security/2FA, share revocation, cache/query fixes     |
 
 Umami 3.5's complete relevant capability set includes server and dashboard features; adding script attributes does not enable server migrations, administrator controls or a working recorder. Revenue, links and pixels are existing optional features, not new browser attributes to enable without a product purpose. Do not fabricate purchase events or open public raw analytics to satisfy a feature checklist.
 
@@ -225,180 +227,180 @@ Modes: B = coarse basic analytics only; S = restricted security data; D = option
 
 Trusted edge metadata or controlled probes. Transport fingerprints require dedicated infrastructure.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| ip | IP address | CF-Connecting-IP | S | Trusted proxy; raw data restricted to security retention |
-| geo | Location | request.cf.city | B | Country/region buckets only in B |
-| coords | Coordinates | request.cf.latitude | D | Edge estimate, not browser GPS |
-| isp | Network (ASN) | request.cf.asOrganization | B | Coarse ASN; trusted edge or local database |
-| tor | Tor | check.torproject.org exit list | D | — |
-| dns | DNS resolver | edns.ip-api.com | D | Controlled DNS detection; optional external requests |
-| tzip | Time zone of the IP | request.cf.timezone | D | — |
-| ptr | Reverse DNS | DNS PTR | D | — |
-| edge | Nearest data center | request.cf.colo | D | — |
-| proto | HTTP and TLS | request.cf.tlsVersion | D | Browser-to-edge metadata, not origin TLS |
-| kex | Key exchange | /cdn-cgi/trace · kex, sni | D | — |
-| warp | Cloudflare WARP | /cdn-cgi/trace · warp | D | — |
-| tlsfp | TLS fingerprint | TLS ClientHello | D | Controlled TLS termination or authorized edge metadata |
-| tcpfp | TCP/IP fingerprint | probe.1ms.dog · TCP SYN | D | Dedicated transport probe |
-| ja4 | TLS fingerprint (JA4) | probe.1ms.dog · JA4 | D | Dedicated probe or authorized edge feature |
-| h2fp | HTTP/2 fingerprint | probe.1ms.dog · HTTP/2 SETTINGS | D | Dedicated HTTP/2 termination probe |
-| quicfp | QUIC fingerprint (HTTP/3) | probe.1ms.dog · HTTP/3 · QUIC JA4 | D | Dedicated QUIC/HTTP3 probe and UDP path |
-| clock | Your clock | Date.now() | D | — |
-| webrtc | WebRTC addresses | RTCPeerConnection · STUN | D | Controlled STUN; sensitive addresses |
-| lan | Local address | WebRTC host candidate | D | Often hidden or replaced by mDNS |
-| v6mac | IPv6 leaking the MAC | IPv6 EUI-64 (ff:fe) | D | Heuristic EUI-64 shape; not a reliable MAC |
+| ID     | Reading                   | Upstream method                   | Mode | Additional limits                                        |
+| ------ | ------------------------- | --------------------------------- | ---- | -------------------------------------------------------- |
+| ip     | IP address                | CF-Connecting-IP                  | S    | Trusted proxy; raw data restricted to security retention |
+| geo    | Location                  | request.cf.city                   | B    | Country/region buckets only in B                         |
+| coords | Coordinates               | request.cf.latitude               | D    | Edge estimate, not browser GPS                           |
+| isp    | Network (ASN)             | request.cf.asOrganization         | B    | Coarse ASN; trusted edge or local database               |
+| tor    | Tor                       | check.torproject.org exit list    | D    | —                                                        |
+| dns    | DNS resolver              | edns.ip-api.com                   | D    | Controlled DNS detection; optional external requests     |
+| tzip   | Time zone of the IP       | request.cf.timezone               | D    | —                                                        |
+| ptr    | Reverse DNS               | DNS PTR                           | D    | —                                                        |
+| edge   | Nearest data center       | request.cf.colo                   | D    | —                                                        |
+| proto  | HTTP and TLS              | request.cf.tlsVersion             | D    | Browser-to-edge metadata, not origin TLS                 |
+| kex    | Key exchange              | /cdn-cgi/trace · kex, sni         | D    | —                                                        |
+| warp   | Cloudflare WARP           | /cdn-cgi/trace · warp             | D    | —                                                        |
+| tlsfp  | TLS fingerprint           | TLS ClientHello                   | D    | Controlled TLS termination or authorized edge metadata   |
+| tcpfp  | TCP/IP fingerprint        | probe.1ms.dog · TCP SYN           | D    | Dedicated transport probe                                |
+| ja4    | TLS fingerprint (JA4)     | probe.1ms.dog · JA4               | D    | Dedicated probe or authorized edge feature               |
+| h2fp   | HTTP/2 fingerprint        | probe.1ms.dog · HTTP/2 SETTINGS   | D    | Dedicated HTTP/2 termination probe                       |
+| quicfp | QUIC fingerprint (HTTP/3) | probe.1ms.dog · HTTP/3 · QUIC JA4 | D    | Dedicated QUIC/HTTP3 probe and UDP path                  |
+| clock  | Your clock                | Date.now()                        | D    | —                                                        |
+| webrtc | WebRTC addresses          | RTCPeerConnection · STUN          | D    | Controlled STUN; sensitive addresses                     |
+| lan    | Local address             | WebRTC host candidate             | D    | Often hidden or replaced by mDNS                         |
+| v6mac  | IPv6 leaking the MAC      | IPv6 EUI-64 (ff:fe)               | D    | Heuristic EUI-64 shape; not a reliable MAC               |
 
 ### Network exits
 
 Use separate controlled destinations, explicit opt-in and bounded requests. CORS and proxy routing can prevent a reading.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| ex_cn | Site in mainland China | myip.ipip.net | D | — |
-| ex_intl | IP service abroad | api.ip.sb | D | — |
-| ex_gpt | ChatGPT | chatgpt.com/cdn-cgi/trace | D | — |
-| ex_claude | Claude | claude.ai/cdn-cgi/trace | D | — |
-| ex_cf | Cloudflare | www.cloudflare.com/cdn-cgi/trace | D | — |
-| stack | IPv4 and IPv6 | Cloudflare Radar · IPv4 / IPv6 | D | — |
+| ID        | Reading                | Upstream method                  | Mode | Additional limits |
+| --------- | ---------------------- | -------------------------------- | ---- | ----------------- |
+| ex_cn     | Site in mainland China | myip.ipip.net                    | D    | —                 |
+| ex_intl   | IP service abroad      | api.ip.sb                        | D    | —                 |
+| ex_gpt    | ChatGPT                | chatgpt.com/cdn-cgi/trace        | D    | —                 |
+| ex_claude | Claude                 | claude.ai/cdn-cgi/trace          | D    | —                 |
+| ex_cf     | Cloudflare             | www.cloudflare.com/cdn-cgi/trace | D    | —                 |
+| stack     | IPv4 and IPv6          | Cloudflare Radar · IPv4 / IPv6   | D    | —                 |
 
 ### Request headers
 
 Use only headers actually received from a trusted path. Browser hints may be absent.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| h_ua | User agent | User-Agent | B | B stores coarse parsed family; full string in D/S only |
-| h_lang | Languages | Accept-Language | B | — |
-| h_chua | Browser brands | Sec-CH-UA | B | — |
-| h_plat | Platform | Sec-CH-UA-Platform | B | — |
-| ch | Client Hints | Sec-CH-UA-* (Accept-CH) | D | Accept-CH; high-entropy hints require opt-in |
-| h_enc | Compression | Accept-Encoding | B | — |
-| h_dnt | Do Not Track | DNT · Sec-GPC | B | — |
-| h_ref | Came from | Referer · document.referrer | B | Sanitized public route; no tokens or query content |
-| wba | AI agent signature | Signature · Signature-Agent | D | Only when signed-agent headers exist; verify separately |
+| ID     | Reading            | Upstream method             | Mode | Additional limits                                       |
+| ------ | ------------------ | --------------------------- | ---- | ------------------------------------------------------- |
+| h_ua   | User agent         | User-Agent                  | B    | B stores coarse parsed family; full string in D/S only  |
+| h_lang | Languages          | Accept-Language             | B    | —                                                       |
+| h_chua | Browser brands     | Sec-CH-UA                   | B    | —                                                       |
+| h_plat | Platform           | Sec-CH-UA-Platform          | B    | —                                                       |
+| ch     | Client Hints       | Sec-CH-UA-* (Accept-CH)     | D    | Accept-CH; high-entropy hints require opt-in            |
+| h_enc  | Compression        | Accept-Encoding             | B    | —                                                       |
+| h_dnt  | Do Not Track       | DNT · Sec-GPC               | B    | —                                                       |
+| h_ref  | Came from          | Referer · document.referrer | B    | Sanitized public route; no tokens or query content      |
+| wba    | AI agent signature | Signature · Signature-Agent | D    | Only when signed-agent headers exist; verify separately |
 
 ### Locale
 
 Browser/API support varies; identifying detailed lists require diagnostic consent.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| langs | Browser languages | navigator.languages | B | — |
-| locale | Locale | Intl.DateTimeFormat | B | — |
-| tz | System time zone | Intl …timeZone | B | — |
-| hour | Clock format | Intl …hourCycle | B | — |
-| week | Week starts | Intl.Locale weekInfo | D | — |
-| fmt | Number and date format | Intl.NumberFormat | D | — |
-| icu | ICU data | Intl.supportedValuesOf | D | — |
-| kbd | Keyboard layout | navigator.keyboard | D | Permission/support dependent; never typed keys |
-| voices | Speech voices | speechSynthesis | D | Identifying local voice list; optional |
+| ID     | Reading                | Upstream method        | Mode | Additional limits                              |
+| ------ | ---------------------- | ---------------------- | ---- | ---------------------------------------------- |
+| langs  | Browser languages      | navigator.languages    | B    | —                                              |
+| locale | Locale                 | Intl.DateTimeFormat    | B    | —                                              |
+| tz     | System time zone       | Intl …timeZone         | B    | —                                              |
+| hour   | Clock format           | Intl …hourCycle        | B    | —                                              |
+| week   | Week starts            | Intl.Locale weekInfo   | D    | —                                              |
+| fmt    | Number and date format | Intl.NumberFormat      | D    | —                                              |
+| icu    | ICU data               | Intl.supportedValuesOf | D    | —                                              |
+| kbd    | Keyboard layout        | navigator.keyboard     | D    | Permission/support dependent; never typed keys |
+| voices | Speech voices          | speechSynthesis        | D    | Identifying local voice list; optional         |
 
 ### Device
 
 Browser support, permissions and privacy settings vary. Capability checks do not authorize accessing a device.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| os | Operating system | userAgentData | B | — |
-| browser | Browser | userAgentData.brands | B | — |
-| arch | CPU architecture | …architecture · bitness | D | — |
-| form | Device form | userAgentData formFactors | D | — |
-| model | Device model | screen · GPU · Client Hints model | D | — |
-| screen | Screen | screen · devicePixelRatio | B | Bucket dimensions/DPR in B; exact values in D |
-| hz | Refresh rate | requestAnimationFrame | D | Idle sample; approximate, affected by power state |
-| screens | Screens | screen.isExtended · screenX | D | Window-management support and permission |
-| win | Window | innerWidth · availHeight | B | Bucket viewport dimensions in B |
-| scrollbar | Scrollbar width | offsetWidth − clientWidth | D | — |
-| gpu | Graphics card | WebGL RENDERER | D | — |
-| vm | Virtual machine | WebGL renderer · hypervisor names | D | — |
-| webgpu | WebGPU | navigator.gpu adapter.info | D | — |
-| gpulim | WebGPU capabilities | GPUAdapter limits · features | D | — |
-| glx | WebGL capabilities | WebGL2 · MAX_TEXTURE_SIZE | D | — |
-| cpu | CPU cores | hardwareConcurrency | D | — |
-| mem | Memory | navigator.deviceMemory | D | — |
-| heap | JS memory limit | performance.memory | D | — |
-| touch | Touch and pointer | maxTouchPoints · pointer | B | — |
-| battery | Battery | navigator.getBattery | D | — |
-| geoloc | Precise location (asks) | geolocation (on request) | D | Separate user action and location permission |
-| sensors | Motion sensors (asks) | devicemotion (on request) | D | Separate action; sensor permission as required |
-| conn | Connection | navigator.connection | D | — |
-| media | Cameras and mics | enumerateDevices | D | Labels may need media permission; no recording |
-| audiohw | Audio hardware | AudioContext.sampleRate | D | — |
-| bio | Biometrics | PublicKeyCredential | D | Availability only; no credentials or biometric data |
-| bt | Bluetooth | bluetooth.getAvailability | D | — |
-| devs | Devices already allowed | usb · hid · serial getDevices | D | Only previously granted devices; no permission request |
-| gamepad | Game controller | getGamepads (on request) | D | Separate user gesture |
-| xr | VR / AR | navigator.xr.isSessionSupported | D | — |
-| codecs | Video codecs | MediaSource.isTypeSupported | D | — |
-| rtccodecs | WebRTC codecs | RTCRtpSender.getCapabilities | D | — |
-| recmime | Recording formats | MediaRecorder.isTypeSupported | D | — |
-| hwdec | Hardware video decoding | mediaCapabilities.decodingInfo | D | — |
-| drm | DRM | requestMediaKeySystemAccess | D | Optional capability test; no licence acquisition |
-| storage | Storage quota | storage.estimate | D | — |
+| ID        | Reading                 | Upstream method                   | Mode | Additional limits                                      |
+| --------- | ----------------------- | --------------------------------- | ---- | ------------------------------------------------------ |
+| os        | Operating system        | userAgentData                     | B    | —                                                      |
+| browser   | Browser                 | userAgentData.brands              | B    | —                                                      |
+| arch      | CPU architecture        | …architecture · bitness           | D    | —                                                      |
+| form      | Device form             | userAgentData formFactors         | D    | —                                                      |
+| model     | Device model            | screen · GPU · Client Hints model | D    | —                                                      |
+| screen    | Screen                  | screen · devicePixelRatio         | B    | Bucket dimensions/DPR in B; exact values in D          |
+| hz        | Refresh rate            | requestAnimationFrame             | D    | Idle sample; approximate, affected by power state      |
+| screens   | Screens                 | screen.isExtended · screenX       | D    | Window-management support and permission               |
+| win       | Window                  | innerWidth · availHeight          | B    | Bucket viewport dimensions in B                        |
+| scrollbar | Scrollbar width         | offsetWidth − clientWidth         | D    | —                                                      |
+| gpu       | Graphics card           | WebGL RENDERER                    | D    | —                                                      |
+| vm        | Virtual machine         | WebGL renderer · hypervisor names | D    | —                                                      |
+| webgpu    | WebGPU                  | navigator.gpu adapter.info        | D    | —                                                      |
+| gpulim    | WebGPU capabilities     | GPUAdapter limits · features      | D    | —                                                      |
+| glx       | WebGL capabilities      | WebGL2 · MAX_TEXTURE_SIZE         | D    | —                                                      |
+| cpu       | CPU cores               | hardwareConcurrency               | D    | —                                                      |
+| mem       | Memory                  | navigator.deviceMemory            | D    | —                                                      |
+| heap      | JS memory limit         | performance.memory                | D    | —                                                      |
+| touch     | Touch and pointer       | maxTouchPoints · pointer          | B    | —                                                      |
+| battery   | Battery                 | navigator.getBattery              | D    | —                                                      |
+| geoloc    | Precise location (asks) | geolocation (on request)          | D    | Separate user action and location permission           |
+| sensors   | Motion sensors (asks)   | devicemotion (on request)         | D    | Separate action; sensor permission as required         |
+| conn      | Connection              | navigator.connection              | D    | —                                                      |
+| media     | Cameras and mics        | enumerateDevices                  | D    | Labels may need media permission; no recording         |
+| audiohw   | Audio hardware          | AudioContext.sampleRate           | D    | —                                                      |
+| bio       | Biometrics              | PublicKeyCredential               | D    | Availability only; no credentials or biometric data    |
+| bt        | Bluetooth               | bluetooth.getAvailability         | D    | —                                                      |
+| devs      | Devices already allowed | usb · hid · serial getDevices     | D    | Only previously granted devices; no permission request |
+| gamepad   | Game controller         | getGamepads (on request)          | D    | Separate user gesture                                  |
+| xr        | VR / AR                 | navigator.xr.isSessionSupported   | D    | —                                                      |
+| codecs    | Video codecs            | MediaSource.isTypeSupported       | D    | —                                                      |
+| rtccodecs | WebRTC codecs           | RTCRtpSender.getCapabilities      | D    | —                                                      |
+| recmime   | Recording formats       | MediaRecorder.isTypeSupported     | D    | —                                                      |
+| hwdec     | Hardware video decoding | mediaCapabilities.decodingInfo    | D    | —                                                      |
+| drm       | DRM                     | requestMediaKeySystemAccess       | D    | Optional capability test; no licence acquisition       |
+| storage   | Storage quota           | storage.estimate                  | D    | —                                                      |
 
 ### Browser
 
 Optional checks run in isolation when needed. Never read another origin's private data.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| scheme | Color scheme | prefers-color-scheme | B | — |
-| motion | Animations | prefers-reduced-motion | B | — |
-| gamut | Display colors | color-gamut · dynamic-range | B | — |
-| a11y | Accessibility | prefers-contrast · forced-colors | B | — |
-| sysui | Default font size and accent color | font-size: medium · AccentColor | D | — |
-| display | Opened as | display-mode | B | — |
-| dnt | Privacy signals | doNotTrack · GPC | B | — |
-| cookies | Cookies | navigator.cookieEnabled | B | — |
-| psb | Privacy Sandbox | browsingTopics · runAdAuction · sharedStorage | D | — |
-| perms | Permissions | permissions.query | D | — |
-| apis | Sensitive APIs | usb · serial · hid · IdleDetector … | D | — |
-| pdf | PDF viewer | pdfViewerEnabled | D | — |
-| ai | Built-in AI | LanguageModel · Translator.availability | D | — |
-| webdriver | Automation | navigator.webdriver | D | — |
-| auto | Automation traces | headless · CDP · Electron traces | D | — |
-| idstr | Identity strings | navigator.vendor · productSub · plugins | D | — |
-| agent | How you click | mousemove → pointerdown · isTrusted | D | — |
-| worker | navigator in a Worker | Worker · navigator | D | — |
-| adblock | Ad blocker | bait element | D | — |
-| trackers | Tracker blocking test | 7 tracker scripts (on request) | D | Isolated test; no third-party code on main origin |
-| ext | Extensions | window.ethereum · DOM marks | D | — |
-| extwar | Extension scan | chrome-extension:// files | D | Browser/CSP limits; cannot enumerate all extensions |
-| history | Tab history | history.length | D | Only history.length; no visited URLs |
-| exif | What a photo carries | a photo's EXIF, read locally | L | User-selected file, local preview; selected metadata only |
-| traces | Stored traces | localStorage · IndexedDB · Cache · window.name | L | Own-origin capabilities/counts, never stored values |
-| xsite | Cross-site tracking | cross.1ms.one · iframe · SameSite=None · CHIPS | D | Separate controlled origin and iframe; partitioning applies |
-| fonts | Installed fonts | canvas measureText | D | — |
+| ID        | Reading                            | Upstream method                                | Mode | Additional limits                                           |
+| --------- | ---------------------------------- | ---------------------------------------------- | ---- | ----------------------------------------------------------- |
+| scheme    | Color scheme                       | prefers-color-scheme                           | B    | —                                                           |
+| motion    | Animations                         | prefers-reduced-motion                         | B    | —                                                           |
+| gamut     | Display colors                     | color-gamut · dynamic-range                    | B    | —                                                           |
+| a11y      | Accessibility                      | prefers-contrast · forced-colors               | B    | —                                                           |
+| sysui     | Default font size and accent color | font-size: medium · AccentColor                | D    | —                                                           |
+| display   | Opened as                          | display-mode                                   | B    | —                                                           |
+| dnt       | Privacy signals                    | doNotTrack · GPC                               | B    | —                                                           |
+| cookies   | Cookies                            | navigator.cookieEnabled                        | B    | —                                                           |
+| psb       | Privacy Sandbox                    | browsingTopics · runAdAuction · sharedStorage  | D    | —                                                           |
+| perms     | Permissions                        | permissions.query                              | D    | —                                                           |
+| apis      | Sensitive APIs                     | usb · serial · hid · IdleDetector …            | D    | —                                                           |
+| pdf       | PDF viewer                         | pdfViewerEnabled                               | D    | —                                                           |
+| ai        | Built-in AI                        | LanguageModel · Translator.availability        | D    | —                                                           |
+| webdriver | Automation                         | navigator.webdriver                            | D    | —                                                           |
+| auto      | Automation traces                  | headless · CDP · Electron traces               | D    | —                                                           |
+| idstr     | Identity strings                   | navigator.vendor · productSub · plugins        | D    | —                                                           |
+| agent     | How you click                      | mousemove → pointerdown · isTrusted            | D    | —                                                           |
+| worker    | navigator in a Worker              | Worker · navigator                             | D    | —                                                           |
+| adblock   | Ad blocker                         | bait element                                   | D    | —                                                           |
+| trackers  | Tracker blocking test              | 7 tracker scripts (on request)                 | D    | Isolated test; no third-party code on main origin           |
+| ext       | Extensions                         | window.ethereum · DOM marks                    | D    | —                                                           |
+| extwar    | Extension scan                     | chrome-extension:// files                      | D    | Browser/CSP limits; cannot enumerate all extensions         |
+| history   | Tab history                        | history.length                                 | D    | Only history.length; no visited URLs                        |
+| exif      | What a photo carries               | a photo's EXIF, read locally                   | L    | User-selected file, local preview; selected metadata only   |
+| traces    | Stored traces                      | localStorage · IndexedDB · Cache · window.name | L    | Own-origin capabilities/counts, never stored values         |
+| xsite     | Cross-site tracking                | cross.1ms.one · iframe · SameSite=None · CHIPS | D    | Separate controlled origin and iframe; partitioning applies |
+| fonts     | Installed fonts                    | canvas measureText                             | D    | —                                                           |
 
 ### Fingerprints
 
 Opt-in, budgeted computation only. Results are spoofable and are not identity credentials.
 
-| ID | Reading | Upstream method | Mode | Additional limits |
-| --- | --- | --- | --- | --- |
-| engine | JS engine | Error.message | D | — |
-| engver | Engine's real version | JS feature probes | D | — |
-| wasm | WebAssembly | WebAssembly.validate | D | — |
-| lies | Lie detection | Function.prototype.toString · iframe | D | — |
-| cssv | CSS feature level | CSS.supports | D | — |
-| smooth | Font smoothing | canvas text antialiasing | D | — |
-| canvas | Canvas | canvas.toDataURL | D | — |
-| webgl | WebGL | WebGL getParameter | D | — |
-| audio | Audio | OfflineAudioContext | D | — |
-| mathfp | Math fingerprint | Math.* → SHA-256 | D | — |
-| emoji | System emoji version | emoji measureText | D | — |
-| fontfp | Font list | fonts → SHA-256 | D | — |
-| domrect | Element sizes (DOMRect) | getClientRects · Range | D | — |
-| svgrect | SVG text sizes | SVG getBBox · getComputedTextLength | D | — |
-| textm | Text metrics | measureText actualBoundingBox | D | — |
-| glimg | WebGL rendering | WebGL readPixels | D | — |
-| keys | Engine API count | window · HTMLElement · CSS keys | D | — |
-| timer | Timer precision | performance.now() resolution | D | — |
-| callstack | Call stack depth | recursion depth | D | Strict CPU/recursion budget; skip constrained devices |
-| fpid | Combined fingerprint | SHA-256 | D | Diagnostic composite only, never identity |
-| hwid | Hardware ID (across browsers) | screen · cores · GPU · fonts → SHA-256 | D | Heuristic composite, not hardware serial |
-| etag | Cache ID (ETag) | HTTP cache · ETag / If-None-Match | D | Dedicated opt-in diagnostic resource; no tracking ID |
-| rand | Fingerprint protection | canvas × 2 | D | — |
-| adsp | Anti-detect tells | impossible readings · switcher marks | D | — |
-| shield | Whose protection | navigator.brave · noise · lies | D | — |
+| ID        | Reading                       | Upstream method                        | Mode | Additional limits                                     |
+| --------- | ----------------------------- | -------------------------------------- | ---- | ----------------------------------------------------- |
+| engine    | JS engine                     | Error.message                          | D    | —                                                     |
+| engver    | Engine's real version         | JS feature probes                      | D    | —                                                     |
+| wasm      | WebAssembly                   | WebAssembly.validate                   | D    | —                                                     |
+| lies      | Lie detection                 | Function.prototype.toString · iframe   | D    | —                                                     |
+| cssv      | CSS feature level             | CSS.supports                           | D    | —                                                     |
+| smooth    | Font smoothing                | canvas text antialiasing               | D    | —                                                     |
+| canvas    | Canvas                        | canvas.toDataURL                       | D    | —                                                     |
+| webgl     | WebGL                         | WebGL getParameter                     | D    | —                                                     |
+| audio     | Audio                         | OfflineAudioContext                    | D    | —                                                     |
+| mathfp    | Math fingerprint              | Math.* → SHA-256                       | D    | —                                                     |
+| emoji     | System emoji version          | emoji measureText                      | D    | —                                                     |
+| fontfp    | Font list                     | fonts → SHA-256                        | D    | —                                                     |
+| domrect   | Element sizes (DOMRect)       | getClientRects · Range                 | D    | —                                                     |
+| svgrect   | SVG text sizes                | SVG getBBox · getComputedTextLength    | D    | —                                                     |
+| textm     | Text metrics                  | measureText actualBoundingBox          | D    | —                                                     |
+| glimg     | WebGL rendering               | WebGL readPixels                       | D    | —                                                     |
+| keys      | Engine API count              | window · HTMLElement · CSS keys        | D    | —                                                     |
+| timer     | Timer precision               | performance.now() resolution           | D    | —                                                     |
+| callstack | Call stack depth              | recursion depth                        | D    | Strict CPU/recursion budget; skip constrained devices |
+| fpid      | Combined fingerprint          | SHA-256                                | D    | Diagnostic composite only, never identity             |
+| hwid      | Hardware ID (across browsers) | screen · cores · GPU · fonts → SHA-256 | D    | Heuristic composite, not hardware serial              |
+| etag      | Cache ID (ETag)               | HTTP cache · ETag / If-None-Match      | D    | Dedicated opt-in diagnostic resource; no tracking ID  |
+| rand      | Fingerprint protection        | canvas × 2                             | D    | —                                                     |
+| adsp      | Anti-detect tells             | impossible readings · switcher marks   | D    | —                                                     |
+| shield    | Whose protection              | navigator.brave · noise · lies         | D    | —                                                     |

@@ -7,6 +7,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 ## Start here
 
 - [Testing](testing.md)
+- [Accounts, favorites and sharing](user-data.md)
 - [Development tools and local data](development-tools.md)
 - [On-demand translation](translation.md)
 - [Translation provider state and operations](translation-operations.md)
