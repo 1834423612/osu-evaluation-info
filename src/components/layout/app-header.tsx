@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Bookmark, Languages } from "lucide-react";
-import { ResourcesMenu } from "./resources-menu";
+import { ResourcesMenu, ExploreMenu } from "./resources-menu";
 import resourceStyles from "./resources-menu.module.css";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
@@ -24,7 +24,7 @@ import { SyllabusUpdateMonitor } from "@/components/syllabus/syllabus-update-mon
 import styles from "./language-controls.module.css";
 
 export function AppHeader({
-  active = "explore",
+  active,
 }: {
   active?: "explore" | "saved" | "methodology" | "reference" | "rmp";
 }) {
@@ -38,6 +38,18 @@ export function AppHeader({
     savedSyllabi.length;
   const updates = savedSyllabi.filter(syllabusHasUpdate).length;
   const pathname = usePathname();
+  const current =
+    pathname === "/"
+      ? "explore"
+      : pathname === "/saved"
+        ? "saved"
+        : pathname === "/reference"
+          ? "reference"
+          : pathname === "/methodology"
+            ? "methodology"
+            : pathname === "/rmp" || pathname.startsWith("/rmp/")
+              ? "rmp"
+              : active;
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
     const title = localizedDocumentTitle(locale, pathname);
@@ -88,17 +100,11 @@ export function AppHeader({
             className="main-nav"
             aria-label={text(locale, "Main navigation", "主导航")}
           >
-            <Link
-              href="/"
-              className={active === "explore" ? "nav-item active" : "nav-item"}
-              aria-current={active === "explore" ? "page" : undefined}
-            >
-              {text(locale, "Explore", "课程探索")}
-            </Link>
+            <ExploreMenu locale={locale} page={current} />
             <Link
               href="/saved"
-              className={active === "saved" ? "nav-item active" : "nav-item"}
-              aria-current={active === "saved" ? "page" : undefined}
+              className={current === "saved" ? "nav-item active" : "nav-item"}
+              aria-current={current === "saved" ? "page" : undefined}
             >
               <Bookmark size={15} />
               {text(locale, "Saved", "收藏")}
@@ -122,14 +128,7 @@ export function AppHeader({
             </Link>
           </nav>
           <div className="header-actions">
-            <ResourcesMenu
-              locale={locale}
-              active={
-                active === "methodology" ||
-                active === "reference" ||
-                active === "rmp"
-              }
-            />
+            <ResourcesMenu locale={locale} page={current} />
             <Button
               variant="outline"
               size="sm"
