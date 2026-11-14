@@ -306,3 +306,10 @@ node tests/analytics/replay.browser.mjs
 node tests/user-data/sync.browser.mjs
 ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 ```
+
+Temporary transfer tests use the sharing database/browser flags. The browser test creates synthetic transfers and revokes them in cleanup, retaining audit rows.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/transfers.integration.test.mjs](../tests/user-data/transfers.integration.test.mjs) | Integration | Real SQL pairing approval, ownership, concurrent leases, expiry, idempotent completion and read-only access |
+| [tests/user-data/transfers.browser.mjs](../tests/user-data/transfers.browser.mjs) | Browser | Real API two-browser pairing, partial import, refresh recovery, lost completion response and 320/390px layouts |

@@ -57,3 +57,11 @@ The separate share page supports partial import and in-place course details. Exi
 `/history` stores submitted searches and deliberately opened courses in this browser for 90 days, with at most 100 searches and 200 course opens. Reopening an item moves it to the top. History can be disabled, cleared or edited individually. Keystrokes and prefetched courses are not history entries. History is currently local and is not uploaded by favorites sync.
 
 See [Testing](testing.md) for isolated database tests and mocked browser flows, [Umami analytics](analytics/umami.md) for recording settings, and the dated [design record](design/sharing-sync-analytics.md) for the broader architecture. Design proposals do not imply that every proposed subsystem has shipped.
+
+## Temporary transfers
+
+**Transfer** on the saved page sends all or selected favorites without an account. The independent `/transfer` page receives codes and manages active transfers from this browser or account. A transfer defaults to one hour; options are 15 minutes, one hour, 24 hours and seven days. Owners can revoke it. Limits are ten active transfers, 10 MiB total and 1 MiB per snapshot.
+
+A private link carries a high-entropy fragment capability. A six-digit pairing code expires after ten minutes and can only request access: the sender must compare the confirmation number shown on the receiving device and approve that device. A code alone never returns the snapshot. No more than three pending receiving devices are admitted per transfer.
+
+Receiving creates a 15-minute lease, bounded by the transfer expiry, so a second device cannot consume the same transfer concurrently. The same browser can resume or refresh its claim. Selected items are persisted locally before completion is acknowledged. If the acknowledgement response is lost, **Confirm completion again** retries the same claim; it does not import a second copy. Import preserves exact syllabus revision state for new items and keeps existing recipient items. Read-only availability checks do not create an anonymous identity.

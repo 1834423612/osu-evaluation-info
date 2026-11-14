@@ -304,3 +304,10 @@ node tests/analytics/replay.browser.mjs
 node tests/user-data/sync.browser.mjs
 ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 ```
+
+临时转存测试使用与分享测试相同的数据库和浏览器开关；浏览器测试创建并最终撤销测试转存，保留审计行。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/transfers.integration.test.mjs](../../tests/user-data/transfers.integration.test.mjs) | Integration | 真实 SQL 的配对确认、权限、并发租约、过期、幂等完成和只读访问 |
+| [tests/user-data/transfers.browser.mjs](../../tests/user-data/transfers.browser.mjs) | Browser | 真实接口的双浏览器配对、部分导入、刷新恢复、确认响应丢失及 320/390 像素布局 |
