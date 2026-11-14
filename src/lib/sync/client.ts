@@ -6,7 +6,8 @@ import {
 } from "../saved/local.ts";
 import { itemKey, type ExchangeItem } from "../saved/exchange.ts";
 import { savedScope, setSavedScope, scopedSavedKey } from "../saved/scope.ts";
-import { SAVED_WORKSPACE_KEY } from "../saved/workspace.ts";
+import { debugFlag } from "../debug/flags.ts";
+import { SAVED_WORKSPACE_KEY, SAVED_STORAGE_KEYS } from "../saved/workspace.ts";
 import { readSyncState, updateSyncState } from "./database.ts";
 import { captureChanges, acceptResponse, resolveConflict } from "./model.ts";
 import { sameItem, syncResponseSchema, type SyncResponse } from "./protocol.ts";
@@ -98,6 +99,7 @@ export type MergePreview = {
   conflicts: number;
 };
 export async function previewMerge(accountId: string): Promise<MergePreview> {
+  if (debugFlag("factory")) throw new Error("simulation");
   const local = readLocalItems(),
     response = await exchange(accountId, { cursor: 0, operations: [] }),
     live = new Map(local.map((x) => [itemKey(x), x]));
@@ -122,6 +124,7 @@ export async function enableSync(
   preview: MergePreview,
   once = false,
 ) {
+  if (debugFlag("factory")) throw new Error("simulation");
   if (preview.response.accountId !== accountId)
     throw new Error("account_changed");
   const token = await lease(accountId);
@@ -137,7 +140,14 @@ export async function enableSync(
     }
     // Guest snapshots remain untouched. Each account has its own physical workspace.
     if (!localStorage.getItem(scopedSavedKey(SAVED_WORKSPACE_KEY, accountId))) {
-      const guest = localStorage.getItem(SAVED_WORKSPACE_KEY);
+      const guest =
+        localStorage.getItem(SAVED_WORKSPACE_KEY) ??
+        JSON.stringify({
+          version: 1,
+          records: Object.fromEntries(
+            SAVED_STORAGE_KEYS.map((key) => [key, localStorage.getItem(key)]),
+          ),
+        });
       if (guest)
         localStorage.setItem(
           scopedSavedKey(SAVED_WORKSPACE_KEY, accountId),

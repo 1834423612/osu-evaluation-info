@@ -150,6 +150,20 @@ try {
       !!localStorage.getItem("course-atlas:saved-workspace:v1:account:" + id),
     user.id,
   );
+  assert.equal(
+    await a.page.evaluate(
+      (id) =>
+        JSON.parse(
+          JSON.parse(
+            localStorage.getItem(
+              "course-atlas:saved-workspace:v1:account:" + id,
+            ),
+          ).records["course-atlas:saved:v1"],
+        )[0].description,
+      user.id,
+    ),
+    snapshot.items[0].payload.description,
+  );
   await setup(b.page);
   assert.equal(await count(b.page), 1);
   assert.equal(cloud.size, 1);
