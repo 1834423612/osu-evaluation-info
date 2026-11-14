@@ -1,4 +1,5 @@
 "use client";
+import { recordCourseOpen } from "@/lib/telemetry/client";
 import { PageShare } from "@/components/sharing/page-share";
 import { SearchMatch } from "./search-match";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
@@ -417,6 +418,7 @@ export function CourseCard({
       term: course.termCode ?? "",
       campus: (course.campusCode ?? "").toLowerCase(),
     });
+    recordCourseOpen(course.id);
     recordHistory({
       id: "course:" + course.id,
       kind: "course",

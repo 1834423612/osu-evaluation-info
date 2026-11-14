@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { ProductAnalytics } from "@/components/analytics/product-analytics";
 import { SyncProvider } from "@/components/sync/sync-provider";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
@@ -100,6 +102,9 @@ export default function RootLayout({
           }}
         />
         <SyncProvider />
+        <Suspense fallback={null}>
+          <ProductAnalytics />
+        </Suspense>
         {children}
         <UmamiAnalytics
           websiteId={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? ""}

@@ -199,7 +199,7 @@ try {
   await b.page.getByRole("button", { name: "Sync now", exact: true }).waitFor();
   await b.page.waitForFunction(async (id) => {
     const db = await new Promise((r) => {
-      const q = indexedDB.open("waho-user-data", 1);
+      const q = indexedDB.open("waho-user-data");
       q.onsuccess = () => r(q.result);
     });
     return await new Promise((r) => {
@@ -247,7 +247,7 @@ try {
     .click();
   await b.page.waitForFunction(async (id) => {
     const db = await new Promise((r) => {
-      const q = indexedDB.open("waho-user-data", 1);
+      const q = indexedDB.open("waho-user-data");
       q.onsuccess = () => r(q.result);
     });
     return await new Promise((r) => {

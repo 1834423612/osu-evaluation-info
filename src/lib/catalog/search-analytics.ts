@@ -1,3 +1,4 @@
+import { safeSearchTerm } from "../analytics/privacy.ts";
 import { normalizeCourseSearch } from "../analytics.ts";
 import type { CatalogResponse } from "./types";
 
@@ -48,7 +49,7 @@ export function courseSearchOutcome(
           : "no_matches";
   const term = params.get("term") ?? result?.terms[0]?.code ?? "";
   return {
-    search_term: query.searchTerm,
+    search_term: safeSearchTerm(query.searchTerm),
     search_type: query.searchType,
     status,
     match_kind: result?.searchInfo?.kind ?? "unknown",

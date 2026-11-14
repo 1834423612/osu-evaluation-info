@@ -1,23 +1,5 @@
 import { newSyncState, type SyncState } from "./model.ts";
-let opening: Promise<IDBDatabase> | undefined;
-function database() {
-  return (opening ??= new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open("waho-user-data", 1);
-    request.onupgradeneeded = () =>
-      request.result.createObjectStore("sync", { keyPath: "accountId" });
-    request.onsuccess = () => {
-      request.result.onversionchange = () => {
-        request.result.close();
-        opening = undefined;
-      };
-      resolve(request.result);
-    };
-    request.onerror = () => {
-      opening = undefined;
-      reject(request.error);
-    };
-  }));
-}
+import { userDatabase as database } from "../user-data/browser-db.ts";
 export async function readSyncState(accountId: string): Promise<SyncState> {
   const db = await database();
   return new Promise((resolve, reject) => {

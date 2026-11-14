@@ -37,6 +37,7 @@ import { SearchContext } from "./search-context";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { courseSearchOutcome } from "@/lib/catalog/search-analytics";
 import { debugServiceControlled } from "@/lib/debug/services";
+import { recordProductEvents } from "@/lib/telemetry/client";
 import { SharedCourseFallback } from "./shared-course-fallback";
 import { CourseCard } from "./course-card";
 import { EnrollmentWatchControl } from "./enrollment-watch-control";
@@ -206,6 +207,7 @@ export function CourseExplorer() {
     window.history.pushState(null, "", `/?${params}`);
   }
   function chooseSearch(query: string, clearSubject = false) {
+    recordProductEvents([{ type: "search", term: query }]);
     recordSearchHistory(query, searchParams.toString());
     if (!clearSubject) {
       updateParam("q", query);
@@ -246,7 +248,23 @@ export function CourseExplorer() {
           data,
           performance.now() - started,
         );
-        if (properties) trackUmamiEvent("course_search_results", properties);
+        if (properties) {
+          trackUmamiEvent("course_search_results", properties);
+          recordProductEvents([
+            {
+              type: "search_result",
+              term: properties.search_term,
+              status: properties.status as
+                | "matches"
+                | "no_matches"
+                | "continuation"
+                | "filter_conflict"
+                | "error",
+              count: Math.max(0, properties.result_count),
+              duration: properties.duration_ms,
+            },
+          ]);
+        }
       }
       setLoading(true);
       setError(false);

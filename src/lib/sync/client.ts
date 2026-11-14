@@ -6,6 +6,7 @@ import {
 } from "../saved/local.ts";
 import { itemKey, type ExchangeItem } from "../saved/exchange.ts";
 import { savedScope, setSavedScope, scopedSavedKey } from "../saved/scope.ts";
+import { applySyncedItems } from "../saved/provenance.ts";
 import { debugFlag } from "../debug/flags.ts";
 import { SAVED_WORKSPACE_KEY, SAVED_STORAGE_KEYS } from "../saved/workspace.ts";
 import { readSyncState, updateSyncState } from "./database.ts";
@@ -70,7 +71,8 @@ export async function syncCycle(accountId: string) {
       const live = readLocalItems(),
         next = acceptResponse(s, response, live);
       delete s.problem;
-      if (!sameItem(next, live)) replaceLocalItems(next);
+      if (!sameItem(next, live))
+        applySyncedItems(() => replaceLocalItems(next));
       if (!s.needsReview)
         captureChanges(s, readLocalItems(), () => crypto.randomUUID());
       if (s.once && !s.outbox.length && !s.conflicts.length && !s.needsReview)
@@ -156,7 +158,7 @@ export async function enableSync(
     }
     setSavedScope(accountId);
     // Legacy guest keys may not yet have an atomic workspace; import the captured items too.
-    importLocalItems(preview.local, "sync");
+    applySyncedItems(() => importLocalItems(preview.local, "sync"));
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       const local = readLocalItems(),
@@ -183,7 +185,7 @@ export async function enableSync(
         }
         if (r.item) live.set(key, r.item);
       }
-      replaceLocalItems([...live.values()]);
+      applySyncedItems(() => replaceLocalItems([...live.values()]));
       s.initialized = true;
       s.enabled = true;
       s.once = once;

@@ -12,6 +12,7 @@ const files = [
   "20261114_sync.sql",
   "20261114_transfers.sql",
   "20261114_page_links.sql",
+  "20261114_telemetry.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),
