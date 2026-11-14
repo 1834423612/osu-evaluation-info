@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 for (const path of [".env.local", ".env"])
   if (existsSync(path)) process.loadEnvFile(path);
+if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const { getDatabasePool } = await import("../../src/lib/db.ts");
 const { userDataSchema } = await import("../../src/lib/user-data/namespace.ts");
 const { authTablePrefix } = await import("../../src/lib/auth/config.ts");

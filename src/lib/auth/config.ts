@@ -23,7 +23,9 @@ export function authBaseURL(env: NodeJS.ProcessEnv = process.env) {
   }
 }
 export function authTablePrefix(env: NodeJS.ProcessEnv = process.env) {
-  const prefix = env.AUTH_TABLE_PREFIX || "ca_";
+  const prefix =
+    env.AUTH_TABLE_PREFIX ||
+    (env.NODE_ENV === "production" ? "ca_" : "ca_dev_");
   if (!/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))
     throw new Error("Invalid authentication table prefix");
   return prefix;

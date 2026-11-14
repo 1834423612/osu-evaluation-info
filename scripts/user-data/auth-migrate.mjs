@@ -1,6 +1,7 @@
 import { existsSync, writeFileSync, readFileSync } from "node:fs";
 for (const path of [".env.local", ".env"])
   if (existsSync(path)) process.loadEnvFile(path);
+if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const { getMigrations } = await import("better-auth/db/migration");
 const { createAuth } = await import("../../src/lib/auth/server.ts");
 const { userDataSchema } = await import("../../src/lib/user-data/namespace.ts");
@@ -25,7 +26,14 @@ const unique =
   'passkey_credential_unique" ON "' +
   prefix +
   'passkey" ("credentialID");';
-const marker = 'CREATE TABLE IF NOT EXISTS "'+schema+'".installation (name text PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now()); INSERT INTO "'+schema+'".installation(name) VALUES (\'auth:'+prefix+'\') ON CONFLICT DO NOTHING;';
+const marker =
+  'CREATE TABLE IF NOT EXISTS "' +
+  schema +
+  '".installation (name text PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now()); INSERT INTO "' +
+  schema +
+  "\".installation(name) VALUES ('auth:" +
+  prefix +
+  "') ON CONFLICT DO NOTHING;";
 let client;
 try {
   if (apply) {
@@ -50,7 +58,18 @@ try {
   if (process.argv.includes("--output")) {
     const path = process.argv[process.argv.indexOf("--output") + 1];
     if (!path) throw new Error("Output file missing");
-    writeFileSync(path,"BEGIN;\n"+base+"\n"+sql+"\n"+unique+"\n"+marker+"\nCOMMIT;\n");
+    writeFileSync(
+      path,
+      "BEGIN;\n" +
+        base +
+        "\n" +
+        sql +
+        "\n" +
+        unique +
+        "\n" +
+        marker +
+        "\nCOMMIT;\n",
+    );
     console.log("Migration SQL written");
   }
   console.log(

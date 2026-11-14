@@ -1,3 +1,4 @@
+import { userDataSchema } from "../../src/lib/user-data/namespace.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
@@ -100,5 +101,16 @@ test("streaming JSON bodies are bounded even without Content-Length", async () =
   await assert.rejects(
     readJson(request, z.object({ value: z.string() }), 1024),
     (e) => e.status === 413,
+  );
+});
+
+test("development identities and cloud data are isolated from production by default", () => {
+  assert.equal(authTablePrefix({ NODE_ENV: "production" }), "ca_");
+  assert.equal(authTablePrefix({ NODE_ENV: "development" }), "ca_dev_");
+  assert.equal(userDataSchema({ NODE_ENV: "production" }), "osu_user");
+  assert.equal(userDataSchema({ NODE_ENV: "development" }), "osu_user_dev");
+  assert.equal(
+    userDataSchema({ NODE_ENV: "production", USER_DATA_SCHEMA: "isolated" }),
+    "isolated",
   );
 });
