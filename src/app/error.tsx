@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import { captureBrowserError } from "@/components/analytics/umami-analytics";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { SceneMascot } from "@/components/brand/scene-mascot";
@@ -7,11 +9,15 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 export default function ErrorPage({
   retry,
+  error,
 }: {
   error: Error & { digest?: string };
   retry: () => void;
 }) {
   const { locale } = usePreferences();
+  useEffect(() => {
+    captureBrowserError(error, "page_boundary");
+  }, [error]);
   return (
     <>
       <AppHeader />

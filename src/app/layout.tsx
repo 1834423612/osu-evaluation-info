@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
+import {
+  analyticsBeforeSend,
+  analyticsAssetUrl,
+} from "@/lib/analytics/privacy";
 import { UmamiAnalytics } from "@/components/analytics/umami-analytics";
 import { brand } from "@/lib/brand";
 import "./globals.css";
@@ -91,31 +94,27 @@ export default function RootLayout({
               var debugSession = JSON.parse(sessionStorage.getItem("course-atlas:debug:session:v1") || "null");
               if (debugSession && debugSession.expiresAt > Date.now()) window.__COURSE_ATLAS_DEBUG__ = debugSession.flags;
             } catch (_) {}
-            window.umamiBeforeSend = function(type, payload) {
-              if (window.__COURSE_ATLAS_DEBUG__ && window.__COURSE_ATLAS_DEBUG__.skipAnalytics) return false;
-              if (!payload || typeof payload !== "object") return payload;
-              for (const field of ["url", "referrer"]) {
-                if (typeof payload[field] !== "string" || !payload[field]) continue;
-                try {
-                  const url = new URL(payload[field], window.location.origin);
-                  const params = new URLSearchParams();
-                  for (const [key, value] of url.searchParams) {
-                    if (/^utm_(source|medium|campaign|term|content)$/i.test(key)) params.append(key, value);
-                  }
-                  url.search = params.toString();
-                  payload[field] = url.href;
-                } catch {}
-              }
-              return payload;
-            };`,
+            window.umamiBeforeSend = ${analyticsBeforeSend.toString()};`,
           }}
         />
         {children}
-        <Analytics />
         <UmamiAnalytics
           websiteId={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? ""}
-          trackerUrl={process.env.NEXT_PUBLIC_UMAMI_TRACKER_URL ?? ""}
-          recorderUrl={process.env.NEXT_PUBLIC_UMAMI_RECORDER_URL ?? ""}
+          trackerUrl={analyticsAssetUrl(
+            process.env.NEXT_PUBLIC_UMAMI_TRACKER_URL ?? "",
+            process.env.NEXT_PUBLIC_UMAMI_ASSET_VERSION ?? "3.5.0",
+          )}
+          recorderUrl={analyticsAssetUrl(
+            process.env.NEXT_PUBLIC_UMAMI_RECORDER_URL ?? "",
+            process.env.NEXT_PUBLIC_UMAMI_ASSET_VERSION ?? "3.5.0",
+          )}
+          release={process.env.NEXT_PUBLIC_BUILD_SHA ?? "development"}
+          environment={
+            process.env.NEXT_PUBLIC_DEPLOYMENT_ENV ??
+            (process.env.NODE_ENV === "production"
+              ? "production"
+              : "development")
+          }
         />
       </body>
     </html>

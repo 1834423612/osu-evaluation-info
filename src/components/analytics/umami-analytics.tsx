@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { Analytics } from "@vercel/analytics/next";
+import {
+  ANALYTICS_EVENT,
+  ANALYTICS_KEY,
+  parseAnalyticsPreference,
+  privateAnalyticsPath,
+  safeSearchTerm,
+} from "@/lib/analytics/privacy";
 import Script from "next/script";
 import { normalizeCourseSearch } from "@/lib/analytics";
 import { debugFlag, DEBUG_EVENT } from "@/lib/debug/flags";
@@ -13,15 +22,51 @@ declare global {
   interface Window {
     umami?: {
       track: (name: string, properties?: EventProperties) => void;
+      captureException?: (
+        error: unknown,
+        options?: { tags?: Record<string, string> },
+      ) => void;
     };
   }
 }
 
 const pendingEvents: PendingEvent[] = [];
+const reportedErrors = new WeakSet<object>();
+export function analyticsEnabled() {
+  if (
+    typeof window === "undefined" ||
+    privateAnalyticsPath(location.pathname) ||
+    debugFlag("skipAnalytics")
+  )
+    return false;
+  if (
+    navigator.doNotTrack === "1" ||
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return false;
+  try {
+    return parseAnalyticsPreference(localStorage.getItem(ANALYTICS_KEY))
+      .enabled;
+  } catch {
+    return true;
+  }
+}
+export function captureBrowserError(error: unknown, feature: string) {
+  if (
+    !analyticsEnabled() ||
+    !error ||
+    typeof error !== "object" ||
+    reportedErrors.has(error)
+  )
+    return;
+  reportedErrors.add(error);
+  window.umami?.captureException?.(error, { tags: { feature } });
+}
 const scrollDepths = new WeakMap<Element, Set<number>>();
 
 export function trackUmamiEvent(name: string, properties: EventProperties) {
-  if (debugFlag("skipAnalytics")) {
+  if (!analyticsEnabled()) {
     pendingEvents.length = 0;
     return;
   }
@@ -33,7 +78,7 @@ export function trackUmamiEvent(name: string, properties: EventProperties) {
 }
 
 function flushPendingEvents() {
-  if (debugFlag("skipAnalytics")) {
+  if (!analyticsEnabled()) {
     pendingEvents.length = 0;
     return;
   }
@@ -88,7 +133,11 @@ function actionFor(element: Element) {
 }
 
 function onClick(event: MouseEvent) {
-  if (!(event.target instanceof Element)) return;
+  if (
+    !(event.target instanceof Element) ||
+    event.target.closest("[data-telemetry-private], .rr-block")
+  )
+    return;
   const control = event.target.closest(
     'button, a[href], input, select, [role="button"], [role="tab"], [role="option"], [role="switch"], [aria-expanded], [data-rmp-card], .course-card',
   );
@@ -141,7 +190,7 @@ function onSubmit(event: SubmitEvent) {
       : null;
   if (normalizedSearch) {
     trackUmamiEvent("course_search", {
-      search_term: normalizedSearch.searchTerm,
+      search_term: safeSearchTerm(normalizedSearch.searchTerm),
       search_type: normalizedSearch.searchType,
       path: window.location.pathname,
     });
@@ -179,11 +228,37 @@ export function UmamiAnalytics({
   websiteId,
   trackerUrl,
   recorderUrl,
+  release,
+  environment,
 }: {
   websiteId: string;
   trackerUrl: string;
   recorderUrl: string;
+  release: string;
+  environment: string;
 }) {
+  const pathname = usePathname();
+  const recorderLoaded = useRef(false);
+  const preference = useSyncExternalStore(
+    (callback) => {
+      window.addEventListener(ANALYTICS_EVENT, callback);
+      window.addEventListener("storage", callback);
+      return () => {
+        window.removeEventListener(ANALYTICS_EVENT, callback);
+        window.removeEventListener("storage", callback);
+      };
+    },
+    () => {
+      try {
+        return localStorage.getItem(ANALYTICS_KEY);
+      } catch {
+        return null;
+      }
+    },
+    () => null,
+  );
+  const settings = parseAnalyticsPreference(preference);
+  const privatePage = privateAnalyticsPath(pathname);
   const disabled = useSyncExternalStore(
     (callback) => {
       window.addEventListener(DEBUG_EVENT, callback);
@@ -193,7 +268,14 @@ export function UmamiAnalytics({
     () => false,
   );
   useEffect(() => {
-    if (!websiteId || !trackerUrl || disabled) return;
+    if (
+      !websiteId ||
+      !trackerUrl ||
+      disabled ||
+      !settings.enabled ||
+      privatePage
+    )
+      return;
     document.addEventListener("click", onClick, true);
     document.addEventListener("change", onChange, true);
     document.addEventListener("submit", onSubmit, true);
@@ -207,11 +289,27 @@ export function UmamiAnalytics({
       document.removeEventListener("submit", onSubmit, true);
       document.removeEventListener("scroll", onScroll, true);
     };
-  }, [trackerUrl, websiteId, disabled]);
+  }, [trackerUrl, websiteId, disabled, settings.enabled, privatePage]);
+  useEffect(() => {
+    if (
+      recorderLoaded.current &&
+      (privatePage || disabled || !settings.enabled || !settings.replay)
+    ) {
+      window.location.reload();
+    }
+  }, [privatePage, disabled, settings.enabled, settings.replay]);
 
-  if (!websiteId || !trackerUrl || disabled) return null;
+  if (!websiteId || !trackerUrl || disabled || !settings.enabled || privatePage)
+    return null;
   return (
     <>
+      <Analytics
+        beforeSend={(event) =>
+          analyticsEnabled()
+            ? { ...event, url: event.url.split(/[?#]/)[0] }
+            : null
+        }
+      />
       <Script
         id="umami-tracker"
         src={trackerUrl}
@@ -220,15 +318,21 @@ export function UmamiAnalytics({
         data-do-not-track="true"
         data-performance="true"
         data-errors="true"
+        data-release={release.slice(0, 100)}
+        data-environment={environment.slice(0, 50)}
+        data-exclude-hash="true"
         data-before-send="umamiBeforeSend"
         onReady={flushPendingEvents}
       />
-      {recorderUrl ? (
+      {recorderUrl && settings.replay ? (
         <Script
           id="umami-recorder"
           src={recorderUrl}
           strategy="afterInteractive"
           data-website-id={websiteId}
+          onReady={() => {
+            recorderLoaded.current = true;
+          }}
         />
       ) : null}
     </>
