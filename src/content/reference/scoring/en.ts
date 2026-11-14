@@ -30,7 +30,7 @@ export const scoring: ReferenceTopic = {
         {
           title: "High / moderate / limited coverage",
           detail:
-            "High adds 100 raw responses and 3 records. Other eligible samples are moderate; below minimums is limited. These are not confidence intervals.",
+            "High adds 100 raw responses and 3 instructor-section records. Other eligible samples are moderate; below minimums is limited. These are not confidence intervals.",
         },
       ],
     },

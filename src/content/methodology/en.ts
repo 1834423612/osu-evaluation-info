@@ -50,8 +50,8 @@ export const methodology: MethodologyCopy = {
         "Coverage describes the amount and spread of evidence, not a statistical confidence interval. Responses are not unique people, and a team-taught section can produce a record for each evaluated teacher.",
       ],
       facts: [
-        "A directional signal needs 30 raw and 30 time-weighted responses, 2 records, 2 terms, and an observation within 2 years.",
-        "With that coverage: positive ≥4.2; caution ≤3.3; otherwise mixed. High coverage needs 100 raw responses and 3 records; other eligible samples are moderate.",
+        "A directional signal needs 30 raw and 30 time-weighted responses, 2 instructor-section records, 2 terms, and an observation within 2 years.",
+        "With that coverage: positive ≥4.2; caution ≤3.3; otherwise mixed. High coverage needs 100 raw responses and 3 instructor-section records; other eligible samples are moderate.",
         "Below those minimums, coverage is limited. Scores do not predict grades, workload, difficulty, or personal fit.",
       ],
     },
