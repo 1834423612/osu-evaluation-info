@@ -4,10 +4,41 @@ import { randomUUID } from "node:crypto";
 import { snapshot } from "./fixtures.mjs";
 import {
   newSyncState,
+  initializeMerge,
   captureChanges,
   acceptResponse,
   resolveConflict,
 } from "../../src/lib/sync/model.ts";
+test("fresh merges keep independent additions, while expired deletion history requires a choice before restoring a missing item", () => {
+  const a = newSyncState("a"),
+    local = snapshot.items[0],
+    remote = snapshot.items[1];
+  const response = {
+    accountId: "a",
+    cursor: 4,
+    floor: 0,
+    reset: false,
+    records: [{ key: itemKey(remote), item: remote, version: 4 }],
+    receipts: [],
+  };
+  assert.equal(initializeMerge(a, response, [local], randomUUID).length, 2);
+  assert.equal(a.outbox.length, 1);
+  assert.equal(a.conflicts.length, 0);
+  const expired = newSyncState("a");
+  assert.equal(
+    initializeMerge(
+      expired,
+      { ...response, floor: 3, reset: true },
+      [local],
+      randomUUID,
+    ).length,
+    2,
+  );
+  assert.equal(expired.outbox.length, 0);
+  assert.equal(expired.conflicts.length, 1);
+  assert.equal(expired.conflicts[0].key, itemKey(local));
+  assert.equal(expired.conflicts[0].remote.item, null);
+});
 import { itemKey } from "../../src/lib/saved/exchange.ts";
 import {
   setSavedScope,

@@ -42,6 +42,49 @@ export function newSyncState(accountId: string): SyncState {
     lastSyncAt: null,
   };
 }
+/** Called only after the user confirms the merge preview. */
+export function initializeMerge(
+  state: SyncState,
+  response: SyncResponse,
+  items: ExchangeItem[],
+  uuid: () => string,
+) {
+  if (response.accountId !== state.accountId)
+    throw new Error("account_changed");
+  const live = new Map(items.map((x) => [itemKey(x), x])),
+    hadHistory = state.initialized,
+    expiredHistory = response.floor > 0,
+    rows = new Map(response.records.map((x) => [x.key, x]));
+  state.baseline = Object.fromEntries(rows);
+  state.seen = Object.fromEntries(
+    [...rows].map(([key, row]) => [key, row.item]),
+  );
+  state.outbox = [];
+  state.conflicts = [];
+  for (const key of new Set([
+    ...rows.keys(),
+    ...(hadHistory || expiredHistory ? [...live.keys()] : []),
+  ])) {
+    const remote = rows.get(key) ?? { key, version: 0, item: null },
+      own = live.get(key) ?? null;
+    if (sameItem(own, remote.item)) continue;
+    if (
+      (own && (rows.has(key) || hadHistory || expiredHistory)) ||
+      (hadHistory && !own && remote.item)
+    ) {
+      state.conflicts.push({ key, local: own, remote });
+      continue;
+    }
+    if (remote.item) live.set(key, remote.item);
+  }
+  state.initialized = true;
+  state.enabled = true;
+  state.needsReview = false;
+  state.cursor = response.cursor;
+  const merged = [...live.values()];
+  captureChanges(state, merged, uuid);
+  return merged;
+}
 export function captureChanges(
   state: SyncState,
   items: ExchangeItem[],

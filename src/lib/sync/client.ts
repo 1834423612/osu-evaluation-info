@@ -15,7 +15,12 @@ import { applySyncedItems } from "../saved/provenance.ts";
 import { debugFlag } from "../debug/flags.ts";
 import { SAVED_WORKSPACE_KEY, SAVED_STORAGE_KEYS } from "../saved/workspace.ts";
 import { readSyncState, updateSyncState } from "./database.ts";
-import { captureChanges, acceptResponse, resolveConflict } from "./model.ts";
+import {
+  captureChanges,
+  acceptResponse,
+  resolveConflict,
+  initializeMerge,
+} from "./model.ts";
 import { sameItem, syncResponseSchema, type SyncResponse } from "./protocol.ts";
 export const SYNC_EVENT = "course-atlas:sync-change";
 function changed() {
@@ -149,6 +154,7 @@ export async function enableSync(
       });
       return;
     }
+    const sourceItems = readLocalItems();
     // Guest snapshots remain untouched. Each account has its own physical workspace.
     if (!localStorage.getItem(scopedSavedKey(SAVED_WORKSPACE_KEY, accountId))) {
       const guest =
@@ -167,40 +173,17 @@ export async function enableSync(
     }
     setSavedScope(accountId);
     // Legacy guest keys may not yet have an atomic workspace; import the captured items too.
-    applySyncedItems(() => importLocalItems(preview.local, "sync"));
+    applySyncedItems(() => importLocalItems(sourceItems, "sync"));
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
-      const local = readLocalItems(),
-        live = new Map(local.map((x) => [itemKey(x), x])),
-        wasInitialized = s.initialized;
-      const rows = new Map(preview.response.records.map((x) => [x.key, x]));
-      s.baseline = Object.fromEntries([...rows]);
-      s.seen = Object.fromEntries([...rows].map(([k, r]) => [k, r.item]));
-      s.outbox = [];
-      s.conflicts = [];
-      for (const key of new Set([
-        ...rows.keys(),
-        ...(wasInitialized ? [...live.keys()] : []),
-      ])) {
-        const r = rows.get(key) ?? { key, version: 0, item: null },
-          own = live.get(key) ?? null;
-        if (sameItem(own, r.item)) continue;
-        if (
-          (own && (rows.has(key) || wasInitialized)) ||
-          (wasInitialized && !own && r.item)
-        ) {
-          s.conflicts.push({ key, local: own, remote: r });
-          continue;
-        }
-        if (r.item) live.set(key, r.item);
-      }
-      applySyncedItems(() => replaceLocalItems([...live.values()]));
-      s.initialized = true;
-      s.enabled = true;
+      const merged = initializeMerge(
+        s,
+        preview.response,
+        readLocalItems(),
+        () => crypto.randomUUID(),
+      );
+      applySyncedItems(() => replaceLocalItems(merged));
       s.once = once;
-      s.needsReview = false;
-      s.cursor = preview.response.cursor;
-      captureChanges(s, readLocalItems(), () => crypto.randomUUID());
     });
   } finally {
     await release(accountId, token);
