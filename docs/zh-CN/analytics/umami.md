@@ -21,3 +21,17 @@ NEXT_PUBLIC_UMAMI_RECORDER_URL=https://example.com/recorder.js
 ```sh
 node --env-file=.env.local scripts/analytics/analyze-search.mjs /tmp/osu-search-audit.json
 ```
+
+## 搜索结果事件字段
+
+| 属性                               | 含义                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `status`                           | `matches`、`no_matches`、`continuation`、`filter_conflict` 或 `error` |
+| `result_count` / `total_courses`   | 当前页课程数／已知匹配总数；未知总数为 `-1`                           |
+| `complete` / `has_more`            | 候选扫描是否完整／是否还有下一页                                      |
+| `search_term` / `search_type`      | 与提交事件使用相同的规范化输入标签                                    |
+| `match_kind`                       | 识别到的课程代码、编号、学科或关键词                                  |
+| `search_engine` / `fuzzy_results`  | 引擎版本与本页明确标注的近似结果数                                    |
+| `index_fallback`                   | `none`、`unavailable` 或 `filter`，区分索引查询与有限实时回退         |
+| `term` / `campus` / `filter_count` | 所选学期、校区和筛选数量，不复制任意筛选值                            |
+| `duration_ms`                      | 结果加载耗时，取整并限制在两分钟内                                    |
