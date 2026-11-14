@@ -16,7 +16,13 @@ import { text, type Locale } from "@/lib/i18n";
 import styles from "./resources-menu.module.css";
 
 type Page =
-  "explore" | "saved" | "methodology" | "reference" | "rmp" | "updates";
+  | "explore"
+  | "saved"
+  | "methodology"
+  | "reference"
+  | "rmp"
+  | "updates"
+  | "history";
 function NavigationMenu({
   locale,
   page,
@@ -55,6 +61,17 @@ function NavigationMenu({
             locale,
             "Teachers and course reviews",
             "教师档案与课程评价",
+          ),
+        },
+        {
+          page: "history",
+          href: "/history",
+          Icon: History,
+          title: text(locale, "Recent activity", "最近记录"),
+          detail: text(
+            locale,
+            "Searches and viewed courses",
+            "搜索与浏览过的课程",
           ),
         },
         {
@@ -117,11 +134,13 @@ function NavigationMenu({
         <Icon size={15} aria-hidden="true" />
         <span>
           {exploring
-            ? page === "updates"
-              ? text(locale, "Updates", "课程更新")
-              : page === "rmp"
-                ? text(locale, "Teachers", "RMP 教师库")
-                : text(locale, "Courses", "课程探索")
+            ? page === "history"
+              ? text(locale, "Recent", "最近记录")
+              : page === "updates"
+                ? text(locale, "Updates", "课程更新")
+                : page === "rmp"
+                  ? text(locale, "Teachers", "RMP 教师库")
+                  : text(locale, "Courses", "课程探索")
             : text(locale, "Guides & data", "课程说明与数据")}
         </span>
         <ChevronDown size={12} aria-hidden="true" />

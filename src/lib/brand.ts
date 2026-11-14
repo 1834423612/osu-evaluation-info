@@ -45,7 +45,9 @@ export type MascotExpression =
 
 export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
   const section =
-    pathname === "/updates"
+    pathname === "/history"
+      ? locale === "zh" ? "最近记录" : "Recent activity"
+      : pathname === "/updates"
       ? locale === "zh"
         ? "课程更新"
         : "Course updates"

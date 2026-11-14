@@ -27,7 +27,13 @@ export function AppHeader({
   active,
 }: {
   active?:
-    "explore" | "saved" | "methodology" | "reference" | "rmp" | "updates";
+    | "explore"
+    | "saved"
+    | "methodology"
+    | "reference"
+    | "rmp"
+    | "updates"
+    | "history";
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
@@ -42,17 +48,19 @@ export function AppHeader({
   const current =
     pathname === "/"
       ? "explore"
-      : pathname === "/saved"
-        ? "saved"
-        : pathname === "/reference"
-          ? "reference"
-          : pathname === "/methodology"
-            ? "methodology"
-            : pathname === "/rmp" || pathname.startsWith("/rmp/")
-              ? "rmp"
-              : pathname === "/updates"
-                ? "updates"
-                : active;
+      : pathname === "/history"
+        ? "history"
+        : pathname === "/saved"
+          ? "saved"
+          : pathname === "/reference"
+            ? "reference"
+            : pathname === "/methodology"
+              ? "methodology"
+              : pathname === "/rmp" || pathname.startsWith("/rmp/")
+                ? "rmp"
+                : pathname === "/updates"
+                  ? "updates"
+                  : active;
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
     const title = localizedDocumentTitle(locale, pathname);

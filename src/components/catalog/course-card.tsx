@@ -2,6 +2,7 @@
 import { SearchMatch } from "./search-match";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
+import { recordHistory } from "@/lib/history/store";
 import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
@@ -400,6 +401,39 @@ export function CourseCard({
     intervalSeconds: enrollmentWatchInterval,
   });
   const current = seatChecks.course;
+  const historyOpen = useRef(false);
+  useEffect(() => {
+    if (!isSelected) {
+      historyOpen.current = false;
+      return;
+    }
+    if (historyOpen.current) return;
+    historyOpen.current = true;
+    const params = new URLSearchParams({
+      q: course.subject + " " + course.catalogNumber,
+      course: course.id,
+      detailTab: "sections",
+      term: course.termCode ?? "",
+      campus: (course.campusCode ?? "").toLowerCase(),
+    });
+    recordHistory({
+      id: "course:" + course.id,
+      kind: "course",
+      title: course.subject + " " + course.catalogNumber + " · " + course.title,
+      context: course.term + " · " + course.campus,
+      href: "/?" + params,
+    });
+  }, [
+    isSelected,
+    course.id,
+    course.subject,
+    course.catalogNumber,
+    course.title,
+    course.term,
+    course.termCode,
+    course.campus,
+    course.campusCode,
+  ]);
 
   useEffect(() => {
     if (!isSelected) return;

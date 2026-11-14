@@ -21,6 +21,7 @@ import type {
   CatalogFacet,
 } from "@/lib/catalog/types";
 import { text, localizedCampus, localizedTerm } from "@/lib/i18n";
+import { recordSearchHistory } from "@/lib/history/store";
 import { usePreferences } from "@/hooks/use-preferences";
 import { AppHeader } from "@/components/layout/app-header";
 import { scrollPageToTop } from "@/lib/layout/scroll-to-top";
@@ -203,6 +204,7 @@ export function CourseExplorer() {
     window.history.pushState(null, "", `/?${params}`);
   }
   function chooseSearch(query: string, clearSubject = false) {
+    recordSearchHistory(query, searchParams.toString());
     if (!clearSubject) {
       updateParam("q", query);
       return;
@@ -494,7 +496,7 @@ export function CourseExplorer() {
             const value = String(
               new FormData(event.currentTarget).get("q") ?? "",
             ).trim();
-            updateParam("q", value);
+            chooseSearch(value);
           }}
         >
           <Search size={20} />
