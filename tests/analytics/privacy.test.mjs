@@ -15,6 +15,9 @@ test("versioned collector URLs retain proxy parameters and reject script schemes
     "https://stats.example/script.js?proxy=1&v=3.5.0",
   );
   assert.equal(analyticsAssetUrl("javascript:alert(1)"), "");
+  for (const raw of [null, "{}", '{"enabled":true}', "invalid"])
+    assert.equal(parseAnalyticsPreference(raw).replay, true);
+  assert.equal(parseAnalyticsPreference('{"replay":false}').replay, false);
   assert.deepEqual(parseAnalyticsPreference(null), {
     enabled: true,
     replay: true,
@@ -48,7 +51,7 @@ test("serialized bootstrap removes secrets from errors, URLs, hashes and nested 
   assert.equal(value.filename, "https://site.example/app.js");
   assert.ok(!JSON.stringify(value).includes("secret"));
 });
-test("private workspaces, opt-outs and DNT cancel collection", () => {
+test("all application routes allow collection while explicit opt-outs and DNT cancel it", () => {
   for (const path of [
     "/saved",
     "/account",
@@ -57,7 +60,7 @@ test("private workspaces, opt-outs and DNT cancel collection", () => {
     "/history",
     "/diagnostics",
   ])
-    assert.equal(send({}, { path }), false);
+    assert.notEqual(send({}, { path }), false);
   assert.equal(send({}, { setting: '{"enabled":false}' }), false);
   assert.equal(send({}, { dnt: "1" }), false);
 });

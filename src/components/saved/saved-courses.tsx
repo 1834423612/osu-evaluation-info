@@ -170,7 +170,7 @@ export function SavedCourses() {
   return (
     <>
       <AppHeader active="saved" />
-      <main className="saved-shell rr-block" data-telemetry-private>
+      <main className="saved-shell" data-telemetry-private>
         <div className="page-heading">
           <div>
             <h1>{text(locale, "Saved items", "我的收藏")}</h1>

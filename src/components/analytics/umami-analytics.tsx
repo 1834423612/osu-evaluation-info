@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
 import { Analytics } from "@vercel/analytics/next";
 import {
   ANALYTICS_EVENT,
   ANALYTICS_KEY,
   parseAnalyticsPreference,
-  privateAnalyticsPath,
   safeSearchTerm,
 } from "@/lib/analytics/privacy";
 import Script from "next/script";
@@ -32,13 +30,9 @@ declare global {
 
 const pendingEvents: PendingEvent[] = [];
 const reportedErrors = new WeakSet<object>();
+const subscribeClient = () => () => {};
 export function analyticsEnabled() {
-  if (
-    typeof window === "undefined" ||
-    privateAnalyticsPath(location.pathname) ||
-    debugFlag("skipAnalytics")
-  )
-    return false;
+  if (typeof window === "undefined" || debugFlag("skipAnalytics")) return false;
   if (
     navigator.doNotTrack === "1" ||
     (navigator as Navigator & { globalPrivacyControl?: boolean })
@@ -237,7 +231,12 @@ export function UmamiAnalytics({
   release: string;
   environment: string;
 }) {
-  const pathname = usePathname();
+  // Read persisted opt-outs before mounting either collector on hydration.
+  const clientReady = useSyncExternalStore(
+    subscribeClient,
+    () => true,
+    () => false,
+  );
   const recorderLoaded = useRef(false);
   const preference = useSyncExternalStore(
     (callback) => {
@@ -258,7 +257,6 @@ export function UmamiAnalytics({
     () => null,
   );
   const settings = parseAnalyticsPreference(preference);
-  const privatePage = privateAnalyticsPath(pathname);
   const disabled = useSyncExternalStore(
     (callback) => {
       window.addEventListener(DEBUG_EVENT, callback);
@@ -268,14 +266,7 @@ export function UmamiAnalytics({
     () => false,
   );
   useEffect(() => {
-    if (
-      !websiteId ||
-      !trackerUrl ||
-      disabled ||
-      !settings.enabled ||
-      privatePage
-    )
-      return;
+    if (!websiteId || !trackerUrl || disabled || !settings.enabled) return;
     document.addEventListener("click", onClick, true);
     document.addEventListener("change", onChange, true);
     document.addEventListener("submit", onSubmit, true);
@@ -289,17 +280,24 @@ export function UmamiAnalytics({
       document.removeEventListener("submit", onSubmit, true);
       document.removeEventListener("scroll", onScroll, true);
     };
-  }, [trackerUrl, websiteId, disabled, settings.enabled, privatePage]);
+  }, [trackerUrl, websiteId, disabled, settings.enabled]);
   useEffect(() => {
     if (
       recorderLoaded.current &&
-      (privatePage || disabled || !settings.enabled || !settings.replay)
+      (disabled || !settings.enabled || !settings.replay)
     ) {
       window.location.reload();
     }
-  }, [privatePage, disabled, settings.enabled, settings.replay]);
+  }, [disabled, settings.enabled, settings.replay]);
 
-  if (!websiteId || !trackerUrl || disabled || !settings.enabled || privatePage)
+  if (
+    !clientReady ||
+    !websiteId ||
+    !trackerUrl ||
+    disabled ||
+    !settings.enabled ||
+    !analyticsEnabled()
+  )
     return null;
   return (
     <>

@@ -40,11 +40,6 @@ export function parseAnalyticsPreference(
     return DEFAULT_ANALYTICS;
   }
 }
-export function privateAnalyticsPath(path: string) {
-  return /^\/(?:account|saved|share|transfer|history|diagnostics)(?:\/|$)/.test(
-    path,
-  );
-}
 export function analyticsAssetUrl(value: string, version = "3.5.0") {
   if (!value) return "";
   try {
@@ -74,13 +69,7 @@ export function analyticsBeforeSend(
   const w = window as Window & {
     __COURSE_ATLAS_DEBUG__?: { skipAnalytics?: boolean };
   };
-  if (
-    w.__COURSE_ATLAS_DEBUG__?.skipAnalytics ||
-    /^\/(account|saved|share|transfer|history|diagnostics)(\/|$)/.test(
-      location.pathname,
-    )
-  )
-    return false;
+  if (w.__COURSE_ATLAS_DEBUG__?.skipAnalytics) return false;
   try {
     const setting = JSON.parse(
       localStorage.getItem("course-atlas:analytics:v1") || "null",
@@ -106,12 +95,6 @@ export function analyticsBeforeSend(
       if (["url", "referrer", "filename"].includes(key)) {
         try {
           const u = new URL(v, location.origin);
-          if (
-            /^\/(account|saved|share|transfer|history|diagnostics)(\/|$)/.test(
-              u.pathname,
-            )
-          )
-            return u.origin + "/private";
           const params = new URLSearchParams();
           for (const [k, x] of u.searchParams)
             if (/^utm_(source|medium|campaign|term|content)$/i.test(k))

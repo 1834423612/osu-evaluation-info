@@ -37,7 +37,7 @@ export function HistoryPage() {
   return (
     <>
       <AppHeader />
-      <main className={styles.shell + " rr-block"} data-telemetry-private>
+      <main className={styles.shell} data-telemetry-private>
         <div className={styles.heading}>
           <div>
             <h1>{text(locale, "Recent activity", "最近记录")}</h1>
