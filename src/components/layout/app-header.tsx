@@ -50,7 +50,7 @@ export function AppHeader({
       ? "explore"
       : pathname === "/history"
         ? "history"
-        : pathname === "/saved"
+        : pathname === "/saved" || pathname.startsWith("/share")
           ? "saved"
           : pathname === "/reference"
             ? "reference"

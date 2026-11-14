@@ -19,10 +19,12 @@ export function CollectionImport({
   snapshot,
   locale,
   onImported,
+  onOpen,
 }: {
   snapshot: SavedSnapshot;
   locale: Locale;
   onImported?: (keys: string[]) => void;
+  onOpen?: (item: SavedSnapshot["items"][number]) => void;
 }) {
   const [selected, setSelected] = useState(
       () => new Set(snapshot.items.map(itemKey)),
@@ -80,7 +82,9 @@ export function CollectionImport({
               )
             }
           >
-            {text(locale, "Select all", "全选")}
+            {selected.size === snapshot.items.length
+              ? text(locale, "Clear selection", "取消选择")
+              : text(locale, "Select all", "全选")}
           </Button>
           <Button disabled={!selected.size || busy} onClick={() => void save()}>
             <Check size={14} />
@@ -123,7 +127,16 @@ export function CollectionImport({
                   </small>
                 </span>
               </label>
-              {href ? (
+              {onOpen && href ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={text(locale, "Open item", "打开项目")}
+                  onClick={() => onOpen(item)}
+                >
+                  <ExternalLink size={15} />
+                </Button>
+              ) : href ? (
                 <Link
                   href={href as Route}
                   aria-label={text(locale, "Open item", "打开项目")}

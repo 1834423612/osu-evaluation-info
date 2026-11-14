@@ -44,8 +44,11 @@ export type MascotExpression =
   "thinking" | keyof typeof brand.assets.expressions;
 
 export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
-  const section =
-    pathname === "/account"
+  const section = pathname.startsWith("/share")
+    ? locale === "zh"
+      ? "分享的收藏"
+      : "Shared collection"
+    : pathname === "/account"
       ? locale === "zh"
         ? "账号与同步"
         : "Account & sync"

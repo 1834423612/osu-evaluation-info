@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import {
   analyticsBeforeSend,
+  captureLinkCapability,
   analyticsAssetUrl,
 } from "@/lib/analytics/privacy";
 import { UmamiAnalytics } from "@/components/analytics/umami-analytics";
@@ -90,7 +91,7 @@ export default function RootLayout({
           id="umami-url-filter"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `try {
+            __html: `(${captureLinkCapability.toString()})(); try {
               var debugSession = JSON.parse(sessionStorage.getItem("course-atlas:debug:session:v1") || "null");
               if (debugSession && debugSession.expiresAt > Date.now()) window.__COURSE_ATLAS_DEBUG__ = debugSession.flags;
             } catch (_) {}

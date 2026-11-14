@@ -1,4 +1,29 @@
 export const ANALYTICS_KEY = "course-atlas:analytics:v1";
+/** Runs before collectors; capability fragments never become replay navigation URLs. */
+export function captureLinkCapability() {
+  const match = location.pathname.match(
+    /^\/(share|transfer)\/([a-f0-9-]{36})\/?$/i,
+  );
+  if (!match || !location.hash) return;
+  const capability = new URLSearchParams(location.hash.slice(1)).get("k");
+  if (!capability || !/^[A-Za-z0-9_-]{43}$/.test(capability)) return;
+  (
+    window as Window & {
+      __WAHO_LINK_CAPABILITY__?: {
+        family: string;
+        id: string;
+        capability: string;
+      };
+    }
+  ).__WAHO_LINK_CAPABILITY__ = { family: match[1], id: match[2], capability };
+  try {
+    sessionStorage.setItem(
+      "course-atlas:capability:" + match[1] + ":" + match[2],
+      capability,
+    );
+  } catch {}
+  history.replaceState(history.state, "", location.pathname + location.search);
+}
 export const ANALYTICS_EVENT = "course-atlas:analytics-change";
 export type AnalyticsPreference = { enabled: boolean; replay: boolean };
 export const DEFAULT_ANALYTICS: AnalyticsPreference = {

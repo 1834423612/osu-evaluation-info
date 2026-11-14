@@ -1,4 +1,6 @@
 "use client";
+import { SharedManagement } from "@/components/sharing/shared-management";
+import { ShareCollection } from "@/components/sharing/share-collection";
 import { useRef, useState } from "react";
 import {
   Cloud,
@@ -113,6 +115,8 @@ export function SavedManager({ locale }: { locale: Locale }) {
   return (
     <section className={styles.panel} data-telemetry-private>
       <div className={styles.tools}>
+        <ShareCollection locale={locale} selected={selected} title={title} />
+        <SharedManagement locale={locale} />
         <Button asChild variant="outline">
           <a href="/account">
             <Cloud size={14} />

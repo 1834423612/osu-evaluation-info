@@ -266,3 +266,55 @@ export function itemKindName(kind: SavedKind, locale: "en" | "zh") {
   };
   return labels[kind][locale === "zh" ? 1 : 0];
 }
+export function courseForItem(
+  item: ExchangeItem,
+): import("../catalog/types.ts").CatalogCourse | null {
+  if (item.kind === "course") return item.payload;
+  if (item.kind === "syllabus")
+    return { ...item.payload.course, sections: [item.payload.section] };
+  if (item.kind === "section") {
+    const p = item.payload,
+      [subject = "", catalogNumber = ""] = p.courseLabel.split(/\s+/, 2);
+    return {
+      id: p.courseId,
+      courseId: p.officialCourseId || p.section.courseId,
+      subject,
+      subjectName: subject,
+      catalogNumber,
+      title: p.courseTitle,
+      description: "",
+      creditsMin: p.creditsMin ?? 0,
+      creditsMax: p.creditsMax ?? p.creditsMin ?? 0,
+      campus: p.campus,
+      campusCode: p.campusCode ?? p.courseId.split("-").at(-1) ?? "",
+      term: p.term,
+      termCode: p.termCode ?? p.courseId.split("-")[0],
+      academicCareer: "",
+      attributes: [],
+      sections: [p.section],
+      sectionsPartial: true,
+    };
+  }
+  const p = item.payload.courses[0];
+  if (!p) return null;
+  const [subject = "", catalogNumber = ""] = p.label.split(/\s+/, 2);
+  return {
+    id: p.id,
+    courseId: p.officialCourseId,
+    subject,
+    subjectName: subject,
+    catalogNumber,
+    title: p.title,
+    description: "",
+    creditsMin: p.creditsMin ?? 0,
+    creditsMax: p.creditsMax ?? p.creditsMin ?? 0,
+    campus: "",
+    campusCode: p.campusCode ?? p.id.split("-").at(-1) ?? "",
+    term: p.term,
+    termCode: p.termCode ?? p.id.split("-")[0],
+    academicCareer: "",
+    attributes: [],
+    sections: [],
+    sectionsPartial: true,
+  };
+}

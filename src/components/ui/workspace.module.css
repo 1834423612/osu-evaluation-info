@@ -171,7 +171,84 @@
   accent-color: var(--primary, #ba0c2f);
   flex-shrink: 0;
 }
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  background: rgb(20 16 21 / 35%);
+}
+.dialog {
+  position: fixed;
+  z-index: 8501;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 20px 80px rgb(20 16 21 / 16%);
+  display: grid;
+  gap: 12px;
+}
+.dialogTitle {
+  font-size: 20px;
+  font-weight: 650;
+  margin: 0 36px 0 0;
+}
+.dialogClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.floatingChoice {
+  z-index: 8502;
+}
+.previewCard {
+  display: none;
+}
+.shareRow {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.shareRow strong {
+  display: inline;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  margin-right: 10px;
+}
+.shareRow small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.code {
+  display: block;
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+}
 @media (max-width: 600px) {
+  .dialog {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: 100%;
+    max-height: calc(92dvh - env(safe-area-inset-top));
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+  }
   .shell {
     padding: 24px 16px calc(40px + env(safe-area-inset-bottom));
   }

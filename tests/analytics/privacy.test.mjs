@@ -4,6 +4,7 @@ import vm from "node:vm";
 import {
   analyticsAssetUrl,
   analyticsBeforeSend,
+  captureLinkCapability,
   parseAnalyticsPreference,
   safeSearchTerm,
 } from "../../src/lib/analytics/privacy.ts";
@@ -64,4 +65,31 @@ test("search terms redact likely credentials and email rather than copying them"
   assert.equal(safeSearchTerm("student@example.com"), "[redacted]");
   assert.equal(safeSearchTerm("token=secret"), "[redacted]");
   assert.equal(safeSearchTerm(" MATH   1151 "), "MATH 1151");
+});
+
+test("capability fragments are captured before collection and removed from the browser URL", () => {
+  const captured = new Map(),
+    location = {
+      pathname: "/share/11111111-1111-4111-8111-111111111111",
+      search: "",
+      hash: "#k=" + "a".repeat(43),
+    };
+  let replaced = "";
+  const window = {};
+  vm.runInNewContext("(" + captureLinkCapability.toString() + ")()", {
+    window,
+    location,
+    URLSearchParams,
+    sessionStorage: { setItem: (k, v) => captured.set(k, v) },
+    history: {
+      state: null,
+      replaceState: (_s, _t, url) => {
+        replaced = url;
+      },
+    },
+  });
+  assert.equal(captured.size, 1);
+  assert.equal(window.__WAHO_LINK_CAPABILITY__.capability, "a".repeat(43));
+  assert.equal(replaced, location.pathname);
+  assert.ok(!replaced.includes("#"));
 });
