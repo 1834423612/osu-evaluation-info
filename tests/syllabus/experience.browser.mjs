@@ -176,7 +176,7 @@ async function setup(width = 1440, seed = false, locale = "zh") {
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return url.origin === new URL(base).origin ||
-      url.hostname === "bux-fonts.s3.us-east-1.amazonaws.com" ||
+      url.hostname === "assets.bux.osu.edu" ||
       url.pathname.includes("/ui/account-image/")
       ? route.continue()
       : route.abort();

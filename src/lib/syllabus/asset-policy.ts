@@ -21,10 +21,7 @@ export function syllabusAssetKind(value: string): "image" | "font" | null {
       )
     )
       return "image";
-    if (
-      url.hostname === "bux-fonts.s3.us-east-1.amazonaws.com" &&
-      fontPath.test(url.pathname)
-    )
+    if (url.hostname === "assets.bux.osu.edu" && fontPath.test(url.pathname))
       return "font";
   } catch {}
   return null;

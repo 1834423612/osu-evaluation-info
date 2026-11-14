@@ -4,7 +4,7 @@ import type { SyllabusDocument } from "./types.ts";
 import decompress from "woff2-encoder/decompress";
 import { pdfFontHeightRatio } from "./pdf-typography.ts";
 
-const fontOrigin = "https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2";
+const fontOrigin = "https://assets.bux.osu.edu/bux-webfonts2";
 type Face = { key: string; file: string; url: string };
 
 function faceFor(style: CSSStyleDeclaration): Face | null {

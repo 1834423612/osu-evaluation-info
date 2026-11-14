@@ -3,7 +3,7 @@
    Editor presentation rules are reproduced without the source site's application code. */
 @font-face {
   font-family: BuckeyeSans;
-  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Regular.woff2")
+  src: url("https://assets.bux.osu.edu/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Regular.woff2")
     format("woff2");
   font-weight: 400;
   font-style: normal;
@@ -11,7 +11,7 @@
 }
 @font-face {
   font-family: BuckeyeSans;
-  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Italic.woff2")
+  src: url("https://assets.bux.osu.edu/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Italic.woff2")
     format("woff2");
   font-weight: 400;
   font-style: italic;
@@ -19,7 +19,7 @@
 }
 @font-face {
   font-family: BuckeyeSans;
-  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Bold.woff2")
+  src: url("https://assets.bux.osu.edu/bux-webfonts2/BuckeyeSans/BuckeyeSans2-Bold.woff2")
     format("woff2");
   font-weight: 700;
   font-style: normal;
@@ -27,7 +27,7 @@
 }
 @font-face {
   font-family: BuckeyeSans;
-  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSans/BuckeyeSans2-ExtraBold.woff2")
+  src: url("https://assets.bux.osu.edu/bux-webfonts2/BuckeyeSans/BuckeyeSans2-ExtraBold.woff2")
     format("woff2");
   font-weight: 800;
   font-style: normal;
@@ -35,7 +35,7 @@
 }
 @font-face {
   font-family: BuckeyeSerif;
-  src: url("https://bux-fonts.s3.us-east-1.amazonaws.com/bux-webfonts2/BuckeyeSerif/BuckeyeSerif2-Black.woff2")
+  src: url("https://assets.bux.osu.edu/bux-webfonts2/BuckeyeSerif/BuckeyeSerif2-Black.woff2")
     format("woff2");
   font-weight: 900;
   font-style: normal;
