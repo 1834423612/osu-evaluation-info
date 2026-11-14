@@ -1,0 +1,61 @@
+name: Expire temporary user data
+
+on:
+  schedule:
+    - cron: "43 */4 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply the private-data retention plan
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-data-maintenance
+  cancel-in-progress: false
+
+jobs:
+  retention:
+    if: github.event_name == 'workflow_dispatch' || vars.USER_DATA_MAINTENANCE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      USER_DATA_SCHEMA: ${{ vars.USER_DATA_SCHEMA || 'osu_user' }}
+      AUTH_TABLE_PREFIX: ${{ vars.AUTH_TABLE_PREFIX || 'ca_' }}
+    steps:
+      - name: Validate database configuration
+        shell: bash
+        run: |
+          if [[ -z "${DATABASE_URL//[[:space:]]/}" ]]; then
+            echo "::error::Configure the repository Actions secret DATABASE_URL."
+            exit 1
+          fi
+
+      - name: Check out repository
+        shell: bash
+        run: |
+          git init --quiet .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          git -c protocol.version=2 fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout --detach --quiet FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Set up Node.js 24 and pinned pnpm
+        run: bash scripts/ci/setup-catalog-runtime.sh
+
+      - name: Install runtime dependencies
+        run: pnpm install --prod --frozen-lockfile
+
+      - name: Review or apply private-data retention
+        shell: bash
+        env:
+          APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+        run: |
+          args=(--production)
+          if [[ "$APPLY" == "true" ]]; then args+=(--apply); fi
+          pnpm user-data:maintain "${args[@]}"
