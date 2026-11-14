@@ -59,6 +59,7 @@ function mergeRecord(
 ) {
   const result = { ...current };
   for (const key of new Set([...Object.keys(base), ...Object.keys(next)])) {
+    if (["__proto__", "constructor", "prototype"].includes(key)) continue;
     if (same(base[key], next[key])) continue;
     const before = base[key],
       after = next[key],
@@ -73,6 +74,22 @@ function mergeRecord(
         JSON.stringify(before),
         JSON.stringify(after),
         JSON.stringify(live),
+      );
+    } else if (
+      before &&
+      after &&
+      live &&
+      typeof before === "object" &&
+      typeof after === "object" &&
+      typeof live === "object" &&
+      !Array.isArray(before) &&
+      !Array.isArray(after) &&
+      !Array.isArray(live)
+    ) {
+      result[key] = mergeRecord(
+        before as Record<string, unknown>,
+        after as Record<string, unknown>,
+        live as Record<string, unknown>,
       );
     } else if (after === undefined) delete result[key];
     else result[key] = after;

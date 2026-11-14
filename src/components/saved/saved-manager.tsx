@@ -17,8 +17,9 @@ import { text, type Locale } from "@/lib/i18n";
 import {
   createLocalSnapshot,
   readLocalItems,
-  replaceLocalItems,
-  importLocalItems,
+  removeLocalItems,
+  restoreLocalRemoval,
+  type LocalRemoval,
 } from "@/lib/saved/local";
 import {
   itemKey,
@@ -39,7 +40,7 @@ export function SavedManager({ locale }: { locale: Locale }) {
     [query, setQuery] = useState(""),
     [notice, setNotice] = useState(""),
     [preview, setPreview] = useState<SavedSnapshot | null>(null),
-    [undo, setUndo] = useState<ExchangeItem[]>([]),
+    [undo, setUndo] = useState<LocalRemoval | null>(null),
     [limit, setLimit] = useState(40),
     [title, setTitle] = useState("");
   function manage() {
@@ -94,14 +95,16 @@ export function SavedManager({ locale }: { locale: Locale }) {
   }
   function remove() {
     try {
-      const latest = readLocalItems(),
-        removed = latest.filter((x) => selected.has(itemKey(x)));
-      replaceLocalItems(latest.filter((x) => !selected.has(itemKey(x))));
+      const removed = removeLocalItems(selected);
       setUndo(removed);
       setItems(createLocalSnapshot(title || "Saved collection").items);
       setSelected(new Set());
       setNotice(
-        text(locale, removed.length + " removed", removed.length + " 项已移除"),
+        text(
+          locale,
+          removed.keys.length + " removed",
+          removed.keys.length + " 项已移除",
+        ),
       );
     } catch {
       setNotice(text(locale, "Could not remove items.", "移除失败。"));
@@ -158,13 +161,13 @@ export function SavedManager({ locale }: { locale: Locale }) {
           <span className={styles.notice} role="status">
             {notice}
           </span>
-          {undo.length ? (
+          {undo ? (
             <Button
               variant="outline"
               onClick={() => {
                 try {
-                  importLocalItems(undo, "sync");
-                  setUndo([]);
+                  restoreLocalRemoval(undo);
+                  setUndo(null);
                   setNotice(text(locale, "Restored", "已恢复"));
                   setItems(readLocalItems());
                 } catch {
