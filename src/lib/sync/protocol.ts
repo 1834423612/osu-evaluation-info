@@ -47,6 +47,27 @@ export type SyncResponse = {
   records: SyncRecord[];
   receipts: SyncReceipt[];
 };
+const recordSchema = z.object({
+  key: z.string().max(320),
+  version: z.number().int().min(0),
+  item: exchangeItemSchema.nullable(),
+});
+export const syncResponseSchema = z.object({
+  accountId: z.string(),
+  cursor: z.number().int().min(0),
+  floor: z.number().int().min(0),
+  reset: z.boolean(),
+  records: z.array(recordSchema).max(10000),
+  receipts: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        status: z.enum(["applied", "conflict"]),
+        record: recordSchema,
+      }),
+    )
+    .max(100),
+});
 // Stable comparison ignores object property order, never uses device clocks.
 export function sameItem(a: unknown, b: unknown): boolean {
   function canonical(v: unknown): unknown {

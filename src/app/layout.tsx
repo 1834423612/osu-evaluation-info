@@ -1,3 +1,4 @@
+import { SyncProvider } from "@/components/sync/sync-provider";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import {
@@ -98,6 +99,7 @@ export default function RootLayout({
             window.umamiBeforeSend = ${analyticsBeforeSend.toString()};`,
           }}
         />
+        <SyncProvider />
         {children}
         <UmamiAnalytics
           websiteId={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? ""}

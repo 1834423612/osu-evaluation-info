@@ -3,6 +3,7 @@ import {
   readSavedWorkspace,
   writeSavedArray,
 } from "../saved/workspace.ts";
+import { savedScope, scopedSavedKey } from "../saved/scope.ts";
 import { migrateBrowserStorage } from "./storage-migrations.ts";
 import {
   DEFAULT_DEBUG_FLAGS,
@@ -55,6 +56,7 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
   const real =
     kind === "local" ? globalThis.localStorage : globalThis.sessionStorage;
   const overlay = overlays[kind];
+  const scope = kind === "local" ? savedScope() : null;
   const keys = () => [
     ...new Set([
       ...Array.from({ length: real.length }, (_, index) =>
@@ -74,13 +76,17 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
         key.startsWith("course-atlas:people-directory:")
       )
         return null;
+      if (scope && isSavedStorageKey(key)) return null;
+      key = scopedSavedKey(key, scope);
       return shadowed(key) ? (overlay.get(key) ?? null) : real.getItem(key);
     },
     setItem(key, value) {
+      key = scopedSavedKey(key, scope);
       if (shadowed(key)) overlay.set(key, String(value));
       else real.setItem(key, value);
     },
     removeItem(key) {
+      key = scopedSavedKey(key, scope);
       if (shadowed(key)) overlay.delete(key);
       else real.removeItem(key);
     },
@@ -100,17 +106,18 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
       if (kind !== "local" || !isSavedStorageKey(key))
         return physical.getItem(key);
       const raw = readSavedWorkspace(physical).records[key];
-      savedBases.set(key, raw);
+      savedBases.set((scope ?? "guest") + ":" + key, raw);
       return raw;
     },
     setItem(key, value) {
       if (kind !== "local" || !isSavedStorageKey(key))
         return physical.setItem(key, value);
-      const base = savedBases.has(key)
-        ? savedBases.get(key)!
+      const baseKey = (scope ?? "guest") + ":" + key;
+      const base = savedBases.has(baseKey)
+        ? savedBases.get(baseKey)!
         : readSavedWorkspace(physical).records[key];
       writeSavedArray(physical, key, value, base);
-      savedBases.set(key, readSavedWorkspace(physical).records[key]);
+      savedBases.set(baseKey, readSavedWorkspace(physical).records[key]);
     },
     removeItem(key) {
       if (kind !== "local" || !isSavedStorageKey(key))

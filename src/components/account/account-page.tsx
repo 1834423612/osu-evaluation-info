@@ -1,4 +1,5 @@
 "use client";
+import { SyncPanel } from "@/components/sync/sync-panel";
 import { useEffect, useState } from "react";
 import {
   Fingerprint,
@@ -516,6 +517,7 @@ function AccountWorkspace() {
           </div>
         ) : (
           <>
+            <SyncPanel accountId={session.user.id} locale={locale} />
             <section className={styles.panel}>
               <h2>
                 {session.user.name || text(locale, "Your account", "我的账号")}

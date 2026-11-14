@@ -11,6 +11,38 @@
   gap: 16px;
   margin-bottom: 22px;
 }
+.panelHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.panelHeading h2 {
+  margin: 0;
+}
+.conflict {
+  flex-wrap: wrap;
+}
+.conflict > span {
+  min-width: 160px;
+  flex: 1;
+}
+.comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.comparison > div {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.comparison > div + div { margin-top: 8px; }
+.comparison > summary { margin-bottom: 8px; }
 .heading h1 {
   margin: 0 0 6px;
   font-size: clamp(24px, 3vw, 32px);
