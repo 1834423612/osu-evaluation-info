@@ -11,6 +11,8 @@ export type SavedWorkspace = {
   version: 1;
   records: Record<string, string | null>;
 };
+let decodedRaw: string | undefined;
+let decodedWorkspace: SavedWorkspace | undefined;
 export function isSavedStorageKey(key: string): key is SavedStorageKey {
   return (SAVED_STORAGE_KEYS as readonly string[]).includes(key);
 }
@@ -23,6 +25,8 @@ export function readSavedWorkspace(store: Store): SavedWorkspace {
         SAVED_STORAGE_KEYS.map((key) => [key, store.getItem(key)]),
       ),
     };
+  if (raw === decodedRaw && decodedWorkspace)
+    return { version: 1, records: { ...decodedWorkspace.records } };
   const parsed = JSON.parse(raw);
   if (
     parsed?.version !== 1 ||
@@ -33,12 +37,14 @@ export function readSavedWorkspace(store: Store): SavedWorkspace {
     )
   )
     throw new Error("Saved workspace is unavailable");
-  return {
+  decodedWorkspace = {
     version: 1,
     records: Object.fromEntries(
       SAVED_STORAGE_KEYS.map((key) => [key, parsed.records[key]]),
     ),
   };
+  decodedRaw = raw;
+  return { version: 1, records: { ...decodedWorkspace.records } };
 }
 function array(raw: string | null): Record<string, unknown>[] {
   const value = raw ? JSON.parse(raw) : [];

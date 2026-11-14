@@ -78,3 +78,11 @@ test("corrupt workspace and corrupt arrays raise an error rather than becoming a
   assert.throws(() => readSavedWorkspace({ getItem: () => "{broken" }));
   assert.throws(() => mergeSavedDelta("[]", "invalid", "[]"));
 });
+
+test("cached workspace reads return independent records and observe storage changes",()=>{
+ let raw=JSON.stringify({version:1,records:Object.fromEntries(SAVED_STORAGE_KEYS.map(k=>[k,"[]"]))});
+ const store={getItem:()=>raw};const first=readSavedWorkspace(store);first.records[SAVED_STORAGE_KEYS[0]]="mutated";
+ assert.equal(readSavedWorkspace(store).records[SAVED_STORAGE_KEYS[0]],"[]");
+ const next=JSON.parse(raw);next.records[SAVED_STORAGE_KEYS[0]]=JSON.stringify([{id:"new"}]);raw=JSON.stringify(next);
+ assert.equal(JSON.parse(readSavedWorkspace(store).records[SAVED_STORAGE_KEYS[0]])[0].id,"new");
+});
