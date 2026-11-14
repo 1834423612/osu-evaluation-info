@@ -1,3 +1,4 @@
+import { SubjectResolver } from "../search/subjects.ts";
 import type { CatalogCourse, CatalogFacet } from "./types";
 
 const STOP = new Set([
@@ -13,16 +14,6 @@ const STOP = new Set([
   "on",
   "at",
 ]);
-// Legacy live-only hints. The primary engine derives its vocabulary and
-// subject abbreviations from the full published catalog without this table.
-const ALIASES: Record<string, string> = {
-  cs: "CSE",
-  compsci: "CSE",
-  mat: "MATH",
-  maths: "MATH",
-  me: "MECHENG",
-  mech: "MECHENG",
-};
 export function normalizeSearchText(value: string) {
   return value
     .normalize("NFKC")
@@ -108,36 +99,25 @@ export function planCatalogSearch(
   const direct = subjects.filter(
     (item) => compact(item.code) === token || compact(item.label) === token,
   );
-  const alias = subjects.filter((item) => item.code === ALIASES[token]);
-  const prefix =
-    token.length >= 3
-      ? subjects.filter(
-          (item) =>
-            compact(item.code).startsWith(token) ||
-            compact(item.label).startsWith(token),
-        )
-      : [];
-  const close =
-    token.length >= 3
-      ? subjects.filter(
-          (item) =>
-            editDistance(compact(item.code), token) === 1 ||
-            editDistance(compact(item.label), token) === 1,
-        )
-      : [];
-  const candidates = direct.length
-    ? direct
-    : alias.length
-      ? alias
-      : prefix.length
-        ? prefix
-        : close;
-  // A three-letter title fragment such as "ani" can mean animation or animal sciences.
+  const matches = new SubjectResolver(
+    subjects.map((item) => ({ subject: item.code, subjectName: item.label })),
+  ).resolve(subjectToken);
+  const best = matches[0];
+  const unique =
+    best &&
+    best.score >= 0.88 &&
+    (!matches[1] || best.score - matches[1].score >= 0.06);
   const resolved =
-    candidates.length === 1 &&
-    (direct.length || alias.length || code || token.length >= 4)
-      ? candidates[0]
-      : undefined;
+    direct.length === 1
+      ? direct[0]
+      : unique && (code || token.length >= 4)
+        ? { code: best.code, label: best.label }
+        : undefined;
+  const candidates = resolved
+    ? [resolved]
+    : matches
+        .filter((item) => item.score >= (best?.score ?? 1) - 0.08)
+        .map((item) => ({ code: item.code, label: item.label }));
   const subject = resolved?.code;
   const number = code?.[2].toUpperCase();
   const numeric = /^\d{1,6}(?:\.\d{1,3})?[a-z]{0,2}$/i.test(query);

@@ -3,6 +3,7 @@ import {
   parseCatalogSearch,
 } from "@/lib/catalog/official-client";
 import { searchPublishedCatalog } from "@/lib/search/service";
+import { SearchCapacityError } from "@/lib/search/result-cache";
 import { UnsupportedSearchFilter } from "@/lib/search/filters";
 
 export const runtime = "nodejs";
@@ -28,21 +29,31 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const status =
-      error instanceof CatalogInputError
-        ? 400
-        : error instanceof UnsupportedSearchFilter
-          ? 422
-          : 503;
+      error instanceof SearchCapacityError
+        ? 429
+        : error instanceof CatalogInputError
+          ? 400
+          : error instanceof UnsupportedSearchFilter
+            ? 422
+            : 503;
     return Response.json(
       {
         error:
-          status === 400
-            ? (error as Error).message
-            : status === 422
-              ? "This filter requires the live official search."
-              : "The course search index is temporarily unavailable.",
+          status === 429
+            ? "Search is busy. Try again shortly."
+            : status === 400
+              ? (error as Error).message
+              : status === 422
+                ? "This filter requires the live official search."
+                : "The course search index is temporarily unavailable.",
       },
-      { status, headers: { "Cache-Control": "no-store" } },
+      {
+        status,
+        headers: {
+          "Cache-Control": "no-store",
+          ...(status === 429 ? { "Retry-After": "1" } : {}),
+        },
+      },
     );
   }
 }

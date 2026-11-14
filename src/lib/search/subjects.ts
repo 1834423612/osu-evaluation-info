@@ -15,7 +15,7 @@ export class SubjectResolver {
     name: string;
     key: string;
   }[];
-  constructor(documents: SearchDocument[]) {
+  constructor(documents: Pick<SearchDocument, "subject" | "subjectName">[]) {
     this.subjects = [
       ...new Map(
         documents.map((doc) => [

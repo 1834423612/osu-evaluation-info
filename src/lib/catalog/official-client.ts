@@ -319,6 +319,7 @@ export function createOfficialCatalogClient(
   async function searchOfficialCatalog(
     input: CatalogSearch = {},
     raw = false,
+    options: { exactPages?: number } = {},
   ): Promise<CatalogResponse> {
     const terms = await getSearchableTerms();
     const term = input.term || terms[0].code;
@@ -344,6 +345,7 @@ export function createOfficialCatalogClient(
             term,
             campus: input.campus ?? "col",
             filters: input.filters,
+            maxPages: options.exactPages,
           });
       const courses = exact.courses;
       const sectionCount = courses.reduce(
@@ -493,6 +495,7 @@ export function createOfficialCatalogClient(
     term?: string;
     campus?: string;
     filters?: Record<string, string>;
+    maxPages?: number;
   }) {
     const terms = await getSearchableTerms();
     const term = input.term || terms[0].code;
@@ -514,7 +517,11 @@ export function createOfficialCatalogClient(
     let fetchedAt = "";
     let complete = false;
     // Bound expansion work even for unusually large independent-study subjects.
-    for (let page = 1; page <= 12; page++) {
+    for (
+      let page = 1;
+      page <= Math.max(1, Math.min(12, input.maxPages ?? 12));
+      page++
+    ) {
       if (page > 1 && Date.now() - startedAt > 15_000) break;
       params.set("p", String(page));
       let data: JsonObject;

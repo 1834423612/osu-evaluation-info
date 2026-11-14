@@ -3,6 +3,7 @@ import type { CatalogResponse } from "../catalog/types";
 export function createIndexedCatalogSearch(
   fetcher: typeof fetch,
   live: (url: string, init?: RequestInit) => Promise<CatalogResponse>,
+  direct?: (url: string, init?: RequestInit) => Promise<CatalogResponse | null>,
 ) {
   return async (
     input: string,
@@ -16,6 +17,10 @@ export function createIndexedCatalogSearch(
       (cursor && !cursor.startsWith("s:"))
     )
       return live(input, init);
+    if (!cursor && direct && url.searchParams.get("searchMode") !== "index") {
+      const fresh = await direct(input, init);
+      if (fresh) return fresh;
+    }
     let reason: "unavailable" | "filter" = "unavailable";
     try {
       const response = await fetcher(
@@ -23,6 +28,7 @@ export function createIndexedCatalogSearch(
         init,
       );
       if (response.status === 400) throw new InvalidSearchPage();
+      if (response.status === 429) throw new SearchBusy();
       reason = response.status === 422 ? "filter" : "unavailable";
       if (response.ok) {
         const result = await response.json();
@@ -35,7 +41,12 @@ export function createIndexedCatalogSearch(
           return result;
       }
     } catch (error) {
-      if (init?.signal?.aborted || error instanceof InvalidSearchPage || cursor)
+      if (
+        init?.signal?.aborted ||
+        error instanceof InvalidSearchPage ||
+        error instanceof SearchBusy ||
+        cursor
+      )
         throw error;
     }
     if (init?.signal?.aborted) throw init.signal.reason;
@@ -53,5 +64,11 @@ export function createIndexedCatalogSearch(
 class InvalidSearchPage extends Error {
   constructor() {
     super("Search page no longer matches this query. Start the search again.");
+  }
+}
+
+class SearchBusy extends Error {
+  constructor() {
+    super("Search is busy. Try again shortly.");
   }
 }

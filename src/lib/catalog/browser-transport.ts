@@ -276,10 +276,17 @@ export function createCatalogTransport(
             }
           }
         } else {
-          const catalog = await client.searchOfficialCatalog({
-            ...search,
-            ...(resource === "facets" ? { limit: 1 } : {}),
-          });
+          const catalog = await client.searchOfficialCatalog(
+            {
+              ...search,
+              ...(resource === "facets" ? { limit: 1 } : {}),
+            },
+            false,
+            resource === "catalog" &&
+              local.searchParams.get("exactPreview") === "1"
+              ? { exactPages: 1 }
+              : {},
+          );
           result =
             resource === "facets"
               ? {
