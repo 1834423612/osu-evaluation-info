@@ -6,7 +6,11 @@ if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const { getDatabasePool } = await import("../../src/lib/db.ts");
 const { userDataSchema } = await import("../../src/lib/user-data/namespace.ts");
 const { authTablePrefix } = await import("../../src/lib/auth/config.ts");
-const files = ["20261114_sharing.sql", "20261114_share_requests.sql"];
+const files = [
+  "20261114_sharing.sql",
+  "20261114_share_requests.sql",
+  "20261114_sync.sql",
+];
 const db = getDatabasePool(),
   schema = userDataSchema(),
   apply = process.argv.includes("--apply");
