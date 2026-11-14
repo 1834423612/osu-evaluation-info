@@ -1,23 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createPreviewScrollIntent } from "../../src/lib/syllabus/scroll-intent.ts";
-
-test("slow scrolling stays in the document; a quick burst temporarily previews the panel", () => {
-  const intent = createPreviewScrollIntent();
-  assert.equal(intent(40, 100), false);
-  assert.equal(intent(40, 300), false);
-  assert.equal(intent(200, 600), true);
-  assert.equal(intent(50, 640), true);
-  assert.equal(intent(40, 900), false);
-  assert.equal(intent(100, 1000), false);
-  assert.equal(intent(100, 1030), false);
-  assert.equal(intent(100, 1060), true);
-  assert.equal(intent(-20, 1080), false);
+import { createScrollOwnership } from "../../src/lib/syllabus/scroll-intent.ts";
+test("fast wheel bursts stay in the hovered document, including the event that reaches its edge", () => {
+  const choose = createScrollOwnership(),
+    document = {};
+  assert.equal(choose(240, 100, document, true), "inner");
+  assert.equal(choose(500, 120, document, true), "inner");
+  assert.equal(choose(800, 140, document, false), "inner");
+  assert.equal(choose(160, 400, document, false), "outer");
+  assert.equal(choose(-400, 420, document, true), "inner");
 });
-test("touch intent distinguishes a fast swipe from small deliberate reading gestures", () => {
-  const intent = createPreviewScrollIntent();
-  assert.equal(intent(5, 100, true), false);
-  assert.equal(intent(5, 130, true), false);
-  assert.equal(intent(50, 150, true), true);
-  assert.equal(intent(5, 400, true), false);
+test("a fresh touch swipe at an exhausted boundary can move the panel on small screens", () => {
+  const choose = createScrollOwnership(),
+    document = {};
+  assert.equal(choose(60, 100, document, true), "inner");
+  assert.equal(choose(200, 130, document, false), "inner");
+  choose.begin();
+  assert.equal(choose(30, 160, document, false), "outer");
+});
+test("pointer changes reset ownership without requiring velocity samples", () => {
+  const choose = createScrollOwnership();
+  assert.equal(choose(200, 100, "one", false), "outer");
+  assert.equal(choose(200, 120, "two", true), "inner");
+  assert.equal(choose(NaN, 121, "two", true), "inner");
 });

@@ -459,20 +459,15 @@ try {
   const longBefore = await panel.evaluate((node) => node.scrollTop);
   await page.mouse.wheel(0, 240);
   await page.waitForFunction(
-    (before) =>
-      document.querySelector(".course-detail-panel").scrollTop > before + 20,
-    longBefore,
-  );
-  assert.equal(await long.evaluate((node) => node.scrollTop), 50);
-  await page.waitForTimeout(180);
-  await long.hover();
-  await page.mouse.wheel(0, 40);
-  await page.waitForFunction(
     () =>
       document.querySelector(
         '[aria-label="大纲速览"] [data-state="active"][data-slot="tabs-content"] > div',
-      ).scrollTop > 60,
+      ).scrollTop > 200,
   );
+  assert.equal(await panel.evaluate((node) => node.scrollTop), longBefore);
+  await page.waitForTimeout(200);
+  await long.hover();
+  await page.mouse.wheel(0, 40);
   await tabs.getByRole("tab", { name: "考核方式", exact: true }).click();
   const short = highlights
     .locator('[data-slot="tabs-content"][data-state="active"] > div')
@@ -503,18 +498,12 @@ try {
   );
   const previewBefore = await panel.evaluate((node) => node.scrollTop);
   await page.mouse.wheel(0, 240);
-  await page.waitForFunction(
-    (before) =>
-      document.querySelector(".course-detail-panel").scrollTop > before + 20,
-    previewBefore,
-  );
-  assert.equal(
-    await frame.evaluate(() => document.scrollingElement.scrollTop),
-    100,
-  );
-  await page.waitForTimeout(180);
+  await frame.waitForFunction(() => document.scrollingElement.scrollTop > 300);
+  assert.equal(await panel.evaluate((node) => node.scrollTop), previewBefore);
+  await page.waitForTimeout(200);
   await page.mouse.wheel(0, 40);
-  await frame.waitForFunction(() => document.scrollingElement.scrollTop > 110);
+  await frame.waitForFunction(() => document.scrollingElement.scrollTop > 340);
+  await page.waitForTimeout(200);
   await panel.evaluate((node) => {
     node.scrollTop = Math.max(0, node.scrollHeight - node.clientHeight - 100);
   });
@@ -702,6 +691,40 @@ try {
         y = Math.max(box.y + 30, Math.min(800, box.y + box.height / 2));
       const before = await outer.evaluate((node) => node.scrollTop);
       const touch = await mobile.context.newCDPSession(page);
+      await frame.evaluate(() => {
+        document.scrollingElement.scrollTop = 200;
+      });
+      const innerStart = await frame.evaluate(
+        () => document.scrollingElement.scrollTop,
+      );
+      const outerStart = await outer.evaluate((node) => node.scrollTop);
+      await touch.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x, y }],
+      });
+      for (let offset = 15; offset <= 120; offset += 15)
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x, y: y - offset }],
+        });
+      await touch.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+      });
+      await page.waitForTimeout(650);
+      assert(
+        (await frame.evaluate(() => document.scrollingElement.scrollTop)) >
+          innerStart + 30,
+        "Fast swipes read the syllabus",
+      );
+      assert.equal(
+        await outer.evaluate((node) => node.scrollTop),
+        outerStart,
+        "Fast reading must not also move the panel",
+      );
+      await frame.evaluate(() => {
+        document.scrollingElement.scrollTop = 0;
+      });
       await touch.send("Input.dispatchTouchEvent", {
         type: "touchStart",
         touchPoints: [{ x, y }],
