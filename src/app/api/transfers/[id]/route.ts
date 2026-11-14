@@ -18,7 +18,7 @@ export async function POST(
     sameOrigin(request);
     const { id } = await params,
       input = await readJson(request, transferActionSchema, 2048),
-      actor = await actorFor(request, true);
+      actor = await actorFor(request, input.action !== "status");
     return actorResponse(
       userJson(await transferAction(actor, id, input)),
       actor,

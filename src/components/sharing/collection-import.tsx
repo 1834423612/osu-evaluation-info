@@ -20,11 +20,15 @@ export function CollectionImport({
   locale,
   onImported,
   onOpen,
+  disabled = false,
+  mode = "copy",
 }: {
   snapshot: SavedSnapshot;
   locale: Locale;
   onImported?: (keys: string[]) => void;
   onOpen?: (item: SavedSnapshot["items"][number]) => void;
+  disabled?: boolean;
+  mode?: "copy" | "sync";
 }) {
   const [selected, setSelected] = useState(
       () => new Set(snapshot.items.map(itemKey)),
@@ -41,7 +45,7 @@ export function CollectionImport({
     try {
       const chosen = snapshot.items.filter((x) => selected.has(itemKey(x))),
         before = new Set(readLocalItems().map(itemKey));
-      const outcome = importLocalItems(chosen);
+      const outcome = importLocalItems(chosen, mode);
       setResult(
         text(
           locale,
@@ -86,7 +90,10 @@ export function CollectionImport({
               ? text(locale, "Clear selection", "取消选择")
               : text(locale, "Select all", "全选")}
           </Button>
-          <Button disabled={!selected.size || busy} onClick={() => void save()}>
+          <Button
+            disabled={disabled || !selected.size || busy}
+            onClick={() => void save()}
+          >
             <Check size={14} />
             {text(locale, "Save selected", "转存所选")} ({selected.size})
           </Button>

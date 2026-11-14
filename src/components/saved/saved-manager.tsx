@@ -1,4 +1,5 @@
 "use client";
+import { TransferSender } from "@/components/transfer/transfer-sender";
 import { SharedManagement } from "@/components/sharing/shared-management";
 import { ShareCollection } from "@/components/sharing/share-collection";
 import { useRef, useState } from "react";
@@ -117,6 +118,7 @@ export function SavedManager({ locale }: { locale: Locale }) {
       <div className={styles.tools}>
         <ShareCollection locale={locale} selected={selected} title={title} />
         <SharedManagement locale={locale} />
+        <TransferSender locale={locale} selected={selected} />
         <Button asChild variant="outline">
           <a href="/account">
             <Cloud size={14} />

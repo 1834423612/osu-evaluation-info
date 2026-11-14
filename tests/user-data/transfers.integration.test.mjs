@@ -47,6 +47,8 @@ test(
       created = await createTransfer(a, input);
     assert.deepEqual(await createTransfer(a, input), created);
     assert.match(created.code, /^\d{6}$/);
+    assert.equal((await transferAction({id:null,owners:[]},created.id,{action:"status",capability:created.capability})).available,true);
+    await assert.rejects(transferAction({id:null,owners:[]},created.id,{action:"claim",capability:created.capability}),e=>e.status===401);
     assert.equal((await listTransfers(c)).length, 0);
     assert.equal((await listTransfers(a))[0].capability, created.capability);
     await assert.rejects(

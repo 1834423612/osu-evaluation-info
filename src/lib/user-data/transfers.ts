@@ -232,8 +232,14 @@ export async function requestTransfer(actor: Actor, raw: unknown) {
 export async function transferAction(actor: Actor, id: string, raw: unknown) {
   z.uuid().parse(id);
   const input = transferActionSchema.parse(raw);
-  if (!actor.id) throw new UserDataError("unauthorized", 401);
-  await checkBudget("transfer-action", actor.id, 60, 90);
+  if (!actor.id && input.action !== "status")
+    throw new UserDataError("unauthorized", 401);
+  await checkBudget(
+    "transfer-action",
+    actor.id ?? privateDigest(id, "transfer-status"),
+    60,
+    90,
+  );
   const db = await getDatabasePool().connect();
   try {
     await db.query("BEGIN");
