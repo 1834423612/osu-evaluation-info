@@ -26,7 +26,7 @@ export const methodology: MethodologyCopy = {
       id: "classes",
       title: "Current classes",
       paragraphs: [
-        "Search matches titles, subjects, descriptions and close spellings against the complete synced OSU catalog. The sync time is shown, and approximate matches are labelled. A search suggestion never changes the course or teacher identity used for ratings.",
+        "Complete course codes first query OSU directly. Titles, descriptions and tolerant matches use the synced catalog. Sources, timestamps and approximate matches are labelled; suggestions never change course or teacher identities.",
         "Opening a course refreshes official details in your browser; seat checks are separate live requests. Counts distinguish sections from campus-specific course entries. These are retrieval or sync times, not university publication times. Future classes may still lack a teacher or schedule.",
       ],
       link: {

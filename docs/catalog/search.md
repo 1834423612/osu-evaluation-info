@@ -87,8 +87,8 @@ cannot silently switch generations or data sources. Users can choose live search
 at any time without losing their query or filters.
 
 Broad browsing without a query still uses the existing direct OSU transport and
-explicit backup mirror. The small aliases in `catalog/search-query.ts` serve only
-that legacy live fallback, not full-corpus retrieval.
+explicit backup mirror. Live fallback and exact routing also derive subject names and abbreviations from metadata;
+there is no enumerated alias map.
 
 ## Files and validation
 
@@ -124,3 +124,44 @@ a guarantee for every possible query. Keep generated reports outside the reposit
 
 Result-load analytics distinguish the engine, fuzzy result count and fallback
 reason; see [Umami analytics](../analytics/umami.md).
+
+## Automatic exact routing and concurrent requests
+
+Complete codes first use a small subject vocabulary (`GET /api/catalog/subjects`), not the full search index.
+It reads course metadata only and coalesces the generation-scoped result; no section transfer or index build is required.
+Unique metadata-derived abbreviations can route to an official subject. Ambiguous names stay in tolerant search.
+An unseen literal subject code can be tried as written, so a new official subject need not wait for the next local sync.
+
+The browser tries one official search page, within a two-second budget including vocabulary resolution.
+This is a direct OSU request, with no server proxy or server cache of the live response.
+Official term discovery may add its usual metadata request on a cold browser session.
+Automatic search does not fetch more official pages or query spelling alternatives. A partial page is marked incomplete;
+opening a course retains the existing on-demand expansion. Empty, failed or slow exact reads use the local tolerant index.
+Keywords, ambiguous subjects and pinned index cursors keep the index path. An explicit index mode skips official routing.
+
+Immutable hydrated index pages are shared by generation, query, filters, sort and cursor. Defaults per Node process:
+96 pages, a 12 MiB serialized-size budget, 120-second TTL and 128 distinct pending keys.
+A hundred simultaneous copies of one query share one ranking/hydration operation. A new publication has a new key.
+Failed requests are not cached. Capacity limits produce 429 with Retry-After, and the client does not amplify overload
+by switching those requests to OSU. The existing PostgreSQL pool bounds connections; search uses reads, never DDL or data writes.
+The vocabulary adds at most 8 cached entries / 512 KiB per process; the browser retains at most 8 term vocabularies for five minutes.
+
+Exact identifiers use maps and metadata lookup. Descriptions and spelling correction use the inverted index;
+binary search on a sorted course list cannot replace those matching rules. These bounds limit each process;
+capacity across serverless instances and arbitrary distinct-query floods still depends on deployment limits.
+
+Initial local measurement on 2026-11-13: an uncached development search took 12.4 s including cold index work;
+ready-index queries took about 53–74 ms. These are local measurements, not a production latency guarantee.
+Tests cover 100-way request coalescing, byte/entry/pending limits, cancellation, dynamic subjects,
+one-page official routing, empty/slow fallback, and no official fanout for fuzzy alternatives.
+
+A production-build localhost benchmark with 200 simultaneous requests for the same cached query
+on 2026-11-13 returned the same page to all clients: p50 248 ms, p95 416 ms, max 446 ms.
+The first uncached description search still took 8.6 s; automatic exact routing avoids that cold index work.
+This checks shared-query coalescing, not 200 unrelated production queries. Run locally with:
+
+```sh
+node scripts/catalog/benchmark-search.mjs
+```
+
+The tool accepts localhost only, caps clients at 200, and writes its report under `.cache/`.
