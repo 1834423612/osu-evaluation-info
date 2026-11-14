@@ -45,29 +45,35 @@ export type MascotExpression =
 
 export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
   const section =
-    pathname === "/history"
-      ? locale === "zh" ? "最近记录" : "Recent activity"
-      : pathname === "/updates"
+    pathname === "/account"
       ? locale === "zh"
-        ? "课程更新"
-        : "Course updates"
-      : pathname.startsWith("/rmp")
+        ? "账号与同步"
+        : "Account & sync"
+      : pathname === "/history"
         ? locale === "zh"
-          ? "RMP 教师库"
-          : "RMP faculty library"
-        : pathname.startsWith("/saved")
+          ? "最近记录"
+          : "Recent activity"
+        : pathname === "/updates"
           ? locale === "zh"
-            ? "收藏"
-            : "Saved courses"
-          : pathname.startsWith("/methodology")
+            ? "课程更新"
+            : "Course updates"
+          : pathname.startsWith("/rmp")
             ? locale === "zh"
-              ? "数据与方法"
-              : "Behind the data"
-            : pathname.startsWith("/reference")
+              ? "RMP 教师库"
+              : "RMP faculty library"
+            : pathname.startsWith("/saved")
               ? locale === "zh"
-                ? "OSU 课程说明"
-                : "OSU field guide"
-              : null;
+                ? "收藏"
+                : "Saved courses"
+              : pathname.startsWith("/methodology")
+                ? locale === "zh"
+                  ? "数据与方法"
+                  : "Behind the data"
+                : pathname.startsWith("/reference")
+                  ? locale === "zh"
+                    ? "OSU 课程说明"
+                    : "OSU field guide"
+                  : null;
   const home = locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : brand.title;
   return section ? `${section} · ${home}` : home;
 }

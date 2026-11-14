@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import {
+  Cloud,
   Download,
   Upload,
   SlidersHorizontal,
@@ -109,6 +110,12 @@ export function SavedManager({ locale }: { locale: Locale }) {
   return (
     <section className={styles.panel} data-telemetry-private>
       <div className={styles.tools}>
+        <Button asChild variant="outline">
+          <a href="/account">
+            <Cloud size={14} />
+            {text(locale, "Account & sync", "账号与同步")}
+          </a>
+        </Button>
         <Button variant="outline" aria-expanded={open} onClick={manage}>
           <SlidersHorizontal size={14} />
           {text(locale, "Manage", "管理")}
