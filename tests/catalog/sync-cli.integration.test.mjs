@@ -34,6 +34,7 @@ it(
         "db/schemas/catalog.sql",
         "db/migrations/catalog/002-versioned-snapshots.sql",
         "db/migrations/catalog/004-term-archives.sql",
+        "db/migrations/catalog/005-course-changes.sql",
       ])
         await client.query(
           (
@@ -44,7 +45,7 @@ it(
           ).replaceAll("osu_catalog", schema),
         );
       await client.query(
-        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(4)`,
+        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(5)`,
       );
       const preload = join(directory, "preload.mjs");
       await writeFile(

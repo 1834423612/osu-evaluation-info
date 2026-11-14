@@ -90,6 +90,15 @@ it(
           "utf8",
         ),
       );
+      await scoped.query(
+        await readFile(
+          new URL(
+            "../../db/migrations/catalog/005-course-changes.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
       assert.equal(
         await find(client),
         old,

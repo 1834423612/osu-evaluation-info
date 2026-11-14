@@ -27,6 +27,7 @@ test(
         "db/migrations/catalog/002-versioned-snapshots.sql",
         "db/migrations/catalog/003-permanent-archive.sql",
         "db/migrations/catalog/004-term-archives.sql",
+        "db/migrations/catalog/005-course-changes.sql",
       ])
         await scoped.query(
           await readFile(new URL("../../" + file, import.meta.url), "utf8"),

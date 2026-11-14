@@ -60,4 +60,23 @@ export async function publishCatalogSnapshot(
         "CATALOG_CHECKPOINT_INVALID",
       );
   });
+  // Derived history is indexed after publication; a retry cannot invalidate the catalog.
+  const terms = await client.query(
+    "SELECT jsonb_array_elements_text(terms) term FROM osu_catalog.sync_runs WHERE id=$1",
+    [runId],
+  );
+  for (const { term } of terms.rows) {
+    try {
+      await withPageTransaction(client, () =>
+        client.query("SELECT osu_catalog.capture_course_changes($1,$2)", [
+          runId,
+          term,
+        ]),
+      );
+    } catch (error) {
+      console.warn(
+        `Course change indexing deferred (${error.code ?? "comparison"}); published catalog retained.`,
+      );
+    }
+  }
 }
