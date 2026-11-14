@@ -1,5 +1,5 @@
 "use client";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { ChevronDown, List, ThumbsDown, ThumbsUp } from "lucide-react";
 import { TranslateText } from "@/components/translation/translate-text";
 import { text, type Locale } from "@/lib/i18n";
 import type { RmpReview } from "@/lib/rmp/types";
@@ -113,7 +113,15 @@ export function RmpReviewContent({
       <div className={styles.footer}>
         {facts.length ? (
           <details className={styles.details}>
-            <summary>{text(locale, "Review details", "评价详情")}</summary>
+            <summary data-rmp-review-details>
+              <List size={13} aria-hidden="true" />
+              <span>{text(locale, "Review details", "评价详情")}</span>
+              <ChevronDown
+                size={13}
+                className={styles.detailChevron}
+                aria-hidden="true"
+              />
+            </summary>
             <dl>
               {facts.map(([label, value]) => (
                 <div key={label}>
