@@ -3,14 +3,14 @@ export const ANALYTICS_EVENT = "course-atlas:analytics-change";
 export type AnalyticsPreference = { enabled: boolean; replay: boolean };
 export const DEFAULT_ANALYTICS: AnalyticsPreference = {
   enabled: true,
-  replay: false,
+  replay: true,
 };
 export function parseAnalyticsPreference(
   raw: string | null,
 ): AnalyticsPreference {
   try {
     const v = JSON.parse(raw ?? "null");
-    return { enabled: v?.enabled !== false, replay: v?.replay === true };
+    return { enabled: v?.enabled !== false, replay: v?.replay !== false };
   } catch {
     return DEFAULT_ANALYTICS;
   }

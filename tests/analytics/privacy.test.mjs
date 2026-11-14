@@ -16,7 +16,7 @@ test("versioned collector URLs retain proxy parameters and reject script schemes
   assert.equal(analyticsAssetUrl("javascript:alert(1)"), "");
   assert.deepEqual(parseAnalyticsPreference(null), {
     enabled: true,
-    replay: false,
+    replay: true,
   });
 });
 function send(payload, { path = "/", setting = null, dnt = "0" } = {}) {
