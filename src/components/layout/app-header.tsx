@@ -26,7 +26,8 @@ import styles from "./language-controls.module.css";
 export function AppHeader({
   active,
 }: {
-  active?: "explore" | "saved" | "methodology" | "reference" | "rmp";
+  active?:
+    "explore" | "saved" | "methodology" | "reference" | "rmp" | "updates";
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
@@ -49,7 +50,9 @@ export function AppHeader({
             ? "methodology"
             : pathname === "/rmp" || pathname.startsWith("/rmp/")
               ? "rmp"
-              : active;
+              : pathname === "/updates"
+                ? "updates"
+                : active;
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
     const title = localizedDocumentTitle(locale, pathname);

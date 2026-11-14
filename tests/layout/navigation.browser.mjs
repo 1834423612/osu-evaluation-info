@@ -47,6 +47,7 @@ try {
       for (const [path, group, selected] of [
         ["/", "explore", "explore"],
         ["/rmp", "explore", "rmp"],
+        ["/updates", "explore", "updates"],
         ["/rmp/1117448", "explore", "rmp"],
         ["/saved", null, "saved"],
         ["/methodology", "guides", "methodology"],
@@ -157,7 +158,7 @@ try {
       await context.close();
     }
   console.log(
-    "Navigation: 6 routes, bilingual 320/360/390/768/1440px, selected groups and leaves, keyboard menus, bounded popovers and custom-select form submission passed",
+    "Navigation: 7 routes, bilingual 320/360/390/768/1440px, selected groups and leaves, keyboard menus, bounded popovers and custom-select form submission passed",
   );
 } catch (error) {
   await active?.screenshot({ path: `${output}/failure.png` }).catch(() => {});

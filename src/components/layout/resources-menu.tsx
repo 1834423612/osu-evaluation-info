@@ -9,12 +9,14 @@ import {
   MessageSquare,
   Search,
   Check,
+  History,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./resources-menu.module.css";
 
-type Page = "explore" | "saved" | "methodology" | "reference" | "rmp";
+type Page =
+  "explore" | "saved" | "methodology" | "reference" | "rmp" | "updates";
 function NavigationMenu({
   locale,
   page,
@@ -55,6 +57,17 @@ function NavigationMenu({
             "教师档案与课程评价",
           ),
         },
+        {
+          page: "updates",
+          href: "/updates",
+          Icon: History,
+          title: text(locale, "Course updates", "课程更新"),
+          detail: text(
+            locale,
+            "New offerings and catalog changes",
+            "新增开课与目录变化",
+          ),
+        },
       ]
     : [
         {
@@ -81,7 +94,13 @@ function NavigationMenu({
         },
       ];
   const selected = items.some((item) => item.page === page);
-  const Icon = exploring ? (page === "rmp" ? MessageSquare : Search) : BookOpen;
+  const Icon = exploring
+    ? page === "rmp"
+      ? MessageSquare
+      : page === "updates"
+        ? History
+        : Search
+    : BookOpen;
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
@@ -98,9 +117,11 @@ function NavigationMenu({
         <Icon size={15} aria-hidden="true" />
         <span>
           {exploring
-            ? page === "rmp"
-              ? text(locale, "Teachers", "RMP 教师库")
-              : text(locale, "Courses", "课程探索")
+            ? page === "updates"
+              ? text(locale, "Updates", "课程更新")
+              : page === "rmp"
+                ? text(locale, "Teachers", "RMP 教师库")
+                : text(locale, "Courses", "课程探索")
             : text(locale, "Guides & data", "课程说明与数据")}
         </span>
         <ChevronDown size={12} aria-hidden="true" />
