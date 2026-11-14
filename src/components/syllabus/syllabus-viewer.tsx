@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 
 import {
   forwardRef,
@@ -278,18 +279,18 @@ export const SyllabusViewer = forwardRef<
           >
             <Minus size={15} />
           </button>
-          <select
+          <ChoiceSelect
             className={styles.zoomSelect}
             aria-label={text(locale, "Document zoom", "文档缩放")}
             value={Math.round(zoom * 100)}
-            onChange={(event) => setZoom(Number(event.target.value) / 100)}
+            onValueChange={(value) => setZoom(Number(value) / 100)}
           >
             {[75, 100, 125, 150, 175].map((value) => (
               <option key={value} value={value}>
                 {value}%
               </option>
             ))}
-          </select>
+          </ChoiceSelect>
           <button
             className={styles.toolButton}
             type="button"

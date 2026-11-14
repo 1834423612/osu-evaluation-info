@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, RefreshCw, BookOpen, MessageSquare } from "lucide-react";
@@ -130,16 +131,14 @@ export function RmpProfilePage({
                   {text(locale, "Courses reviewed", "有评价的课程")}{" "}
                   <small>{data.courses.length}</small>
                 </h2>
-                <select
+                <ChoiceSelect
                   className={styles.mobileCourseSelect}
                   aria-label={text(locale, "Courses reviewed", "有评价的课程")}
                   value={course === null ? "all" : `course:${course}`}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     router.push(
                       link(
-                        event.target.value === "all"
-                          ? null
-                          : event.target.value.slice("course:".length),
+                        value === "all" ? null : value.slice("course:".length),
                       ),
                     )
                   }
@@ -155,7 +154,7 @@ export function RmpProfilePage({
                       · {item.count}
                     </option>
                   ))}
-                </select>
+                </ChoiceSelect>
                 <Link
                   href={link(null)}
                   aria-current={course === null ? "page" : undefined}

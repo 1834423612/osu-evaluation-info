@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { browserStorage } from "@/lib/preferences/browser-storage";
@@ -140,7 +141,7 @@ export function RmpLibrary({
           </label>
           <label>
             <span>{text(locale, "Campus", "校区")}</span>
-            <select name="campus" defaultValue={campus}>
+            <ChoiceSelect name="campus" defaultValue={campus}>
               {[
                 ["ALL", text(locale, "All campuses", "所有校区")],
                 ["COL", "Columbus"],
@@ -154,11 +155,11 @@ export function RmpLibrary({
                   {label}
                 </option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <label>
             <span>{text(locale, "Official identity", "官方身份")}</span>
-            <select name="identity" defaultValue={identity}>
+            <ChoiceSelect name="identity" defaultValue={identity}>
               <option value="all">
                 {text(locale, "All profiles", "全部档案")}
               </option>
@@ -168,7 +169,7 @@ export function RmpLibrary({
               <option value="unverified">
                 {text(locale, "Unconfirmed", "待确认")}
               </option>
-            </select>
+            </ChoiceSelect>
           </label>
           <button type="submit" className={styles.primary}>
             {text(locale, "Search", "搜索")}

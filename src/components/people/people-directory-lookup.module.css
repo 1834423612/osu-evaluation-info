@@ -13,7 +13,7 @@
 }
 
 .roleTrigger:focus-visible {
-  outline: 3px solid var(--ring);
+  outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
 

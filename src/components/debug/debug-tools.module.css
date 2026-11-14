@@ -135,7 +135,7 @@
 .group > p {
   margin: 5px 0 8px;
 }
-.delay select {
+.delay [data-choice-select] {
   border: 1px solid var(--line);
   border-radius: 5px;
   padding: 4px;
@@ -214,7 +214,7 @@
 }
 .tools button:focus-visible,
 .tools input:focus-visible,
-.tools select:focus-visible {
+.tools [data-choice-select]:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }

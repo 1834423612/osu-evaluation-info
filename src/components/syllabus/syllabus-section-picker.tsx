@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useId, useState } from "react";
 import { EmptyResult } from "@/components/brand/empty-result";
 import {
@@ -94,12 +95,10 @@ export function SyllabusSectionPicker({
         <div id={filtersId} className={styles.filters}>
           <label>
             {text(locale, "Staff type", "员工类型")}
-            <select
+            <ChoiceSelect
               aria-label={text(locale, "Filter staff type", "筛选员工类型")}
               value={filters.role}
-              onChange={(event) =>
-                setFilters({ ...filters, role: event.target.value })
-              }
+              onValueChange={(value) => setFilters({ ...filters, role: value })}
             >
               {[
                 ["all", "All types", "全部类型"],
@@ -114,32 +113,32 @@ export function SyllabusSectionPicker({
                   {text(locale, en, zh)}
                 </option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <label>
             {text(locale, "Score source", "评分来源")}
-            <select
+            <ChoiceSelect
               aria-label={text(locale, "Rating source", "评分来源")}
               value={filters.source}
-              onChange={(event) =>
+              onValueChange={(value) =>
                 setFilters({
                   ...filters,
-                  source: event.target.value as SyllabusChoiceFilters["source"],
+                  source: value as SyllabusChoiceFilters["source"],
                 })
               }
             >
               {["RMP", "SEI", "SSLE"].map((source) => (
                 <option key={source}>{source}</option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <label>
             {text(locale, "Minimum score", "最低评分")}
-            <select
+            <ChoiceSelect
               aria-label={text(locale, "Minimum score", "最低评分")}
               value={filters.minimum}
-              onChange={(event) =>
-                setFilters({ ...filters, minimum: Number(event.target.value) })
+              onValueChange={(value) =>
+                setFilters({ ...filters, minimum: Number(value) })
               }
             >
               <option value={0}>{text(locale, "Any score", "不限评分")}</option>
@@ -148,17 +147,17 @@ export function SyllabusSectionPicker({
                   ≥ {score} / 5
                 </option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <label>
             {text(locale, "Order", "排序")}
-            <select
+            <ChoiceSelect
               aria-label={text(locale, "Syllabus order", "大纲排序")}
               value={filters.sort}
-              onChange={(event) =>
+              onValueChange={(value) =>
                 setFilters({
                   ...filters,
-                  sort: event.target.value as SyllabusChoiceFilters["sort"],
+                  sort: value as SyllabusChoiceFilters["sort"],
                 })
               }
             >
@@ -171,7 +170,7 @@ export function SyllabusSectionPicker({
               <option value="asc">
                 {text(locale, "Score: low to high", "评分从低到高")}
               </option>
-            </select>
+            </ChoiceSelect>
           </label>
           {active ? (
             <button

@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -563,19 +564,16 @@ export function DebugTools() {
                     </legend>
                     <label className={styles.delay}>
                       {text(locale, "Request delay", "请求延迟")}
-                      <select
+                      <ChoiceSelect
                         value={state.flags.latency}
-                        onChange={(event) =>
-                          debugTools.setFlag(
-                            "latency",
-                            Number(event.target.value),
-                          )
+                        onValueChange={(value) =>
+                          debugTools.setFlag("latency", Number(value))
                         }
                       >
                         <option value={0}>0 ms</option>
                         <option value={800}>800 ms</option>
                         <option value={2000}>2000 ms</option>
-                      </select>
+                      </ChoiceSelect>
                     </label>
                     <div className={styles.buttons}>
                       <button

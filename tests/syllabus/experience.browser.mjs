@@ -414,13 +414,18 @@ try {
   assert.equal(await unavailable.getAttribute("data-available"), "false");
   assert.equal(await unavailable.getByRole("radio").isDisabled(), true);
   await page.getByRole("button", { name: "筛选与排序", exact: true }).click();
-  await page.getByLabel("最低评分", { exact: true }).selectOption("3.5");
+  await page.getByLabel("最低评分", { exact: true }).click();
+  await page.locator('[role="option"][data-choice-value="3.5"]').click();
   assert.equal(await secondCard.getAttribute("data-filter-match"), "false");
-  await page.getByLabel("最低评分", { exact: true }).selectOption("4.5");
+  await page.getByLabel("最低评分", { exact: true }).click();
+  await page.locator('[role="option"][data-choice-value="4.5"]').click();
   await page.locator("[data-empty-result] img").waitFor();
-  await page.getByLabel("最低评分", { exact: true }).selectOption("0");
-  await page.getByLabel("评分来源", { exact: true }).selectOption("SEI");
-  await page.getByLabel("大纲排序", { exact: true }).selectOption("asc");
+  await page.getByLabel("最低评分", { exact: true }).click();
+  await page.locator('[role="option"][data-choice-value="0"]').click();
+  await page.getByLabel("评分来源", { exact: true }).click();
+  await page.locator('[role="option"][data-choice-value="SEI"]').click();
+  await page.getByLabel("大纲排序", { exact: true }).click();
+  await page.locator('[role="option"][data-choice-value="asc"]').click();
   assert.equal(
     await page
       .locator("[data-syllabus-card]")
@@ -560,6 +565,13 @@ try {
   const diagnosticDownload = page.waitForEvent("download");
   await diagnostic.click();
   await (await diagnosticDownload).saveAs(`${output}/scroll.json`);
+  const delay = page.getByRole("combobox", { name: "请求延迟", exact: true });
+  await delay.click();
+  await page.getByRole("option", { name: "800 ms", exact: true }).click();
+  assert((await delay.innerText()).includes("800 ms"));
+  await delay.click();
+  await page.getByRole("option", { name: "0 ms", exact: true }).click();
+
   await page
     .locator("[data-debug-tools]")
     .getByRole("button", { name: "DEV", exact: true })

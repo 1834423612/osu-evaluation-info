@@ -40,7 +40,7 @@
   --accent-soft: #fcf0f2;
   --accent-border: #e8bac4;
   --accent-selection: #f2d4db;
-  --ring: #be6277;
+  --ring: #497768;
   --scroll-thumb: #ccbac0;
   --positive: #35704a;
   --positive-soft: #edf7ef;
@@ -80,8 +80,8 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid var(--ring);
-  outline-offset: 3px;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 button {
   font-family: inherit;
@@ -316,7 +316,7 @@ h1 {
 }
 .enrollment-watch-toggle input:focus-visible {
   outline: 2px solid var(--ring);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 .enrollment-watch-copy {
   display: grid;
@@ -1761,8 +1761,8 @@ h1 {
   cursor: pointer;
 }
 .course-card:focus-visible {
-  outline: 3px solid var(--ring);
-  outline-offset: 3px;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 .course-preview {
   border-top: 1px solid var(--line);

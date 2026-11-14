@@ -85,8 +85,9 @@ try {
       const heading = await page.locator("h1").innerText();
       assert(heading.length > 0);
       if (width < 650) {
-        const select = page.locator("aside select");
-        await select.selectOption({ index: 1 });
+        const select = page.locator("aside [data-choice-select]");
+        await select.click();
+        await page.getByRole("option").nth(1).click();
       } else {
         await page.locator("aside a").nth(1).click();
       }

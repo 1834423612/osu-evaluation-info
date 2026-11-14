@@ -52,7 +52,7 @@
   color: var(--secondary-foreground);
 }
 .filters input,
-.filters select {
+.filters [data-choice-select] {
   width: 100%;
   min-width: 0;
   height: 38px;
@@ -403,7 +403,7 @@
 .page a:focus-visible,
 .page button:focus-visible,
 .page input:focus-visible,
-.page select:focus-visible {
+.page [data-choice-select]:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
