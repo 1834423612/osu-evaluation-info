@@ -1,3 +1,4 @@
+import { recoveryPlugin } from "./recovery.ts";
 import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { emailOTP } from "better-auth/plugins/email-otp";
@@ -61,6 +62,7 @@ export function createAuth(
     },
     logger: { disabled: true },
     plugins: [
+      recoveryPlugin(),
       emailOTP({
         expiresIn: 300,
         otpLength: 6,

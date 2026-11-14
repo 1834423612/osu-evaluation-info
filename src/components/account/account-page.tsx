@@ -31,8 +31,14 @@ type Device = {
   expiresAt: Date;
 };
 export function AccountPage() {
+  const { data: session } = authClient.useSession();
+  return <AccountWorkspace key={session?.user.id ?? "guest"} />;
+}
+function AccountWorkspace() {
   const { locale } = usePreferences(),
     { data: session, isPending, refetch } = authClient.useSession();
+  const [recovery, setRecovery] = useState("");
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [profileName, setProfileName] = useState("");
   const [status, setStatus] = useState<Status | null>(null),
     [email, setEmail] = useState(""),
@@ -377,6 +383,68 @@ export function AccountPage() {
             </section>
             <section className={styles.panel}>
               <h2>
+                <KeyRound size={18} />
+                {text(locale, "Recovery codes", "恢复码")}
+              </h2>
+              <p className={styles.muted}>
+                {text(
+                  locale,
+                  "Keep these offline. Each code works once, for one year. New codes replace old ones.",
+                  "请离线保存，每个恢复码限用一次，一年内有效；生成新码后旧码失效。",
+                )}
+              </p>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => {
+                    const result = await authClient.$fetch<{ codes: string[] }>(
+                      "/recovery/generate",
+                      { method: "POST", body: {} },
+                    );
+                    if (result.data) setRecoveryCodes(result.data.codes);
+                    return result;
+                  })
+                }
+              >
+                {text(locale, "Generate new codes", "生成新恢复码")}
+              </Button>
+              {recoveryCodes.length ? (
+                <>
+                  <label className={styles.fields}>
+                    {text(locale, "Save these codes now", "请立即保存恢复码")}
+                    <textarea
+                      className={styles.input}
+                      readOnly
+                      rows={10}
+                      value={recoveryCodes.join("\n")}
+                    />
+                  </label>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const url = URL.createObjectURL(
+                          new Blob([recoveryCodes.join("\n")], {
+                            type: "text/plain",
+                          }),
+                        ),
+                        link = document.createElement("a");
+                      link.href = url;
+                      link.download = "waho-recovery-codes.txt";
+                      link.click();
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    }}
+                  >
+                    {text(locale, "Download codes", "下载恢复码")}
+                  </Button>
+                  <Button variant="ghost" onClick={() => setRecoveryCodes([])}>
+                    {text(locale, "Hide codes", "隐藏恢复码")}
+                  </Button>
+                </>
+              ) : null}
+            </section>
+            <section className={styles.panel}>
+              <h2>
                 <Fingerprint size={18} />{" "}
                 {text(locale, "Use a passkey", "使用通行密钥")}
               </h2>
@@ -401,6 +469,42 @@ export function AccountPage() {
                 <Fingerprint size={16} />
                 {text(locale, "Sign in with a passkey", "用通行密钥登录")}
               </Button>
+              <details>
+                <summary>
+                  {text(locale, "Use a recovery code", "使用恢复码")}
+                </summary>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void run(async () => {
+                      const result = await authClient.$fetch(
+                        "/recovery/verify",
+                        { method: "POST", body: { code: recovery } },
+                      );
+                      if (!result.error) {
+                        setRecovery("");
+                        await refetch();
+                      }
+                      return result;
+                    });
+                  }}
+                >
+                  <label className={styles.fields}>
+                    {text(locale, "Recovery code", "恢复码")}
+                    <input
+                      className={styles.input}
+                      autoComplete="off"
+                      value={recovery}
+                      maxLength={100}
+                      required
+                      onChange={(e) => setRecovery(e.target.value)}
+                    />
+                  </label>
+                  <Button variant="outline" disabled={busy}>
+                    {text(locale, "Recover account", "恢复账号")}
+                  </Button>
+                </form>
+              </details>
               <p className={styles.muted}>
                 {text(
                   locale,
@@ -417,7 +521,42 @@ export function AccountPage() {
                 {session.user.name || text(locale, "Your account", "我的账号")}
               </h2>
               <p className={styles.muted}>{session.user.email}</p>
-            <details><summary>{text(locale,"Edit profile","编辑资料")}</summary><form onSubmit={e=>{e.preventDefault();void run(async()=>{const result=await authClient.updateUser({name:profileName.trim()});if(!result.error){setProfileName("");await refetch();}return result;},text(locale,"Name updated","昵称已更新"));}}><label className={styles.fields}>{text(locale,"Display name","昵称")}<input className={styles.input} value={profileName} placeholder={session.user.name} required maxLength={60} onChange={e=>setProfileName(e.target.value)}/></label><Button variant="outline" disabled={busy}>{text(locale,"Save name","保存昵称")}</Button></form></details>
+              <details>
+                <summary>{text(locale, "Edit profile", "编辑资料")}</summary>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void run(
+                      async () => {
+                        const result = await authClient.updateUser({
+                          name: profileName.trim(),
+                        });
+                        if (!result.error) {
+                          setProfileName("");
+                          await refetch();
+                        }
+                        return result;
+                      },
+                      text(locale, "Name updated", "昵称已更新"),
+                    );
+                  }}
+                >
+                  <label className={styles.fields}>
+                    {text(locale, "Display name", "昵称")}
+                    <input
+                      className={styles.input}
+                      value={profileName}
+                      placeholder={session.user.name}
+                      required
+                      maxLength={60}
+                      onChange={(e) => setProfileName(e.target.value)}
+                    />
+                  </label>
+                  <Button variant="outline" disabled={busy}>
+                    {text(locale, "Save name", "保存昵称")}
+                  </Button>
+                </form>
+              </details>
               <p className={styles.muted}>
                 {text(
                   locale,

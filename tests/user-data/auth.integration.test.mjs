@@ -168,6 +168,30 @@ test(
       200,
     );
     assert.equal((await make("/get-session", null, second.cookie)).data, null);
+    const generated = await make("/recovery/generate", {}, first.cookie);
+    assert.equal(generated.status, 200);
+    assert.equal(generated.data.codes.length, 10);
+    const codeA = generated.data.codes[0],
+      oldCode = generated.data.codes[1];
+    const race = await Promise.all([
+      make("/recovery/verify", { code: codeA }),
+      make("/recovery/verify", { code: codeA }),
+    ]);
+    assert.equal(race.filter((x) => x.status === 200).length, 1);
+    assert.equal(race.filter((x) => x.status === 400).length, 1);
+    const replacement = await make("/recovery/generate", {}, first.cookie);
+    assert.equal(replacement.status, 200);
+    assert.equal(
+      (await make("/recovery/verify", { code: oldCode })).status,
+      400,
+    );
+    assert.equal(
+      (await make("/recovery/verify", { code: replacement.data.codes[0] }))
+        .status,
+      200,
+    );
+    const account = await make("/get-session", null, first.cookie);
+    assert.equal(account.data.user.recoveryGeneration, undefined);
     const outcomes = await Promise.allSettled(
       Array.from({ length: 10 }, () =>
         checkBudget("integration", "same", 60, 3),
