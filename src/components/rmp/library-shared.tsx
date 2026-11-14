@@ -4,8 +4,12 @@ import { text, type Locale } from "@/lib/i18n";
 import type { RmpLibraryReview, RmpProfile } from "@/lib/rmp/library-types";
 import { RmpReviewContent } from "./review-content";
 import styles from "./library.module.css";
-export const rating = (value: number | null) =>
-  value === null ? "—" : value.toFixed(1);
+export {
+  formatRmpRating as rating,
+  formatRmpPercent as percentage,
+  profileInitials,
+  ratingTone,
+} from "@/lib/rmp/display";
 export function RmpIdentityBadge({
   profile,
   locale,

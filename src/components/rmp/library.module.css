@@ -7,13 +7,16 @@
   color: var(--ink);
 }
 .hero {
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
 }
 .eyebrow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
-  color: #58736b;
+  color: var(--accent-foreground);
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 0.04em;
@@ -35,10 +38,11 @@
   grid-template-columns: minmax(180px, 1fr) 150px 150px auto;
   gap: 12px;
   align-items: end;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
+  box-shadow: 0 2px 10px #221a1904;
 }
 .filters label {
   display: grid;
@@ -90,6 +94,10 @@
   color: var(--muted);
 }
 .toolbar h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   color: var(--ink);
   font-size: 15px;
@@ -119,39 +127,26 @@
   gap: 13px;
 }
 .profileCard {
-  display: block;
+  display: grid;
   min-width: 0;
-  padding: 17px;
+  padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 11px;
   background: var(--surface);
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    border-color 150ms,
+    box-shadow 150ms;
 }
 .profileCard:hover {
-  border-color: #92afa5;
-  box-shadow: 0 3px 12px #304d3710;
-}
-.cardTitle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.cardTitle h2 {
-  min-width: 0;
-  margin: 0;
-  font-size: 15px;
-  font-weight: 650;
-  overflow-wrap: anywhere;
-}
-.cardTitle > svg {
-  flex-shrink: 0;
-  color: #70887e;
+  border-color: var(--accent-border);
+  box-shadow: 0 4px 16px #4023210b;
 }
 .cardDept {
-  margin: 8px 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 4px 0 8px;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
@@ -186,26 +181,6 @@
   color: var(--muted);
   font-size: 10px;
 }
-.cardStats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  font-size: 10px;
-  color: var(--muted);
-}
-.cardStats b {
-  margin-left: 4px;
-  font-size: 16px;
-  color: var(--ink);
-}
-.cardStats small {
-  font-size: 10px;
-}
 .pagination {
   display: flex;
   align-items: center;
@@ -234,10 +209,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 25px;
-  padding: 22px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
 }
 .profileHeader > div {
   min-width: 0;
@@ -266,9 +242,14 @@
   color: #446e60;
 }
 .ratings {
-  display: flex;
-  gap: 24px;
-  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  min-width: 260px;
+  padding: 15px 18px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--subtle-surface);
 }
 .ratings > div {
   display: grid;
@@ -293,13 +274,21 @@
   gap: 30px;
 }
 .courseList {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100dvh - 112px);
+  overflow-y: auto;
+  scrollbar-width: thin;
   align-self: start;
-  padding: 16px;
+  padding: 15px;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--surface);
 }
 .courseList h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0 0 15px;
   font-size: 13px;
   font-weight: 650;
@@ -345,8 +334,11 @@
   line-height: 1.7;
 }
 .review {
-  padding: 18px 0;
-  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
 }
 .reviewMeta {
   display: flex;
@@ -393,26 +385,6 @@
   font-size: 12px;
   line-height: 1.85;
 }
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  list-style: none;
-  margin: 10px 0;
-  padding: 0;
-}
-.tags li {
-  padding: 3px 7px;
-  border-radius: 4px;
-  background: #f1f4f1;
-  color: #526957;
-  font-size: 10px;
-  overflow-wrap: anywhere;
-}
-.reviewDetails {
-  font-size: 10px;
-  color: var(--muted);
-}
 .supplements {
   margin-top: 24px;
   padding: 14px;
@@ -428,44 +400,205 @@
 .supplements > p {
   color: var(--muted);
 }
-.teacherReply {
-  margin: 12px 0;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--subtle-surface);
-  font-size: 11px;
-  line-height: 1.8;
-  overflow-wrap: anywhere;
-}
-.teacherReply p {
-  margin: 6px 0 0;
-  white-space: pre-wrap;
-}
-.reviewDetails summary {
-  cursor: pointer;
-}
-.reviewDetails dl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  padding: 5px 0;
-  margin: 8px 0;
-}
-.reviewDetails dl > div {
-  display: flex;
-  gap: 6px;
-}
-.reviewDetails dd {
-  margin: 0;
-  color: var(--ink);
-}
 .page a:focus-visible,
 .page button:focus-visible,
 .page input:focus-visible,
 .page select:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
+}
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.viewSwitch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--subtle-surface);
+}
+.viewSwitch button {
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.viewSwitch button[aria-pressed="true"] {
+  background: var(--surface);
+  box-shadow: 0 1px 3px #301a1812;
+  color: var(--ink);
+}
+.profileCard:focus-visible,
+.viewSwitch button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.cardIdentity {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.cardIdentityText {
+  flex: 1;
+  min-width: 0;
+}
+.cardIdentityText h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.monogram {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--accent-border);
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  font-size: 12px;
+  font-weight: 650;
+}
+.monogram[data-palette="1"] {
+  border-color: #cadcd8;
+  background: #eef6f4;
+  color: #38695a;
+}
+.monogram[data-palette="2"] {
+  border-color: #d9d8e9;
+  background: #f2f1f8;
+  color: #686081;
+}
+.cardArrow {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.cardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 7px;
+}
+.campus {
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.cardMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 17px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+}
+.cardMetrics dt {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.cardMetrics dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.cardMetrics small {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.cardMetrics [data-tone="positive"] dd,
+.ratings [data-tone="positive"] b {
+  color: #327454;
+}
+.cardMetrics [data-tone="caution"] dd,
+.ratings [data-tone="caution"] b {
+  color: var(--accent-foreground);
+}
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.cardFoot > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.grid[data-view="list"] {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+}
+.grid[data-view="list"] .profileCard {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.85fr);
+  column-gap: 28px;
+}
+.grid[data-view="list"] .cardIdentity {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+.grid[data-view="list"] .cardMetrics {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.grid[data-view="list"] .cardFoot {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 9px;
+}
+.profileIdentity {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.profileIdentity > div {
+  min-width: 0;
+}
+.profileMonogram {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--accent-border);
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  font-weight: 650;
+  width: 54px;
+  height: 54px;
+  margin-top: 4px;
+  font-size: 18px;
+}
+.profileIdentity h1,
+.identityLine > span {
+  overflow-wrap: anywhere;
+}
+.notice[data-tone="neutral"] {
+  border-color: var(--line);
+  background: var(--subtle-surface);
+  color: var(--muted);
 }
 @media (max-width: 900px) {
   .grid {
@@ -522,6 +655,9 @@
     flex-wrap: wrap;
     gap: 5px;
     padding: 12px;
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
   .courseList h2 {
     flex-basis: 100%;
@@ -548,13 +684,42 @@
     font-size: 22px;
   }
   .profileHeader {
-    padding: 18px 0;
+    padding: 17px;
+  }
+  .profileMonogram {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+  .profileIdentity {
+    gap: 10px;
+  }
+  .ratings {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    gap: 12px;
+  }
+  .grid[data-view="list"] .profileCard {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .grid[data-view="list"] .cardIdentity {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .grid[data-view="list"] .cardMetrics {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .grid[data-view="list"] .cardFoot {
+    grid-column: 1;
+    grid-row: auto;
   }
   .notice {
     font-size: 10px;
-  }
-  .cardStats {
-    margin-top: 11px;
-    padding-top: 10px;
   }
 }

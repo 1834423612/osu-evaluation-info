@@ -37,6 +37,11 @@ try {
       await cards.first().waitFor();
       assert((await cards.count()) > 0);
       assert(
+        !(await page.locator("[data-rmp-library-view]").innerText()).includes(
+          "-1%",
+        ),
+      );
+      assert(
         (await cards.first().innerText()).includes(
           locale === "zh" ? "身份待确认" : "Identity unconfirmed",
         ),
@@ -46,6 +51,29 @@ try {
           () => document.documentElement.scrollWidth <= innerWidth + 1,
         ),
       );
+      const views = page.locator("[data-rmp-library-view]");
+      assert.equal(await views.getAttribute("data-rmp-library-view"), "grid");
+      await page
+        .getByRole("button", {
+          name: locale === "zh" ? "列表视图" : "List view",
+          exact: true,
+        })
+        .click();
+      assert.equal(await views.getAttribute("data-rmp-library-view"), "list");
+      await page.reload({ waitUntil: "networkidle" });
+      await cards.first().waitFor();
+      assert.equal(await views.getAttribute("data-rmp-library-view"), "list");
+      await page.screenshot({
+        path: `${output}/library-list-${locale}-${width}.png`,
+        fullPage: true,
+      });
+      await page
+        .getByRole("button", {
+          name: locale === "zh" ? "网格视图" : "Grid view",
+          exact: true,
+        })
+        .click();
+      assert.equal(await views.getAttribute("data-rmp-library-view"), "grid");
       await page.screenshot({
         path: `${output}/library-${locale}-${width}.png`,
         fullPage: true,

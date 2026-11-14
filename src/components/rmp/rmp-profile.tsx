@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, BookOpen, MessageSquare } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { EmptyResult } from "@/components/brand/empty-result";
@@ -11,9 +11,12 @@ import { text } from "@/lib/i18n";
 import type { RmpProfileDetail } from "@/lib/rmp/library-types";
 import {
   RmpIdentityBadge,
+  profileInitials,
+  ratingTone,
   RmpProfileSource,
   RmpLibraryReviewCard,
   rating,
+  percentage,
 } from "./library-shared";
 import styles from "./library.module.css";
 export function RmpProfilePage({
@@ -59,30 +62,39 @@ export function RmpProfilePage({
         {data && profile ? (
           <>
             <header className={styles.profileHeader}>
-              <div>
-                <span className={styles.eyebrow}>
-                  {profile.campuses.join(" / ")} · {profile.department}
+              <div className={styles.profileIdentity}>
+                <span className={styles.profileMonogram} aria-hidden="true">
+                  {profileInitials(profile.name)}
                 </span>
-                <h1>{profile.name}</h1>
-                <div className={styles.identityLine}>
-                  <RmpIdentityBadge profile={profile} locale={locale} />
-                  {profile.username ? (
-                    <span>
-                      {profile.officialName} · {profile.username}
-                    </span>
-                  ) : null}
+                <div>
+                  <span className={styles.eyebrow}>
+                    {profile.campuses.join(" / ")} · {profile.department}
+                  </span>
+                  <h1>{profile.name}</h1>
+                  <div className={styles.identityLine}>
+                    <RmpIdentityBadge profile={profile} locale={locale} />
+                    {profile.username ? (
+                      <span>
+                        {profile.officialName &&
+                        profile.officialName !== profile.name
+                          ? `${profile.officialName} · `
+                          : ""}
+                        {profile.username}
+                      </span>
+                    ) : null}
+                  </div>
+                  <RmpProfileSource profile={profile} locale={locale} />
                 </div>
-                <RmpProfileSource profile={profile} locale={locale} />
               </div>
               <div className={styles.ratings}>
-                <div>
+                <div data-tone={ratingTone(profile.quality)}>
                   <span>{text(locale, "RMP overall", "RMP 原站均分")}</span>
                   <b>
                     {rating(profile.quality)}
                     <small>/5</small>
                   </b>
                 </div>
-                <div>
+                <div data-tone={ratingTone(profile.difficulty, true)}>
                   <span>{text(locale, "Difficulty", "难度")}</span>
                   <b>
                     {rating(profile.difficulty)}
@@ -91,30 +103,30 @@ export function RmpProfilePage({
                 </div>
                 <div>
                   <span>{text(locale, "Would take again", "愿意再选")}</span>
-                  <b>
-                    {profile.wouldTakeAgain === null
-                      ? "—"
-                      : Math.round(profile.wouldTakeAgain) + "%"}
-                  </b>
+                  <b>{percentage(profile.wouldTakeAgain)}</b>
                 </div>
               </div>
             </header>
-            <p className={styles.notice}>
+            <p
+              className={styles.notice}
+              data-tone={profile.username ? "neutral" : "warning"}
+            >
               {profile.username
                 ? text(
                     locale,
-                    "Student opinions from RMP; course labels are not official teaching records.",
-                    "以下为 RMP 学生主观评价，课程代码不代表官方任课证明。",
+                    "RMP student reviews · Course labels are not official teaching records.",
+                    "RMP 学生评价 · 课程代码不代表官方任课证明。",
                   )
                 : text(
                     locale,
-                    "Official identity unconfirmed. Name, department and courses below are from RMP.",
-                    "官方身份待确认。以下姓名、院系及课程信息来自 RMP。",
+                    "Identity unconfirmed · Profile and course labels come from RMP.",
+                    "身份待确认 · 档案及课程标注来自 RMP。",
                   )}
             </p>
             <div className={styles.profileLayout}>
               <aside className={styles.courseList}>
                 <h2>
+                  <BookOpen size={14} aria-hidden="true" />
                   {text(locale, "Courses reviewed", "有评价的课程")}{" "}
                   <small>{data.courses.length}</small>
                 </h2>
@@ -171,6 +183,7 @@ export function RmpProfilePage({
               >
                 <div className={styles.toolbar}>
                   <h2>
+                    <MessageSquare size={15} aria-hidden="true" />
                     {course === null
                       ? text(locale, "All reviews", "全部评价")
                       : course ||

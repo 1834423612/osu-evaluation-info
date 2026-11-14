@@ -1,7 +1,16 @@
 "use client";
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
+import { browserStorage } from "@/lib/preferences/browser-storage";
 import { useRouter } from "next/navigation";
-import { Search, ArrowRight, MessageSquare, RefreshCw } from "lucide-react";
+import {
+  Search,
+  ArrowUpRight,
+  LayoutGrid,
+  List,
+  MessageSquare,
+  RefreshCw,
+} from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { EmptyResult } from "@/components/brand/empty-result";
@@ -9,8 +18,48 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { useRmpResource } from "@/hooks/use-rmp-resource";
 import { text } from "@/lib/i18n";
 import type { RmpLibraryResult } from "@/lib/rmp/library-types";
-import { RmpIdentityBadge, rating } from "./library-shared";
+import {
+  RmpIdentityBadge,
+  rating,
+  percentage,
+  profileInitials,
+  ratingTone,
+} from "./library-shared";
 import styles from "./library.module.css";
+const VIEW_KEY = "course-atlas:rmp-view:v1";
+const viewEvent = "course-atlas:rmp-view-change";
+let memoryView: "grid" | "list" | null = null;
+const readView = (): "grid" | "list" => {
+  if (memoryView) return memoryView;
+  try {
+    return browserStorage().getItem(VIEW_KEY) === "list" ? "list" : "grid";
+  } catch {
+    return "grid";
+  }
+};
+const subscribeView = (listener: () => void) => {
+  const storageChanged = () => {
+    memoryView = null;
+    listener();
+  };
+  window.addEventListener("storage", storageChanged);
+  window.addEventListener(viewEvent, listener);
+  return () => {
+    window.removeEventListener("storage", storageChanged);
+    window.removeEventListener(viewEvent, listener);
+  };
+};
+const serverView = () => "grid" as const;
+function saveView(value: "grid" | "list") {
+  memoryView = value;
+  try {
+    browserStorage().setItem(VIEW_KEY, value);
+  } catch {
+    /* Restricted storage keeps the page usable. */
+  }
+  window.dispatchEvent(new Event(viewEvent));
+}
+
 export function RmpLibrary({
   query = "",
   campus = "ALL",
@@ -24,6 +73,7 @@ export function RmpLibrary({
 }) {
   const { locale } = usePreferences();
   const router = useRouter();
+  const view = useSyncExternalStore(subscribeView, readView, serverView);
   const params = new URLSearchParams({
     q: query,
     campus,
@@ -134,22 +184,45 @@ export function RmpLibrary({
                 )
               : "RMP"}
           </span>
-          <button
-            type="button"
-            onClick={retry}
-            aria-label={text(locale, "Reload saved data", "重新读取已保存数据")}
-          >
-            <RefreshCw size={13} />
-            {text(locale, "Reload", "重新读取")}
-          </button>
+          <div className={styles.toolbarActions}>
+            <div
+              className={styles.viewSwitch}
+              role="group"
+              aria-label={text(locale, "Display", "显示方式")}
+            >
+              <button
+                type="button"
+                aria-pressed={view === "grid"}
+                onClick={() => saveView("grid")}
+                aria-label={text(locale, "Grid view", "网格视图")}
+              >
+                <LayoutGrid size={14} />
+                <span>{text(locale, "Grid", "网格")}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={view === "list"}
+                onClick={() => saveView("list")}
+                aria-label={text(locale, "List view", "列表视图")}
+              >
+                <List size={14} />
+                <span>{text(locale, "List", "列表")}</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={retry}
+              aria-label={text(
+                locale,
+                "Reload saved data",
+                "重新读取已保存数据",
+              )}
+            >
+              <RefreshCw size={13} />
+              {text(locale, "Reload", "重新读取")}
+            </button>
+          </div>
         </div>
-        <p className={styles.notice}>
-          {text(
-            locale,
-            "Names and course labels come from RMP. Unconfirmed identities are marked.",
-            "姓名与课程标注来自 RMP，身份待确认的档案单独标记。",
-          )}
-        </p>
         {loading ? (
           <p role="status">
             {text(locale, "Loading profiles…", "正在读取档案…")}
@@ -164,7 +237,11 @@ export function RmpLibrary({
             {text(locale, "No matching profiles", "没有找到相关档案")}
           </EmptyResult>
         ) : null}
-        <div className={styles.grid}>
+        <div
+          className={styles.grid}
+          data-rmp-library-view={view}
+          data-view={view}
+        >
           {data?.profiles.map((profile) => (
             <Link
               className={styles.profileCard}
@@ -172,31 +249,61 @@ export function RmpLibrary({
               href={`/rmp/${profile.id}`}
               data-rmp-profile={profile.id}
             >
-              <div className={styles.cardTitle}>
-                <h2>{profile.name}</h2>
-                <ArrowRight size={15} />
+              <div className={styles.cardIdentity}>
+                <span
+                  className={styles.monogram}
+                  data-palette={Number(profile.id) % 3}
+                  aria-hidden="true"
+                >
+                  {profileInitials(profile.name)}
+                </span>
+                <div className={styles.cardIdentityText}>
+                  <h2>{profile.name}</h2>
+                  <p className={styles.cardDept}>
+                    {profile.department ||
+                      text(locale, "Department unspecified", "未注明院系")}
+                  </p>
+                  <div className={styles.cardBadges}>
+                    <RmpIdentityBadge profile={profile} locale={locale} />
+                    <span className={styles.campus}>
+                      {profile.campuses.join(" / ")}
+                    </span>
+                    {!profile.active ? (
+                      <span className={styles.archive}>
+                        {text(locale, "Archived", "已归档")}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <ArrowUpRight size={15} className={styles.cardArrow} />
               </div>
-              <div className={styles.cardDept}>
-                {profile.department ||
-                  text(locale, "Department unspecified", "未注明院系")}{" "}
-                · {profile.campuses.join(" / ")}
-              </div>
-              <RmpIdentityBadge profile={profile} locale={locale} />
-              {!profile.active ? (
-                <span className={styles.archive}>
-                  {text(locale, "Source archived", "原站已归档")}
-                </span>
-              ) : null}
-              <div className={styles.cardStats}>
+              <dl className={styles.cardMetrics}>
+                <div data-tone={ratingTone(profile.quality)}>
+                  <dt>{text(locale, "RMP quality", "RMP 评分")}</dt>
+                  <dd>
+                    {rating(profile.quality)}
+                    <small>/5</small>
+                  </dd>
+                </div>
+                <div data-tone={ratingTone(profile.difficulty, true)}>
+                  <dt>{text(locale, "Difficulty", "难度")}</dt>
+                  <dd>
+                    {rating(profile.difficulty)}
+                    <small>/5</small>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{text(locale, "Would take again", "愿意再选")}</dt>
+                  <dd>{percentage(profile.wouldTakeAgain)}</dd>
+                </div>
+              </dl>
+              <div className={styles.cardFoot}>
                 <span>
-                  {text(locale, "RMP quality", "RMP 评分")}{" "}
-                  <b>{rating(profile.quality)}</b>
-                  <small>/5</small>
+                  <MessageSquare size={12} />
+                  {profile.storedReviewCount.toLocaleString()}{" "}
+                  {text(locale, "reviews", "条评价")}
                 </span>
-                <span>
-                  {profile.storedReviewCount}{" "}
-                  {text(locale, "saved reviews", "条已保存评价")}
-                </span>
+                <span>RMP #{profile.id}</span>
               </div>
             </Link>
           ))}
