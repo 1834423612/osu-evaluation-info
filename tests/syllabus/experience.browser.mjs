@@ -6,6 +6,7 @@ import {
   syllabusHasUpdate,
 } from "../../src/lib/syllabus/saved.ts";
 import { documentFixture, componentId, snapshotId } from "./fixtures.mjs";
+import { DEBUG_SESSION_KEY } from "../../src/lib/debug/flags.ts";
 
 const { chromium } = await import(
   process.env.PLAYWRIGHT_MODULE ?? "playwright"
@@ -142,13 +143,18 @@ async function setup(width = 1440, seed = false, locale = "zh") {
   };
   const saved = createSavedSyllabus(course, section, document.entry, original);
   await context.addInitScript(
-    ({ course, seed, saved, locale }) => {
+    ({ course, seed, saved, locale, debugKey }) => {
       Object.defineProperty(window, "showSaveFilePicker", {
         value: undefined,
         configurable: true,
       });
       if (sessionStorage.getItem("syllabus-fixture")) return;
       sessionStorage.setItem("syllabus-fixture", "1");
+      // The mocked authorized session reopens tools in both dev and production builds.
+      sessionStorage.setItem(
+        debugKey,
+        JSON.stringify({ hidden: false, expanded: false }),
+      );
       localStorage.setItem("course-atlas:locale:v1", locale);
       localStorage.setItem("course-atlas:translation-guide:v1", "done");
       localStorage.setItem("course-atlas:saved:v1", JSON.stringify([course]));
@@ -158,7 +164,7 @@ async function setup(width = 1440, seed = false, locale = "zh") {
           JSON.stringify([saved]),
         );
     },
-    { course, seed, saved, locale },
+    { course, seed, saved, locale, debugKey: DEBUG_SESSION_KEY },
   );
   const page = await context.newPage();
   activePage = page;
