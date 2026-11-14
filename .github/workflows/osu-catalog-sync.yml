@@ -58,6 +58,11 @@ jobs:
           "$RUNNER_TEMP/rmp-mapping-runtime/bin/pip" install --disable-pip-version-check -r scripts/rmp/requirements.txt
           "$RUNNER_TEMP/rmp-mapping-runtime/bin/python" scripts/rmp/sync_rmp_mappings.py --require-schema
 
+      - name: Complete pending course change history
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/catalog/backfill_changes.mjs --max-batches 12
+
       - name: Summarize catalog failure
         if: failure()
         shell: bash
