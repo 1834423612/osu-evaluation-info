@@ -14,6 +14,7 @@ import {
 import { useSavedSyllabi } from "@/hooks/use-saved-syllabi";
 import { syllabusHasUpdate } from "@/lib/syllabus/saved";
 import { SavedSyllabi } from "./saved-syllabi";
+import { SavedManager } from "./saved-manager";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { SceneMascot } from "@/components/brand/scene-mascot";
@@ -169,7 +170,7 @@ export function SavedCourses() {
   return (
     <>
       <AppHeader active="saved" />
-      <main className="saved-shell">
+      <main className="saved-shell rr-block" data-telemetry-private>
         <div className="page-heading">
           <div>
             <h1>{text(locale, "Saved items", "我的收藏")}</h1>
@@ -189,6 +190,7 @@ export function SavedCourses() {
             </span>
           </div>
         </div>
+        <SavedManager locale={locale} />
         {savedCount ? (
           <Tabs
             defaultValue={
