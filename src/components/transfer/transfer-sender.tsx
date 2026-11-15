@@ -34,9 +34,11 @@ type Created = {
 export function TransferSender({
   locale,
   selected,
+  scopeKeys,
 }: {
   locale: Locale;
   selected?: Set<string>;
+  scopeKeys?: Set<string>;
 }) {
   const [open, setOpen] = useState(false),
     [snapshot, setSnapshot] = useState<SavedSnapshot | null>(null),
@@ -83,6 +85,7 @@ export function TransferSender({
       const s = createLocalSnapshot(
         text(locale, "Favorites transfer", "收藏转存"),
       );
+      if (scopeKeys) s.items = s.items.filter((x) => scopeKeys.has(itemKey(x)));
       if (selected?.size)
         s.items = s.items.filter((x) => selected.has(itemKey(x)));
       if (!s.items.length) throw Error();

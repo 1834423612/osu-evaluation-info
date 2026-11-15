@@ -32,10 +32,12 @@ type Created = {
 export function ShareCollection({
   locale,
   selected,
+  scopeKeys,
   title,
 }: {
   locale: Locale;
   selected?: Set<string>;
+  scopeKeys?: Set<string>;
   title?: string;
 }) {
   const [requestId, setRequestId] = useState("");
@@ -52,6 +54,8 @@ export function ShareCollection({
       const next = createLocalSnapshot(
         title?.trim() || text(locale, "Shared collection", "分享的收藏"),
       );
+      if (scopeKeys)
+        next.items = next.items.filter((x) => scopeKeys.has(itemKey(x)));
       if (selected?.size)
         next.items = next.items.filter((x) => selected.has(itemKey(x)));
       if (!next.items.length) throw Error();

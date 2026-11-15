@@ -124,9 +124,8 @@ try {
   await p.goto(new URL("/saved", base).href);
   await p.getByText("Private A cached title", { exact: true }).waitFor();
   await p.getByRole("button", { name: "Manage", exact: true }).click();
-  await p
-    .getByLabel("Collection name", { exact: true })
-    .fill("Private A draft");
+  await p.getByText("Export / share title", { exact: true }).click();
+  await p.getByLabel("Title", { exact: true }).fill("Private A draft");
   const account = await context.newPage();
   await account.goto(new URL("/account", base).href);
   await account.getByRole("button", { name: "Sign out", exact: true }).click();
@@ -140,10 +139,7 @@ try {
     await p.getByText("Private A cached title", { exact: true }).count(),
     0,
   );
-  assert.equal(
-    await p.getByLabel("Collection name", { exact: true }).count(),
-    0,
-  );
+  assert.equal(await p.getByLabel("Title", { exact: true }).count(), 0);
   assert.equal(
     await p
       .getByRole("button", { name: "Manage", exact: true })

@@ -23,13 +23,22 @@ export function editCollections(
   );
   window.dispatchEvent(new Event(PREFERENCES_EVENT));
 }
-export function saveCollection(value: SavedCollection) {
+export function saveCollection(
+  value: SavedCollection,
+  expected?: SavedCollection | null,
+) {
   const next = collectionSchema.parse(value);
-  editCollections((current) =>
-    current.some((x) => x.id === next.id)
+  editCollections((current) => {
+    const live = current.find((x) => x.id === next.id);
+    if (
+      expected !== undefined &&
+      JSON.stringify(live ?? null) !== JSON.stringify(expected)
+    )
+      throw new Error("collection_changed");
+    return current.some((x) => x.id === next.id)
       ? current.map((x) => (x.id === next.id ? next : x))
-      : [...current, next],
-  );
+      : [...current, next];
+  });
 }
 export function assignCollection(
   keys: Set<string>,
