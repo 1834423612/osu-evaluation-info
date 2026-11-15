@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: "30 3 * * 6"
       timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      max_requests:
+        description: Maximum source requests (1–120)
+        type: number
+        default: 2
 permissions:
   contents: read
 concurrency:
@@ -10,9 +16,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   refresh:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 30
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -25,7 +31,14 @@ jobs:
       - name: Resume bounded incremental source collection
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python scripts/rmp/collect_rmp_osu.py --confirm-authorization --max-requests 600 --batch-size 20 --min-interval 10 --refresh-days 7
+          MAX_REQUESTS: ${{ github.event_name == 'schedule' && '120' || inputs.max_requests }}
+        shell: bash
+        run: |
+          if [[ ! "$MAX_REQUESTS" =~ ^[0-9]+$ ]] || (( MAX_REQUESTS < 1 || MAX_REQUESTS > 120 )); then
+            echo "::error::max_requests must be between 1 and 120."
+            exit 1
+          fi
+          python -u scripts/rmp/collect_rmp_osu.py --confirm-authorization --max-requests "$MAX_REQUESTS" --max-runtime-seconds 1200 --batch-size 20 --min-interval 10 --refresh-days 30
       - name: Reconcile source identities and course labels
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

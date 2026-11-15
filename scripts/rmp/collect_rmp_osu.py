@@ -241,6 +241,7 @@ class GraphQLClient:
         max_requests: int,
         page_size: int,
         batch_size: int,
+        max_runtime_seconds: int = 0,
     ):
         self.conn = conn
         self.run_id = run_id
@@ -251,8 +252,15 @@ class GraphQLClient:
         self.page_size = page_size
         self.batch_size = batch_size
         self.at_limit = False
+        self.deadline = time.monotonic() + max_runtime_seconds if max_runtime_seconds else None
+
+    def _check_runtime(self, wait_seconds: float = 0) -> None:
+        if self.deadline is not None and time.monotonic() + wait_seconds >= self.deadline:
+            self.at_limit = True
+            raise RequestLimitReached("runtime budget")
 
     def _wait(self, seconds: float) -> None:
+        self._check_runtime(max(seconds, 0))
         if seconds > 0:
             time.sleep(seconds)
 
@@ -265,9 +273,10 @@ class GraphQLClient:
         for attempt in range(5):
             if self.max_requests and self.requests_made >= self.max_requests:
                 self.at_limit = True
-                raise RequestLimitReached
+                raise RequestLimitReached("request budget")
             wait_for = max(self.interval - (time.time() - self.last_request_epoch), 0.0)
             self._wait(wait_for)
+            self._check_runtime()
             now = time.time()
             self.conn.commit()
             with self.conn.transaction():
@@ -290,7 +299,9 @@ class GraphQLClient:
             )
             self.requests_made += 1
             try:
-                with urllib.request.urlopen(request, timeout=40) as response:
+                self._check_runtime()
+                timeout = min(40, max(0.1, self.deadline - time.monotonic())) if self.deadline is not None else 40
+                with urllib.request.urlopen(request, timeout=timeout) as response:
                     payload = json.loads(response.read())
                     if response.status != 200:
                         raise CollectionError(f"RMP returned HTTP {response.status}.")
@@ -940,6 +951,7 @@ def parse_args(argv: list[str] | None = None):
     parser.add_argument("--min-interval", type=float, default=MIN_REQUEST_INTERVAL, help="Minimum seconds between HTTP requests; values below 10 are rejected.")
     parser.add_argument("--page-size", type=int, default=MAX_PAGE_SIZE, help="Teacher/review page size (maximum 100).")
     parser.add_argument("--batch-size", type=int, default=10, help="Professor review queries per GraphQL request (1-20).")
+    parser.add_argument("--max-runtime-seconds", type=int, default=0, help="Pause safely at the wall-clock budget; 0 means unlimited.")
     parser.add_argument("--max-requests", type=int, default=0, help="Pause after this many requests; 0 means no limit.")
     args = parser.parse_args(argv)
     if args.min_interval < MIN_REQUEST_INTERVAL:
@@ -948,6 +960,8 @@ def parse_args(argv: list[str] | None = None):
         parser.error(f"--page-size must be between 1 and {MAX_PAGE_SIZE}.")
     if not 1 <= args.batch_size <= 20:
         parser.error("--batch-size must be between 1 and 20.")
+    if args.max_runtime_seconds < 0:
+        parser.error("--max-runtime-seconds cannot be negative.")
     if args.max_requests < 0:
         parser.error("--max-requests cannot be negative.")
     if args.refresh_days < 1:
@@ -975,6 +989,7 @@ def main(argv: list[str] | None = None) -> int:
             args.max_requests,
             args.page_size,
             args.batch_size,
+            args.max_runtime_seconds,
         )
         print(f"[run] {run_id}; resuming saved cursors; minimum interval {args.min_interval:g}s")
         try:
@@ -1040,10 +1055,10 @@ def main(argv: list[str] | None = None) -> int:
                 f"[progress] schools={complete_schools}/{len(SCHOOLS)}; "
                 f"professor reviews complete={complete_professors}; reviews loaded={reviews}"
             )
-        except RequestLimitReached:
+        except RequestLimitReached as exc:
             if not save_paused_run(conn, run_id):
                 return 1
-            print("[run] request limit reached; saved progress can be resumed")
+            print(f"[run] {exc or 'request budget'} reached; saved progress can be resumed", flush=True)
         except KeyboardInterrupt:
             if not save_paused_run(conn, run_id):
                 return 1

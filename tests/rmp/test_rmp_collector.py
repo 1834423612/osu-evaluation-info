@@ -1,5 +1,6 @@
 import unittest
 import io
+import urllib.error
 from contextlib import nullcontext, redirect_stderr, redirect_stdout
 from unittest.mock import MagicMock, patch
 
@@ -14,6 +15,8 @@ from scripts.rmp.collect_rmp_osu import (
     upsert_review,
     validate_page_progress,
     CollectionError,
+    GraphQLClient,
+    RequestLimitReached,
     collect_reviews,
     connect_database,
     main,
@@ -22,6 +25,45 @@ from scripts.rmp.collect_rmp_osu import (
 
 
 class RmpCollectorTests(unittest.TestCase):
+    def test_runtime_budget_pauses_before_a_pacing_wait_or_request(self):
+        database = MagicMock()
+        with patch("scripts.rmp.collect_rmp_osu.time.monotonic", return_value=0), \
+             patch("scripts.rmp.collect_rmp_osu.time.time", return_value=0), \
+             patch("scripts.rmp.collect_rmp_osu.time.sleep") as sleep, \
+             patch("scripts.rmp.collect_rmp_osu.urllib.request.urlopen") as request:
+            client = GraphQLClient(database, 1, 0, 10, 100, 100, 20, 5)
+            with self.assertRaisesRegex(RequestLimitReached, "runtime budget"):
+                client.request("Test", "query {}", {})
+        self.assertTrue(client.at_limit)
+        sleep.assert_not_called()
+        request.assert_not_called()
+        database.execute.assert_not_called()
+
+    def test_retry_after_longer_than_remaining_runtime_saves_budget_instead_of_sleeping(self):
+        clock = [0.0]
+        with patch("scripts.rmp.collect_rmp_osu.time.monotonic", side_effect=lambda: clock[0]), \
+             patch("scripts.rmp.collect_rmp_osu.time.time", side_effect=lambda: clock[0]), \
+             patch("scripts.rmp.collect_rmp_osu.time.sleep", side_effect=lambda n: clock.__setitem__(0, clock[0]+n)), \
+             patch("scripts.rmp.collect_rmp_osu.urllib.request.urlopen", side_effect=urllib.error.HTTPError("https://example.invalid",429,"limited",{"Retry-After":"3600"},None)) as request:
+            client = GraphQLClient(MagicMock(), 1, 0, 10, 100, 100, 20, 30)
+            with self.assertRaisesRegex(RequestLimitReached, "runtime budget"):
+                client.request("Test", "query {}", {})
+        self.assertEqual(clock[0],10)
+        self.assertEqual(request.call_count,1)
+
+    def test_runtime_pause_is_successful_and_never_finalizes_or_deletes_a_partial_run(self):
+        database=MagicMock()
+        with patch("scripts.rmp.collect_rmp_osu.load_database_url",return_value="test-dsn"), \
+             patch("scripts.rmp.collect_rmp_osu.connect_database",return_value=(database,object())), \
+             patch("scripts.rmp.collect_rmp_osu.start_or_resume_run",return_value=(7,None,False)), \
+             patch("scripts.rmp.collect_rmp_osu.collect_search_pages",side_effect=RequestLimitReached("runtime budget")), \
+             patch("scripts.rmp.collect_rmp_osu.save_paused_run",return_value=True) as paused, \
+             patch("scripts.rmp.collect_rmp_osu.mark_missing_professors") as inactive, redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--confirm-authorization","--max-runtime-seconds","60"]),0)
+        paused.assert_called_once_with(database,7)
+        inactive.assert_not_called()
+        database.close.assert_called_once()
+
     def test_payload_hash_is_order_stable_and_version_sensitive(self):
         self.assertEqual(
             payload_sha256({"name": "Ada", "rating": 4}),
