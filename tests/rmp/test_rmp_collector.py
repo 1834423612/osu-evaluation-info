@@ -1,7 +1,7 @@
 import unittest
 import io
 import urllib.error
-from contextlib import nullcontext, redirect_stderr, redirect_stdout
+from contextlib import nullcontext, redirect_stderr, redirect_stdout, contextmanager
 from unittest.mock import MagicMock, patch
 
 from scripts.rmp.collect_rmp_osu import (
@@ -225,8 +225,21 @@ class RmpCollectorTests(unittest.TestCase):
         class Database:
             def __init__(self):
                 self.statements = []
+                self.pipeline_open = False
+                self.pipeline_count = 0
+
+            @contextmanager
+            def pipeline(self):
+                self.pipeline_open = True
+                self.pipeline_count += 1
+                try:
+                    yield
+                finally:
+                    self.pipeline_open = False
 
             def execute(self, sql, params=()):
+                if "SELECT count(*) FROM osu_rmp.review" in sql and self.pipeline_open:
+                    raise AssertionError("Completeness checks ran before writes were flushed")
                 self.statements.append(sql)
                 if "SELECT rp.professor_id" in sql:
                     return Result([(1, "teacher-1", None, None)])
@@ -256,10 +269,12 @@ class RmpCollectorTests(unittest.TestCase):
 
         database = Database()
         with patch("scripts.rmp.collect_rmp_osu.upsert_professor", return_value=1), \
-             patch("scripts.rmp.collect_rmp_osu.upsert_review"), \
+             patch("scripts.rmp.collect_rmp_osu.upsert_review", side_effect=lambda *args: self.assertTrue(database.pipeline_open)), \
              patch("scripts.rmp.collect_rmp_osu.save_page_cursor"):
             with self.assertRaisesRegex(CollectionError, "distribution total 3, stored 2"):
                 collect_reviews(database, lambda value: value, Client(), 1)
+        self.assertEqual(database.pipeline_count, 1)
+        self.assertFalse(database.pipeline_open)
         self.assertFalse(any("SET active = false" in sql for sql in database.statements))
         self.assertFalse(any("SET last_full_refresh_at" in sql for sql in database.statements))
 

@@ -717,23 +717,25 @@ def collect_search_pages(conn, Jsonb, client: GraphQLClient, run_id: int) -> Non
                     "UPDATE osu_rmp.school SET search_result_count = %s, updated_at = now() WHERE legacy_id = %s",
                     (result_count, legacy_id),
                 )
-                for edge in edges:
-                    teacher = edge.get("node") or {}
-                    if not teacher:
-                        continue
-                    professor_id = upsert_professor(conn, run_id, teacher, Jsonb)
-                    total = int(teacher.get("numRatings") or 0)
-                    signature = tuple(
-                        float(value) if value is not None else None
-                        for value in (total, teacher.get("avgRating"), teacher.get("avgDifficulty"), teacher.get("wouldTakeAgainPercent"))
-                    )
-                    conn.execute(
-                        """INSERT INTO osu_rmp.run_professor
-                               (run_id, professor_id, expected_count, source_changed)
-                           VALUES (%s, %s, %s, %s)
-                           ON CONFLICT (run_id, professor_id) DO NOTHING""",
-                        (run_id, professor_id, total, previous.get(professor_id) != signature),
-                    )
+                pipeline = getattr(conn, "pipeline", None)
+                with pipeline() if callable(pipeline) else contextlib.nullcontext():
+                    for edge in edges:
+                        teacher = edge.get("node") or {}
+                        if not teacher:
+                            continue
+                        professor_id = upsert_professor(conn, run_id, teacher, Jsonb)
+                        total = int(teacher.get("numRatings") or 0)
+                        signature = tuple(
+                            float(value) if value is not None else None
+                            for value in (total, teacher.get("avgRating"), teacher.get("avgDifficulty"), teacher.get("wouldTakeAgainPercent"))
+                        )
+                        conn.execute(
+                            """INSERT INTO osu_rmp.run_professor
+                                   (run_id, professor_id, expected_count, source_changed)
+                               VALUES (%s, %s, %s, %s)
+                               ON CONFLICT (run_id, professor_id) DO NOTHING""",
+                            (run_id, professor_id, total, previous.get(professor_id) != signature),
+                        )
                 conn.execute(
                     """UPDATE osu_rmp.run_school
                        SET previous_cursor = cursor, cursor = %s, page_count = page_count + 1, result_count = %s,
@@ -864,10 +866,12 @@ def collect_reviews(
                     f"professor {professor_id}", item["previous_cursor"],
                 )
                 save_page_cursor(conn, run_id, "professor", professor_id, item["cursor"], next_cursor)
-                for edge in edges:
-                    review = edge.get("node") or {}
-                    if review:
-                        upsert_review(conn, run_id, professor_id, review, Jsonb)
+                pipeline = getattr(conn, "pipeline", None)
+                with pipeline() if callable(pipeline) else contextlib.nullcontext():
+                    for edge in edges:
+                        review = edge.get("node") or {}
+                        if review:
+                            upsert_review(conn, run_id, professor_id, review, Jsonb)
                 conn.execute(
                     """UPDATE osu_rmp.run_professor
                        SET previous_cursor = cursor, cursor = %s, reviews_loaded = reviews_loaded + %s,
