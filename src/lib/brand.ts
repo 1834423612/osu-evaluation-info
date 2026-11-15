@@ -44,6 +44,10 @@ export type MascotExpression =
   "thinking" | keyof typeof brand.assets.expressions;
 
 export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
+  if (pathname === "/planning") {
+    const home = locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : brand.title;
+    return `${locale === "zh" ? "学期规划" : "Schedule planning"} · ${home}`;
+  }
   const section =
     pathname === "/diagnostics"
       ? locale === "en"
