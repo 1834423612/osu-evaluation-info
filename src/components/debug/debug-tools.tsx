@@ -46,6 +46,7 @@ export function DebugTools() {
   const [key, setKey] = useState("");
   const [error, setError] = useState("");
   const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  const [sheetTop, setSheetTop] = useState<number | null>(null);
   const toolsRef = useRef<HTMLElement | null>(null);
   const { savedSyllabi } = useSavedSyllabi();
   const [checkingSyllabi, setCheckingSyllabi] = useState(false);
@@ -83,6 +84,27 @@ export function DebugTools() {
       if (node.matches(":popover-open")) node.hidePopover();
     };
   }, [state.visible, portalTarget]);
+  useEffect(() => {
+    const target = portalTarget;
+    const place = () => {
+      const rect = target?.matches('[role="dialog"]')
+        ? target.getBoundingClientRect()
+        : null;
+      setSheetTop(
+        rect && rect.top > 80 && rect.width > innerWidth - 160
+          ? rect.top
+          : null,
+      );
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    if (target) observer.observe(target);
+    window.addEventListener("resize", place);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", place);
+    };
+  }, [portalTarget]);
   useEffect(() => {
     debugTools.initialize();
     const gesture = createLogoClickController({
@@ -278,6 +300,11 @@ export function DebugTools() {
         <aside
           ref={toolsRef}
           popover="manual"
+          style={
+            sheetTop === null || state.expanded
+              ? undefined
+              : { bottom: `calc(100dvh - ${sheetTop}px + 6px)` }
+          }
           className={styles.tools}
           data-debug-tools
           aria-label={text(locale, "Developer tools", "调试工具")}
