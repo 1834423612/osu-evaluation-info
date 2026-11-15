@@ -1,5 +1,6 @@
 "use client";
 
+import { bindUmamiVisitor } from "@/lib/telemetry/client";
 import { useEffect, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import {
@@ -19,6 +20,7 @@ type PendingEvent = { name: string; properties: EventProperties };
 declare global {
   interface Window {
     umami?: {
+      identify?: (id: string) => void;
       track: (name: string, properties?: EventProperties) => void;
       captureException?: (
         error: unknown,
@@ -73,6 +75,7 @@ export function trackUmamiEvent(name: string, properties: EventProperties) {
 }
 
 function flushPendingEvents() {
+  bindUmamiVisitor();
   if (!analyticsEnabled()) {
     pendingEvents.length = 0;
     return;

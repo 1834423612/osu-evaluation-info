@@ -170,7 +170,7 @@ export async function analyticsContexts(
   const cursor = readAdminCursor(before),
     env = environment === "all" ? null : environment;
   const result = await pool.query(
-    "SELECT session_id AS id,user_agent,accept_language,language,languages,time_zone,viewport,network_address::text AS ip,network_source,created_at,environment,to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time FROM " +
+    "SELECT session_id AS id,user_agent,accept_language,language,languages,time_zone,viewport,network_address::text AS ip,network_source,browser_context,network_location,umami_id,account_id,created_at,environment,to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time FROM " +
       table("visitor_context") +
       " WHERE created_at>=now()-interval '7 days' AND ($1::text IS NULL OR environment=$1) AND ($2::timestamptz IS NULL OR (created_at,session_id)<($2::timestamptz,$3::uuid)) ORDER BY created_at DESC,session_id DESC LIMIT 101",
     [env, cursor?.time ?? null, cursor?.id ?? null],

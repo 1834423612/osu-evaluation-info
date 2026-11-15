@@ -1,3 +1,4 @@
+import { browserContextSchema } from "./context.ts";
 import { z } from "zod";
 import { safeSearchTerm } from "../analytics/privacy.ts";
 import { normalizeCourseSearch } from "../analytics.ts";
@@ -33,7 +34,9 @@ export const productEventSchema = z
   .transform((v) => ({
     ...v,
     path: telemetryPath(v.path),
-    term: v.term ? safeSearchTerm(normalizeCourseSearch(v.term)?.searchTerm??v.term) : undefined,
+    term: v.term
+      ? safeSearchTerm(normalizeCourseSearch(v.term)?.searchTerm ?? v.term)
+      : undefined,
   }));
 export type ProductEvent = z.infer<typeof productEventSchema>;
 export const telemetryBatchSchema = z.object({
@@ -43,6 +46,7 @@ export const telemetryBatchSchema = z.object({
   languages: z.array(z.string().max(50)).max(10),
   timeZone: z.string().max(100),
   viewport: z.enum(["small", "medium", "large"]),
+  context: browserContextSchema.optional(),
   events: z.array(productEventSchema).min(1).max(20),
 });
 export function telemetryPath(raw: string) {

@@ -1,3 +1,5 @@
+import { accountSession } from "../auth/server.ts";
+import { networkLocation } from "./location.ts";
 import { telemetryBatchSchema } from "../telemetry/protocol.ts";
 import type { Pool } from "pg";
 import { getTelemetryPool } from "./telemetry-pool.ts";
@@ -26,6 +28,10 @@ export async function recordProductEvents(
       process.env.NEXT_PUBLIC_DEPLOYMENT_ENV ??
       (process.env.NODE_ENV === "production" ? "production" : "development"),
     release = process.env.NEXT_PUBLIC_BUILD_SHA || "development";
+  const [session, place] = await Promise.all([
+    accountSession(headers).catch(() => null),
+    networkLocation(network.address),
+  ]);
   const db = await pool.connect();
   let accepted = 0;
   try {
@@ -33,7 +39,7 @@ export async function recordProductEvents(
     await db.query(
       "INSERT INTO " +
         table("visitor_context") +
-        "(session_id,actor_digest,user_agent,accept_language,language,languages,time_zone,viewport,network_address,network_source,environment) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9::inet,$10,$11) ON CONFLICT(session_id) DO NOTHING",
+        "(session_id,actor_digest,user_agent,accept_language,language,languages,time_zone,viewport,network_address,network_source,environment,account_id,browser_context,network_location,umami_id) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9::inet,$10,$11,$12,$13::jsonb,$14::jsonb,$2) ON CONFLICT(session_id) DO UPDATE SET account_id=EXCLUDED.account_id,browser_context=EXCLUDED.browser_context,network_location=coalesce(EXCLUDED.network_location,visitor_context.network_location) WHERE visitor_context.actor_digest=EXCLUDED.actor_digest",
       [
         input.session,
         actor,
@@ -46,6 +52,9 @@ export async function recordProductEvents(
         network.address,
         network.source,
         environment,
+        session?.user.id ?? null,
+        JSON.stringify(input.context ?? {}),
+        place ? JSON.stringify(place) : null,
       ],
     );
     const rows = input.events.map((e) => ({
@@ -71,7 +80,11 @@ export async function recordProductEvents(
     );
     accepted = Number(result.rows[0].accepted);
     await db.query("COMMIT");
-    return { accepted, receipts: input.events.map((x) => x.id) };
+    return {
+      accepted,
+      visitorId: actor,
+      receipts: input.events.map((x) => x.id),
+    };
   } catch (e) {
     await db.query("ROLLBACK");
     throw e;

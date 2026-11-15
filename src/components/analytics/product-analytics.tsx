@@ -1,4 +1,5 @@
 "use client";
+import { prepareBrowserContext } from "@/lib/telemetry/context";
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ANALYTICS_EVENT } from "@/lib/analytics/privacy";
@@ -26,6 +27,7 @@ export function ProductAnalytics() {
     if (!selected) resetCourseOpen();
   }, [selected]);
   useEffect(() => {
+    if (telemetryAllowed()) void prepareBrowserContext();
     let previous = new Set<string>(),
       scope = savedScope();
     try {

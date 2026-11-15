@@ -1,4 +1,5 @@
 "use client";
+import { browserContext } from "./context.ts";
 import { userDatabase } from "../user-data/browser-db.ts";
 import { browserUuid } from "../uuid.ts";
 import { debugFlag } from "../debug/flags.ts";
@@ -10,6 +11,22 @@ import { productEventSchema, type ProductEvent } from "./protocol.ts";
 let timer: ReturnType<typeof setTimeout> | undefined,
   running = false,
   retries = 0;
+let identifiedVisitor: string | null = null;
+let pendingVisitor: string | null = null;
+export function bindUmamiVisitor(value?: string) {
+  if (value && /^[a-f0-9]{64}$/.test(value)) pendingVisitor = value;
+  if (
+    !telemetryAllowed() ||
+    !pendingVisitor ||
+    identifiedVisitor === pendingVisitor ||
+    !window.umami?.identify
+  )
+    return;
+  try {
+    window.umami.identify(pendingVisitor);
+    identifiedVisitor = pendingVisitor;
+  } catch {}
+}
 let openCourse: string | null = null;
 let currentPage: string | null = null;
 const memory = new Map<string, Stored>();
@@ -136,6 +153,7 @@ function body(events: Stored[]) {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     viewport:
       innerWidth < 640 ? "small" : innerWidth < 1100 ? "medium" : "large",
+    context: browserContext(),
     events: events.map((event) => productEventSchema.parse(event)),
   };
 }
@@ -176,8 +194,9 @@ export async function flushTelemetry(beacon = false) {
       keepalive: true,
     });
     if (!r.ok) throw Error();
-    const data = await r.json(),
-      sent = new Set(events.map((x) => x.id));
+    const data = await r.json();
+    if (typeof data.visitorId === "string") bindUmamiVisitor(data.visitorId);
+    const sent = new Set(events.map((x) => x.id));
     if (
       !Array.isArray(data.receipts) ||
       !data.receipts.every(

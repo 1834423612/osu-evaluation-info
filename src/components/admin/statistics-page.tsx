@@ -23,6 +23,14 @@ type Context = {
   viewport: string;
   ip: string | null;
   network_source: string;
+  browser_context?: Record<string, unknown>;
+  network_location?: {
+    city?: string;
+    region?: string;
+    country?: string;
+  } | null;
+  umami_id?: string | null;
+  account_id?: string | null;
   created_at: string;
   environment: string;
 };
@@ -468,6 +476,26 @@ export function StatisticsPage() {
                               [
                                 text(locale, "IP source", "IP 来源"),
                                 row.network_source,
+                              ],
+                              [
+                                text(locale, "Network location", "网络归属地"),
+                                [
+                                  row.network_location?.city,
+                                  row.network_location?.region,
+                                  row.network_location?.country,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ") ||
+                                  text(locale, "Unavailable", "未获取"),
+                              ],
+                              ["Umami ID", row.umami_id ?? "—"],
+                              [
+                                text(locale, "Account", "账号"),
+                                row.account_id ?? "—",
+                              ],
+                              [
+                                text(locale, "Browser context", "浏览器上下文"),
+                                JSON.stringify(row.browser_context ?? {}),
                               ],
                               ["User-Agent", row.user_agent],
                               ["Accept-Language", row.accept_language],
