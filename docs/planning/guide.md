@@ -2,14 +2,14 @@
 
 English · [简体中文](../zh-CN/planning/guide.md)
 
-Open **Your space → Schedule planning** (`/planning`). Choose Student Plan, Standard Audit, Expanded Audit (Beta), or Compact Audit, and specify BDP export or browser print. Start with Student Plan and compare a Planned Standard audit separately; Expanded can supply additional constraint context. Imports are separate snapshots, not an automatic merge. Export the current draft before replacing it.
+Open **Your space → Schedule planning** (`/planning`). Choose Student Plan, Standard Audit, Expanded Audit (Beta), or Compact Audit, and specify BDP export or browser print. Start with Student Plan and compare a Planned Standard audit separately; Expanded can supply additional constraint context. The default import action appends a separate source snapshot to the workspace. Matching course codes never silently replace another observation. Choose Replace only when you intend to discard the draft; export it first if needed.
 
 ## Local workflow
 
 1. Choose a text PDF, at most 20 MB and 100 pages. Password-protected and scanned PDFs are unsupported. Extraction runs through a bundled local PDF.js worker; no external PDF service receives the file.
 2. Check each candidate against the original document. Edit subject, number, credits, type and source status; remove incorrect rows and add missing courses or semesters. Empty credits mean unknown. Semester labels use `Autumn2026`, `Spring2027`, or `Summer2027`.
 3. Keep Applied Version (for example `AU2017`) separate from Catalog Term. Applied Version reflects SIS plan/sub-plan requirement terms, not the PDF publication date or admission year. Different requirements may use different versions; conflicting versions remain unknown.
-4. Confirm review, then save in this browser or export structured JSON. Editing invalidates review. The current browser holds one saved snapshot; explicitly loading or importing over a nonempty draft requires confirmation. Deleting the local plan removes that snapshot and clears the draft. Exported files must be deleted separately.
+4. Confirm review, then save in this browser or export structured JSON. Editing invalidates review. The current browser holds one saved workspace containing multiple source snapshots; loading or explicitly replacing a nonempty draft requires confirmation. Deleting the local plan removes that workspace and clears the draft. Editing, loading, deleting or cancelling invalidates pending import generations so late extraction cannot overwrite the new state. Exported files must be deleted separately.
 
 The page reuses course search links for catalog details and evaluations. Opening a course sends that selected course query through the existing search workflow; the PDF and the rest of the plan are not included.
 
@@ -17,13 +17,13 @@ The page reuses course search links for catalog details and evaluations. Opening
 
 This is a candidate extractor and planning editor, not a graduation audit, prerequisite solver, registration system or timetable conflict checker. Coverage has not been validated across all BDP exports. Research used one student's family of layouts; no private attachments or their text are checked in. Automated fixtures are synthetic.
 
-Standard and Expanded audits can repeat a course across requirement nodes. Candidates are deduplicated within the same extracted group; there is no summed audit-credit total or merged remaining-credit calculation. Audit terms remain unassigned. Compact's two-column layout has limited support. Browser-print order is also untrusted and remains unassigned. Transfer and examination credits must not be assigned a normal attendance semester without review. Unsupported formatting may yield no candidates; manually enter the missing items. Raw requirements, detailed constraints, exceptions and grades are not imported.
+Standard and Expanded audits can repeat a course across requirement nodes. Candidates are deduplicated within the same extracted group; there is no summed audit-credit total or merged remaining-credit calculation. Audit terms remain unassigned. Compact's two-column layout has limited support. Browser-print order is also untrusted and remains unassigned. Transfer and examination credits must not be assigned a normal attendance semester without review. Unsupported formatting may yield no candidates; manually enter the missing items. Expanded numeric credit/course minimums and all/any group markers can become requirement candidates. Indentation-derived hierarchy, rules and allocations each require explicit verification. Unsupported clauses, exceptions, GPA rules and prerequisite logic are not solved; raw prose and grades are not stored. Standard and Compact requirement trees still need manual reconstruction.
 
 A course number does not establish that an item is an actual course: a placeholder may have one. “Planned” in the PDF does not prove that a course is unregistered. A reported semester total of 13 credits does not determine the credits of placeholders marked `-`; they stay unknown. Course candidates and reported totals are separate facts. Verify degree requirements and registration with an advisor.
 
 ## Privacy boundary
 
-Raw files, filenames, names, student IDs, contacts, advisor fields, grades, free-text notes and raw extracted text are not persisted or exported. Extraction memory is released after processing and worker teardown. The private schema permits only enumerated source information, terms, course codes, credit values, page references and review state. Unknown fields are stripped at the save boundary. Browser storage can fail or be cleared; export a copy when needed. Local storage is not encrypted and is accessible to people or scripts with access to this browser profile.
+Raw files, filenames, names, student IDs, contacts, advisor fields, grades, free-text notes and raw extracted text are not persisted or exported. Extraction memory is released after processing and worker teardown. The version-2 private schema permits enumerated source information, local reference IDs, program codes, separate program versions, terms, course codes, credit provenance, numeric rule candidates, allocations, page references and review state. Version-1 snapshots are upgraded on read. Program and requirement fields must contain academic codes, never personal names. Unknown fields are stripped at the save boundary. Browser storage can fail or be cleared; export a copy when needed. Local storage is not encrypted and is accessible to people or scripts with access to this browser profile.
 
 Course combinations remain potentially identifying even after names are removed. JSON is private information, not an anonymous public dataset. No contribution or public sharing endpoint is implemented. A future shared library must use a separate explicit opt-in workflow and server-side whitelist; private snapshots must never become public curriculum seeds.
 
@@ -31,9 +31,9 @@ Planning suppresses first-party events and analytics payloads. Its content is bl
 
 ## Official curriculum directory
 
-The checked-in directory contains eight source entrances, one structured Molecular Genetics example pending human review, and zero human-approved structured plans. It does not cover all OSU majors. The university majors-by-college index is a discovery baseline, not a curriculum API. Programs, departments and paginated search results are different populations. History can be incomplete or advisor-only.
+The checked-in directory contains twelve source entrances, one structured Molecular Genetics example pending human review, and zero human-approved structured plans. It does not cover all OSU majors. The university majors-by-college index is a discovery baseline, not a curriculum API. Programs, departments and paginated search results are different populations. History can be incomplete or advisor-only.
 
-Source records and curriculum versions are distinct from private plans. A version retains source URL, SHA-256, fetch/validation dates, source kind, program, specialization, campus, GEN/GEL, applicability, evidence, credit ranges and review state. Unknown applicability remains null. A sample plan is never promoted to formal requirements. The source adapter supports Molecular Genetics HTML only, preserves alternatives as evidence for review, and rejects layouts without eight recognized semesters. The checked-in preview compresses prose into course-code facts and does not reproduce all footnotes; consult its linked source before using it. Other formats remain pending.
+Source records and curriculum versions are distinct from private plans. A version retains source URL, SHA-256, fetch/validation dates, source kind, program, specialization, campus, GEN/GEL, applicability, evidence, credit ranges and review state. Unknown applicability remains null. A sample plan is never promoted to formal requirements. Adapters support the Molecular Genetics page and strict public HTML tables with eight explicit semester captions and Course/Credits columns. Unknown alternatives or table layouts remain pending rather than being flattened. The Molecular Genetics preview preserves course alternatives in public source evidence; consult the original footnotes. Official PDFs remain unsupported for automatic structuring. Publication state (including draft), single/multiple-program scope and academic year are separate from source version, Applied Version and Catalog Term. Drafts cannot be approved as authoritative requirements. The directory includes a double-major sample, a composition draft, a mathematics substitution reference and a geology sample with variable offerings; none establishes universal requirements.
 
 Official references:
 
@@ -43,7 +43,7 @@ Official references:
 
 ## Operations and architecture
 
-The browser imports `src/lib/planning/model.ts`, `parser.ts` and lazily loads PDF.js through `pdf.ts`. Private storage uses `course-atlas:private-planning:v1`, separate from favorites, account sync and public exchange. No private-plan backend exists.
+The browser imports `src/lib/planning/model.ts`, `parser.ts` and lazily loads PDF.js through `pdf.ts`. Private storage uses `course-atlas:private-planning:v1`, separate from favorites, account sync and public exchange. No private-plan backend exists. `snapshots.ts` remaps references when appending sources and retains per-program remaining credits without summing them. Deleting a source removes its dependent rules and allocations. `SourceReview` exposes program-specific versions, nested all/any/minimum rules, credit origin correction and explicit allocation review. Course observations with the same code are counted once per reviewed rule; conflicting credit observations stay unresolved. Root-level version fields are compatibility summaries; document/program records carry the detailed provenance.
 
 Public curriculum data uses `osu_planning` in production and `osu_planning_dev` in development. `PLANNING_SCHEMA` permits isolated names starting with `osu_planning_`. `source_document` stores immutable source identities; `curriculum_version` stores explicit sample/requirement versions and review metadata. All SQL resolves the dedicated namespace helper. This unrelated domain has its own initialization, backup and retain-all policy; account backups do not include it.
 
@@ -77,10 +77,21 @@ See [testing](../testing.md) for individual scripts. The browser scenario create
 
 ### Verification record — 2026-11-15
 
-- `pnpm lint`, `pnpm typecheck` and `pnpm build` passed.
-- `pnpm test`: 501 tests, 474 passed, 27 skipped, zero failures. Skipped cases require their optional services or test flags and are not passes.
-- `pnpm test:python`: 99 tests, two skipped; the separate planning Python suite passed three tests.
-- PDF.js integration passed with a synthetic PDF. A standard-font-data-path warning was emitted; extraction assertions passed. No parser regression was run against the user's real attachments.
-- Bounded official crawl: eight entrances downloaded, 146 links discovered, two pending structured candidates; one pending preview is checked in, zero human-approved plans.
-- Database command dry-runs passed; no isolated PostgreSQL was available, so actual migration, import and backup/restore were not run.
-- Browser testing was environment-blocked: Chromium failed at startup with `socket() failed: Operation not permitted`; the cloud browser returned `ERR_CONNECTION_REFUSED` for the local development port. Import UI and actual 390/768/1440-pixel interaction, visual and network assertions remain unverified. No public port was exposed.
+The initial release passed lint/typecheck/build and 474 Node tests, with 27 skipped. Subsequent local regression found and repaired missing table credits/term headings, honors-code suffixes misread as credit counts, and stale asynchronous imports. Private PDF processing stayed local; no originals, filenames, text, credentials or student fields were committed or logged. HAR contents were not used.
+
+| PDF type       | Documents | Import failures after repair | Course candidates | Known / unknown course credits | Assigned attendance semesters |
+| -------------- | --------: | ---------------------------: | ----------------: | -----------------------------: | ----------------------------: |
+| Student Plan   |         1 |                            0 |                19 |                         15 / 4 |                             2 |
+| Standard Audit |         4 |                            0 |               158 |                        0 / 158 |                             0 |
+| Compact Audit  |         4 |                            0 |                72 |                         0 / 72 |                             0 |
+| Expanded Audit |         2 |                            0 |               168 |                        0 / 168 |                             0 |
+
+These are type-level extraction counts, not independent accuracy/recall scores or degree totals. Transfer/examination groups remain separate from attendance semesters. Expanded produced 78 rule candidates and 162 allocation candidates across two documents; all inferred hierarchies and allocations start unverified. Standard/Compact rule trees, arbitrary programs and unsupported constraints still require manual review. Audit course credits remain unknown rather than guessed. A single student's export family does not establish support for all BDP outputs.
+
+The isolated in-memory PostgreSQL integration test executes the real schema, repeated initialization, approval checks, foreign keys and rollback. It uses PGlite, not a networked PostgreSQL service. Native `pg` connectivity and `pg_dump` backup/restore remain untested. Synthetic PDF.js integration passes with a standard-font-data-path warning.
+
+The bounded official crawl downloaded eight initial entrances and discovered 146 links; the expanded twelve-entry registry does not claim twelve fully structured curricula. Two Molecular Genetics candidates were generated, one pending preview is checked in and zero plans are human-approved. The generic table adapter is verified with synthetic fixtures only.
+
+Browser execution remains environment-blocked: Chromium previously failed with `socket() failed: Operation not permitted`; the cloud browser returned `ERR_CONNECTION_REFUSED`. The final production-build retry reached the local server successfully, but Chromium again failed at socket creation before browser assertions could run. No public port or user-local service is used. Actual mobile/tablet/desktop interactions, screenshots and network assertions are not passes until the browser scenario completes.
+
+Final regression checks: `pnpm lint`, `pnpm typecheck` and `pnpm build` passed. `pnpm test` ran 512 tests: 485 passed, 27 skipped, zero failures. `pnpm test:python` ran 99 tests with two skipped; the separate planning Python suite passed four tests.

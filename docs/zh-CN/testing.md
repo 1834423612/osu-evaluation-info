@@ -429,3 +429,7 @@ USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.t
 - `tests/planning/workspace.browser.mjs`: 本地导入、纠错、保存/导出、双语及响应式隐私流程。 `node tests/planning/workspace.browser.mjs`. 需本地运行应用、Playwright 和 Chromium；可设 `BASE_URL`、`PLAYWRIGHT_MODULE`、`PLAYWRIGHT_CHROMIUM_EXECUTABLE`。仅向隔离浏览器存储写入合成数据，截图保存在临时目录；不访问官方来源或生产数据库。
 - `tests/planning/pdf.integration.test.mjs`: 使用内存生成的 PDF 验证 PDF.js 提取到白名单规划的完整链路；`node --test tests/planning/pdf.integration.test.mjs`. 无需浏览器、数据库或网络。
 - `tests/planning/synthetic-pdf.mjs`: 上述浏览器和 PDF 集成测试共享的合成 PDF 生成器，不单独执行，不写私人数据。
+- `tests/planning/import-guard.test.mjs`: 导入较晚完成与编辑、载入、删除、新导入之间的竞争. `node --test tests/planning/import-guard.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/snapshots.test.mjs`: 多来源标识、项目独立版本、要求层级及分配去重. `node --test tests/planning/snapshots.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/database.integration.test.mjs`: 在隔离内存 PGlite PostgreSQL 中执行真实规划 SQL，测试迁移、外键、审核约束和回滚. `node --test tests/planning/database.integration.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/private-regression.mjs`: 明确选择运行的本地私人 PDF 回归。设置 `PLANNING_PRIVATE_PDF_DIR` 指向本地附件目录，然后运行 `node tests/planning/private-regression.mjs`。仅读取 PDF，不读取 HAR，不写原文；仅输出类型级计数和失败数量。不得在公共 CI 提供附件或上传输出以外的数据。
