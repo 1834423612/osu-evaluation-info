@@ -25,6 +25,7 @@ type Row = {
   imports: number;
 };
 export function SharedManagement({ locale }: { locale: Locale }) {
+  const [filter, setFilter] = useState<"active" | "all">("active");
   const [now, setNow] = useState(() => Date.now());
   const [manualUrl, setManualUrl] = useState("");
   const [open, setOpen] = useState(false),
@@ -41,9 +42,10 @@ export function SharedManagement({ locale }: { locale: Locale }) {
     const timer = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, [open]);
-  async function load() {
+  async function load(clearNotice = true) {
     setNow(Date.now());
     setLoading(true);
+    if (clearNotice) setNotice("");
     try {
       const r = await fetch("/api/shares", { cache: "no-store" });
       if (!r.ok) throw Error();
@@ -97,7 +99,7 @@ export function SharedManagement({ locale }: { locale: Locale }) {
         );
       } else setNotice(text(locale, "Share revoked", "分享已撤销"));
       setPending(null);
-      await load();
+      await load(false);
     } catch {
       setNotice(
         text(locale, "Could not change this share.", "未能修改此分享。"),
@@ -151,6 +153,10 @@ export function SharedManagement({ locale }: { locale: Locale }) {
       );
     }
   }
+  const visibleRows = rows.filter(
+    (row) =>
+      filter === "all" || (!row.revoked_at && Date.parse(row.expires_at) > now),
+  );
   return (
     <>
       <Button
@@ -240,21 +246,50 @@ export function SharedManagement({ locale }: { locale: Locale }) {
               <RefreshCw size={13} />
               {text(locale, "Refresh", "刷新")}
             </Button>
+            <div className={styles.tools}>
+              {(["active", "all"] as const).map((value) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={filter === value ? "secondary" : "ghost"}
+                  aria-pressed={filter === value}
+                  onClick={() => setFilter(value)}
+                >
+                  {text(
+                    locale,
+                    value === "active" ? "Active" : "All shares",
+                    value === "active" ? "有效分享" : "全部分享",
+                  )}{" "}
+                  ·{" "}
+                  {
+                    rows.filter(
+                      (row) =>
+                        value === "all" ||
+                        (!row.revoked_at && Date.parse(row.expires_at) > now),
+                    ).length
+                  }
+                </Button>
+              ))}
+            </div>
             {loading ? (
               <p className={styles.muted}>
                 {text(locale, "Loading…", "正在读取…")}
               </p>
-            ) : !rows.length ? (
+            ) : !visibleRows.length ? (
               <p className={styles.muted}>
                 {text(locale, "No shared links yet.", "还没有分享链接。")}
               </p>
             ) : (
               <ul className={styles.list}>
-                {rows.map((row) => {
+                {visibleRows.map((row) => {
                   const active =
                     !row.revoked_at && Date.parse(row.expires_at) > now;
                   return (
-                    <li className={styles.shareRow} key={row.id}>
+                    <li
+                      className={styles.shareRow}
+                      data-active={active}
+                      key={row.id}
+                    >
                       <div>
                         <strong>{row.title}</strong>
                         <span className={styles.badge}>

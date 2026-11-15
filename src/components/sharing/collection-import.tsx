@@ -1,4 +1,5 @@
 "use client";
+import { SelectionCheckbox } from "@/components/saved/selection-checkbox";
 import { useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -78,20 +79,13 @@ export function CollectionImport({
           </small>
         </div>
         <div className={styles.tools}>
-          <Button
-            variant="outline"
-            onClick={() =>
-              setSelected(
-                selected.size === snapshot.items.length
-                  ? new Set()
-                  : new Set(snapshot.items.map(itemKey)),
-              )
-            }
-          >
-            {selected.size === snapshot.items.length
-              ? text(locale, "Clear selection", "取消选择")
-              : text(locale, "Select all", "全选")}
-          </Button>
+          <SelectionCheckbox
+            keys={snapshot.items.map(itemKey)}
+            selected={selected}
+            onChange={setSelected}
+            label={text(locale, "Select all", "全选")}
+            disabled={disabled || busy}
+          />
           <Button
             disabled={disabled || !selected.size || busy}
             onClick={() => void save()}
@@ -116,6 +110,7 @@ export function CollectionImport({
                 <input
                   className={styles.checkbox}
                   type="checkbox"
+                  disabled={disabled || busy}
                   checked={selected.has(key)}
                   onChange={() =>
                     setSelected((current) => {

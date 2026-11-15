@@ -2,7 +2,9 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { Copy, Trash2, Check } from "lucide-react";
+import { OtpInput } from "@/components/account/otp-input";
+import flow from "@/components/personal/exchange.module.css";
+import { Copy, Trash2, Check, ArrowRightLeft } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { Button } from "@/components/ui/button";
@@ -202,9 +204,19 @@ export function TransferPage({ id }: { id?: string }) {
           </p>
         ) : null}
         {!id ? (
-          <>
-            <section className={styles.panel}>
-              <h2>{text(locale, "Receive with a code", "通过配对码接收")}</h2>
+          <div className={flow.transferGrid}>
+            <section className={flow.codePanel}>
+              <div className={flow.codeIcon}>
+                <ArrowRightLeft size={24} />
+              </div>
+              <h2>{text(locale, "Pick up your favorites", "接续你的收藏")}</h2>
+              <p>
+                {text(
+                  locale,
+                  "Enter the code shown on the sending device. No file or account needed.",
+                  "输入发送设备上的配对码，无需文件或账号。",
+                )}
+              </p>
               <form
                 className={styles.fields}
                 onSubmit={(e) => {
@@ -225,19 +237,12 @@ export function TransferPage({ id }: { id?: string }) {
                   });
                 }}
               >
-                <label>
-                  {text(locale, "6-digit pairing code", "六位配对码")}
-                  <input
-                    className={styles.input}
-                    inputMode="numeric"
-                    autoComplete="off"
-                    maxLength={6}
-                    pattern="[0-9]{6}"
-                    required
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  />
-                </label>
+                <OtpInput
+                  value={code}
+                  onChange={setCode}
+                  label={text(locale, "Pairing code", "配对码")}
+                  disabled={busy}
+                />
                 <Button disabled={busy || code.length !== 6}>
                   {text(locale, "Request transfer", "请求接收")}
                 </Button>
@@ -266,7 +271,7 @@ export function TransferPage({ id }: { id?: string }) {
                 </EmptyResult>
               ) : (
                 rows.map((row) => (
-                  <div key={row.id} className={styles.panel}>
+                  <div key={row.id} className={flow.transferRow}>
                     <div className={styles.panelHeading}>
                       <strong>{row.title}</strong>
                       <small>{row.items + text(locale, " items", " 项")}</small>
@@ -402,7 +407,7 @@ export function TransferPage({ id }: { id?: string }) {
                 ))
               )}
             </section>
-          </>
+          </div>
         ) : completed ? (
           <section className={styles.panel}>
             <a href="/saved">

@@ -1,4 +1,5 @@
 "use client";
+import { SavedItemPicker } from "@/components/saved/saved-item-picker";
 import { useState } from "react";
 import { Share2, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export function ShareCollection({
   scopeKeys?: Set<string>;
   title?: string;
 }) {
+  const [picked, setPicked] = useState(new Set<string>());
   const [requestId, setRequestId] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [open, setOpen] = useState(false),
@@ -56,8 +58,11 @@ export function ShareCollection({
       );
       if (scopeKeys)
         next.items = next.items.filter((x) => scopeKeys.has(itemKey(x)));
-      if (selected?.size)
-        next.items = next.items.filter((x) => selected.has(itemKey(x)));
+      setPicked(
+        new Set(
+          next.items.filter((x) => selected?.has(itemKey(x))).map(itemKey),
+        ),
+      );
       if (!next.items.length) throw Error();
       setSnapshot(next);
       setRequestId(browserRequestId());
@@ -86,7 +91,12 @@ export function ShareCollection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          snapshot,
+          snapshot: snapshot
+            ? {
+                ...snapshot,
+                items: snapshot.items.filter((x) => picked.has(itemKey(x))),
+              }
+            : null,
           requestId,
           visibility,
           expiresIn: Number(expiry),
@@ -166,10 +176,13 @@ export function ShareCollection({
                 }
               />
             </label>
-            <p className={styles.muted}>
-              {snapshot?.items.length}{" "}
-              {text(locale, "selected items", "个选中项目")}
-            </p>
+            <SavedItemPicker
+              items={snapshot?.items ?? []}
+              picked={picked}
+              onChange={setPicked}
+              locale={locale}
+              disabled={attempted}
+            />
             <div className={styles.tools}>
               <Button
                 variant={visibility === "link" ? "secondary" : "outline"}
@@ -185,7 +198,7 @@ export function ShareCollection({
                 aria-pressed={visibility === "public"}
                 onClick={() => setVisibility("public")}
               >
-                {text(locale, "Public 6-digit code", "六位公开分享码")}
+                {text(locale, "Share code", "分享码")}
               </Button>
             </div>
             {visibility === "public" ? (
@@ -222,7 +235,7 @@ export function ShareCollection({
               </Select>
             </div>
             <Button
-              disabled={busy || !snapshot?.title.trim()}
+              disabled={busy || !snapshot?.title.trim() || !picked.size}
               onClick={() => void create()}
             >
               {text(locale, "Create share", "创建分享")}

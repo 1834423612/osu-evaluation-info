@@ -1,0 +1,185 @@
+.codePanel {
+  width: min(100%, 520px);
+  margin: 40px auto 60px;
+  padding: 34px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 10px 40px #44232c06;
+}
+.codeIcon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--primary);
+  margin-bottom: 22px;
+}
+.codePanel h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.codePanel > p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0 0 26px;
+}
+.codePanel form {
+  display: grid;
+  gap: 20px;
+}
+.codePanel form > button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 10px;
+}
+.transferGrid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.transferGrid > .codePanel {
+  margin: 0;
+  padding: 26px;
+}
+.transferRow {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+.transferRow:last-child {
+  border: 0;
+}
+.transferRow strong {
+  font-size: 14px;
+}
+.transferRow :global(strong[class*="transferCode"]),
+.transferRow :global(b[class*="transferCode"]) {
+  font-size: 18px;
+  letter-spacing: 0.12em;
+}
+.discoverGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.discoverItem {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 136px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  text-align: left;
+  color: var(--ink);
+  transition:
+    border-color 180ms,
+    box-shadow 180ms,
+    transform 180ms;
+}
+.discoverItem:hover {
+  border-color: var(--accent-border);
+  box-shadow: 0 7px 24px #5a1d2a07;
+  transform: translateY(-2px);
+}
+.discoverTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.discoverTop > span {
+  flex: 1;
+  min-width: 0;
+}
+.discoverCode {
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  margin-bottom: 9px;
+  display: block;
+}
+.discoverItem strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.discoverBottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.discoverBottom > span:first-child {
+  flex: 1;
+}
+.discoverRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+}
+.subjectFilter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.subjectFilter select {
+  width: auto;
+  min-width: 180px;
+  font-size: 13px;
+}
+@media (max-width: 800px) {
+  .transferGrid {
+    grid-template-columns: 1fr;
+  }
+  .transferGrid > .codePanel {
+    width: 100%;
+    max-width: none;
+  }
+}
+@media (max-width: 600px) {
+  .codePanel {
+    margin: 24px auto;
+    padding: 26px 22px;
+  }
+  .discoverGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .discoverItem {
+    min-height: 120px;
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .discoverItem {
+    transition: none;
+  }
+  .discoverItem:hover {
+    transform: none;
+  }
+}

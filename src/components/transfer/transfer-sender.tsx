@@ -1,4 +1,5 @@
 "use client";
+import { SavedItemPicker } from "@/components/saved/saved-item-picker";
 import { useState, useEffect } from "react";
 import { ArrowRightLeft, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export function TransferSender({
   selected?: Set<string>;
   scopeKeys?: Set<string>;
 }) {
+  const [picked, setPicked] = useState(new Set<string>());
   const [open, setOpen] = useState(false),
     [snapshot, setSnapshot] = useState<SavedSnapshot | null>(null),
     [requestId, setRequestId] = useState(""),
@@ -86,8 +88,13 @@ export function TransferSender({
         text(locale, "Favorites transfer", "收藏转存"),
       );
       if (scopeKeys) s.items = s.items.filter((x) => scopeKeys.has(itemKey(x)));
-      if (selected?.size)
-        s.items = s.items.filter((x) => selected.has(itemKey(x)));
+      setPicked(
+        new Set(
+          s.items
+            .filter((x) => !selected?.size || selected.has(itemKey(x)))
+            .map(itemKey),
+        ),
+      );
       if (!s.items.length) throw Error();
       setSnapshot(s);
       setRequestId(browserRequestId());
@@ -114,7 +121,12 @@ export function TransferSender({
       setCreated(
         await transferRequest<Created>("", {
           requestId,
-          snapshot,
+          snapshot: snapshot
+            ? {
+                ...snapshot,
+                items: snapshot.items.filter((x) => picked.has(itemKey(x))),
+              }
+            : null,
           expiresIn: Number(expiry),
         }),
       );
@@ -151,10 +163,13 @@ export function TransferSender({
       >
         {!created ? (
           <>
-            <p>
-              {snapshot?.items.length}{" "}
-              {text(locale, "selected items", "项已选收藏")}
-            </p>
+            <SavedItemPicker
+              items={snapshot?.items ?? []}
+              picked={picked}
+              onChange={setPicked}
+              locale={locale}
+              disabled={attempted}
+            />
             <label className={styles.fields}>
               {text(locale, "Expires after", "有效期")}
               <Select
@@ -179,7 +194,10 @@ export function TransferSender({
                 </SelectContent>
               </Select>
             </label>
-            <Button disabled={busy} onClick={() => void create()}>
+            <Button
+              disabled={busy || !picked.size}
+              onClick={() => void create()}
+            >
               {text(
                 locale,
                 attempted ? "Retry" : "Create transfer",
@@ -207,8 +225,16 @@ export function TransferSender({
                 void copyLink(
                   transferLink(location.origin, created.id, created.capability),
                 )
-                  .then(() =>
-                    setNotice(text(locale, "Link copied", "链接已复制")),
+                  .then((ok) =>
+                    setNotice(
+                      ok
+                        ? text(locale, "Link copied", "链接已复制")
+                        : text(
+                            locale,
+                            "Select the link and copy it.",
+                            "请选择链接后复制。",
+                          ),
+                    ),
                   )
                   .catch(() =>
                     setNotice(

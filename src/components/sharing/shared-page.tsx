@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
+import { OtpInput } from "@/components/account/otp-input";
+import flow from "@/components/personal/exchange.module.css";
 import { Share2, Copy } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
@@ -157,7 +159,24 @@ export function SharedPage({ id }: { id?: string }) {
           </p>
         ) : null}
         {!id ? (
-          <section className={styles.panel}>
+          <section className={flow.codePanel}>
+            <div className={flow.codeIcon}>
+              <Share2 size={24} />
+            </div>
+            <h2>
+              {text(
+                locale,
+                "A good class is worth sharing",
+                "好课程，一起收藏",
+              )}
+            </h2>
+            <p>
+              {text(
+                locale,
+                "Enter a share code to preview the collection before saving.",
+                "输入分享码，先预览清单，再选择喜欢的内容。",
+              )}
+            </p>
             <form
               className={styles.fields}
               onSubmit={(e) => {
@@ -165,19 +184,12 @@ export function SharedPage({ id }: { id?: string }) {
                 void resolve();
               }}
             >
-              <label>
-                {text(locale, "6-digit public code", "六位公开分享码")}
-                <input
-                  className={styles.input}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  maxLength={6}
-                  pattern="[0-9]{6}"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                />
-              </label>
+              <OtpInput
+                value={code}
+                onChange={setCode}
+                label={text(locale, "Share code", "分享码")}
+                disabled={busy}
+              />
               <Button disabled={busy || code.length !== 6}>
                 <Share2 size={14} />
                 {text(locale, "Open collection", "打开清单")}
