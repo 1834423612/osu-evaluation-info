@@ -108,7 +108,7 @@ export function requirementProgress(
     ancestors.add(ancestor);
     ancestor = plan.requirements.find((r) => r.id === ancestor)?.parentId;
   }
-  if (!node)
+  if (!node || node.hierarchyReviewed !== true)
     return {
       state: "unresolved",
       knownCredits: 0,

@@ -82,3 +82,21 @@ test("course links reuse search and reject arbitrary free text", () => {
     null,
   );
 });
+
+test("transfer and examination credit groups cannot masquerade as attendance semesters", () => {
+  for (const creditOrigin of ["transfer", "exam"])
+    assert.equal(
+      planSchema.safeParse({
+        ...emptyPlan(),
+        semesters: [
+          {
+            term: "Autumn2028",
+            creditOrigin,
+            reportedCredits: null,
+            courses: [],
+          },
+        ],
+      }).success,
+      false,
+    );
+});

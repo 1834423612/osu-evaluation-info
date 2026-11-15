@@ -55,6 +55,9 @@ test("multiple snapshots preserve program versions, requirements and allocation 
 });
 test("degree requirements do not become satisfied through duplicated or unknown credit observations", () => {
   const plan = audit();
+  plan.requirements.forEach((r) => {
+    r.hierarchyReviewed = true;
+  });
   const requirement = plan.requirements.find((r) => r.kind === "credits");
   assert.equal(requirementProgress(plan, requirement.id).state, "insufficient");
   plan.allocations = plan.allocations.map((a) => ({ ...a, confirmed: true }));
@@ -88,6 +91,37 @@ test("schema upgrades old exports and rejects reference cycles and cross-program
   const plan = audit();
   plan.requirements[0].parentId = plan.requirements[1].id;
   assert.equal(planSchema.safeParse(plan).success, false);
+  assert.equal(
+    requirementProgress(plan, plan.requirements[0].id).state,
+    "unresolved",
+  );
+});
+
+test("expanded constraint clauses retain candidates but never auto-approve inferred hierarchy", () => {
+  const rows = [
+    {
+      text: "Information Systems",
+      page: 1,
+      cells: [{ text: "Information Systems", x: 20 }],
+    },
+    {
+      text: "Complete all of the following",
+      page: 1,
+      cells: [{ text: "Complete all of the following", x: 20 }],
+    },
+    {
+      text: "A minimum of 6 credits",
+      page: 1,
+      cells: [{ text: "A minimum of 6 credits", x: 40 }],
+    },
+    { text: "CSE 2999H", page: 1, cells: [{ text: "CSE 2999H", x: 60 }] },
+  ];
+  const { plan } = parsePlanLines(rows, "expanded-audit");
+  assert.equal(plan.programs[0].code, "IS");
+  assert.equal(plan.requirements.length, 2);
+  assert.equal(plan.requirements[1].parentId, plan.requirements[0].id);
+  assert.equal(plan.requirements[1].minimumCredits, 6);
+  assert.equal(plan.allocations.length, 1);
   assert.equal(
     requirementProgress(plan, plan.requirements[0].id).state,
     "unresolved",

@@ -40,6 +40,7 @@ const requirementSchema = z
     documentId: reference,
     programId: reference,
     parentId: reference.nullable(),
+    hierarchyReviewed: z.boolean().optional(),
     kind: z.enum(["all", "any", "credits", "courses", "unknown"]),
     minimumCredits: z.number().min(0).max(999).nullable(),
     minimumCourses: z.number().int().min(0).max(100).nullable(),
@@ -170,6 +171,11 @@ export const planSchema = z
       issue();
     for (const p of plan.programs) if (!documents.has(p.documentId)) issue();
     for (const s of plan.semesters) {
+      if (
+        s.term &&
+        (s.creditOrigin === "transfer" || s.creditOrigin === "exam")
+      )
+        issue();
       if (s.documentId && !documents.has(s.documentId)) issue();
       for (const c of s.courses)
         if (c.documentId && !documents.has(c.documentId)) issue();

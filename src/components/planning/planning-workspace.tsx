@@ -63,6 +63,11 @@ export function PlanningWorkspace() {
   const updateCourse = (si: number, ci: number, patch: Partial<PlanCourse>) =>
     update((p) => ({
       ...p,
+      allocations: p.allocations.map((a) =>
+        a.courseId === p.semesters[si].courses[ci].id
+          ? { ...a, confirmed: false }
+          : a,
+      ),
       semesters: p.semesters.map((s, i) =>
         i === si
           ? {
@@ -513,12 +518,51 @@ export function PlanningWorkspace() {
                       · {semester.creditOrigin ?? "unknown"}
                     </small>
                     <label className={styles.field}>
+                      {t("Credit origin", "学分来源")}
+                      <select
+                        value={semester.creditOrigin ?? "unknown"}
+                        onChange={(e) => {
+                          const value = e.target.value as NonNullable<
+                            typeof semester.creditOrigin
+                          >;
+                          update((p) => ({
+                            ...p,
+                            semesters: p.semesters.map((x, i) =>
+                              i === si
+                                ? {
+                                    ...x,
+                                    creditOrigin: value,
+                                    term: ["transfer", "exam"].includes(value)
+                                      ? null
+                                      : x.term,
+                                  }
+                                : x,
+                            ),
+                          }));
+                        }}
+                      >
+                        {["institutional", "transfer", "exam", "unknown"].map(
+                          (value, i) => (
+                            <option value={value} key={value}>
+                              {locale === "zh"
+                                ? ["校内课程", "转学分", "考试学分", "未知"][i]
+                                : value}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                    <label className={styles.field}>
                       {t(
                         "Semester · blank means unassigned",
                         "学期 · 空白表示未分配",
                       )}
                       <input
                         aria-label={t("Semester", "学期")}
+                        disabled={
+                          semester.creditOrigin === "transfer" ||
+                          semester.creditOrigin === "exam"
+                        }
                         placeholder="Autumn2026"
                         value={semester.term ?? ""}
                         onChange={(e) =>

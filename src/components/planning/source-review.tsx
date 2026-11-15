@@ -68,7 +68,13 @@ export function SourceReview({ plan, locale, update }: Props) {
     update((p) => ({
       ...p,
       requirements: p.requirements.map((x) =>
-        x.id === id ? { ...x, ...patch } : x,
+        x.id === id
+          ? {
+              ...x,
+              ...patch,
+              hierarchyReviewed: patch.hierarchyReviewed ?? false,
+            }
+          : x,
       ),
     }));
   }
@@ -105,6 +111,21 @@ export function SourceReview({ plan, locale, update }: Props) {
               </span>
             </div>
             <div className={styles.panel}>
+              <label className={styles.allocation}>
+                <input
+                  type="checkbox"
+                  checked={r.hierarchyReviewed === true}
+                  onChange={(e) =>
+                    editRequirement(r.id, {
+                      hierarchyReviewed: e.target.checked,
+                    })
+                  }
+                />
+                {t(
+                  "I verified this rule and its parent against the source",
+                  "我已对照来源核对本规则及其上级",
+                )}
+              </label>
               <div className={styles.meta}>
                 <label className={styles.field}>
                   {t("Rule", "规则")}
@@ -307,6 +328,29 @@ export function SourceReview({ plan, locale, update }: Props) {
             {t("Source", "来源")} {index + 1} · {d.source} · {d.auditMode}
           </summary>
           <div className={styles.panel}>
+            <label className={styles.field}>
+              {t("Source audit mode", "来源审核模式")}
+              <select
+                value={d.auditMode}
+                onChange={(e) =>
+                  update((p) => ({
+                    ...p,
+                    documents: p.documents.map((x) =>
+                      x.id === d.id
+                        ? {
+                            ...x,
+                            auditMode: e.target.value as typeof d.auditMode,
+                          }
+                        : x,
+                    ),
+                  }))
+                }
+              >
+                <option value="unknown">{t("Unknown", "未知")}</option>
+                <option value="official">Official</option>
+                <option value="planned">Planned</option>
+              </select>
+            </label>
             <div className={styles.actions}>
               <button onClick={() => addProgram(d.id)}>
                 {t("Add program", "添加项目")}

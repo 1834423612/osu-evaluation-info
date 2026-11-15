@@ -23,6 +23,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
   let program: Plan["programs"][number] | undefined;
   let requirement: Plan["requirements"][number] | undefined;
   const numbered = new Map<string, string>();
+  let stack: Array<{ id: string; x: number }> = [];
   const makeProgram = (code: string | null) => {
     const p = {
       id: `program-${plan.programs.length + 1}`,
@@ -35,10 +36,11 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     };
     plan.programs.push(p);
     numbered.clear();
+    stack = [];
     requirement = undefined;
     return p;
   };
-  for (const { text: raw, page } of lines) {
+  for (const { text: raw, page, cells } of lines) {
     const line = raw.trim().replace(/\s+/g, " ");
     if (/@|student\s*(?:name|id)|advisor|https?:/i.test(line)) continue;
     const heading = line.match(
@@ -50,12 +52,28 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         program.declaration = heading[2] as "declared" | "undeclared";
       continue;
     }
+    const knownCode = /^Computer and Information Science\b/i.test(line)
+      ? "CIS"
+      : /^Information Systems\b/i.test(line)
+        ? "IS"
+        : /^General Education\b/i.test(line)
+          ? "GE"
+          : null;
+    if (knownCode && program?.code !== knownCode) {
+      program = makeProgram(knownCode);
+      continue;
+    }
     const version = line.match(
       /\bApplied\s+Version\s*:?\s*((?:AU|SP|SU)\s*20\d{2})\b/i,
     );
     if (version) {
-      if (!program || program.appliedVersion !== null)
-        program = makeProgram(null);
+      if (
+        !program ||
+        (program.appliedVersion !== null &&
+          program.appliedVersion !==
+            version[1].replace(/\s/g, "").toUpperCase())
+      )
+        program = makeProgram(program?.code ?? null);
       program.appliedVersion = version[1].replace(/\s/g, "").toUpperCase();
       continue;
     }
@@ -96,6 +114,46 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       plan.requirements.push(requirement);
       numbered.set(marker[1], requirement.id);
       continue;
+    }
+    // Free-form prose is never stored. Only explicit numeric clauses and logical
+    // group markers become candidates, and every inferred hierarchy needs review.
+    if (
+      plan.source === "expanded-audit" &&
+      !/\b(?:not|except|unless)\b/i.test(line)
+    ) {
+      const credit = line.match(
+        /\b(?:minimum(?:\s+of)?|at least)\s+(\d{1,3}(?:\.\d+)?)\s*(?:credits?|hours?|h)\b/i,
+      );
+      const count = line.match(
+        /\b(?:minimum(?:\s+of)?|at least)\s+(\d{1,2})\s+courses?\b/i,
+      );
+      const group = line.match(/\b(all|any) of\b/i);
+      if (credit || count || group) {
+        program ??= makeProgram(null);
+        const x = cells?.find((c) => /[A-Za-z]/.test(c.text))?.x ?? 0;
+        while (stack.length && stack[stack.length - 1].x >= x) stack.pop();
+        requirement = {
+          id: `requirement-${plan.requirements.length + 1}`,
+          documentId,
+          programId: program.id,
+          parentId: stack.at(-1)?.id ?? null,
+          hierarchyReviewed: false,
+          kind: credit
+            ? "credits"
+            : count
+              ? "courses"
+              : group?.[1].toLowerCase() === "all"
+                ? "all"
+                : "any",
+          minimumCredits: credit ? Number(credit[1]) : null,
+          minimumCourses: count ? Number(count[1]) : null,
+          alternatives: [],
+          page,
+        };
+        plan.requirements.push(requirement);
+        if (group) stack.push({ id: requirement.id, x });
+        continue;
+      }
     }
     if (requirement) {
       for (const m of line.matchAll(

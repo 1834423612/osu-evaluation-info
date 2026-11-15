@@ -20,7 +20,12 @@ async function walk(path) {
   return files;
 }
 const groups = {};
-for (const file of await walk(directory)) {
+const files = await walk(directory).catch(() => {
+  console.log(JSON.stringify({ localReadFailure: true }));
+  process.exitCode = 1;
+  return [];
+});
+for (const file of files) {
   const type = /compact/i.test(file)
     ? "compact-audit"
     : /expanded/i.test(file)
@@ -39,6 +44,9 @@ for (const file of await walk(directory)) {
     appliedVersionDetected: 0,
     catalogTermDetected: 0,
     failures: 0,
+    programRecords: 0,
+    requirementCandidates: 0,
+    allocationCandidates: 0,
   });
   group.documents++;
   let task;
@@ -58,6 +66,9 @@ for (const file of await walk(directory)) {
         ),
       );
     const { plan } = parsePlanLines(lines, type);
+    group.programRecords += plan.programs.length;
+    group.requirementCandidates += plan.requirements.length;
+    group.allocationCandidates += plan.allocations.length;
     for (const semester of plan.semesters) {
       group.assignedSemesters += Number(!!semester.term);
       group.nonAttendanceGroups += Number(
