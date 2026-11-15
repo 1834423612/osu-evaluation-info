@@ -89,6 +89,16 @@
   padding: 2px 5px;
   color: var(--muted);
 }
+.exportTitle {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.exportTitle summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
+
 @media (max-width: 600px) {
   .filters {
     grid-template-columns: 1fr 1fr;
@@ -107,12 +117,3 @@
   }
 }
 
-.exportTitle {
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.exportTitle summary {
-  cursor: pointer;
-  padding: 4px 0;
-}
