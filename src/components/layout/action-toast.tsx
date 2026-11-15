@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, RotateCcw, X } from "lucide-react";
+import { Bookmark, RotateCcw, X, CircleAlert } from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 
 type ToastDetail = {
-  added: boolean;
-  label: string;
-  undo: () => void;
+  added?: boolean;
+  label?: string;
+  undo?: () => void;
+  error?: "capacity" | "storage" | "failed";
+  limit?: number;
 };
 
 export function ActionToast() {
@@ -24,7 +26,11 @@ export function ActionToast() {
       setToast((event as CustomEvent<ToastDetail>).detail);
     };
     window.addEventListener("course-atlas:toast", onToast);
-    return () => window.removeEventListener("course-atlas:toast", onToast);
+    window.addEventListener("course-atlas:save-error", onToast);
+    return () => {
+      window.removeEventListener("course-atlas:toast", onToast);
+      window.removeEventListener("course-atlas:save-error", onToast);
+    };
   }, []);
 
   useEffect(() => {
@@ -43,33 +49,47 @@ export function ActionToast() {
   return createPortal(
     <div
       className="action-toast"
-      data-state={toast.added ? "added" : "removed"}
+      data-state={toast.error ? "error" : toast.added ? "added" : "removed"}
       data-phase={leaving ? "closing" : "open"}
       role="status"
       aria-live="polite"
       style={{ pointerEvents: "auto" }}
     >
-      {toast.added ? (
+      {toast.error ? (
+        <CircleAlert size={17} aria-hidden="true" />
+      ) : toast.added ? (
         <BrandMascot expression="belly-laugh" size={32} eager />
       ) : (
         <Bookmark size={17} aria-hidden="true" />
       )}
       <span>
-        {toast.added
-          ? text(locale, "Saved", "已收藏")
-          : text(locale, "Removed", "已取消收藏")}{" "}
+        {toast.error
+          ? toast.error === "capacity"
+            ? text(
+                locale,
+                `Collection is full (${toast.limit}).`,
+                `收藏已满（${toast.limit}）。`,
+              )
+            : toast.error === "storage"
+              ? text(locale, "Browser storage is full.", "浏览器存储空间已满。")
+              : text(locale, "Could not save this item.", "未能保存此项目。")
+          : toast.added
+            ? text(locale, "Saved", "已收藏")
+            : text(locale, "Removed", "已取消收藏")}{" "}
         <strong>{toast.label}</strong>
       </span>
-      <button
-        type="button"
-        onClick={() => {
-          toast.undo();
-          setLeaving(true);
-        }}
-      >
-        <RotateCcw size={14} aria-hidden="true" />
-        {text(locale, "Undo", "撤回")}
-      </button>
+      {toast.undo ? (
+        <button
+          type="button"
+          onClick={() => {
+            setLeaving(true);
+            toast.undo?.();
+          }}
+        >
+          <RotateCcw size={14} aria-hidden="true" />
+          {text(locale, "Undo", "撤回")}
+        </button>
+      ) : null}
       <button
         type="button"
         className="action-toast-close"

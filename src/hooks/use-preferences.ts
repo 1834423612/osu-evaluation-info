@@ -2,6 +2,7 @@
 
 import { debugFlag } from "@/lib/debug/flags";
 import { browserStorage } from "@/lib/preferences/browser-storage";
+import { notifySaveFailure } from "@/lib/saved/capacity";
 import { useEffect, useSyncExternalStore } from "react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { CatalogSection } from "@/lib/catalog/types";
@@ -130,7 +131,6 @@ function getSaved() {
             (v): v is CatalogCourse =>
               v && typeof v.id === "string" && Array.isArray(v.sections),
           )
-          .slice(0, 100)
           .map(withoutCourseAvailability)
       : EMPTY;
   } catch {
@@ -153,7 +153,7 @@ function getSavedDetails<T>(key: string, type: "sections" | "instructors") {
   let parsed: T[] = [];
   try {
     const value: unknown = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(value)) parsed = value.slice(-200) as T[];
+    if (Array.isArray(value)) parsed = value as T[];
   } catch {
     parsed = [];
   }
@@ -178,7 +178,8 @@ function writeArray(key: string, value: unknown[]) {
     browserStorage().setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event(EVENT));
     return true;
-  } catch {
+  } catch (error) {
+    notifySaveFailure(error);
     return false;
   }
 }
@@ -254,10 +255,11 @@ export function usePreferences() {
     const current = getSaved();
     const next = current.some((item) => item.id === course.id)
       ? current.filter((item) => item.id !== course.id)
-      : [...current, course].slice(-100);
+      : [...current, course];
     try {
       browserStorage().setItem(SAVED_KEY, JSON.stringify(next));
-    } catch {
+    } catch (error) {
+      notifySaveFailure(error);
       return false;
     }
     window.dispatchEvent(new Event(EVENT));
@@ -268,11 +270,13 @@ export function usePreferences() {
         ? latest.filter((item) => item.id !== course.id)
         : latest.some((item) => item.id === course.id)
           ? latest
-          : [...latest, course].slice(-100);
+          : [...latest, course];
       try {
         browserStorage().setItem(SAVED_KEY, JSON.stringify(undone));
         window.dispatchEvent(new Event(EVENT));
-      } catch {}
+      } catch (error) {
+        notifySaveFailure(error);
+      }
     });
     return true;
   }
@@ -303,7 +307,7 @@ export function usePreferences() {
             creditsMax: course.creditsMax,
             section,
           },
-        ].slice(-200);
+        ];
     if (!writeArray(SAVED_SECTIONS_KEY, next)) return false;
     const added = !exists;
     notifySaved(
@@ -334,7 +338,7 @@ export function usePreferences() {
                   creditsMax: course.creditsMax,
                   section,
                 },
-              ].slice(-200);
+              ];
         writeArray(SAVED_SECTIONS_KEY, undone);
       },
     );
@@ -382,7 +386,7 @@ export function usePreferences() {
             item === existing
               ? {
                   ...item,
-                  courses: [...item.courses, relatedCourse].slice(-30),
+                  courses: [...item.courses, relatedCourse],
                 }
               : item,
           )
@@ -394,7 +398,7 @@ export function usePreferences() {
             email: instructor.email ?? null,
             courses: [relatedCourse],
           },
-        ].slice(-200);
+        ];
     if (!writeArray(SAVED_INSTRUCTORS_KEY, next)) return false;
     const added =
       !existing || !existing.courses.some((item) => item.id === course.id);
@@ -431,7 +435,7 @@ export function usePreferences() {
             item === currentInstructor
               ? {
                   ...item,
-                  courses: [...item.courses, relatedCourse].slice(-30),
+                  courses: [...item.courses, relatedCourse],
                 }
               : item,
           ),
@@ -439,17 +443,14 @@ export function usePreferences() {
         return;
       }
       if (!existing) return;
-      writeArray(
-        SAVED_INSTRUCTORS_KEY,
-        [
-          ...latest,
-          {
-            ...existing,
-            id: identity,
-            courses: existing.courses,
-          },
-        ].slice(-200),
-      );
+      writeArray(SAVED_INSTRUCTORS_KEY, [
+        ...latest,
+        {
+          ...existing,
+          id: identity,
+          courses: existing.courses,
+        },
+      ]);
     });
     return true;
   }

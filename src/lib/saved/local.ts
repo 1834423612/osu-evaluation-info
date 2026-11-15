@@ -66,7 +66,7 @@ function commit(
     const kind = kinds[i],
       prior = before.filter((x) => x.kind === kind),
       incoming = next.filter((x) => x.kind === kind);
-    if (incoming.length > limits[i])
+    if (incoming.length > limits[i] && incoming.length > prior.length)
       throw new Error(
         "Saved-item limit reached. Select fewer items or export a backup.",
       );

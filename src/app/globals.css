@@ -1919,6 +1919,11 @@ h1 {
   background: var(--subtle-surface);
   color: var(--secondary-foreground);
 }
+.action-toast[data-state="error"] {
+  border-color: #e3c394;
+  background: #fff8ed;
+  color: #774d16;
+}
 .action-toast > span {
   min-width: 0;
   overflow: hidden;

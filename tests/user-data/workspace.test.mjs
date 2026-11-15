@@ -9,6 +9,67 @@ import {
   SAVED_WORKSPACE_KEY,
 } from "../../src/lib/saved/workspace.ts";
 const raw = (values) => JSON.stringify(values);
+
+test("capacity rejects additions without evicting old favorites and still permits reducing a legacy over-limit list", () => {
+  for (const key of SAVED_STORAGE_KEYS) {
+    const limit = key === SAVED_STORAGE_KEYS[0] ? 100 : 200,
+      items = Array.from({ length: limit }, (_, i) => ({ id: String(i) })),
+      records = Object.fromEntries(
+        SAVED_STORAGE_KEYS.map((k) => [k, k === key ? raw(items) : "[]"]),
+      );
+    const map = new Map([
+        [SAVED_WORKSPACE_KEY, JSON.stringify({ version: 1, records })],
+      ]),
+      store = {
+        getItem: (k) => map.get(k) ?? null,
+        setItem: (k, v) => map.set(k, v),
+        removeItem: (k) => map.delete(k),
+      },
+      before = map.get(SAVED_WORKSPACE_KEY);
+    assert.throws(
+      () =>
+        writeSavedArray(
+          store,
+          key,
+          raw([...items, { id: "extra" }]),
+          raw(items),
+        ),
+      (e) => e.name === "SavedCapacityError" && e.limit === limit,
+    );
+    assert.equal(map.get(SAVED_WORKSPACE_KEY), before);
+    records[key] = raw([...items, { id: "legacy-extra" }]);
+    map.set(SAVED_WORKSPACE_KEY, JSON.stringify({ version: 1, records }));
+    writeSavedArray(store, key, raw(items), records[key]);
+    assert.equal(
+      JSON.parse(readSavedWorkspace(store).records[key]).length,
+      limit,
+    );
+  }
+  const key = SAVED_STORAGE_KEYS[2],
+    before = [
+      {
+        id: "teacher",
+        courses: Array.from({ length: 30 }, (_, i) => ({ id: String(i) })),
+      },
+    ],
+    next = [{ ...before[0], courses: [...before[0].courses, { id: "extra" }] }],
+    records = Object.fromEntries(
+      SAVED_STORAGE_KEYS.map((k) => [k, k === key ? raw(before) : "[]"]),
+    ),
+    map = new Map([
+      [SAVED_WORKSPACE_KEY, JSON.stringify({ version: 1, records })],
+    ]),
+    store = {
+      getItem: (k) => map.get(k) ?? null,
+      setItem: (k, v) => map.set(k, v),
+      removeItem: (k) => map.delete(k),
+    };
+  assert.throws(
+    () => writeSavedArray(store, key, raw(next), raw(before)),
+    (e) => e.name === "SavedCapacityError" && e.limit === 30,
+  );
+  assert.deepEqual(JSON.parse(readSavedWorkspace(store).records[key]), before);
+});
 test("cross-tab changes preserve unrelated additions and cannot resurrect another tab's deletion", () => {
   const base = raw([{ id: "a" }, { id: "b" }]);
   assert.deepEqual(
@@ -79,10 +140,20 @@ test("corrupt workspace and corrupt arrays raise an error rather than becoming a
   assert.throws(() => mergeSavedDelta("[]", "invalid", "[]"));
 });
 
-test("cached workspace reads return independent records and observe storage changes",()=>{
- let raw=JSON.stringify({version:1,records:Object.fromEntries(SAVED_STORAGE_KEYS.map(k=>[k,"[]"]))});
- const store={getItem:()=>raw};const first=readSavedWorkspace(store);first.records[SAVED_STORAGE_KEYS[0]]="mutated";
- assert.equal(readSavedWorkspace(store).records[SAVED_STORAGE_KEYS[0]],"[]");
- const next=JSON.parse(raw);next.records[SAVED_STORAGE_KEYS[0]]=JSON.stringify([{id:"new"}]);raw=JSON.stringify(next);
- assert.equal(JSON.parse(readSavedWorkspace(store).records[SAVED_STORAGE_KEYS[0]])[0].id,"new");
+test("cached workspace reads return independent records and observe storage changes", () => {
+  let raw = JSON.stringify({
+    version: 1,
+    records: Object.fromEntries(SAVED_STORAGE_KEYS.map((k) => [k, "[]"])),
+  });
+  const store = { getItem: () => raw };
+  const first = readSavedWorkspace(store);
+  first.records[SAVED_STORAGE_KEYS[0]] = "mutated";
+  assert.equal(readSavedWorkspace(store).records[SAVED_STORAGE_KEYS[0]], "[]");
+  const next = JSON.parse(raw);
+  next.records[SAVED_STORAGE_KEYS[0]] = JSON.stringify([{ id: "new" }]);
+  raw = JSON.stringify(next);
+  assert.equal(
+    JSON.parse(readSavedWorkspace(store).records[SAVED_STORAGE_KEYS[0]])[0].id,
+    "new",
+  );
 });

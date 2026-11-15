@@ -1,3 +1,4 @@
+import { checkSavedCapacity } from "./capacity.ts";
 export const SAVED_WORKSPACE_KEY = "course-atlas:saved-workspace:v1";
 export const SAVED_STORAGE_KEYS = [
   "course-atlas:saved:v1",
@@ -132,15 +133,17 @@ export function writeSavedArray(
   base: string | null,
 ) {
   const current = readSavedWorkspace(store);
-  current.records[key] = JSON.stringify(
-    mergeSavedDelta(base, raw, current.records[key]),
-  );
+  const next = mergeSavedDelta(base, raw, current.records[key]);
+  checkSavedCapacity(key, next, array(current.records[key]));
+  current.records[key] = JSON.stringify(next);
   store.setItem(SAVED_WORKSPACE_KEY, JSON.stringify(current));
 }
 export function replaceSavedWorkspace(
   store: Store,
   records: Record<SavedStorageKey, string | null>,
 ) {
-  for (const key of SAVED_STORAGE_KEYS) array(records[key]);
+  const current = readSavedWorkspace(store);
+  for (const key of SAVED_STORAGE_KEYS)
+    checkSavedCapacity(key, array(records[key]), array(current.records[key]));
   store.setItem(SAVED_WORKSPACE_KEY, JSON.stringify({ version: 1, records }));
 }

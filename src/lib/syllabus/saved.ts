@@ -132,7 +132,7 @@ export function parseSavedSyllabi(raw: string | null): SavedSyllabus[] {
           Array.isArray(item.section?.instructors) &&
           Array.isArray(item.section?.meetings),
       )
-      .slice(-200)
+
       .map((item) => ({
         ...item,
         course: withoutCourseAvailability(item.course),

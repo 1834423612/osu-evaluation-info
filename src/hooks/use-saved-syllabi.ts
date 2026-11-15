@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { browserStorage } from "@/lib/preferences/browser-storage";
+import { notifySaveFailure } from "@/lib/saved/capacity";
 import { PREFERENCES_EVENT } from "@/lib/preferences/locale";
 import {
   SAVED_SYLLABI_KEY,
@@ -45,11 +46,12 @@ function read() {
 function write(items: SavedSyllabus[]) {
   try {
     const raw = JSON.stringify(items);
-    if (browserStorage().getItem(SAVED_SYLLABI_KEY) === raw) return true;
+    if (previous === raw) return true;
     browserStorage().setItem(SAVED_SYLLABI_KEY, raw);
     window.dispatchEvent(new Event(PREFERENCES_EVENT));
     return true;
-  } catch {
+  } catch (error) {
+    notifySaveFailure(error);
     return false;
   }
 }
@@ -68,10 +70,7 @@ export const savedSyllabiActions = {
       !write(
         existing
           ? current.filter((item) => item.id !== entry.code)
-          : [
-              ...current,
-              createSavedSyllabus(course, section, entry, result),
-            ].slice(-200),
+          : [...current, createSavedSyllabus(course, section, entry, result)],
       )
     )
       return false;
@@ -87,7 +86,7 @@ export const savedSyllabiActions = {
                 ? latest.filter((item) => item.id !== entry.code)
                 : latest.some((item) => item.id === entry.code)
                   ? latest
-                  : [...latest, existing!].slice(-200),
+                  : [...latest, existing!],
             );
           },
         },
