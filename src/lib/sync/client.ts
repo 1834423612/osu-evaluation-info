@@ -1,4 +1,5 @@
 "use client";
+import { browserUuid } from "../uuid.ts";
 import { importLocalItems } from "../saved/local.ts";
 import { syncItemKey as itemKey, syncBatch, type SyncItem } from "./items.ts";
 import { readSyncItems, replaceSyncItems } from "./workspace.ts";
@@ -45,7 +46,7 @@ async function exchange(accountId: string, body: Record<string, unknown>) {
   return response;
 }
 async function lease(accountId: string) {
-  const id = crypto.randomUUID();
+  const id = browserUuid();
   return updateSyncState(accountId, (state) => {
     if (state.lease && state.lease.until > Date.now()) return null;
     state.lease = { id, until: Date.now() + 30000 };
@@ -66,7 +67,7 @@ export async function syncCycle(accountId: string) {
     const state = await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       if (s.enabled && !s.needsReview)
-        captureChanges(s, readSyncItems(), () => crypto.randomUUID());
+        captureChanges(s, readSyncItems(), () => browserUuid());
       if (!navigator.onLine) s.problem = "offline";
       return structuredClone(s);
     });
@@ -84,7 +85,7 @@ export async function syncCycle(accountId: string) {
       delete s.problem;
       if (!sameItem(next, live)) applySyncedItems(() => replaceSyncItems(next));
       if (!s.needsReview)
-        captureChanges(s, readSyncItems(), () => crypto.randomUUID());
+        captureChanges(s, readSyncItems(), () => browserUuid());
       if (s.once && !s.outbox.length && !s.conflicts.length && !s.needsReview)
         s.enabled = false;
     });
@@ -195,7 +196,7 @@ export async function enableSync(
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       const merged = initializeMerge(s, preview.response, readSyncItems(), () =>
-        crypto.randomUUID(),
+        browserUuid(),
       );
       applySyncedItems(() => replaceSyncItems(merged));
       s.once = once;
@@ -224,7 +225,7 @@ export async function chooseConflict(
       applySyncedItems(() =>
         replaceSyncItems(resolveConflict(s, key, choice, readSyncItems())),
       );
-      captureChanges(s, readSyncItems(), () => crypto.randomUUID());
+      captureChanges(s, readSyncItems(), () => browserUuid());
     });
   } finally {
     await release(accountId, token);

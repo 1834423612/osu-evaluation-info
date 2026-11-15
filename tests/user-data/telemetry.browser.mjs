@@ -18,6 +18,15 @@ try {
     viewport: { width: 1440, height: 950 },
   });
   await c.addInitScript((course) => {
+    Object.defineProperty(Crypto.prototype, "randomUUID", {
+      configurable: true,
+      value: undefined,
+    });
+    try {
+      void localStorage.length;
+    } catch {
+      return;
+    }
     localStorage.setItem("course-atlas:locale:v1", "en");
     if (!localStorage.getItem("qa-seeded")) {
       localStorage.setItem("course-atlas:saved:v1", JSON.stringify([course]));
@@ -52,6 +61,10 @@ try {
       });
     return route.continue();
   });
+  const errors = [];
+  c.on("page", (page) =>
+    page.on("pageerror", (error) => errors.push(error.message)),
+  );
   const page = await c.newPage();
   await page.goto(new URL("/saved", base).href);
   async function until(test) {
@@ -101,6 +114,18 @@ try {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(3500);
   assert.equal(received.size, before);
+  const restricted = await c.newPage();
+  await restricted.addInitScript(() =>
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: undefined,
+    }),
+  );
+  await restricted.goto(new URL("/history", base).href);
+  await restricted
+    .getByRole("heading", { name: "Recent activity", exact: true })
+    .waitFor();
+  assert.deepEqual(errors, []);
   console.log(
     "Durable telemetry retries, Strict Mode deduplication, cross-tab save accounting, actual course opens and explicit opt-out passed (collector mocked)",
   );

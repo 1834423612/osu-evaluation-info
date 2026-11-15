@@ -1,4 +1,5 @@
 "use client";
+import { browserUuid } from "@/lib/uuid";
 import { useEffect, useRef, useState } from "react";
 import { Activity, Download, Play, Square, Send, Search } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
@@ -105,7 +106,7 @@ export function DiagnosticsPage() {
     setMessage("");
     setReport({
       version: 1,
-      id: crypto.randomUUID(),
+      id: browserUuid(),
       capturedAt: new Date().toISOString(),
       consent: "selected-report-v1",
       results: registry

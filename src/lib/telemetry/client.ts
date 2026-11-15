@@ -1,5 +1,6 @@
 "use client";
 import { userDatabase } from "../user-data/browser-db.ts";
+import { browserUuid } from "../uuid.ts";
 import { debugFlag } from "../debug/flags.ts";
 import {
   ANALYTICS_KEY,
@@ -51,17 +52,22 @@ type Input = Omit<ProductEvent, "id" | "path" | "capturedAt" | "term"> & {
 type Stored = ProductEvent & { queuedAt: number };
 export function recordProductEvents(events: Input[]) {
   if (!telemetryAllowed()) return;
-  const parsed = events
-    .map((event) =>
-      productEventSchema.safeParse({
-        ...event,
-        id: crypto.randomUUID(),
-        path: event.path ?? location.pathname,
-        capturedAt: new Date().toISOString(),
-      }),
-    )
-    .filter((x) => x.success)
-    .map((x) => ({ ...x.data!, queuedAt: Date.now() }));
+  let parsed: Stored[];
+  try {
+    parsed = events
+      .map((event) =>
+        productEventSchema.safeParse({
+          ...event,
+          id: browserUuid(),
+          path: event.path ?? location.pathname,
+          capturedAt: new Date().toISOString(),
+        }),
+      )
+      .filter((x) => x.success)
+      .map((x) => ({ ...x.data!, queuedAt: Date.now() }));
+  } catch {
+    return;
+  } // Optional telemetry cannot prevent navigation or saving.
   if (!parsed.length) return;
   for (const event of parsed) memory.set(event.id, event);
   while (memory.size > 20) memory.delete(memory.keys().next().value!);
@@ -113,12 +119,12 @@ function identity(kind: "device" | "session") {
       key = "course-atlas:telemetry-" + kind + ":v1";
     let id = store.getItem(key);
     if (!id || !/^[a-f0-9-]{36}$/.test(id)) {
-      id = crypto.randomUUID();
+      id = browserUuid();
       store.setItem(key, id);
     }
     return id;
   } catch {
-    return (volatileIds[kind] ??= crypto.randomUUID());
+    return (volatileIds[kind] ??= browserUuid());
   }
 }
 function body(events: Stored[]) {

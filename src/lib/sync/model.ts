@@ -1,3 +1,4 @@
+import { browserUuid } from "../uuid.ts";
 import { syncItemKey as itemKey, type SyncItem } from "./items.ts";
 import {
   sameItem,
@@ -198,7 +199,7 @@ export function resolveConflict(
   key: string,
   choice: "local" | "cloud" | "both",
   items: SyncItem[],
-  uuid: () => string = () => crypto.randomUUID(),
+  uuid: () => string = () => browserUuid(),
 ) {
   const conflict = state.conflicts.find((x) => x.key === key);
   if (!conflict) throw new Error("Conflict was already resolved");

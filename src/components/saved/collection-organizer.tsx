@@ -1,4 +1,5 @@
 "use client";
+import { browserUuid } from "@/lib/uuid";
 import { useState } from "react";
 import { Folder, FolderPlus, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ export function CollectionOrganizer({
     setDraft(
       value
         ? structuredClone(value)
-        : { id: crypto.randomUUID(), name: "", tags: [], members: [] },
+        : { id: browserUuid(), name: "", tags: [], members: [] },
     );
     setTags(value?.tags.join(", ") ?? "");
     setConfirmDelete(false);
