@@ -2412,6 +2412,17 @@ html[data-debug-layout] [data-debug-tools],
 html[data-debug-layout] [data-debug-tools] * {
   outline: none;
 }
+
+.course-facts-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.course-facts-share > :first-child {
+  margin-top: 0;
+}
 @media (min-width: 1500px) {
   .header-inner {
     padding: 0 40px;

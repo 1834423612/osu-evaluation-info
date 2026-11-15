@@ -1,0 +1,63 @@
+.popover {
+  z-index: 9100;
+  pointer-events: auto;
+  width: min(330px, calc(100vw - 24px));
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 12px 45px #21121d1c;
+  animation: share-enter 160ms ease-out;
+}
+.popover strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+.popover p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 6px 0 12px;
+  overflow-wrap: anywhere;
+}
+.copyRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.copyRow input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: var(--subtle-surface);
+  color: var(--muted);
+  font-size: 11px;
+}
+.popover small {
+  display: block;
+  margin-top: 9px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.arrow {
+  fill: var(--surface);
+}
+@keyframes share-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
+}

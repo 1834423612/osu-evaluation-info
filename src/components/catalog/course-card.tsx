@@ -596,7 +596,6 @@ export function CourseCard({
               {text(locale, "Syllabus", "教学大纲")}
             </TabsTrigger>
           </TabsList>
-          <PageShare locale={locale} course={current} compact />
           <span className="detail-term">
             {localizedTerm(course.term, locale)}
           </span>
@@ -812,6 +811,7 @@ export function CourseCard({
               {course.subject} {course.catalogNumber}
             </span>
             <CourseIdentityFacts course={current} locale={locale} compact />
+            <PageShare locale={locale} course={current} compact />
             <Button
               variant="ghost"
               size="icon-sm"
@@ -846,7 +846,6 @@ export function CourseCard({
             preview
           />
           <div className="course-meta">
-            <PageShare locale={locale} course={current} />
             <span>
               <GraduationCap size={13} />
               {courseAcademicCareerLabel(current, locale)}
@@ -923,7 +922,7 @@ export function CourseCard({
               if (
                 target instanceof Element &&
                 target.closest(
-                  ".action-toast, [data-language-notice], [data-translation-popover]",
+                  ".action-toast, [data-language-notice], [data-translation-popover], [data-page-share]",
                 )
               )
                 event.preventDefault();
@@ -954,7 +953,10 @@ export function CourseCard({
                     "查看班次时间、教师、选课人数与历史评价。",
                   )}
                 </DrawerDescription>
-                <CourseIdentityFacts course={current} locale={locale} />
+                <div className="course-facts-share">
+                  <CourseIdentityFacts course={current} locale={locale} />
+                  <PageShare locale={locale} course={current} compact />
+                </div>
               </div>
               <Button
                 type="button"
@@ -988,7 +990,7 @@ export function CourseCard({
               if (
                 target instanceof Element &&
                 target.closest(
-                  ".action-toast, [data-language-notice], [data-translation-popover]",
+                  ".action-toast, [data-language-notice], [data-translation-popover], [data-page-share]",
                 )
               )
                 event.preventDefault();
@@ -1019,7 +1021,10 @@ export function CourseCard({
                     "查看班次时间、教师、选课人数与历史评价。",
                   )}
                 </SheetDescription>
-                <CourseIdentityFacts course={current} locale={locale} />
+                <div className="course-facts-share">
+                  <CourseIdentityFacts course={current} locale={locale} />
+                  <PageShare locale={locale} course={current} compact />
+                </div>
               </div>
               <Button
                 type="button"

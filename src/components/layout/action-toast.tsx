@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, RotateCcw, X, CircleAlert } from "lucide-react";
+import { Bookmark, Share2, RotateCcw, X, CircleAlert } from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 
 type ToastDetail = {
   added?: boolean;
+  message?: string;
   label?: string;
   undo?: () => void;
   error?: "capacity" | "storage" | "failed";
@@ -79,7 +80,9 @@ export function ActionToast() {
       aria-atomic="true"
       style={{ pointerEvents: "auto" }}
     >
-      {toast.error ? (
+      {toast.message ? (
+        <Share2 size={17} aria-hidden="true" />
+      ) : toast.error ? (
         <CircleAlert size={17} aria-hidden="true" />
       ) : toast.added ? (
         <BrandMascot expression="belly-laugh" size={32} eager />
@@ -87,19 +90,25 @@ export function ActionToast() {
         <Bookmark size={17} aria-hidden="true" />
       )}
       <span>
-        {toast.error
-          ? toast.error === "capacity"
-            ? text(
-                locale,
-                `Collection is full (${toast.limit}).`,
-                `收藏已满（${toast.limit}）。`,
-              )
-            : toast.error === "storage"
-              ? text(locale, "Browser storage is full.", "浏览器存储空间已满。")
-              : text(locale, "Could not save this item.", "未能保存此项目。")
-          : toast.added
-            ? text(locale, "Saved", "已收藏")
-            : text(locale, "Removed", "已取消收藏")}{" "}
+        {toast.message
+          ? toast.message
+          : toast.error
+            ? toast.error === "capacity"
+              ? text(
+                  locale,
+                  `Collection is full (${toast.limit}).`,
+                  `收藏已满（${toast.limit}）。`,
+                )
+              : toast.error === "storage"
+                ? text(
+                    locale,
+                    "Browser storage is full.",
+                    "浏览器存储空间已满。",
+                  )
+                : text(locale, "Could not save this item.", "未能保存此项目。")
+            : toast.added
+              ? text(locale, "Saved", "已收藏")
+              : text(locale, "Removed", "已取消收藏")}{" "}
         <strong>{toast.label}</strong>
       </span>
       {toast.undo ? (

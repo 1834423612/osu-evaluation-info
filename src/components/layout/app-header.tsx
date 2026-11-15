@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { PageShare } from "@/components/sharing/page-share";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Languages, Bookmark } from "lucide-react";
@@ -163,6 +164,7 @@ export function AppHeader({
             />{" "}
           </nav>
           <div className="header-actions">
+            <PageShare locale={locale} compact />
             <ResourcesMenu locale={locale} page={current} />
             <Button
               variant="outline"
