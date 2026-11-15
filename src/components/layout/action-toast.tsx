@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Bookmark, RotateCcw, X, CircleAlert } from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
@@ -19,6 +19,28 @@ export function ActionToast() {
   const { locale } = usePreferences();
   const [toast, setToast] = useState<ToastDetail | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const surface = useRef<HTMLDivElement>(null);
+  const previousSize = useRef<{ width: number; height: number } | null>(null);
+  useLayoutEffect(() => {
+    const element = surface.current;
+    if (!element || !toast) {
+      previousSize.current = null;
+      return;
+    }
+    const rect = element.getBoundingClientRect(),
+      old = previousSize.current;
+    previousSize.current = { width: rect.width, height: rect.height };
+    if (old && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const animation = element.animate(
+        [
+          { width: old.width + "px", height: old.height + "px" },
+          { width: rect.width + "px", height: rect.height + "px" },
+        ],
+        { duration: 320, easing: "cubic-bezier(.16,1,.3,1)" },
+      );
+      return () => animation.cancel();
+    }
+  }, [toast]);
 
   useEffect(() => {
     const onToast = (event: Event) => {
@@ -48,11 +70,13 @@ export function ActionToast() {
   if (!toast) return null;
   return createPortal(
     <div
+      ref={surface}
       className="action-toast"
       data-state={toast.error ? "error" : toast.added ? "added" : "removed"}
       data-phase={leaving ? "closing" : "open"}
       role="status"
       aria-live="polite"
+      aria-atomic="true"
       style={{ pointerEvents: "auto" }}
     >
       {toast.error ? (

@@ -57,7 +57,7 @@ export function DrawerDismissHandle({
         event.preventDefault();
         animation.current?.cancel();
         surface.current = event.currentTarget.closest<HTMLElement>(
-          '[data-slot="drawer-content"]',
+          '[data-slot="drawer-content"], [data-slot="sheet-content"]',
         );
         active.current = {
           pointer: event.pointerId,

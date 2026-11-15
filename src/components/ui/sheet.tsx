@@ -4,10 +4,34 @@ import * as React from "react";
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 
+import { DrawerDismissHandle } from "./drawer-dismiss-handle";
+import { usePreferences } from "@/hooks/use-preferences";
+import { text } from "@/lib/i18n";
+import sheetStyles from "./sheet-mobile.module.css";
 import { cn } from "@/lib/utils";
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+const SheetDismiss = React.createContext<() => void>(() => {});
+function Sheet({
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  const [internal, setInternal] = React.useState(defaultOpen ?? false);
+  const change = (value: boolean) => {
+    setInternal(value);
+    onOpenChange?.(value);
+  };
+  return (
+    <SheetDismiss.Provider value={() => change(false)}>
+      <SheetPrimitive.Root
+        data-slot="sheet"
+        open={open ?? internal}
+        onOpenChange={change}
+        {...props}
+      />
+    </SheetDismiss.Provider>
+  );
 }
 
 function SheetTrigger({
@@ -54,6 +78,8 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left";
   showCloseButton?: boolean;
 }) {
+  const dismiss = React.useContext(SheetDismiss);
+  const { locale } = usePreferences();
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -61,6 +87,7 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
+          sheetStyles.sheet,
           "fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500",
           side === "right" &&
             "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
@@ -74,6 +101,12 @@ function SheetContent({
         )}
         {...props}
       >
+        <div className={sheetStyles.handle}>
+          <DrawerDismissHandle
+            label={text(locale, "Drag to close", "拖动关闭")}
+            onDismiss={dismiss}
+          />
+        </div>
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-secondary">
