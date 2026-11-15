@@ -45,6 +45,7 @@ export function PlanningWorkspace() {
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<"private" | "official">("private");
   const [dark, setDark] = useState(false);
+  const [visibleSource, setVisibleSource] = useState("");
   const importGuard = useRef(new ImportGuard());
   useEffect(() => {
     const guard = importGuard.current;
@@ -157,6 +158,9 @@ export function PlanningWorkspace() {
       );
     }
   }
+  const selectedSource = plan.documents.some((d) => d.id === visibleSource)
+    ? visibleSource
+    : "";
   const count = plan.semesters.reduce((n, s) => n + s.courses.length, 0);
   return (
     <div
@@ -447,7 +451,7 @@ export function PlanningWorkspace() {
                   "请对照原文件。“Planned” 不代表未注册。空白学分表示未知，不是零。重复审核课程仅作为候选，不计算总学分。",
                 )}
               </p>
-              {plan.documents.length <= 1 && (
+              {plan.documents.length === 0 && (
                 <div className={styles.meta}>
                   <label className={styles.field}>
                     {t(
@@ -510,260 +514,283 @@ export function PlanningWorkspace() {
                   </p>
                 </div>
               )}
-              {plan.semesters.map((semester, si) => (
-                <article className={styles.semester} key={si}>
-                  <div className={styles.semesterHeading}>
-                    <small>
-                      {semester.documentId
-                        ? `${t("Source", "来源")} ${plan.documents.findIndex((d) => d.id === semester.documentId) + 1}`
-                        : t("Manual", "手动")}{" "}
-                      · {semester.creditOrigin ?? "unknown"}
-                    </small>
-                    <label className={styles.field}>
-                      {t("Credit origin", "学分来源")}
-                      <select
-                        value={semester.creditOrigin ?? "unknown"}
-                        onChange={(e) => {
-                          const value = e.target.value as NonNullable<
-                            typeof semester.creditOrigin
-                          >;
-                          update((p) => ({
-                            ...p,
-                            semesters: p.semesters.map((x, i) =>
-                              i === si
-                                ? {
-                                    ...x,
-                                    creditOrigin: value,
-                                    term: ["transfer", "exam"].includes(value)
-                                      ? null
-                                      : x.term,
-                                  }
-                                : x,
+              {plan.documents.length > 1 && (
+                <label className={styles.field}>
+                  {t("Show source", "显示来源")}
+                  <select
+                    value={selectedSource}
+                    onChange={(e) => setVisibleSource(e.target.value)}
+                  >
+                    <option value="">{t("All sources", "全部来源")}</option>
+                    {plan.documents.map((d, i) => (
+                      <option key={d.id} value={d.id}>
+                        {t("Source", "来源")} {i + 1} · {d.source}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {plan.semesters.map((semester, si) =>
+                selectedSource &&
+                semester.documentId !== selectedSource ? null : (
+                  <article className={styles.semester} key={si}>
+                    <div className={styles.semesterHeading}>
+                      <small>
+                        {semester.documentId
+                          ? `${t("Source", "来源")} ${plan.documents.findIndex((d) => d.id === semester.documentId) + 1}`
+                          : t("Manual", "手动")}{" "}
+                        · {semester.creditOrigin ?? "unknown"}
+                      </small>
+                      <label className={styles.field}>
+                        {t("Credit origin", "学分来源")}
+                        <select
+                          value={semester.creditOrigin ?? "unknown"}
+                          onChange={(e) => {
+                            const value = e.target.value as NonNullable<
+                              typeof semester.creditOrigin
+                            >;
+                            update((p) => ({
+                              ...p,
+                              semesters: p.semesters.map((x, i) =>
+                                i === si
+                                  ? {
+                                      ...x,
+                                      creditOrigin: value,
+                                      term: ["transfer", "exam"].includes(value)
+                                        ? null
+                                        : x.term,
+                                    }
+                                  : x,
+                              ),
+                            }));
+                          }}
+                        >
+                          {["institutional", "transfer", "exam", "unknown"].map(
+                            (value, i) => (
+                              <option value={value} key={value}>
+                                {locale === "zh"
+                                  ? ["校内课程", "转学分", "考试学分", "未知"][
+                                      i
+                                    ]
+                                  : value}
+                              </option>
                             ),
-                          }));
-                        }}
-                      >
-                        {["institutional", "transfer", "exam", "unknown"].map(
-                          (value, i) => (
-                            <option value={value} key={value}>
-                              {locale === "zh"
-                                ? ["校内课程", "转学分", "考试学分", "未知"][i]
-                                : value}
-                            </option>
-                          ),
+                          )}
+                        </select>
+                      </label>
+                      <label className={styles.field}>
+                        {t(
+                          "Semester · blank means unassigned",
+                          "学期 · 空白表示未分配",
                         )}
-                      </select>
-                    </label>
-                    <label className={styles.field}>
-                      {t(
-                        "Semester · blank means unassigned",
-                        "学期 · 空白表示未分配",
-                      )}
-                      <input
-                        aria-label={t("Semester", "学期")}
-                        disabled={
-                          semester.creditOrigin === "transfer" ||
-                          semester.creditOrigin === "exam"
-                        }
-                        placeholder="Autumn2026"
-                        value={semester.term ?? ""}
-                        onChange={(e) =>
-                          update((p) => ({
-                            ...p,
-                            semesters: p.semesters.map((s, i) =>
-                              i === si
-                                ? { ...s, term: e.target.value || null }
-                                : s,
-                            ),
-                          }))
-                        }
-                      />
-                    </label>
-                    <span>
-                      {t("Source total", "来源总学分")}:{" "}
-                      {semester.reportedCredits ?? "—"}
-                    </span>
-                    <button
-                      aria-label={t("Remove semester", "删除学期")}
-                      onClick={() =>
-                        update((p) => ({
-                          ...p,
-                          semesters: p.semesters.filter((_, i) => i !== si),
-                        }))
-                      }
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  {semester.courses.map((course, ci) => (
-                    <div className={styles.course} key={ci}>
-                      <label>
-                        {t("Subject", "学科")}
                         <input
-                          value={course.subject ?? ""}
-                          placeholder="CSE"
+                          aria-label={t("Semester", "学期")}
+                          disabled={
+                            semester.creditOrigin === "transfer" ||
+                            semester.creditOrigin === "exam"
+                          }
+                          placeholder="Autumn2026"
+                          value={semester.term ?? ""}
                           onChange={(e) =>
-                            updateCourse(si, ci, {
-                              subject: e.target.value.toUpperCase() || null,
-                            })
-                          }
-                        />
-                      </label>
-                      <label>
-                        {t("Number", "课号")}
-                        <input
-                          value={course.number ?? ""}
-                          placeholder="2111"
-                          onChange={(e) =>
-                            updateCourse(si, ci, {
-                              number: e.target.value || null,
-                            })
-                          }
-                        />
-                      </label>
-                      <label>
-                        {t("Credits", "学分")}
-                        <input
-                          type="number"
-                          min="0"
-                          max="99"
-                          step="0.5"
-                          value={course.credits ?? ""}
-                          placeholder="—"
-                          onChange={(e) =>
-                            updateCourse(si, ci, {
-                              credits:
-                                e.target.value === ""
-                                  ? null
-                                  : Number(e.target.value),
-                            })
-                          }
-                        />
-                      </label>
-                      <label>
-                        {t("Kind", "类型")}
-                        <select
-                          value={course.kind}
-                          onChange={(e) =>
-                            updateCourse(si, ci, {
-                              kind: e.target.value as PlanCourse["kind"],
-                            })
-                          }
-                        >
-                          <option value="course">{t("Course", "课程")}</option>
-                          <option value="placeholder">
-                            {t("Placeholder", "占位项")}
-                          </option>
-                        </select>
-                      </label>
-                      <label>
-                        {t("Source status", "来源状态")}
-                        <select
-                          value={course.status}
-                          onChange={(e) =>
-                            updateCourse(si, ci, {
-                              status: e.target.value as PlanCourse["status"],
-                            })
-                          }
-                        >
-                          {(
-                            [
-                              "unknown",
-                              "planned",
-                              "completed",
-                              "in-progress",
-                            ] as const
-                          ).map((s, i) => (
-                            <option key={s} value={s}>
-                              {locale === "zh"
-                                ? ["未知", "计划", "已完成", "进行中"][i]
-                                : s}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <div className={styles.rowActions}>
-                        <small>
-                          {course.page
-                            ? `${t("p.", "页")} ${course.page}`
-                            : t("Manual", "手动")}
-                        </small>
-                        {(() => {
-                          try {
-                            const href = courseSearchHref(course);
-                            return href ? (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noreferrer"
-                                aria-label={t(
-                                  "Find course and ratings",
-                                  "查找课程和评分",
-                                )}
-                              >
-                                <ArrowUpRight size={17} />
-                              </a>
-                            ) : null;
-                          } catch {
-                            return null;
-                          }
-                        })()}
-                        <button
-                          aria-label={t("Remove course", "删除课程")}
-                          onClick={() =>
                             update((p) => ({
                               ...p,
                               semesters: p.semesters.map((s, i) =>
                                 i === si
-                                  ? {
-                                      ...s,
-                                      courses: s.courses.filter(
-                                        (_, j) => j !== ci,
-                                      ),
-                                    }
+                                  ? { ...s, term: e.target.value || null }
                                   : s,
                               ),
                             }))
                           }
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                        />
+                      </label>
+                      <span>
+                        {t("Source total", "来源总学分")}:{" "}
+                        {semester.reportedCredits ?? "—"}
+                      </span>
+                      <button
+                        aria-label={t("Remove semester", "删除学期")}
+                        onClick={() =>
+                          update((p) => ({
+                            ...p,
+                            semesters: p.semesters.filter((_, i) => i !== si),
+                          }))
+                        }
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                  ))}
-                  <button
-                    className={styles.add}
-                    onClick={() =>
-                      update((p) => ({
-                        ...p,
-                        semesters: p.semesters.map((s, i) =>
-                          i === si
-                            ? {
-                                ...s,
-                                courses: [
-                                  ...s.courses,
-                                  {
-                                    id: browserUuid(),
-                                    documentId: s.documentId,
-                                    kind: "course",
-                                    subject: null,
-                                    number: null,
-                                    credits: null,
-                                    status: "unknown",
-                                    page: null,
-                                  },
-                                ],
-                              }
-                            : s,
-                        ),
-                      }))
-                    }
-                  >
-                    <Plus size={15} />
-                    {t("Add course or placeholder", "添加课程或占位项")}
-                  </button>
-                </article>
-              ))}
+                    {semester.courses.map((course, ci) => (
+                      <div className={styles.course} key={ci}>
+                        <label>
+                          {t("Subject", "学科")}
+                          <input
+                            value={course.subject ?? ""}
+                            placeholder="CSE"
+                            onChange={(e) =>
+                              updateCourse(si, ci, {
+                                subject: e.target.value.toUpperCase() || null,
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          {t("Number", "课号")}
+                          <input
+                            value={course.number ?? ""}
+                            placeholder="2111"
+                            onChange={(e) =>
+                              updateCourse(si, ci, {
+                                number: e.target.value || null,
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          {t("Credits", "学分")}
+                          <input
+                            type="number"
+                            min="0"
+                            max="99"
+                            step="0.5"
+                            value={course.credits ?? ""}
+                            placeholder="—"
+                            onChange={(e) =>
+                              updateCourse(si, ci, {
+                                credits:
+                                  e.target.value === ""
+                                    ? null
+                                    : Number(e.target.value),
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          {t("Kind", "类型")}
+                          <select
+                            value={course.kind}
+                            onChange={(e) =>
+                              updateCourse(si, ci, {
+                                kind: e.target.value as PlanCourse["kind"],
+                              })
+                            }
+                          >
+                            <option value="course">
+                              {t("Course", "课程")}
+                            </option>
+                            <option value="placeholder">
+                              {t("Placeholder", "占位项")}
+                            </option>
+                          </select>
+                        </label>
+                        <label>
+                          {t("Source status", "来源状态")}
+                          <select
+                            value={course.status}
+                            onChange={(e) =>
+                              updateCourse(si, ci, {
+                                status: e.target.value as PlanCourse["status"],
+                              })
+                            }
+                          >
+                            {(
+                              [
+                                "unknown",
+                                "planned",
+                                "completed",
+                                "in-progress",
+                              ] as const
+                            ).map((s, i) => (
+                              <option key={s} value={s}>
+                                {locale === "zh"
+                                  ? ["未知", "计划", "已完成", "进行中"][i]
+                                  : s}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className={styles.rowActions}>
+                          <small>
+                            {course.page
+                              ? `${t("p.", "页")} ${course.page}`
+                              : t("Manual", "手动")}
+                          </small>
+                          {(() => {
+                            try {
+                              const href = courseSearchHref(course);
+                              return href ? (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={t(
+                                    "Find course and ratings",
+                                    "查找课程和评分",
+                                  )}
+                                >
+                                  <ArrowUpRight size={17} />
+                                </a>
+                              ) : null;
+                            } catch {
+                              return null;
+                            }
+                          })()}
+                          <button
+                            aria-label={t("Remove course", "删除课程")}
+                            onClick={() =>
+                              update((p) => ({
+                                ...p,
+                                semesters: p.semesters.map((s, i) =>
+                                  i === si
+                                    ? {
+                                        ...s,
+                                        courses: s.courses.filter(
+                                          (_, j) => j !== ci,
+                                        ),
+                                      }
+                                    : s,
+                                ),
+                              }))
+                            }
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      className={styles.add}
+                      onClick={() =>
+                        update((p) => ({
+                          ...p,
+                          semesters: p.semesters.map((s, i) =>
+                            i === si
+                              ? {
+                                  ...s,
+                                  courses: [
+                                    ...s.courses,
+                                    {
+                                      id: browserUuid(),
+                                      documentId: s.documentId,
+                                      kind: "course",
+                                      subject: null,
+                                      number: null,
+                                      credits: null,
+                                      status: "unknown",
+                                      page: null,
+                                    },
+                                  ],
+                                }
+                              : s,
+                          ),
+                        }))
+                      }
+                    >
+                      <Plus size={15} />
+                      {t("Add course or placeholder", "添加课程或占位项")}
+                    </button>
+                  </article>
+                ),
+              )}
               <button
                 className={styles.add}
                 onClick={() =>

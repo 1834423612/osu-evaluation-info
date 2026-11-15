@@ -51,9 +51,7 @@ try {
     "",
   );
   assert.equal(
-    await page
-      .getByLabel("Applied Version (SIS requirement term)", { exact: true })
-      .inputValue(),
+    await page.getByLabel("Applied Version", { exact: true }).inputValue(),
     "AU2017",
   );
   assert.equal(
@@ -103,6 +101,34 @@ try {
         await page.getByRole("button", { name: "Light", exact: true }).click();
     }
   }
+  await page
+    .locator("input[type=file]")
+    .setInputFiles({
+      name: "synthetic-second.pdf",
+      mimeType: "application/pdf",
+      buffer: syntheticPdf(),
+    });
+  await page.getByLabel("Show source", { exact: true }).waitFor();
+  assert.equal(await page.getByLabel("Subject", { exact: true }).count(), 4);
+  assert.equal(
+    await page.getByLabel("Number", { exact: true }).first().inputValue(),
+    "2221",
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Save on this device", exact: true })
+      .isDisabled(),
+    true,
+  );
+  await page
+    .getByLabel("Show source", { exact: true })
+    .selectOption({ index: 2 });
+  assert.equal(await page.getByLabel("Subject", { exact: true }).count(), 2);
+  assert.equal(
+    await page.getByLabel("Number", { exact: true }).first().inputValue(),
+    "2111",
+  );
+  await page.getByLabel("Show source", { exact: true }).selectOption("");
   await page.getByRole("tab", { name: "Official curriculum sources" }).click();
   await page.getByText(/0 human-approved structured plans/).waitFor();
   assert.equal(
