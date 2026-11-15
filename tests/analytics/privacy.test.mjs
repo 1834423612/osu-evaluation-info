@@ -96,3 +96,42 @@ test("capability fragments are captured before collection and removed from the b
   assert.equal(replaced, location.pathname);
   assert.ok(!replaced.includes("#"));
 });
+
+test("startup events wait for one visit token, remain bounded, and honor opt-outs while waiting", async () => {
+  let cache,
+    setting = null;
+  const callbacks = [],
+    window = { umami: { getSession: () => ({ cache }) } },
+    localStorage = { getItem: () => setting };
+  const context = vm.createContext({
+    window,
+    localStorage,
+    navigator: { doNotTrack: "0" },
+    Date,
+    setTimeout: (fn) => callbacks.push(fn),
+    URL,
+    URLSearchParams,
+    location: { origin: "https://example.com" },
+  });
+  const send = vm.runInContext(
+    "(" + analyticsBeforeSend.toString() + ")",
+    context,
+  );
+  assert.equal(send("event", { name: "first" }).name, "first");
+  const waiting = send("event", { name: "second" });
+  assert.equal(typeof waiting.then, "function");
+  assert.equal(window.__COURSE_ATLAS_UMAMI_STARTING__.waiting, 1);
+  cache = "one-visit-token";
+  callbacks.shift()();
+  assert.equal((await waiting).name, "second");
+  assert.equal(window.__COURSE_ATLAS_UMAMI_STARTING__.waiting, 0);
+  cache = undefined;
+  const pending = Array.from({ length: 100 }, () =>
+    send("event", { name: "bounded" }),
+  );
+  assert.equal(send("event", { name: "overflow" }), false);
+  setting = '{"enabled":false}';
+  while (callbacks.length) callbacks.shift()();
+  assert.ok((await Promise.all(pending)).every((x) => x === false));
+  assert.equal(window.__COURSE_ATLAS_UMAMI_STARTING__.waiting, 0);
+});

@@ -68,6 +68,7 @@ export function analyticsBeforeSend(
 ) {
   const w = window as Window & {
     __COURSE_ATLAS_DEBUG__?: { skipAnalytics?: boolean };
+    __COURSE_ATLAS_UMAMI_STARTING__?: { waiting: number };
   };
   if (w.__COURSE_ATLAS_DEBUG__?.skipAnalytics) return false;
   try {
@@ -124,5 +125,46 @@ export function analyticsBeforeSend(
       );
     return v;
   };
-  return clean(payload);
+  const value = clean(payload);
+  // Umami returns its visit token asynchronously. Parallel startup events without
+  // that token can create different visits, splitting the full snapshot from its mutations.
+  const tracker = w.umami;
+  if (!tracker?.getSession || tracker.getSession()?.cache) return value;
+  if (!w.__COURSE_ATLAS_UMAMI_STARTING__) {
+    w.__COURSE_ATLAS_UMAMI_STARTING__ = { waiting: 0 };
+    return value;
+  }
+  const state = w.__COURSE_ATLAS_UMAMI_STARTING__;
+  if (state.waiting >= 100) return false;
+  state.waiting++;
+  return new Promise((resolve) => {
+    const deadline = Date.now() + 30000;
+    const finish = (result: unknown) => {
+      state.waiting--;
+      resolve(result);
+    };
+    const check = () => {
+      let optedOut = false;
+      try {
+        optedOut =
+          JSON.parse(
+            localStorage.getItem("course-atlas:analytics:v1") || "null",
+          )?.enabled === false;
+      } catch {
+        /* Storage may be unavailable. */
+      }
+      if (
+        optedOut ||
+        w.__COURSE_ATLAS_DEBUG__?.skipAnalytics ||
+        navigator.doNotTrack === "1" ||
+        (navigator as Navigator & { globalPrivacyControl?: boolean })
+          .globalPrivacyControl ||
+        Date.now() >= deadline
+      )
+        return finish(false);
+      if (tracker.getSession?.()?.cache) return finish(value);
+      setTimeout(check, 100);
+    };
+    check();
+  });
 }

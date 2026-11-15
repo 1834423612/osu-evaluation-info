@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import {
   ANALYTICS_EVENT,
@@ -24,6 +24,7 @@ declare global {
         error: unknown,
         options?: { tags?: Record<string, string> },
       ) => void;
+      getSession?: () => { cache?: string };
     };
   }
 }
@@ -238,6 +239,7 @@ export function UmamiAnalytics({
     () => false,
   );
   const recorderLoaded = useRef(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const preference = useSyncExternalStore(
     (callback) => {
       window.addEventListener(ANALYTICS_EVENT, callback);
@@ -289,6 +291,34 @@ export function UmamiAnalytics({
       window.location.reload();
     }
   }, [disabled, settings.enabled, settings.replay]);
+  useEffect(() => {
+    if (
+      !clientReady ||
+      !websiteId ||
+      !trackerUrl ||
+      disabled ||
+      !settings.enabled ||
+      !settings.replay
+    )
+      return;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = () => {
+      if (window.umami?.getSession?.()?.cache) {
+        setSessionReady(true);
+        return;
+      }
+      timer = setTimeout(check, 250);
+    };
+    timer = setTimeout(check, 0);
+    return () => clearTimeout(timer);
+  }, [
+    clientReady,
+    websiteId,
+    trackerUrl,
+    disabled,
+    settings.enabled,
+    settings.replay,
+  ]);
 
   if (
     !clientReady ||
@@ -322,7 +352,7 @@ export function UmamiAnalytics({
         data-before-send="umamiBeforeSend"
         onReady={flushPendingEvents}
       />
-      {recorderUrl && settings.replay ? (
+      {recorderUrl && settings.replay && sessionReady ? (
         <Script
           id="umami-recorder"
           src={recorderUrl}

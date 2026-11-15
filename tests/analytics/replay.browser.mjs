@@ -19,7 +19,7 @@ try {
     if (route.request().resourceType() === "script")
       return route.fulfill({
         contentType: "application/javascript",
-        body: "window.__collectorLoads=(window.__collectorLoads||0)+1;",
+        body: "window.__collectorLoads=(window.__collectorLoads||0)+1;window.umami=window.umami||{track:()=>{},getSession:()=>({cache:window.__qaTrackerReady?'synthetic-test-token':undefined})};setTimeout(()=>window.__qaTrackerReady=true,location.pathname==='/'?6000:0);",
       });
     return route.abort();
   });
