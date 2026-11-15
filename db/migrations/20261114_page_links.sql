@@ -1,4 +1,4 @@
-CREATE TABLE osu_user.page_link (
+CREATE TABLE osu_sharing.page_link (
  id uuid PRIMARY KEY,
  owner_id text NOT NULL REFERENCES osu_user.principal(id),
  href text NOT NULL,
@@ -9,4 +9,4 @@ CREATE TABLE osu_user.page_link (
  opens bigint NOT NULL DEFAULT 0,
  UNIQUE(owner_id,href)
 );
-CREATE INDEX page_link_owner ON osu_user.page_link(owner_id,created_at DESC);
+CREATE INDEX page_link_owner ON osu_sharing.page_link(owner_id,created_at DESC);

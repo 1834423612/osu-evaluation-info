@@ -1,5 +1,5 @@
 export function authBackupTables(prefix) {
-  if (!/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))
+  if (prefix && !/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))
     throw Error("Invalid auth prefix");
   return [
     "user",

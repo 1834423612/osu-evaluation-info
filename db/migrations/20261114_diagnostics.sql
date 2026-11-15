@@ -1,4 +1,4 @@
-CREATE TABLE osu_user.diagnostic_report (
+CREATE TABLE osu_diagnostics.diagnostic_report (
   id uuid PRIMARY KEY,
   actor_digest text NOT NULL,
   payload_digest text NOT NULL,
@@ -6,4 +6,4 @@ CREATE TABLE osu_user.diagnostic_report (
   observed_context jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX diagnostic_report_created ON osu_user.diagnostic_report(created_at DESC,id DESC);
+CREATE INDEX diagnostic_report_created ON osu_diagnostics.diagnostic_report(created_at DESC,id DESC);

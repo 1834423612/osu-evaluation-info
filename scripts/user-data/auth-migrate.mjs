@@ -4,22 +4,21 @@ for (const path of [".env.local", ".env"])
 if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const { getMigrations } = await import("better-auth/db/migration");
 const { createAuth } = await import("../../src/lib/auth/server.ts");
-const { userDataSchema } = await import("../../src/lib/user-data/namespace.ts");
-const { authConfigured, authTablePrefix } =
+const { userDataSchema, domainSQL } =
+  await import("../../src/lib/user-data/namespace.ts");
+const { authConfigured, authTablePrefix, authSchema } =
   await import("../../src/lib/auth/config.ts");
-const { getDatabasePool } = await import("../../src/lib/db.ts");
+const { getAuthPool } = await import("../../src/lib/auth/database.ts");
 if (!authConfigured())
   throw new Error(
     "Configure DATABASE_URL, BETTER_AUTH_SECRET (32+ characters) and the authentication origin first",
   );
-const db = getDatabasePool(),
+const db = getAuthPool(),
   schema = userDataSchema(),
   prefix = authTablePrefix(),
   apply = process.argv.includes("--apply");
-const base = readFileSync(
-  "db/migrations/20261114_user_data_base.sql",
-  "utf8",
-).replaceAll("osu_user", schema);
+const base = readFileSync("db/migrations/20261114_user_data_base.sql", "utf8");
+const baseSQL = domainSQL(base);
 const unique =
   'CREATE UNIQUE INDEX IF NOT EXISTS "' +
   prefix +
@@ -34,6 +33,7 @@ const marker =
   "\".installation(name) VALUES ('auth:" +
   prefix +
   "') ON CONFLICT DO NOTHING;";
+if (apply) await db.query('CREATE SCHEMA IF NOT EXISTS "' + authSchema() + '"');
 let client;
 try {
   if (apply) {
@@ -52,7 +52,17 @@ try {
     ...plan.toBeAdded,
     ...plan.toBeAddedIndexes,
   ])
-    if (!row.table.startsWith(prefix))
+    if (
+      !row.table.startsWith(prefix) ||
+      ![
+        "user",
+        "session",
+        "account",
+        "verification",
+        "rate_limit",
+        "passkey",
+      ].includes(row.table.slice(prefix.length))
+    )
       throw new Error("Migration outside configured authentication prefix");
   const sql = await plan.compileMigrations();
   if (process.argv.includes("--output")) {
@@ -61,7 +71,7 @@ try {
     writeFileSync(
       path,
       "BEGIN;\n" +
-        base +
+        baseSQL +
         "\n" +
         sql +
         "\n" +
@@ -108,7 +118,7 @@ try {
       throw new Error(
         "Existing authentication tables are not owned by this installation",
       );
-    await client.query(base);
+    await client.query(baseSQL);
     await client.query(sql || "SELECT 1");
     await client.query(unique);
     await client.query(

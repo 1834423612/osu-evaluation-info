@@ -14,8 +14,10 @@ for (const p of [".env.local", ".env"])
   if (existsSync(p)) process.loadEnvFile(p);
 if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const { getDatabasePool } = await import("../../src/lib/db.ts"),
-  { userDataSchema } = await import("../../src/lib/user-data/namespace.ts"),
-  { authTablePrefix } = await import("../../src/lib/auth/config.ts");
+  { userDataSchema, domainSchemas } =
+    await import("../../src/lib/user-data/namespace.ts"),
+  { authTablePrefix, authSchema: accountSchema } =
+    await import("../../src/lib/auth/config.ts");
 const db = getDatabasePool(),
   schema = userDataSchema(),
   prefix = authTablePrefix(),
@@ -53,8 +55,7 @@ try {
     ["auth:" + prefix],
   );
   if (!owned.rows.length) throw Error("User-data ownership was not verified");
-  const authSchema = (await client.query("SELECT current_schema() AS name"))
-    .rows[0].name;
+  const authSchema = accountSchema();
   if (!/^[_a-z][_a-z0-9]*$/.test(authSchema))
     throw Error("Unexpected authentication schema");
   const tables = (
@@ -67,11 +68,11 @@ try {
     throw Error("Authentication tables are missing");
   const domain = (
     await client.query(
-      "SELECT tablename FROM pg_tables WHERE schemaname=$1 ORDER BY tablename",
-      [schema],
+      "SELECT schemaname,tablename FROM pg_tables WHERE schemaname=ANY($1::text[]) ORDER BY schemaname,tablename",
+      [domainSchemas()],
     )
-  ).rows.map((x) => x.tablename);
-  if (domain.some((x) => !/^[_a-z][_a-z0-9]*$/.test(x)))
+  ).rows.map((x) => x.schemaname + "." + x.tablename);
+  if (domain.some((x) => !/^[_a-z][_a-z0-9]*\.[_a-z][_a-z0-9]*$/.test(x)))
     throw Error("Unexpected table identifier");
   console.log(
     JSON.stringify({
@@ -110,7 +111,7 @@ try {
       rows: {},
     };
     for (const [name, args] of [
-      ["user-data.dump", ["--schema=" + schema]],
+      ["user-data.dump", domainSchemas().map((name) => "--schema=" + name)],
       [
         "authentication.dump",
         tables.map((t) => "--table=" + authSchema + "." + t),
@@ -146,16 +147,15 @@ try {
         sha256: createHash("sha256").update(readFileSync(file)).digest("hex"),
       });
     }
-    for (const [ns, names] of [
-      [schema, domain],
-      [authSchema, tables],
-    ])
-      for (const name of names) {
-        const result = await client.query(
-          'SELECT count(*)::text AS n FROM "' + ns + '"."' + name + '"',
-        );
-        manifest.rows[ns + "." + name] = result.rows[0].n;
-      }
+    for (const [ns, name] of [
+      ...domain.map((x) => x.split(".")),
+      ...tables.map((name) => [authSchema, name]),
+    ]) {
+      const result = await client.query(
+        'SELECT count(*)::text AS n FROM "' + ns + '"."' + name + '"',
+      );
+      manifest.rows[ns + "." + name] = result.rows[0].n;
+    }
     writeFileSync(
       join(dir, "manifest.json"),
       JSON.stringify(manifest, null, 2),

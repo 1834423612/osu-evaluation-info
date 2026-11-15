@@ -6,6 +6,7 @@ import {
   sameOrigin,
   userRoute,
 } from "@/lib/user-data/http";
+import { requestNetwork } from "@/lib/user-data/network";
 import { checkBudget } from "@/lib/user-data/rate-limit";
 export const runtime = "nodejs";
 async function handle(request: Request) {
@@ -20,6 +21,8 @@ async function handle(request: Request) {
   return userRoute(async () => {
     if (request.method === "POST") {
       sameOrigin(request);
+      const network = requestNetwork(request.headers);
+      await checkBudget("auth-source", network.address ?? "unresolved", 60, 60);
       const body = await readJson(
         request.clone(),
         z.record(z.string(), z.unknown()),
@@ -30,17 +33,28 @@ async function handle(request: Request) {
         (!body.name.trim() || body.name.length > 60)
       )
         return userJson({ error: "invalid_name" }, 400);
-      if (new URL(request.url).pathname.endsWith("/sign-in/email")) {
-        const email = z.email().max(254).parse(body.email).toLowerCase();
-        await checkBudget("password-email", email, 60, 5);
-      }
       if (
-        /\/(?:send-verification-otp|request-password-reset)$/.test(
+        /\/(?:sign-in\/email|sign-in\/email-otp|verify-email|reset-password|check-verification-otp)$/.test(
           new URL(request.url).pathname,
         )
       ) {
         const email = z.email().max(254).parse(body.email).toLowerCase();
-        await checkBudget("mail-address", email, 600, 3);
+        await checkBudget("auth-verify-email", email, 600, 12);
+      }
+      if (
+        /\/(?:send-verification-otp|request-password-reset|sign-up\/email)$/.test(
+          new URL(request.url).pathname,
+        )
+      ) {
+        const email = z.email().max(254).parse(body.email).toLowerCase();
+        await checkBudget("mail-cooldown", email, 60, 1);
+        await checkBudget("mail-address", email, 3600, 6);
+        await checkBudget(
+          "mail-source",
+          network.address ?? "unresolved",
+          3600,
+          30,
+        );
         await checkBudget("mail-global", "all", 3600, 1000);
       }
     }

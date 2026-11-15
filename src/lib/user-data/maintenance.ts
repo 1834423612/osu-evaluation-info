@@ -35,7 +35,7 @@ export async function maintainUserData(apply = false) {
     inTransaction = false;
   async function exists(name: string) {
     return !!(
-      await db.query("SELECT to_regclass($1) AS present", [schema + "." + name])
+      await db.query("SELECT to_regclass($1) AS present", [table(name)])
     ).rows[0].present;
   }
   try {

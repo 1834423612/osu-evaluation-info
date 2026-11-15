@@ -6,6 +6,7 @@ import {
   authBaseURL,
   authConfigured,
   authTablePrefix,
+  authSchema,
   otpDigest,
 } from "../../src/lib/auth/config.ts";
 import { sameOrigin, readJson } from "../../src/lib/user-data/http.ts";
@@ -105,12 +106,18 @@ test("streaming JSON bodies are bounded even without Content-Length", async () =
 });
 
 test("development identities and cloud data are isolated from production by default", () => {
-  assert.equal(authTablePrefix({ NODE_ENV: "production" }), "ca_");
-  assert.equal(authTablePrefix({ NODE_ENV: "development" }), "ca_dev_");
+  assert.equal(authTablePrefix({ NODE_ENV: "production" }), "");
+  assert.equal(authTablePrefix({ NODE_ENV: "development" }), "");
   assert.equal(userDataSchema({ NODE_ENV: "production" }), "osu_user");
   assert.equal(userDataSchema({ NODE_ENV: "development" }), "osu_user_dev");
   assert.equal(
     userDataSchema({ NODE_ENV: "production", USER_DATA_SCHEMA: "isolated" }),
     "isolated",
   );
+});
+
+test("account schemas are explicit and validate identifiers", () => {
+  assert.equal(authSchema({ NODE_ENV: "production" }), "osu_account");
+  assert.equal(authSchema({ NODE_ENV: "development" }), "osu_account_dev");
+  assert.throws(() => authSchema({ AUTH_SCHEMA: "unsafe;DROP" }));
 });

@@ -1,4 +1,4 @@
-CREATE TABLE osu_user.product_event (
+CREATE TABLE osu_analytics.product_event (
  id uuid PRIMARY KEY,
  actor_digest text NOT NULL,
  session_id uuid NOT NULL,
@@ -14,9 +14,9 @@ CREATE TABLE osu_user.product_event (
  environment text NOT NULL,
  release text NOT NULL
 );
-CREATE INDEX product_event_recent ON osu_user.product_event(environment,received_at DESC);
-CREATE INDEX product_event_expiry ON osu_user.product_event(received_at);
-CREATE TABLE osu_user.product_day (
+CREATE INDEX product_event_recent ON osu_analytics.product_event(environment,received_at DESC);
+CREATE INDEX product_event_expiry ON osu_analytics.product_event(received_at);
+CREATE TABLE osu_analytics.product_day (
  day date NOT NULL DEFAULT ((now() AT TIME ZONE 'UTC')::date),
  environment text NOT NULL,
  type text NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE osu_user.product_day (
  hits bigint NOT NULL DEFAULT 0,
  PRIMARY KEY(day,environment,type,dimension)
 );
-CREATE TABLE osu_user.visitor_context (
+CREATE TABLE osu_analytics.visitor_context (
  session_id uuid PRIMARY KEY,
  actor_digest text NOT NULL,
  user_agent text NOT NULL,
@@ -38,5 +38,5 @@ CREATE TABLE osu_user.visitor_context (
  created_at timestamptz NOT NULL DEFAULT now(),
  environment text NOT NULL
 );
-CREATE INDEX visitor_context_expiry ON osu_user.visitor_context(created_at);
-CREATE INDEX sync_item_popular ON osu_user.sync_item(key,updated_at DESC) WHERE item IS NOT NULL;
+CREATE INDEX visitor_context_expiry ON osu_analytics.visitor_context(created_at);
+CREATE INDEX sync_item_popular ON osu_saved.sync_item(key,updated_at DESC) WHERE item IS NOT NULL;

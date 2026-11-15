@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { passkey } from "@better-auth/passkey";
-import { getDatabasePool } from "../db.ts";
+import { getAuthPool } from "./database.ts";
 import {
   authBaseURL,
   authConfigured,
@@ -20,7 +20,7 @@ export function createAuth(
     appName: "WahO!",
     baseURL,
     secret: process.env.BETTER_AUTH_SECRET!,
-    database: getDatabasePool(),
+    database: getAuthPool(),
     trustedOrigins: [baseURL],
     user: { modelName: prefix + "user" },
     session: {
@@ -37,7 +37,7 @@ export function createAuth(
     verification: { modelName: prefix + "verification" },
     emailAndPassword: {
       enabled: true,
-      disableSignUp: true,
+      disableSignUp: false,
       requireEmailVerification: true,
       minPasswordLength: 12,
       maxPasswordLength: 128,
@@ -48,13 +48,18 @@ export function createAuth(
       storage: "database",
       modelName: prefix + "rate_limit",
       window: 60,
-      max: 600,
+      max: 120,
+      customRules: {
+        "/sign-in/email": { window: 60, max: 10 },
+        "/sign-in/email-otp": { window: 60, max: 10 },
+        "/email-otp/*": { window: 60, max: 5 },
+      },
     },
     advanced: {
       cookiePrefix: "waho",
       database: { generateId: () => randomUUID() },
       ipAddress: {
-        disableIpTracking: !process.env.USER_DATA_TRUSTED_PROXY_HEADER,
+        disableIpTracking: false,
         ipAddressHeaders: process.env.USER_DATA_TRUSTED_PROXY_HEADER
           ? [process.env.USER_DATA_TRUSTED_PROXY_HEADER]
           : [],
@@ -65,6 +70,8 @@ export function createAuth(
       recoveryPlugin(),
       emailOTP({
         expiresIn: 300,
+        overrideDefaultEmailVerification: true,
+        sendVerificationOnSignUp: true,
         otpLength: 6,
         allowedAttempts: 3,
         storeOTP: {

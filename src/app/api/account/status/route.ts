@@ -2,6 +2,7 @@ import {
   authConfigured,
   mailConfigured,
   authTablePrefix,
+  authSchema,
 } from "@/lib/auth/config";
 import { queryDatabase } from "@/lib/db";
 import { userJson } from "@/lib/user-data/http";
@@ -12,7 +13,7 @@ export async function GET() {
     try {
       const result = await queryDatabase<{ ready: boolean }>(
         "SELECT to_regclass($1) IS NOT NULL AS ready",
-        [authTablePrefix() + "user"],
+        [authSchema() + "." + authTablePrefix() + "user"],
       );
       ready = result.rows[0].ready;
     } catch {}

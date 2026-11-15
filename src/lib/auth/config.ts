@@ -23,10 +23,8 @@ export function authBaseURL(env: NodeJS.ProcessEnv = process.env) {
   }
 }
 export function authTablePrefix(env: NodeJS.ProcessEnv = process.env) {
-  const prefix =
-    env.AUTH_TABLE_PREFIX ||
-    (env.NODE_ENV === "production" ? "ca_" : "ca_dev_");
-  if (!/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))
+  const prefix = env.AUTH_TABLE_PREFIX || "";
+  if (prefix && !/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))
     throw new Error("Invalid authentication table prefix");
   return prefix;
 }
@@ -45,4 +43,13 @@ export function otpDigest(otp: string, secret: string) {
   return createHmac("sha256", secret)
     .update("waho:email-otp:" + otp)
     .digest("hex");
+}
+
+export function authSchema(env: NodeJS.ProcessEnv = process.env) {
+  const name =
+    env.AUTH_SCHEMA ||
+    (env.NODE_ENV === "production" ? "osu_account" : "osu_account_dev");
+  if (!/^[a-z][a-z0-9_]{0,50}$/.test(name))
+    throw Error("Invalid account schema");
+  return name;
 }

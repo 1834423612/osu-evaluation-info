@@ -4,7 +4,8 @@ for (const path of [".env.local", ".env"])
   if (existsSync(path)) process.loadEnvFile(path);
 if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const { getDatabasePool } = await import("../../src/lib/db.ts");
-const { userDataSchema } = await import("../../src/lib/user-data/namespace.ts");
+const { userDataSchema, domainSQL, domainSchemas } =
+  await import("../../src/lib/user-data/namespace.ts");
 const { authTablePrefix } = await import("../../src/lib/auth/config.ts");
 const files = [
   "20261114_sharing.sql",
@@ -15,6 +16,7 @@ const files = [
   "20261114_telemetry.sql",
   "20261114_diagnostics.sql",
   "20261114_statistics.sql",
+  "20261115_visitor_context.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),
@@ -68,7 +70,12 @@ try {
       }),
     );
     if (apply) {
-      await client.query(sql.replaceAll("osu_user", schema));
+      await client.query(
+        domainSchemas()
+          .map((name) => 'CREATE SCHEMA IF NOT EXISTS "' + name + '";')
+          .join("\n"),
+      );
+      await client.query(domainSQL(sql));
       await client.query(
         'INSERT INTO "' + schema + '".schema_migration(name,sha) VALUES($1,$2)',
         [name, sha],

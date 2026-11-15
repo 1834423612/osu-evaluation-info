@@ -61,6 +61,7 @@ export function userJson(value: unknown, status = 200) {
       "Cache-Control": "no-store",
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
+      ...(status === 429 ? { "Retry-After": "60" } : {}),
     },
   });
 }
