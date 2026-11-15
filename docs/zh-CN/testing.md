@@ -419,3 +419,13 @@ USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.t
 | [tests/user-data/account-domain.integration.test.mjs](../../tests/user-data/account-domain.integration.test.mjs) | 集成 | 显式一次性模式内的完整邮箱验证账号流程，模拟邮件             |
 
 使用 `USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs tests/diagnostics/reports.integration.test.mjs` 执行相关数据库测试。只写入一次性测试模式，不调用生产应用接口或真实 SMTP。
+
+## 学期规划
+
+- `tests/planning/model.test.mjs`: 白名单、审核门槛、存储失败和课程链接. `node --test tests/planning/model.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/parser.test.mjs`: 合成版式、未知学分、占位项、冲突版本及打印顺序. `node --test tests/planning/parser.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/curriculum.test.mjs`: 官方候选、独立域和导入验证. `node --test tests/planning/curriculum.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/test_sync.py`: 公开 URL 限制和未知布局。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线，无数据库或网络写入。
+- `tests/planning/workspace.browser.mjs`: 本地导入、纠错、保存/导出、双语及响应式隐私流程。 `node tests/planning/workspace.browser.mjs`. 需本地运行应用、Playwright 和 Chromium；可设 `BASE_URL`、`PLAYWRIGHT_MODULE`、`PLAYWRIGHT_CHROMIUM_EXECUTABLE`。仅向隔离浏览器存储写入合成数据，截图保存在临时目录；不访问官方来源或生产数据库。
+- `tests/planning/pdf.integration.test.mjs`: 使用内存生成的 PDF 验证 PDF.js 提取到白名单规划的完整链路；`node --test tests/planning/pdf.integration.test.mjs`. 无需浏览器、数据库或网络。
+- `tests/planning/synthetic-pdf.mjs`: 上述浏览器和 PDF 集成测试共享的合成 PDF 生成器，不单独执行，不写私人数据。

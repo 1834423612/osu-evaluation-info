@@ -70,3 +70,5 @@
 - [OSU 课程说明文案](content/reference.md)
 
 [项目启动](../../README.zh-CN.md) · [贡献规则（英文）](../../AGENTS.md)
+
+- [学期规划：使用、隐私、来源与运维](planning/guide.md)

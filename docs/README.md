@@ -70,3 +70,5 @@ Run commands from the repository root. English is the default; the Chinese tree 
 - [OSU reference articles](../src/content/reference/README.md)
 
 [Project setup](../README.md) · [Contributor rules](../AGENTS.md)
+
+- [Schedule planning: usage, privacy, sources and operations](planning/guide.md)

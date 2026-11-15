@@ -421,3 +421,13 @@ These unit checks run with `pnpm test` without external requests. The account in
 | [tests/user-data/account-domain.integration.test.mjs](../tests/user-data/account-domain.integration.test.mjs) | Integration | Complete verified account flow in a disposable explicit schema; mocked email                                                          |
 
 `USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs tests/diagnostics/reports.integration.test.mjs` runs the related database suite. It writes only its disposable schemas. Production application APIs and real SMTP delivery are not used.
+
+## Schedule planning
+
+- `tests/planning/model.test.mjs`: Whitelist, review gate, storage failures and course links. `node --test tests/planning/model.test.mjs`. No services or external writes.
+- `tests/planning/parser.test.mjs`: Synthetic layouts, unknown credits, placeholders, conflicting versions and print ordering. `node --test tests/planning/parser.test.mjs`. No services or external writes.
+- `tests/planning/curriculum.test.mjs`: Official candidates, isolated namespace and import validation. `node --test tests/planning/curriculum.test.mjs`. No services or external writes.
+- `tests/planning/test_sync.py`: Public URL restrictions and unknown layouts. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline; no database or network writes.
+- `tests/planning/workspace.browser.mjs`: Local import, correction, save/export, bilingual responsive and privacy flow. `node tests/planning/workspace.browser.mjs`. Requires a running local app, Playwright and Chromium; configure `BASE_URL`, `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE` as needed. Writes synthetic data only to isolated browser storage and temporary screenshots; no official-source or production database calls.
+- `tests/planning/pdf.integration.test.mjs`: Exercises PDF.js extraction into the whitelist model using an in-memory generated PDF; `node --test tests/planning/pdf.integration.test.mjs`. No browser, database or network required.
+- `tests/planning/synthetic-pdf.mjs`: Shared synthetic PDF generator for the browser and PDF integration tests; not standalone and writes no private data.
