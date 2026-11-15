@@ -18,6 +18,10 @@ export function authErrorMessage(locale: Locale, failure: unknown) {
       ? "登录服务暂不可用，请稍后重试。"
       : "Sign-in is temporarily unavailable. Try again shortly.";
   switch (code) {
+    case "POLICY_REQUIRED":
+      return zh
+        ? "请先阅读并同意使用条款与隐私说明。"
+        : "Read and agree to the Terms and Privacy Notice first.";
     case "INVALID_EMAIL_OR_PASSWORD":
       return zh
         ? "邮箱或密码不正确。未设置密码？请使用验证码或通行密钥登录。"

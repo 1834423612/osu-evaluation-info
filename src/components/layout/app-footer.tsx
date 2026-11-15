@@ -62,6 +62,16 @@ export function AppFooter() {
           )}
         </p>
       </div>
+      <nav
+        className={styles.policyLinks}
+        aria-label={text(locale, "Legal notices", "条款说明")}
+      >
+        <Link href="/legal/terms">{text(locale, "Terms", "使用条款")}</Link>
+        <Link href="/legal/privacy">{text(locale, "Privacy", "隐私说明")}</Link>
+        <Link href="/legal/security">
+          {text(locale, "Account security", "账号数据与安全")}
+        </Link>
+      </nav>
       <div className={styles.credit}>
         <span className={styles.signature}>
           <span>

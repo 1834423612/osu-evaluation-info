@@ -1,0 +1,47 @@
+{
+  "title": "Terms & disclaimer",
+  "intro": "Independent course information for personal planning. Effective November 15, 2026.",
+  "sections": [
+    {
+      "title": "Independent project; voluntary accounts",
+      "paragraphs": [
+        "WahO! is an independent open-source student project. It is not affiliated with, operated by, approved by or endorsed by The Ohio State University, its medical center, colleges, staff or Registrar. Registration is voluntary and creates no school account, enrollment, employment or university relationship.",
+        "We never request your university password, student ID, Social Security number, home address, transcript, financial information or private student records. University-email verification proves mailbox access only; it is not university confirmation of enrollment or affiliation."
+      ]
+    },
+    {
+      "title": "Sources, accuracy and decisions",
+      "paragraphs": [
+        "Course information is drawn from public sources and authorized contributions. Source notices, licenses, institutional restrictions and third-party intellectual-property rights continue to apply. Public availability and our open-source code do not authorize unrestricted reuse of third-party material.",
+        "Information, translations, recommendations and reviews may be incomplete, inaccurate or outdated. They are provided as available, without guarantees of accuracy, availability, fitness, academic credit or enrollment. Confirm decisions with official OSU records, Buckeye Link, your instructor or advisor. You are responsible for your own decisions."
+      ]
+    },
+    {
+      "title": "Contributions and acceptable use",
+      "paragraphs": [
+        "Where contributions are available, share only content you are entitled to publish. Do not post unlawful material, threats, harassment, discrimination, impersonation, spam, private records, doxxing or identifying student details. Never publish student IDs or addresses. Publishing your own name, nickname or email requires a deliberate choice.",
+        "Reviews and uploads express their authors’ views and are not official university statements. Contributors remain responsible for their content. We may reasonably review, restrict or remove content or accounts for moderation, security, rights protection or legal obligations. We do not guarantee universal advance review or verification."
+      ]
+    },
+    {
+      "title": "Corrections, removal and contact",
+      "paragraphs": [
+        "Report inaccurate, private, infringing or problematic material through the project GitHub issues or the contact channel on kjch.net. Include the affected URL, your authority, the reason and a safe reply channel. Never place credentials or sensitive student records in a public issue.",
+        "We assess sufficiently specific reports and take appropriate action, including removal or restricted access where warranted. This notice does not replace legally prescribed procedures or waive valid rights."
+      ]
+    },
+    {
+      "title": "Service and liability boundaries",
+      "paragraphs": [
+        "Protect your devices, passkeys, recovery codes, exports and share links. Anyone holding a public code or valid capability link may access the selected content. Public sharing is voluntary.",
+        "To the fullest extent allowed by applicable law, the service and materials are provided as available without warranties, and the operator is not liable for losses arising from reliance on information, translations, contributions, interruptions or third-party services. This does not exclude non-waivable duties, liabilities or remedies, including applicable privacy, intellectual-property and consumer-protection obligations. These terms cannot guarantee complete legal immunity."
+      ]
+    },
+    {
+      "title": "Related notices and updates",
+      "paragraphs": [
+        "Account use is subject to these terms and the Privacy Notice. The Account Data & Security notice describes actual protections and limits. Updated notices carry a revised effective date; materially different terms may require a new acknowledgment."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "title": "Privacy notice",
+  "intro": "Collection, purposes, access and choices. Effective November 15, 2026.",
+  "sections": [
+    {
+      "title": "Accounts and public identity",
+      "paragraphs": [
+        "We store your nickname, email, password hash if set, verification state and terms acknowledgment. Optional institutional verification stores the verified mailbox and time. We do not obtain university passwords or private student records.",
+        "Public contribution responses do not include raw private account records. Identity fields are private by default where publishing is offered. Only fields you deliberately enable may appear publicly. Public visibility preferences do not erase private operational records."
+      ]
+    },
+    {
+      "title": "Favorites and sharing",
+      "paragraphs": [
+        "Favorites, collections, history and preferences may be stored in your browser. Enabled cloud sync stores account favorites and collection metadata on the server. Signed-out browser workspaces and share-management records are separate from account workspaces.",
+        "Exports and public or capability-link sharing reveal the items you choose. Recipients may save them. Protect backups, recovery files, private links and transfer approvals; we cannot control copies recipients have already made."
+      ]
+    },
+    {
+      "title": "Operational and diagnostic data",
+      "paragraphs": [
+        "Requests and security-sensitive actions may record account identifiers, time, sessions, IP, UA, browser/OS, device-model hints, screen and viewport, language, time zone and available device capabilities. Model hints can be missing or imprecise and are not hardware serial numbers. IP-based location is approximate.",
+        "If trusted ingress metadata is absent, the browser may contact GeoJS, ipapi.co or ipify for public IP and approximate city, region and country. Providers receive the connecting IP and normal request metadata. Browser-reported data is labeled and is not trusted identity evidence. Automatic analytics does not request GPS, precise location, motion sensors, camera or microphone.",
+        "Optional analytics respects the site setting and supported Do Not Track/global privacy signals. Additional diagnostics require you to run, select and submit them. Authentication, security and abuse-prevention records are separate from optional analytics and may be necessary to operate the service."
+      ]
+    },
+    {
+      "title": "Purposes, access and retention",
+      "paragraphs": [
+        "We use data for accounts, sync, sharing, email delivery, troubleshooting, aggregate statistics, moderation and abuse investigation. We do not sell account information or routinely disclose private records to OSU, advertisers or public users. Authorized administrators can access necessary records for those purposes.",
+        "Raw visitor contexts and diagnostic reports are scheduled for deletion after seven days, raw product events after 30 days, subject to configured maintenance. Aggregates can be retained longer. Accounts, favorites and contributions remain for operational purposes until deletion, expiry or a lawful retention requirement. Backups and security/legal holds may have separate retention; erasure from all backups is not immediate."
+      ]
+    },
+    {
+      "title": "Providers and lawful disclosure",
+      "paragraphs": [
+        "Hosting, database, email, analytics, translation and network-information providers process information needed for their functions. Server translation sends selected text to the configured provider; browser translation uses the browser/model option you choose. Do not submit sensitive student information.",
+        "We may disclose information when reasonably necessary to comply with valid law or lawful process, protect rights or safety, investigate abuse or handle security incidents. We assess requests and cannot promise absolute confidentiality, immunity from compelled disclosure or freedom from unauthorized access and third-party failures."
+      ]
+    },
+    {
+      "title": "Your choices and requests",
+      "paragraphs": [
+        "Public browsing and local favorites do not require registration. Cloud sync, sharing, optional analytics and public identity choices are separate. Never enter sensitive student information on this site.",
+        "Contact the maintainer through kjch.net for access, correction or deletion requests. Proportionate proof of account control may be needed. Rights depend on applicable law; copies made by others and legally required records may be outside our deletion control."
+      ]
+    }
+  ]
+}

@@ -94,6 +94,17 @@
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
+
+.policyLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 10px;
+  color: var(--muted);
+  grid-column: 1 / -1;
+}
 @media (max-width: 640px) {
   .footer:global(.site-footer) {
     grid-template-columns: minmax(0, 1fr) auto;

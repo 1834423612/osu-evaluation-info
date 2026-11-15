@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth/client";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
+import { InstitutionalProfile } from "./institutional-profile";
 import { AuthEntry } from "./auth-entry";
 import styles from "@/components/ui/workspace.module.css";
 import layout from "./account.module.css";
@@ -314,6 +315,7 @@ function AccountWorkspace() {
                     </Button>
                   </DraftForm>
                 </section>
+                <InstitutionalProfile locale={locale} />
                 <div id="sync" className={layout.section}>
                   <SyncPanel accountId={session.user.id} locale={locale} />
                 </div>
@@ -480,8 +482,8 @@ function AccountWorkspace() {
                           <label>
                             {text(
                               locale,
-                              "New password · at least 12 characters",
-                              "新密码 · 至少 12 个字符",
+                              "New password · at least 8 characters",
+                              "新密码 · 至少 8 个字符",
                             )}
                             <input
                               className={styles.input}
@@ -490,7 +492,7 @@ function AccountWorkspace() {
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
                               required
-                              minLength={12}
+                              minLength={8}
                               maxLength={128}
                             />
                           </label>

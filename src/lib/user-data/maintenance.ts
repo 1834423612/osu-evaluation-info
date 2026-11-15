@@ -4,6 +4,7 @@ import { userDataSchema, userDataTable as table } from "./namespace.ts";
 const rules = [
   ["rate_bucket", "expires_at<now()"],
   ["cooldown_bucket", "expires_at<now()"],
+  ["institutional_challenge", "expires_at<now()"],
   ["security_event", "created_at<now()-interval '7 days'"],
   ["visitor_context", "created_at<now()-interval '7 days'"],
   ["diagnostic_report", "created_at<now()-interval '7 days'"],

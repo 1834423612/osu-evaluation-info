@@ -389,8 +389,8 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 26px;
-  margin-bottom: 24px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 20px;
@@ -398,13 +398,13 @@
 .avatar {
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border-radius: 18px;
   background: var(--accent-soft);
   color: var(--primary);
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 700;
 }
 .profileCopy {
@@ -412,13 +412,13 @@
   min-width: 0;
 }
 .profileCopy h1 {
-  font-size: 24px;
+  font-size: 19px;
   letter-spacing: -0.025em;
   margin: 0 0 8px;
   overflow-wrap: anywhere;
 }
 .profileCopy p {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   margin: 0;
   overflow-wrap: anywhere;
@@ -484,6 +484,91 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.policyConsent {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 9px !important;
+  font-size: 11px !important;
+  line-height: 1.8;
+  font-weight: 400 !important;
+}
+.policyConsent input {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+.policyConsent a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.verifiedMail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--primary);
+}
+.verifiedMail span {
+  min-width: 0;
+}
+.verifiedMail strong {
+  display: block;
+  font-size: 12px;
+}
+.verifiedMail small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.publicProfile {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 20px;
+}
+.publicProfile h3 {
+  font-size: 14px;
+  margin: 0;
+}
+.publicProfile p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+}
+.publicProfile > label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+}
+.privacyChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.privacyChoices label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.privacyChoices input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
 }
 @media (prefers-reduced-motion: reduce) {
   .authLayout {
@@ -554,6 +639,6 @@
     font-size: 20px;
   }
   .profileCopy h1 {
-    font-size: 21px;
+    font-size: 18px;
   }
 }

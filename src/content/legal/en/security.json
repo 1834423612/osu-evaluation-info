@@ -1,0 +1,34 @@
+{
+  "title": "Account data & security",
+  "intro": "Implemented safeguards and their limits. Effective November 15, 2026.",
+  "sections": [
+    {
+      "title": "Passwords, passkeys and codes",
+      "paragraphs": [
+        "Passwords use the authentication library’s salted, one-way password hashing; recoverable passwords are not stored. Passwords require 8–128 characters. Passkey private keys stay with the authenticator/provider; the server stores public-key credentials and verification metadata.",
+        "Email codes expire in five minutes, permit limited verification attempts and are stored as keyed digests. Shared database budgets and resend cooldowns limit abuse. Recovery codes are hashed, single-use and time-limited."
+      ]
+    },
+    {
+      "title": "Encryption and administrator access",
+      "paragraphs": [
+        "Production authentication requires an HTTPS origin. Sessions use protected cookies, origin checks and expiry. Database/hosting transport encryption, encrypted storage/backups and operator access controls depend on deployment configuration and must be verified by the operator.",
+        "Emails, nicknames, institutional-verification records, cloud favorites and operational metadata are readable by the server and authorized database administrators. They are not end-to-end encrypted or automatically encrypted per column. Password hashing does not mean all account information is encrypted. Do not use this service as a vault."
+      ]
+    },
+    {
+      "title": "Separation and public responses",
+      "paragraphs": [
+        "Identity, visitor analytics and diagnostics have separate database domains. Private APIs enforce owner/session checks; guest and account share-management metadata are separate. Public contributions use explicit public-field allowlists and must not serialize raw accounts, sessions or network records.",
+        "Client-reported device/IP values can be spoofed. Trusted proxy values are accepted only under the configured ingress contract. Sources remain distinguishable instead of being presented as uniformly verified."
+      ]
+    },
+    {
+      "title": "Protect your account",
+      "paragraphs": [
+        "Use a unique password, secure passkeys/recovery codes, revoke unfamiliar sessions and keep your browser updated. Backups and capability links can reveal private content.",
+        "Report security issues privately through kjch.net; do not publish tokens, exploit credentials or private records in public issues. Controls reduce risk but cannot guarantee absolute secrecy or uninterrupted service."
+      ]
+    }
+  ]
+}

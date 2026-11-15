@@ -1,4 +1,11 @@
 "use client";
+import Link from "next/link";
+import { POLICY_VERSION } from "@/content/legal/policy";
+import {
+  confirmDiscard,
+  DraftForm,
+  useDraftGuard,
+} from "@/components/forms/draft-guard";
 import { useEffect, useState } from "react";
 import {
   Fingerprint,
@@ -30,7 +37,7 @@ export function AuthEntry({
   emailEnabled: boolean;
   onSignedIn: () => Promise<unknown>;
 }) {
-  const [mode, setMode] = useState<Mode>(emailEnabled ? "email" : "password"),
+  const [mode, setMode] = useState<Mode>("password"),
     [email, setEmail] = useState(""),
     [name, setName] = useState(""),
     [password, setPassword] = useState(""),
@@ -40,7 +47,8 @@ export function AuthEntry({
     [notice, setNotice] = useState(""),
     [cooldown, setCooldown] = useState(0),
     [visible, setVisible] = useState(false),
-    [recovery, setRecovery] = useState("");
+    [recovery, setRecovery] = useState(""),
+    [accepted, setAccepted] = useState(true);
   useEffect(() => {
     if (!cooldown) return;
     const timer = setTimeout(
@@ -49,8 +57,17 @@ export function AuthEntry({
     );
     return () => clearTimeout(timer);
   }, [cooldown]);
-  function change(next: Mode) {
+  useDraftGuard(sent);
+  function change(next: Mode, completed = false) {
+    if (
+      !completed &&
+      (mode === "register" || mode === "reset" || sent) &&
+      !confirmDiscard()
+    )
+      return;
     setMode(next);
+    if (next === "register") setAccepted(false);
+    else if (mode === "register") setAccepted(true);
     setSent(false);
     setOtp("");
     setPassword("");
@@ -81,7 +98,10 @@ export function AuthEntry({
       setBusy(false);
     }
   }
-  const headers = { "x-waho-locale": locale };
+  const headers = {
+    "x-waho-locale": locale,
+    "x-waho-policy-version": POLICY_VERSION,
+  };
   async function send() {
     if (cooldown) return;
     const result =
@@ -116,22 +136,29 @@ export function AuthEntry({
     return result;
   }
   async function submit() {
+    if (!accepted) return { error: { code: "POLICY_REQUIRED" } };
     if (mode === "passkey") {
       if (!window.isSecureContext || !window.PublicKeyCredential)
         return { error: { code: "PASSKEY_UNAVAILABLE" } };
       const result = await authClient.signIn.passkey({
         fetchOptions: {
-          headers: { "x-waho-passkey-email": email.trim().toLowerCase() },
+          headers: {
+            ...headers,
+            "x-waho-passkey-email": email.trim().toLowerCase(),
+          },
         },
       });
       if (!result.error) await onSignedIn();
       return result;
     }
     if (mode === "password") {
-      const result = await authClient.signIn.email({
-        email: email.trim(),
-        password,
-      });
+      const result = await authClient.signIn.email(
+        {
+          email: email.trim(),
+          password,
+        },
+        { headers },
+      );
       if (!result.error) {
         setPassword("");
         await onSignedIn();
@@ -145,10 +172,13 @@ export function AuthEntry({
         otp,
       });
       if (verified.error) return verified;
-      const result = await authClient.signIn.email({
-        email: email.trim(),
-        password,
-      });
+      const result = await authClient.signIn.email(
+        {
+          email: email.trim(),
+          password,
+        },
+        { headers },
+      );
       if (!result.error) {
         setPassword("");
         setOtp("");
@@ -163,7 +193,7 @@ export function AuthEntry({
         password,
       });
       if (!result.error) {
-        change("password");
+        change("password", true);
         setNotice(
           text(
             locale,
@@ -174,10 +204,13 @@ export function AuthEntry({
       }
       return result;
     }
-    const result = await authClient.signIn.emailOtp({
-      email: email.trim(),
-      otp,
-    });
+    const result = await authClient.signIn.emailOtp(
+      {
+        email: email.trim(),
+        otp,
+      },
+      { headers },
+    );
     if (!result.error) {
       setOtp("");
       await onSignedIn();
@@ -234,7 +267,7 @@ export function AuthEntry({
             type="button"
             aria-pressed={mode !== "register"}
             disabled={busy}
-            onClick={() => change(emailEnabled ? "email" : "password")}
+            onClick={() => change("password")}
           >
             {text(locale, "Sign in", "登录")}
           </button>
@@ -258,20 +291,12 @@ export function AuthEntry({
                 ? "Make yourself at home"
                 : mode === "reset"
                   ? "A fresh start"
-                  : mode === "passkey"
-                    ? "Sign in with your device"
-                    : sent
-                      ? "Check your inbox"
-                      : "Welcome back",
+                  : "Welcome back",
               mode === "register"
                 ? "开启你的课程收藏"
                 : mode === "reset"
                   ? "重置登录密码"
-                  : mode === "passkey"
-                    ? "使用设备通行密钥"
-                    : sent
-                      ? "查收你的验证码"
-                      : "欢迎回来",
+                  : "欢迎回来",
             )}
           </h2>
           <p>
@@ -282,23 +307,23 @@ export function AuthEntry({
                 : mode === "register"
                   ? "Keep your plans close, on every device."
                   : mode === "passkey"
-                    ? "Enter your email, then unlock your device. No password needed."
+                    ? "Email + device passkey. No password."
                     : mode === "reset"
                       ? "Verify your email to set a new password."
                       : mode === "email"
-                        ? "Sign in with a code sent to your email. No password needed."
-                        : "Use the password you set for your account.",
+                        ? "Email + verification code."
+                        : "Email + account password.",
               sent
                 ? "输入邮件中的验证码。"
                 : mode === "register"
                   ? "在每台设备上，接续你的选课计划。"
                   : mode === "passkey"
-                    ? "输入邮箱，再用指纹、面容或设备 PIN 验证，无需密码。"
+                    ? "邮箱 + 设备通行密钥，无需密码。"
                     : mode === "reset"
                       ? "通过邮件验证码，为账号设置新密码。"
                       : mode === "email"
-                        ? "通过邮件验证码登录，无需设置密码。"
-                        : "使用你为此账号设置的密码登录。",
+                        ? "邮箱 + 邮件验证码。"
+                        : "邮箱 + 账号密码。",
             )}
           </p>
         </div>
@@ -311,9 +336,9 @@ export function AuthEntry({
             {(
               [
                 {
-                  value: "email",
-                  label: text(locale, "Email code", "验证码"),
-                  Icon: Mail,
+                  value: "password",
+                  label: text(locale, "Password", "密码"),
+                  Icon: KeyRound,
                 },
                 {
                   value: "passkey",
@@ -321,9 +346,9 @@ export function AuthEntry({
                   Icon: Fingerprint,
                 },
                 {
-                  value: "password",
-                  label: text(locale, "Password", "密码"),
-                  Icon: KeyRound,
+                  value: "email",
+                  label: text(locale, "Email code", "验证码"),
+                  Icon: Mail,
                 },
               ] as const
             ).map(({ value, label, Icon }) => (
@@ -340,7 +365,12 @@ export function AuthEntry({
             ))}
           </div>
         ) : null}
-        <form
+        <DraftForm
+          guard={
+            mode === "register" ||
+            mode === "reset" ||
+            (mode === "email" && sent)
+          }
           onSubmit={(e) => {
             e.preventDefault();
             void run(submit);
@@ -396,7 +426,7 @@ export function AuthEntry({
                     mode === "password" ? "current-password" : "new-password"
                   }
                   value={password}
-                  minLength={mode === "password" ? 1 : 12}
+                  minLength={mode === "password" ? 1 : 8}
                   maxLength={128}
                   required
                   disabled={busy || (mode === "register" && sent)}
@@ -404,7 +434,7 @@ export function AuthEntry({
                   placeholder={
                     mode === "password"
                       ? undefined
-                      : text(locale, "At least 12 characters", "至少 12 个字符")
+                      : text(locale, "At least 8 characters", "至少 8 个字符")
                   }
                 />
                 <button
@@ -449,6 +479,29 @@ export function AuthEntry({
               disabled={busy}
             />
           ) : null}
+          <label className={styles.policyConsent}>
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              required
+              disabled={busy}
+            />
+            <span>
+              {text(locale, "I agree to the ", "我已阅读并同意")}
+              <Link href="/legal/terms" target="_blank">
+                {text(locale, "Terms", "使用条款")}
+              </Link>
+              {text(locale, " and ", "及")}
+              <Link href="/legal/privacy" target="_blank">
+                {text(locale, "Privacy Notice", "隐私说明")}
+              </Link>
+              。
+              <Link href="/legal/security" target="_blank">
+                {text(locale, "Account data & security", "账号数据与安全")}
+              </Link>
+            </span>
+          </label>
           {notice ? (
             <p role="status" className={styles.authNotice}>
               {notice}
@@ -459,6 +512,7 @@ export function AuthEntry({
             className={styles.fullButton}
             disabled={
               busy ||
+              !accepted ||
               ((mode === "email" || mode === "register" || mode === "reset") &&
                 !emailEnabled) ||
               (!sent &&
@@ -553,7 +607,7 @@ export function AuthEntry({
               </button>
             ) : null}
           </div>
-        </form>
+        </DraftForm>
         {!emailEnabled ? (
           <p className={styles.authNotice}>
             {text(
@@ -565,12 +619,19 @@ export function AuthEntry({
         ) : null}
         <details className={styles.recovery}>
           <summary>{text(locale, "Use a recovery code", "使用恢复码")}</summary>
-          <form
+          <DraftForm
             onSubmit={(e) => {
               e.preventDefault();
+              if (!accepted) {
+                setNotice(
+                  authErrorMessage(locale, { code: "POLICY_REQUIRED" }),
+                );
+                return;
+              }
               void run(async () => {
                 const result = await authClient.$fetch("/recovery/verify", {
                   method: "POST",
+                  headers,
                   body: { code: recovery },
                 });
                 if (!result.error) {
@@ -591,10 +652,10 @@ export function AuthEntry({
                 maxLength={100}
               />
             </label>
-            <Button variant="outline" disabled={busy}>
+            <Button variant="outline" disabled={busy || !accepted}>
               {text(locale, "Continue", "继续")}
             </Button>
-          </form>
+          </DraftForm>
         </details>
       </section>
     </div>

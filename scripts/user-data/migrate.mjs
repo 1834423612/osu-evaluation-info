@@ -8,6 +8,7 @@ const { userDataSchema, domainSQL, domainSchemas } =
   await import("../../src/lib/user-data/namespace.ts");
 const { authTablePrefix } = await import("../../src/lib/auth/config.ts");
 const files = [
+  "20261115_identity_preferences.sql",
   "20261114_sharing.sql",
   "20261114_share_requests.sql",
   "20261114_sync.sql",

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       throw new UserDataError("reauthenticate", 401);
     const body = await readJson(
       request,
-      z.object({ password: z.string().min(12).max(128) }),
+      z.object({ password: z.string().min(8).max(128) }),
       4096,
     );
     await getAuth()!.api.setPassword({

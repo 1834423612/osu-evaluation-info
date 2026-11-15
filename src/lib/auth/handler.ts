@@ -1,3 +1,6 @@
+import { POLICY_VERSION } from "../../content/legal/policy.ts";
+import { queryDatabase } from "../db.ts";
+import { userDataTable } from "../user-data/namespace.ts";
 import { getAuth } from "./server.ts";
 import { z } from "zod";
 import {
@@ -17,8 +20,18 @@ export async function handleAuthRequest(request: Request, auth = getAuth()) {
   )
     return userJson({ error: "too_large" }, 413);
   return userRoute(async () => {
+    const path = new URL(request.url).pathname;
+    const consentRequired =
+      /\/(?:sign-up\/email|sign-in\/email|sign-in\/email-otp|passkey\/verify-authentication|recovery\/verify)$/.test(
+        path,
+      );
     if (request.method === "POST") {
       sameOrigin(request);
+      if (
+        consentRequired &&
+        request.headers.get("x-waho-policy-version") !== POLICY_VERSION
+      )
+        return userJson({ code: "POLICY_REQUIRED" }, 400);
       const network = requestNetwork(request.headers);
       await checkBudget("auth-source", network.address ?? "unresolved", 60, 60);
       const body = await readJson(
@@ -62,6 +75,16 @@ export async function handleAuthRequest(request: Request, auth = getAuth()) {
         { error: "Authentication is temporarily unavailable" },
         503,
       );
+    if (response.ok && consentRequired) {
+      const data = await response.clone().json();
+      if (typeof data.user?.id === "string")
+        await queryDatabase(
+          "INSERT INTO " +
+            userDataTable("policy_acceptance") +
+            "(user_id,version) VALUES($1,$2) ON CONFLICT DO NOTHING",
+          [data.user.id, POLICY_VERSION],
+        );
+    }
     response.headers.set("Cache-Control", "no-store");
     return response;
   });
