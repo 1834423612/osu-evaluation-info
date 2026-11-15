@@ -15,6 +15,7 @@ import {
   UserRound,
   ArrowRightLeft,
   Link as LinkIcon,
+  TrendingUp,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { text, type Locale } from "@/lib/i18n";
@@ -30,7 +31,8 @@ type Page =
   | "history"
   | "account"
   | "transfer"
-  | "share";
+  | "share"
+  | "popular";
 function NavigationMenu({
   locale,
   page,
@@ -84,6 +86,17 @@ function NavigationMenu({
             locale,
             "New offerings and catalog changes",
             "新增开课与目录变化",
+          ),
+        },
+        {
+          page: "popular",
+          href: "/popular",
+          Icon: TrendingUp,
+          title: text(locale, "Most saved", "热门收藏"),
+          detail: text(
+            locale,
+            "Courses, sections and instructors",
+            "课程、班次与教师",
           ),
         },
       ]
@@ -231,12 +244,16 @@ function NavigationMenu({
                     ? "Updates"
                     : page === "rmp"
                       ? "Teachers"
-                      : "Courses",
+                      : page === "popular"
+                        ? "Most saved"
+                        : "Courses",
                   page === "updates"
                     ? "课程更新"
                     : page === "rmp"
                       ? "RMP 教师库"
-                      : "课程探索",
+                      : page === "popular"
+                        ? "热门收藏"
+                        : "课程探索",
                 )
               : text(locale, "Guides & data", "课程说明与数据")}
         </span>

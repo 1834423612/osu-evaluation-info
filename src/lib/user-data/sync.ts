@@ -1,3 +1,4 @@
+import { invalidatePopularFavorites } from "./statistics.ts";
 import { getDatabasePool } from "../db.ts";
 import { userDataTable as table } from "./namespace.ts";
 import { privateDigest, checkBudget } from "./rate-limit.ts";
@@ -137,6 +138,7 @@ export async function exchangeSync(
       if (row.item && itemKey(row.item) !== row.key)
         throw new UserDataError("invalid_state", 503);
     await db.query("COMMIT");
+    if (sequence > Number(state.sequence)) invalidatePopularFavorites();
     return {
       accountId,
       cursor: sequence,

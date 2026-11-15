@@ -48,6 +48,7 @@ try {
         ["/", "explore", "explore"],
         ["/rmp", "explore", "rmp"],
         ["/updates", "explore", "updates"],
+        ["/popular", "explore", "popular"],
         ["/rmp/1117448", "explore", "rmp"],
         ["/saved", "personal", "saved"],
         ["/account", "personal", "account"],
@@ -162,7 +163,7 @@ try {
       await context.close();
     }
   console.log(
-    "Navigation: 11 routes, bilingual 320/360/390/768/1440px, selected groups and leaves, keyboard menus, bounded popovers and custom-select form submission passed",
+    "Navigation: 12 routes, bilingual 320/360/390/768/1440px, selected groups and leaves, keyboard menus, bounded popovers and custom-select form submission passed",
   );
 } catch (error) {
   await active?.screenshot({ path: `${output}/failure.png` }).catch(() => {});

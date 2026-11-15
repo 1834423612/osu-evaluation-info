@@ -29,7 +29,7 @@ export function pageShareHref(value: string) {
   const url = new URL(value, "https://share.invalid");
   if (
     url.origin !== "https://share.invalid" ||
-    !/^\/(?:$|rmp(?:\/\d+)?|updates|reference|methodology)\/?$/.test(
+    !/^\/(?:$|rmp(?:\/\d+)?|updates|reference|methodology|popular)\/?$/.test(
       url.pathname,
     )
   )
