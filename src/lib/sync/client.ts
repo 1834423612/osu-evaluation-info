@@ -19,6 +19,7 @@ import {
   acceptResponse,
   resolveConflict,
   initializeMerge,
+  mergeConflictCount,
 } from "./model.ts";
 import { sameItem, syncResponseSchema, type SyncResponse } from "./protocol.ts";
 export const SYNC_EVENT = "course-atlas:sync-change";
@@ -113,13 +114,15 @@ export async function previewMerge(accountId: string): Promise<MergePreview> {
   assertAuthenticatedAccount(accountId);
   if (debugFlag("factory")) throw new Error("simulation");
   const local = readSyncItems(),
-    response = await exchange(accountId, { cursor: 0, operations: [] }),
+    [response, state] = await Promise.all([
+      exchange(accountId, { cursor: 0, operations: [] }),
+      readSyncState(accountId),
+    ]),
     live = new Map(local.map((x) => [itemKey(x), x]));
-  let incoming = 0,
-    conflicts = 0;
+  assertAuthenticatedAccount(accountId);
+  let incoming = 0;
   for (const r of response.records) {
     if (r.item && !live.has(r.key)) incoming++;
-    if (live.has(r.key) && !sameItem(live.get(r.key), r.item)) conflicts++;
   }
   return {
     response,
@@ -128,7 +131,7 @@ export async function previewMerge(accountId: string): Promise<MergePreview> {
     outgoing: local.filter(
       (x) => !response.records.some((r) => r.key === itemKey(x)),
     ).length,
-    conflicts,
+    conflicts: mergeConflictCount(state, response, local),
   };
 }
 export async function enableSync(

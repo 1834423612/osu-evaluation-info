@@ -42,6 +42,26 @@ export function newSyncState(accountId: string): SyncState {
     lastSyncAt: null,
   };
 }
+export function mergeConflictCount(
+  state: SyncState,
+  response: SyncResponse,
+  items: SyncItem[],
+) {
+  const local = new Map(items.map((x) => [itemKey(x), x])),
+    rows = new Map(response.records.map((x) => [x.key, x]));
+  let count = 0;
+  for (const key of new Set([...rows.keys(), ...local.keys()])) {
+    const own = local.get(key) ?? null,
+      remote = rows.get(key)?.item ?? null;
+    if (sameItem(own, remote)) continue;
+    if (
+      (own && (rows.has(key) || state.initialized || response.floor > 0)) ||
+      (state.initialized && !own && remote)
+    )
+      count++;
+  }
+  return count;
+}
 /** Called only after the user confirms the merge preview. */
 export function initializeMerge(
   state: SyncState,

@@ -8,6 +8,7 @@ import {
   captureChanges,
   acceptResponse,
   resolveConflict,
+  mergeConflictCount,
 } from "../../src/lib/sync/model.ts";
 test("fresh merges keep independent additions, while expired deletion history requires a choice before restoring a missing item", () => {
   const a = newSyncState("a"),
@@ -38,6 +39,15 @@ test("fresh merges keep independent additions, while expired deletion history re
   assert.equal(expired.conflicts.length, 1);
   assert.equal(expired.conflicts[0].key, itemKey(local));
   assert.equal(expired.conflicts[0].remote.item, null);
+  assert.equal(
+    mergeConflictCount(
+      newSyncState("a"),
+      { ...response, floor: 3, reset: true },
+      [local],
+    ),
+    1,
+  );
+  assert.equal(mergeConflictCount(newSyncState("a"), response, [local]), 0);
 });
 import { itemKey } from "../../src/lib/saved/exchange.ts";
 import {
