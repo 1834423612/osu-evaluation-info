@@ -1,0 +1,1864 @@
+[
+  {
+    "id": "ip",
+    "group": "Network",
+    "method": "CF-Connecting-IP",
+    "mode": "S",
+    "label": {
+      "en": "IP address",
+      "zh": "IP 地址"
+    },
+    "note": {
+      "en": "Trusted proxy; raw data restricted to security retention",
+      "zh": "可信代理；原值仅按安全日志保留期保存"
+    }
+  },
+  {
+    "id": "geo",
+    "group": "Network",
+    "method": "request.cf.city",
+    "mode": "B",
+    "label": {
+      "en": "Location",
+      "zh": "位置"
+    },
+    "note": {
+      "en": "Country/region buckets only in B",
+      "zh": "B 模式仅国家／地区分组"
+    }
+  },
+  {
+    "id": "coords",
+    "group": "Network",
+    "method": "request.cf.latitude",
+    "mode": "D",
+    "label": {
+      "en": "Coordinates",
+      "zh": "坐标"
+    },
+    "note": {
+      "en": "Edge estimate, not browser GPS",
+      "zh": "边缘估算，不等于浏览器 GPS"
+    }
+  },
+  {
+    "id": "isp",
+    "group": "Network",
+    "method": "request.cf.asOrganization",
+    "mode": "B",
+    "label": {
+      "en": "Network (ASN)",
+      "zh": "网络（ASN）"
+    },
+    "note": {
+      "en": "Coarse ASN; trusted edge or local database",
+      "zh": "粗粒度 ASN；可信边缘或本地数据库"
+    }
+  },
+  {
+    "id": "tor",
+    "group": "Network",
+    "method": "check.torproject.org exit list",
+    "mode": "D",
+    "label": {
+      "en": "Tor",
+      "zh": "Tor 节点"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "dns",
+    "group": "Network",
+    "method": "edns.ip-api.com",
+    "mode": "D",
+    "label": {
+      "en": "DNS resolver",
+      "zh": "DNS 解析器"
+    },
+    "note": {
+      "en": "Controlled DNS detection; optional external requests",
+      "zh": "自控 DNS 检测；主动选择后对外请求"
+    }
+  },
+  {
+    "id": "tzip",
+    "group": "Network",
+    "method": "request.cf.timezone",
+    "mode": "D",
+    "label": {
+      "en": "Time zone of the IP",
+      "zh": "IP 所在时区"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ptr",
+    "group": "Network",
+    "method": "DNS PTR",
+    "mode": "D",
+    "label": {
+      "en": "Reverse DNS",
+      "zh": "反向解析"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "edge",
+    "group": "Network",
+    "method": "request.cf.colo",
+    "mode": "D",
+    "label": {
+      "en": "Nearest data center",
+      "zh": "最近的数据中心"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "proto",
+    "group": "Network",
+    "method": "request.cf.tlsVersion",
+    "mode": "D",
+    "label": {
+      "en": "HTTP and TLS",
+      "zh": "HTTP 和 TLS"
+    },
+    "note": {
+      "en": "Browser-to-edge metadata, not origin TLS",
+      "zh": "浏览器到边缘的元数据，不是源站 TLS"
+    }
+  },
+  {
+    "id": "kex",
+    "group": "Network",
+    "method": "/cdn-cgi/trace · kex, sni",
+    "mode": "D",
+    "label": {
+      "en": "Key exchange",
+      "zh": "密钥交换"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "warp",
+    "group": "Network",
+    "method": "/cdn-cgi/trace · warp",
+    "mode": "D",
+    "label": {
+      "en": "Cloudflare WARP",
+      "zh": "Cloudflare WARP"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "tlsfp",
+    "group": "Network",
+    "method": "TLS ClientHello",
+    "mode": "D",
+    "label": {
+      "en": "TLS fingerprint",
+      "zh": "TLS 指纹"
+    },
+    "note": {
+      "en": "Controlled TLS termination or authorized edge metadata",
+      "zh": "受控 TLS 终止点或授权边缘元数据"
+    }
+  },
+  {
+    "id": "tcpfp",
+    "group": "Network",
+    "method": "probe.1ms.dog · TCP SYN",
+    "mode": "D",
+    "label": {
+      "en": "TCP/IP fingerprint",
+      "zh": "TCP/IP 指纹"
+    },
+    "note": {
+      "en": "Dedicated transport probe",
+      "zh": "专用传输探针"
+    }
+  },
+  {
+    "id": "ja4",
+    "group": "Network",
+    "method": "probe.1ms.dog · JA4",
+    "mode": "D",
+    "label": {
+      "en": "TLS fingerprint (JA4)",
+      "zh": "TLS 指纹（JA4）"
+    },
+    "note": {
+      "en": "Dedicated probe or authorized edge feature",
+      "zh": "专用探针或授权边缘能力"
+    }
+  },
+  {
+    "id": "h2fp",
+    "group": "Network",
+    "method": "probe.1ms.dog · HTTP/2 SETTINGS",
+    "mode": "D",
+    "label": {
+      "en": "HTTP/2 fingerprint",
+      "zh": "HTTP/2 指纹"
+    },
+    "note": {
+      "en": "Dedicated HTTP/2 termination probe",
+      "zh": "专用 HTTP/2 终止探针"
+    }
+  },
+  {
+    "id": "quicfp",
+    "group": "Network",
+    "method": "probe.1ms.dog · HTTP/3 · QUIC JA4",
+    "mode": "D",
+    "label": {
+      "en": "QUIC fingerprint (HTTP/3)",
+      "zh": "QUIC 指纹（HTTP/3）"
+    },
+    "note": {
+      "en": "Dedicated QUIC/HTTP3 probe and UDP path",
+      "zh": "专用 QUIC／HTTP3 探针及 UDP 路径"
+    }
+  },
+  {
+    "id": "clock",
+    "group": "Network",
+    "method": "Date.now()",
+    "mode": "D",
+    "label": {
+      "en": "Your clock",
+      "zh": "你的时钟"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "webrtc",
+    "group": "Network",
+    "method": "RTCPeerConnection · STUN",
+    "mode": "D",
+    "label": {
+      "en": "WebRTC addresses",
+      "zh": "WebRTC 地址"
+    },
+    "note": {
+      "en": "Controlled STUN; sensitive addresses",
+      "zh": "自控 STUN；地址敏感"
+    }
+  },
+  {
+    "id": "lan",
+    "group": "Network",
+    "method": "WebRTC host candidate",
+    "mode": "D",
+    "label": {
+      "en": "Local address",
+      "zh": "局域网地址"
+    },
+    "note": {
+      "en": "Often hidden or replaced by mDNS",
+      "zh": "通常隐藏或被 mDNS 替换"
+    }
+  },
+  {
+    "id": "v6mac",
+    "group": "Network",
+    "method": "IPv6 EUI-64 (ff:fe)",
+    "mode": "D",
+    "label": {
+      "en": "IPv6 leaking the MAC",
+      "zh": "IPv6 泄露网卡 MAC"
+    },
+    "note": {
+      "en": "Heuristic EUI-64 shape; not a reliable MAC",
+      "zh": "启发式 EUI-64 形态；不能可靠取得 MAC"
+    }
+  },
+  {
+    "id": "ex_cn",
+    "group": "Network exits",
+    "method": "myip.ipip.net",
+    "mode": "D",
+    "label": {
+      "en": "Site in mainland China",
+      "zh": "国内网站"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ex_intl",
+    "group": "Network exits",
+    "method": "api.ip.sb",
+    "mode": "D",
+    "label": {
+      "en": "IP service abroad",
+      "zh": "国外 IP 服务"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ex_gpt",
+    "group": "Network exits",
+    "method": "chatgpt.com/cdn-cgi/trace",
+    "mode": "D",
+    "label": {
+      "en": "ChatGPT",
+      "zh": "ChatGPT"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ex_claude",
+    "group": "Network exits",
+    "method": "claude.ai/cdn-cgi/trace",
+    "mode": "D",
+    "label": {
+      "en": "Claude",
+      "zh": "Claude"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ex_cf",
+    "group": "Network exits",
+    "method": "www.cloudflare.com/cdn-cgi/trace",
+    "mode": "D",
+    "label": {
+      "en": "Cloudflare",
+      "zh": "Cloudflare"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "stack",
+    "group": "Network exits",
+    "method": "Cloudflare Radar · IPv4 / IPv6",
+    "mode": "D",
+    "label": {
+      "en": "IPv4 and IPv6",
+      "zh": "IPv4 和 IPv6"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "h_ua",
+    "group": "Request headers",
+    "method": "User-Agent",
+    "mode": "B",
+    "label": {
+      "en": "User agent",
+      "zh": "User-Agent"
+    },
+    "note": {
+      "en": "B stores coarse parsed family; full string in D/S only",
+      "zh": "B 仅解析后粗分类；完整字符串仅 D／S"
+    }
+  },
+  {
+    "id": "h_lang",
+    "group": "Request headers",
+    "method": "Accept-Language",
+    "mode": "B",
+    "label": {
+      "en": "Languages",
+      "zh": "语言"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "h_chua",
+    "group": "Request headers",
+    "method": "Sec-CH-UA",
+    "mode": "B",
+    "label": {
+      "en": "Browser brands",
+      "zh": "浏览器品牌"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "h_plat",
+    "group": "Request headers",
+    "method": "Sec-CH-UA-Platform",
+    "mode": "B",
+    "label": {
+      "en": "Platform",
+      "zh": "平台"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ch",
+    "group": "Request headers",
+    "method": "Sec-CH-UA-* (Accept-CH)",
+    "mode": "D",
+    "label": {
+      "en": "Client Hints",
+      "zh": "Client Hints"
+    },
+    "note": {
+      "en": "Accept-CH; high-entropy hints require opt-in",
+      "zh": "Accept-CH；高熵提示需主动选择"
+    }
+  },
+  {
+    "id": "h_enc",
+    "group": "Request headers",
+    "method": "Accept-Encoding",
+    "mode": "B",
+    "label": {
+      "en": "Compression",
+      "zh": "压缩方式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "h_dnt",
+    "group": "Request headers",
+    "method": "DNT · Sec-GPC",
+    "mode": "B",
+    "label": {
+      "en": "Do Not Track",
+      "zh": "请勿追踪（DNT）"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "h_ref",
+    "group": "Request headers",
+    "method": "Referer · document.referrer",
+    "mode": "B",
+    "label": {
+      "en": "Came from",
+      "zh": "来源页面"
+    },
+    "note": {
+      "en": "Sanitized public route; no tokens or query content",
+      "zh": "脱敏公开路径；无令牌或查询内容"
+    }
+  },
+  {
+    "id": "wba",
+    "group": "Request headers",
+    "method": "Signature · Signature-Agent",
+    "mode": "D",
+    "label": {
+      "en": "AI agent signature",
+      "zh": "AI 代理签名"
+    },
+    "note": {
+      "en": "Only when signed-agent headers exist; verify separately",
+      "zh": "仅存在签名代理头时；另行验证"
+    }
+  },
+  {
+    "id": "langs",
+    "group": "Locale",
+    "method": "navigator.languages",
+    "mode": "B",
+    "label": {
+      "en": "Browser languages",
+      "zh": "浏览器语言"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "locale",
+    "group": "Locale",
+    "method": "Intl.DateTimeFormat",
+    "mode": "B",
+    "label": {
+      "en": "Locale",
+      "zh": "区域设置"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "tz",
+    "group": "Locale",
+    "method": "Intl …timeZone",
+    "mode": "B",
+    "label": {
+      "en": "System time zone",
+      "zh": "系统时区"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "hour",
+    "group": "Locale",
+    "method": "Intl …hourCycle",
+    "mode": "B",
+    "label": {
+      "en": "Clock format",
+      "zh": "时钟格式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "week",
+    "group": "Locale",
+    "method": "Intl.Locale weekInfo",
+    "mode": "D",
+    "label": {
+      "en": "Week starts",
+      "zh": "一周从哪天开始"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "fmt",
+    "group": "Locale",
+    "method": "Intl.NumberFormat",
+    "mode": "D",
+    "label": {
+      "en": "Number and date format",
+      "zh": "数字和日期格式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "icu",
+    "group": "Locale",
+    "method": "Intl.supportedValuesOf",
+    "mode": "D",
+    "label": {
+      "en": "ICU data",
+      "zh": "ICU 数据"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "kbd",
+    "group": "Locale",
+    "method": "navigator.keyboard",
+    "mode": "D",
+    "label": {
+      "en": "Keyboard layout",
+      "zh": "键盘布局"
+    },
+    "note": {
+      "en": "Permission/support dependent; never typed keys",
+      "zh": "权限／支持限制；不采集实际键入"
+    }
+  },
+  {
+    "id": "voices",
+    "group": "Locale",
+    "method": "speechSynthesis",
+    "mode": "D",
+    "label": {
+      "en": "Speech voices",
+      "zh": "朗读语音"
+    },
+    "note": {
+      "en": "Identifying local voice list; optional",
+      "zh": "本地语音列表有辨识性；可选"
+    }
+  },
+  {
+    "id": "os",
+    "group": "Device",
+    "method": "userAgentData",
+    "mode": "B",
+    "label": {
+      "en": "Operating system",
+      "zh": "操作系统"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "browser",
+    "group": "Device",
+    "method": "userAgentData.brands",
+    "mode": "B",
+    "label": {
+      "en": "Browser",
+      "zh": "浏览器"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "arch",
+    "group": "Device",
+    "method": "…architecture · bitness",
+    "mode": "D",
+    "label": {
+      "en": "CPU architecture",
+      "zh": "CPU 架构"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "form",
+    "group": "Device",
+    "method": "userAgentData formFactors",
+    "mode": "D",
+    "label": {
+      "en": "Device form",
+      "zh": "设备形态"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "model",
+    "group": "Device",
+    "method": "screen · GPU · Client Hints model",
+    "mode": "D",
+    "label": {
+      "en": "Device model",
+      "zh": "设备型号"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "screen",
+    "group": "Device",
+    "method": "screen · devicePixelRatio",
+    "mode": "B",
+    "label": {
+      "en": "Screen",
+      "zh": "屏幕"
+    },
+    "note": {
+      "en": "Bucket dimensions/DPR in B; exact values in D",
+      "zh": "B 对尺寸／DPR 分桶；准确值仅 D"
+    }
+  },
+  {
+    "id": "hz",
+    "group": "Device",
+    "method": "requestAnimationFrame",
+    "mode": "D",
+    "label": {
+      "en": "Refresh rate",
+      "zh": "刷新率"
+    },
+    "note": {
+      "en": "Idle sample; approximate, affected by power state",
+      "zh": "空闲取样；受省电影响，仅估计"
+    }
+  },
+  {
+    "id": "screens",
+    "group": "Device",
+    "method": "screen.isExtended · screenX",
+    "mode": "D",
+    "label": {
+      "en": "Screens",
+      "zh": "显示器数量"
+    },
+    "note": {
+      "en": "Window-management support and permission",
+      "zh": "窗口管理支持与权限"
+    }
+  },
+  {
+    "id": "win",
+    "group": "Device",
+    "method": "innerWidth · availHeight",
+    "mode": "B",
+    "label": {
+      "en": "Window",
+      "zh": "窗口"
+    },
+    "note": {
+      "en": "Bucket viewport dimensions in B",
+      "zh": "B 对视口尺寸分桶"
+    }
+  },
+  {
+    "id": "scrollbar",
+    "group": "Device",
+    "method": "offsetWidth − clientWidth",
+    "mode": "D",
+    "label": {
+      "en": "Scrollbar width",
+      "zh": "滚动条宽度"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "gpu",
+    "group": "Device",
+    "method": "WebGL RENDERER",
+    "mode": "D",
+    "label": {
+      "en": "Graphics card",
+      "zh": "显卡"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "vm",
+    "group": "Device",
+    "method": "WebGL renderer · hypervisor names",
+    "mode": "D",
+    "label": {
+      "en": "Virtual machine",
+      "zh": "虚拟机"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "webgpu",
+    "group": "Device",
+    "method": "navigator.gpu adapter.info",
+    "mode": "D",
+    "label": {
+      "en": "WebGPU",
+      "zh": "WebGPU"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "gpulim",
+    "group": "Device",
+    "method": "GPUAdapter limits · features",
+    "mode": "D",
+    "label": {
+      "en": "WebGPU capabilities",
+      "zh": "WebGPU 能力"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "glx",
+    "group": "Device",
+    "method": "WebGL2 · MAX_TEXTURE_SIZE",
+    "mode": "D",
+    "label": {
+      "en": "WebGL capabilities",
+      "zh": "WebGL 能力"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "cpu",
+    "group": "Device",
+    "method": "hardwareConcurrency",
+    "mode": "D",
+    "label": {
+      "en": "CPU cores",
+      "zh": "CPU 线程"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "mem",
+    "group": "Device",
+    "method": "navigator.deviceMemory",
+    "mode": "D",
+    "label": {
+      "en": "Memory",
+      "zh": "内存"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "heap",
+    "group": "Device",
+    "method": "performance.memory",
+    "mode": "D",
+    "label": {
+      "en": "JS memory limit",
+      "zh": "JS 内存上限"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "touch",
+    "group": "Device",
+    "method": "maxTouchPoints · pointer",
+    "mode": "B",
+    "label": {
+      "en": "Touch and pointer",
+      "zh": "触控和指针"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "battery",
+    "group": "Device",
+    "method": "navigator.getBattery",
+    "mode": "D",
+    "label": {
+      "en": "Battery",
+      "zh": "电池"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "geoloc",
+    "group": "Device",
+    "method": "geolocation (on request)",
+    "mode": "D",
+    "label": {
+      "en": "Precise location (asks)",
+      "zh": "精确定位（需授权）"
+    },
+    "note": {
+      "en": "Separate user action and location permission",
+      "zh": "单独用户操作和定位权限"
+    }
+  },
+  {
+    "id": "sensors",
+    "group": "Device",
+    "method": "devicemotion (on request)",
+    "mode": "D",
+    "label": {
+      "en": "Motion sensors (asks)",
+      "zh": "运动传感器（需授权）"
+    },
+    "note": {
+      "en": "Separate action; sensor permission as required",
+      "zh": "单独操作；按需传感器权限"
+    }
+  },
+  {
+    "id": "conn",
+    "group": "Device",
+    "method": "navigator.connection",
+    "mode": "D",
+    "label": {
+      "en": "Connection",
+      "zh": "网络连接"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "media",
+    "group": "Device",
+    "method": "enumerateDevices",
+    "mode": "D",
+    "label": {
+      "en": "Cameras and mics",
+      "zh": "摄像头和麦克风"
+    },
+    "note": {
+      "en": "Labels may need media permission; no recording",
+      "zh": "名称可能需要媒体权限；不录音录像"
+    }
+  },
+  {
+    "id": "audiohw",
+    "group": "Device",
+    "method": "AudioContext.sampleRate",
+    "mode": "D",
+    "label": {
+      "en": "Audio hardware",
+      "zh": "音频硬件"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "bio",
+    "group": "Device",
+    "method": "PublicKeyCredential",
+    "mode": "D",
+    "label": {
+      "en": "Biometrics",
+      "zh": "生物识别"
+    },
+    "note": {
+      "en": "Availability only; no credentials or biometric data",
+      "zh": "仅可用性；无凭据或生物信息"
+    }
+  },
+  {
+    "id": "bt",
+    "group": "Device",
+    "method": "bluetooth.getAvailability",
+    "mode": "D",
+    "label": {
+      "en": "Bluetooth",
+      "zh": "蓝牙"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "devs",
+    "group": "Device",
+    "method": "usb · hid · serial getDevices",
+    "mode": "D",
+    "label": {
+      "en": "Devices already allowed",
+      "zh": "已授权的设备"
+    },
+    "note": {
+      "en": "Only previously granted devices; no permission request",
+      "zh": "仅已授权设备；不请求新权限"
+    }
+  },
+  {
+    "id": "gamepad",
+    "group": "Device",
+    "method": "getGamepads (on request)",
+    "mode": "D",
+    "label": {
+      "en": "Game controller",
+      "zh": "游戏手柄"
+    },
+    "note": {
+      "en": "Separate user gesture",
+      "zh": "单独用户操作"
+    }
+  },
+  {
+    "id": "xr",
+    "group": "Device",
+    "method": "navigator.xr.isSessionSupported",
+    "mode": "D",
+    "label": {
+      "en": "VR / AR",
+      "zh": "VR / AR"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "codecs",
+    "group": "Device",
+    "method": "MediaSource.isTypeSupported",
+    "mode": "D",
+    "label": {
+      "en": "Video codecs",
+      "zh": "视频编码格式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "rtccodecs",
+    "group": "Device",
+    "method": "RTCRtpSender.getCapabilities",
+    "mode": "D",
+    "label": {
+      "en": "WebRTC codecs",
+      "zh": "WebRTC 编解码器"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "recmime",
+    "group": "Device",
+    "method": "MediaRecorder.isTypeSupported",
+    "mode": "D",
+    "label": {
+      "en": "Recording formats",
+      "zh": "录制格式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "hwdec",
+    "group": "Device",
+    "method": "mediaCapabilities.decodingInfo",
+    "mode": "D",
+    "label": {
+      "en": "Hardware video decoding",
+      "zh": "视频硬件解码"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "drm",
+    "group": "Device",
+    "method": "requestMediaKeySystemAccess",
+    "mode": "D",
+    "label": {
+      "en": "DRM",
+      "zh": "DRM"
+    },
+    "note": {
+      "en": "Optional capability test; no licence acquisition",
+      "zh": "可选能力检查；不获取许可证"
+    }
+  },
+  {
+    "id": "storage",
+    "group": "Device",
+    "method": "storage.estimate",
+    "mode": "D",
+    "label": {
+      "en": "Storage quota",
+      "zh": "存储配额"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "scheme",
+    "group": "Browser",
+    "method": "prefers-color-scheme",
+    "mode": "B",
+    "label": {
+      "en": "Color scheme",
+      "zh": "深浅色"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "motion",
+    "group": "Browser",
+    "method": "prefers-reduced-motion",
+    "mode": "B",
+    "label": {
+      "en": "Animations",
+      "zh": "动画效果"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "gamut",
+    "group": "Browser",
+    "method": "color-gamut · dynamic-range",
+    "mode": "B",
+    "label": {
+      "en": "Display colors",
+      "zh": "屏幕色域"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "a11y",
+    "group": "Browser",
+    "method": "prefers-contrast · forced-colors",
+    "mode": "B",
+    "label": {
+      "en": "Accessibility",
+      "zh": "辅助功能"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "sysui",
+    "group": "Browser",
+    "method": "font-size: medium · AccentColor",
+    "mode": "D",
+    "label": {
+      "en": "Default font size and accent color",
+      "zh": "默认字号和强调色"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "display",
+    "group": "Browser",
+    "method": "display-mode",
+    "mode": "B",
+    "label": {
+      "en": "Opened as",
+      "zh": "打开方式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "dnt",
+    "group": "Browser",
+    "method": "doNotTrack · GPC",
+    "mode": "B",
+    "label": {
+      "en": "Privacy signals",
+      "zh": "隐私信号"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "cookies",
+    "group": "Browser",
+    "method": "navigator.cookieEnabled",
+    "mode": "B",
+    "label": {
+      "en": "Cookies",
+      "zh": "Cookie"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "psb",
+    "group": "Browser",
+    "method": "browsingTopics · runAdAuction · sharedStorage",
+    "mode": "D",
+    "label": {
+      "en": "Privacy Sandbox",
+      "zh": "Privacy Sandbox"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "perms",
+    "group": "Browser",
+    "method": "permissions.query",
+    "mode": "D",
+    "label": {
+      "en": "Permissions",
+      "zh": "权限"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "apis",
+    "group": "Browser",
+    "method": "usb · serial · hid · IdleDetector …",
+    "mode": "D",
+    "label": {
+      "en": "Sensitive APIs",
+      "zh": "敏感接口"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "pdf",
+    "group": "Browser",
+    "method": "pdfViewerEnabled",
+    "mode": "D",
+    "label": {
+      "en": "PDF viewer",
+      "zh": "PDF 阅读器"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "ai",
+    "group": "Browser",
+    "method": "LanguageModel · Translator.availability",
+    "mode": "D",
+    "label": {
+      "en": "Built-in AI",
+      "zh": "浏览器内置 AI"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "webdriver",
+    "group": "Browser",
+    "method": "navigator.webdriver",
+    "mode": "D",
+    "label": {
+      "en": "Automation",
+      "zh": "自动化"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "auto",
+    "group": "Browser",
+    "method": "headless · CDP · Electron traces",
+    "mode": "D",
+    "label": {
+      "en": "Automation traces",
+      "zh": "自动化痕迹"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "idstr",
+    "group": "Browser",
+    "method": "navigator.vendor · productSub · plugins",
+    "mode": "D",
+    "label": {
+      "en": "Identity strings",
+      "zh": "身份字符串"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "agent",
+    "group": "Browser",
+    "method": "mousemove → pointerdown · isTrusted",
+    "mode": "D",
+    "label": {
+      "en": "How you click",
+      "zh": "操作方式"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "worker",
+    "group": "Browser",
+    "method": "Worker · navigator",
+    "mode": "D",
+    "label": {
+      "en": "navigator in a Worker",
+      "zh": "Worker 里的 navigator"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "adblock",
+    "group": "Browser",
+    "method": "bait element",
+    "mode": "D",
+    "label": {
+      "en": "Ad blocker",
+      "zh": "广告拦截"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "trackers",
+    "group": "Browser",
+    "method": "7 tracker scripts (on request)",
+    "mode": "D",
+    "label": {
+      "en": "Tracker blocking test",
+      "zh": "追踪拦截实测"
+    },
+    "note": {
+      "en": "Isolated test; no third-party code on main origin",
+      "zh": "隔离测试；不在主站源执行第三方代码"
+    }
+  },
+  {
+    "id": "ext",
+    "group": "Browser",
+    "method": "window.ethereum · DOM marks",
+    "mode": "D",
+    "label": {
+      "en": "Extensions",
+      "zh": "浏览器扩展"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "extwar",
+    "group": "Browser",
+    "method": "chrome-extension:// files",
+    "mode": "D",
+    "label": {
+      "en": "Extension scan",
+      "zh": "扩展扫描"
+    },
+    "note": {
+      "en": "Browser/CSP limits; cannot enumerate all extensions",
+      "zh": "受浏览器／CSP 限制；不能枚举所有扩展"
+    }
+  },
+  {
+    "id": "history",
+    "group": "Browser",
+    "method": "history.length",
+    "mode": "D",
+    "label": {
+      "en": "Tab history",
+      "zh": "本标签页历史"
+    },
+    "note": {
+      "en": "Only history.length; no visited URLs",
+      "zh": "仅 history.length；无已访问网址"
+    }
+  },
+  {
+    "id": "exif",
+    "group": "Browser",
+    "method": "a photo's EXIF, read locally",
+    "mode": "L",
+    "label": {
+      "en": "What a photo carries",
+      "zh": "照片里的信息"
+    },
+    "note": {
+      "en": "User-selected file, local preview; selected metadata only",
+      "zh": "用户选文件后本地预览；仅单独选中的元数据"
+    }
+  },
+  {
+    "id": "traces",
+    "group": "Browser",
+    "method": "localStorage · IndexedDB · Cache · window.name",
+    "mode": "L",
+    "label": {
+      "en": "Stored traces",
+      "zh": "存储留痕"
+    },
+    "note": {
+      "en": "Own-origin capabilities/counts, never stored values",
+      "zh": "仅同源能力／数量，不上传存储原值"
+    }
+  },
+  {
+    "id": "xsite",
+    "group": "Browser",
+    "method": "cross.1ms.one · iframe · SameSite=None · CHIPS",
+    "mode": "D",
+    "label": {
+      "en": "Cross-site tracking",
+      "zh": "跨站追踪"
+    },
+    "note": {
+      "en": "Separate controlled origin and iframe; partitioning applies",
+      "zh": "独立自控来源与 iframe；受分区限制"
+    }
+  },
+  {
+    "id": "fonts",
+    "group": "Browser",
+    "method": "canvas measureText",
+    "mode": "D",
+    "label": {
+      "en": "Installed fonts",
+      "zh": "已装字体"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "engine",
+    "group": "Fingerprints",
+    "method": "Error.message",
+    "mode": "D",
+    "label": {
+      "en": "JS engine",
+      "zh": "JS 引擎"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "engver",
+    "group": "Fingerprints",
+    "method": "JS feature probes",
+    "mode": "D",
+    "label": {
+      "en": "Engine's real version",
+      "zh": "引擎真实版本"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "wasm",
+    "group": "Fingerprints",
+    "method": "WebAssembly.validate",
+    "mode": "D",
+    "label": {
+      "en": "WebAssembly",
+      "zh": "WebAssembly"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "lies",
+    "group": "Fingerprints",
+    "method": "Function.prototype.toString · iframe",
+    "mode": "D",
+    "label": {
+      "en": "Lie detection",
+      "zh": "谎言检测"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "cssv",
+    "group": "Fingerprints",
+    "method": "CSS.supports",
+    "mode": "D",
+    "label": {
+      "en": "CSS feature level",
+      "zh": "CSS 特性版本"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "smooth",
+    "group": "Fingerprints",
+    "method": "canvas text antialiasing",
+    "mode": "D",
+    "label": {
+      "en": "Font smoothing",
+      "zh": "字体平滑"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "canvas",
+    "group": "Fingerprints",
+    "method": "canvas.toDataURL",
+    "mode": "D",
+    "label": {
+      "en": "Canvas",
+      "zh": "Canvas"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "webgl",
+    "group": "Fingerprints",
+    "method": "WebGL getParameter",
+    "mode": "D",
+    "label": {
+      "en": "WebGL",
+      "zh": "WebGL"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "audio",
+    "group": "Fingerprints",
+    "method": "OfflineAudioContext",
+    "mode": "D",
+    "label": {
+      "en": "Audio",
+      "zh": "音频"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "mathfp",
+    "group": "Fingerprints",
+    "method": "Math.* → SHA-256",
+    "mode": "D",
+    "label": {
+      "en": "Math fingerprint",
+      "zh": "数学函数指纹"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "emoji",
+    "group": "Fingerprints",
+    "method": "emoji measureText",
+    "mode": "D",
+    "label": {
+      "en": "System emoji version",
+      "zh": "系统 Emoji 版本"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "fontfp",
+    "group": "Fingerprints",
+    "method": "fonts → SHA-256",
+    "mode": "D",
+    "label": {
+      "en": "Font list",
+      "zh": "字体列表"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "domrect",
+    "group": "Fingerprints",
+    "method": "getClientRects · Range",
+    "mode": "D",
+    "label": {
+      "en": "Element sizes (DOMRect)",
+      "zh": "元素尺寸（DOMRect）"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "svgrect",
+    "group": "Fingerprints",
+    "method": "SVG getBBox · getComputedTextLength",
+    "mode": "D",
+    "label": {
+      "en": "SVG text sizes",
+      "zh": "SVG 文字尺寸"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "textm",
+    "group": "Fingerprints",
+    "method": "measureText actualBoundingBox",
+    "mode": "D",
+    "label": {
+      "en": "Text metrics",
+      "zh": "文字度量"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "glimg",
+    "group": "Fingerprints",
+    "method": "WebGL readPixels",
+    "mode": "D",
+    "label": {
+      "en": "WebGL rendering",
+      "zh": "WebGL 渲染图像"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "keys",
+    "group": "Fingerprints",
+    "method": "window · HTMLElement · CSS keys",
+    "mode": "D",
+    "label": {
+      "en": "Engine API count",
+      "zh": "引擎接口数"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "timer",
+    "group": "Fingerprints",
+    "method": "performance.now() resolution",
+    "mode": "D",
+    "label": {
+      "en": "Timer precision",
+      "zh": "计时精度"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "callstack",
+    "group": "Fingerprints",
+    "method": "recursion depth",
+    "mode": "D",
+    "label": {
+      "en": "Call stack depth",
+      "zh": "调用栈深度"
+    },
+    "note": {
+      "en": "Strict CPU/recursion budget; skip constrained devices",
+      "zh": "限制 CPU／递归；受限设备跳过"
+    }
+  },
+  {
+    "id": "fpid",
+    "group": "Fingerprints",
+    "method": "SHA-256",
+    "mode": "D",
+    "label": {
+      "en": "Combined fingerprint",
+      "zh": "综合指纹"
+    },
+    "note": {
+      "en": "Diagnostic composite only, never identity",
+      "zh": "仅诊断组合值，不作身份"
+    }
+  },
+  {
+    "id": "hwid",
+    "group": "Fingerprints",
+    "method": "screen · cores · GPU · fonts → SHA-256",
+    "mode": "D",
+    "label": {
+      "en": "Hardware ID (across browsers)",
+      "zh": "硬件编号（跨浏览器）"
+    },
+    "note": {
+      "en": "Heuristic composite, not hardware serial",
+      "zh": "启发式组合值，不是硬件序列号"
+    }
+  },
+  {
+    "id": "etag",
+    "group": "Fingerprints",
+    "method": "HTTP cache · ETag / If-None-Match",
+    "mode": "D",
+    "label": {
+      "en": "Cache ID (ETag)",
+      "zh": "缓存编号（ETag）"
+    },
+    "note": {
+      "en": "Dedicated opt-in diagnostic resource; no tracking ID",
+      "zh": "专用主动诊断资源；不建立跟踪 ID"
+    }
+  },
+  {
+    "id": "rand",
+    "group": "Fingerprints",
+    "method": "canvas × 2",
+    "mode": "D",
+    "label": {
+      "en": "Fingerprint protection",
+      "zh": "防指纹"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "adsp",
+    "group": "Fingerprints",
+    "method": "impossible readings · switcher marks",
+    "mode": "D",
+    "label": {
+      "en": "Anti-detect tells",
+      "zh": "反检测浏览器的破绽"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  },
+  {
+    "id": "shield",
+    "group": "Fingerprints",
+    "method": "navigator.brave · noise · lies",
+    "mode": "D",
+    "label": {
+      "en": "Whose protection",
+      "zh": "防护是谁"
+    },
+    "note": {
+      "en": "—",
+      "zh": "—"
+    }
+  }
+]

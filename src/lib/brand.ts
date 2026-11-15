@@ -45,47 +45,55 @@ export type MascotExpression =
 
 export function localizedDocumentTitle(locale: "en" | "zh", pathname: string) {
   const section =
-    pathname === "/popular"
+    pathname === "/diagnostics"
       ? locale === "en"
-        ? "Most saved"
-        : "热门收藏"
-      : pathname.startsWith("/transfer")
+        ? "Browser diagnostics"
+        : "浏览器诊断"
+      : pathname === "/admin/statistics"
         ? locale === "en"
-          ? "Temporary transfer"
-          : "临时转存"
-        : pathname.startsWith("/share")
-          ? locale === "zh"
-            ? "分享的收藏"
-            : "Shared collection"
-          : pathname === "/account"
-            ? locale === "zh"
-              ? "账号与同步"
-              : "Account & sync"
-            : pathname === "/history"
+          ? "Site statistics"
+          : "网站统计"
+        : pathname === "/popular"
+          ? locale === "en"
+            ? "Most saved"
+            : "热门收藏"
+          : pathname.startsWith("/transfer")
+            ? locale === "en"
+              ? "Temporary transfer"
+              : "临时转存"
+            : pathname.startsWith("/share")
               ? locale === "zh"
-                ? "最近记录"
-                : "Recent activity"
-              : pathname === "/updates"
+                ? "分享的收藏"
+                : "Shared collection"
+              : pathname === "/account"
                 ? locale === "zh"
-                  ? "课程更新"
-                  : "Course updates"
-                : pathname.startsWith("/rmp")
+                  ? "账号与同步"
+                  : "Account & sync"
+                : pathname === "/history"
                   ? locale === "zh"
-                    ? "RMP 教师库"
-                    : "RMP faculty library"
-                  : pathname.startsWith("/saved")
+                    ? "最近记录"
+                    : "Recent activity"
+                  : pathname === "/updates"
                     ? locale === "zh"
-                      ? "收藏"
-                      : "Saved courses"
-                    : pathname.startsWith("/methodology")
+                      ? "课程更新"
+                      : "Course updates"
+                    : pathname.startsWith("/rmp")
                       ? locale === "zh"
-                        ? "数据与方法"
-                        : "Behind the data"
-                      : pathname.startsWith("/reference")
+                        ? "RMP 教师库"
+                        : "RMP faculty library"
+                      : pathname.startsWith("/saved")
                         ? locale === "zh"
-                          ? "OSU 课程说明"
-                          : "OSU field guide"
-                        : null;
+                          ? "收藏"
+                          : "Saved courses"
+                        : pathname.startsWith("/methodology")
+                          ? locale === "zh"
+                            ? "数据与方法"
+                            : "Behind the data"
+                          : pathname.startsWith("/reference")
+                            ? locale === "zh"
+                              ? "OSU 课程说明"
+                              : "OSU field guide"
+                            : null;
   const home = locale === "zh" ? "蛙O！ | OSU 课程信息汇总" : brand.title;
   return section ? `${section} · ${home}` : home;
 }

@@ -37,7 +37,8 @@ export function AppHeader({
     | "account"
     | "transfer"
     | "share"
-    | "popular";
+    | "popular"
+    | "diagnostics";
 }) {
   const { locale, setLocale, saved, savedSections, savedInstructors } =
     usePreferences();
@@ -50,29 +51,31 @@ export function AppHeader({
   const updates = savedSyllabi.filter(syllabusHasUpdate).length;
   const pathname = usePathname();
   const current =
-    pathname === "/popular"
-      ? "popular"
-      : pathname === "/"
-        ? "explore"
-        : pathname === "/history"
-          ? "history"
-          : pathname === "/saved"
-            ? "saved"
-            : pathname.startsWith("/share")
-              ? "share"
-              : pathname.startsWith("/transfer")
-                ? "transfer"
-                : pathname === "/account"
-                  ? "account"
-                  : pathname === "/reference"
-                    ? "reference"
-                    : pathname === "/methodology"
-                      ? "methodology"
-                      : pathname === "/rmp" || pathname.startsWith("/rmp/")
-                        ? "rmp"
-                        : pathname === "/updates"
-                          ? "updates"
-                          : active;
+    pathname === "/diagnostics"
+      ? "diagnostics"
+      : pathname === "/popular"
+        ? "popular"
+        : pathname === "/"
+          ? "explore"
+          : pathname === "/history"
+            ? "history"
+            : pathname === "/saved"
+              ? "saved"
+              : pathname.startsWith("/share")
+                ? "share"
+                : pathname.startsWith("/transfer")
+                  ? "transfer"
+                  : pathname === "/account"
+                    ? "account"
+                    : pathname === "/reference"
+                      ? "reference"
+                      : pathname === "/methodology"
+                        ? "methodology"
+                        : pathname === "/rmp" || pathname.startsWith("/rmp/")
+                          ? "rmp"
+                          : pathname === "/updates"
+                            ? "updates"
+                            : active;
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
     const title = localizedDocumentTitle(locale, pathname);

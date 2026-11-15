@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { Route } from "next";
 import {
   BookOpen,
+  Activity,
   ChevronDown,
   FileChartColumn,
   LibraryBig,
@@ -32,7 +33,8 @@ type Page =
   | "account"
   | "transfer"
   | "share"
-  | "popular";
+  | "popular"
+  | "diagnostics";
 function NavigationMenu({
   locale,
   page,
@@ -168,6 +170,17 @@ function NavigationMenu({
               locale,
               "Class formats and rating scales",
               "授课方式、班次与评价量表",
+            ),
+          },
+          {
+            page: "diagnostics",
+            href: "/diagnostics",
+            Icon: Activity,
+            title: text(locale, "Browser diagnostics", "浏览器诊断"),
+            detail: text(
+              locale,
+              "Device checks and report preview",
+              "设备检测与报告预览",
             ),
           },
           {
