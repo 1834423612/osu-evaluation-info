@@ -1,4 +1,5 @@
 import { emptyPlan, planSchema, type Plan, type PlanCourse } from "./model.ts";
+import { addProvenance } from "./provenance.ts";
 export type PdfLine = {
   text: string;
   page: number;
@@ -154,7 +155,7 @@ export function parsePlanLines(
   if (modes.size === 1) plan.auditMode = [...modes][0] as Plan["auditMode"];
   plan.semesters = plan.semesters.filter((s) => s.term || s.courses.length);
   return {
-    plan: planSchema.parse(plan),
+    plan: planSchema.parse(addProvenance(plan, lines)),
     warnings: [
       "review",
       "status",

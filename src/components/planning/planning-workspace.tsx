@@ -29,6 +29,9 @@ import { extractPlan } from "@/lib/planning/pdf";
 import sources from "../../../data/planning/sources.json";
 import curricula from "../../../data/planning/curricula.json";
 import styles from "./planning.module.css";
+import { SourceReview } from "./source-review";
+import { mergeSnapshots, pruneAllocations } from "@/lib/planning/snapshots";
+import { browserUuid } from "@/lib/uuid";
 import { ImportGuard } from "@/lib/planning/import-guard";
 
 export function PlanningWorkspace() {
@@ -37,6 +40,7 @@ export function PlanningWorkspace() {
   const [plan, setPlan] = useState<Plan>(emptyPlan);
   const [source, setSource] = useState<Plan["source"]>("student-plan");
   const [origin, setOrigin] = useState<Plan["pdfOrigin"]>("export");
+  const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<"private" | "official">("private");
@@ -53,7 +57,7 @@ export function PlanningWorkspace() {
   const fileInput = useRef<HTMLInputElement>(null);
   const update = (fn: (p: Plan) => Plan) => {
     cancelImport();
-    setPlan((p) => ({ ...fn(p), reviewed: false }));
+    setPlan((p) => ({ ...pruneAllocations(fn(p)), reviewed: false }));
     setMessage("");
   };
   const updateCourse = (si: number, ci: number, patch: Partial<PlanCourse>) =>
@@ -73,6 +77,7 @@ export function PlanningWorkspace() {
   async function importPdf(file?: File) {
     if (!file) return;
     if (
+      importMode === "replace" &&
       plan.semesters.length &&
       !window.confirm(
         t(
@@ -88,7 +93,12 @@ export function PlanningWorkspace() {
     try {
       const result = await extractPlan(file, source, token.signal, origin);
       if (!importGuard.current.current(token.generation)) return;
-      setPlan(result.plan);
+      setPlan(
+        importMode === "merge" &&
+          (plan.documents.length || plan.semesters.length)
+          ? mergeSnapshots(plan, result.plan)
+          : result.plan,
+      );
       setMessage(
         result.warnings.includes("empty")
           ? t(
@@ -293,8 +303,8 @@ export function PlanningWorkspace() {
               </div>
               <p>
                 {t(
-                  "Start with Student Plan. Review Planned Standard separately; Expanded adds constraint context. Each import replaces the draft only after confirmation.",
-                  "推荐先导入 Student Plan，再单独核对 Planned Standard；Expanded 提供详细约束。再次导入会先确认是否替换草稿。",
+                  "Start with Student Plan. Review Planned Standard separately; Expanded adds constraint context. Add imports as separate source snapshots, or explicitly replace the draft.",
+                  "推荐先导入 Student Plan，再单独核对 Planned Standard；Expanded 提供详细约束。可追加独立来源快照，或明确选择替换草稿。",
                 )}
               </p>
               <label className={styles.field}>
@@ -334,6 +344,23 @@ export function PlanningWorkspace() {
                   )}
                 </p>
               )}
+              <label className={styles.field}>
+                {t("Import action", "导入方式")}
+                <select
+                  value={importMode}
+                  disabled={busy}
+                  onChange={(e) =>
+                    setImportMode(e.target.value as "merge" | "replace")
+                  }
+                >
+                  <option value="merge">
+                    {t("Add source to this workspace", "追加来源到当前工作区")}
+                  </option>
+                  <option value="replace">
+                    {t("Replace current draft", "替换当前草稿")}
+                  </option>
+                </select>
+              </label>
               <label className={styles.drop}>
                 <FileUp size={30} />
                 <strong>
@@ -413,53 +440,55 @@ export function PlanningWorkspace() {
                   "请对照原文件。“Planned” 不代表未注册。空白学分表示未知，不是零。重复审核课程仅作为候选，不计算总学分。",
                 )}
               </p>
-              <div className={styles.meta}>
-                <label className={styles.field}>
-                  {t(
-                    "Applied Version (SIS requirement term)",
-                    "Applied Version（SIS 要求学期）",
-                  )}
-                  <input
-                    placeholder="AU2017"
-                    value={plan.appliedVersion ?? ""}
-                    onChange={(e) =>
-                      update((p) => ({
-                        ...p,
-                        appliedVersion: e.target.value || null,
-                      }))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  {t("Catalog Term", "Catalog Term（目录学期）")}
-                  <input
-                    placeholder="Autumn2026"
-                    value={plan.catalogTerm ?? ""}
-                    onChange={(e) =>
-                      update((p) => ({
-                        ...p,
-                        catalogTerm: e.target.value || null,
-                      }))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  {t("Audit mode", "审核模式")}
-                  <select
-                    value={plan.auditMode}
-                    onChange={(e) =>
-                      update((p) => ({
-                        ...p,
-                        auditMode: e.target.value as Plan["auditMode"],
-                      }))
-                    }
-                  >
-                    <option value="unknown">{t("Unknown", "未知")}</option>
-                    <option value="official">Official</option>
-                    <option value="planned">Planned</option>
-                  </select>
-                </label>
-              </div>
+              {plan.documents.length <= 1 && (
+                <div className={styles.meta}>
+                  <label className={styles.field}>
+                    {t(
+                      "Applied Version (SIS requirement term)",
+                      "Applied Version（SIS 要求学期）",
+                    )}
+                    <input
+                      placeholder="AU2017"
+                      value={plan.appliedVersion ?? ""}
+                      onChange={(e) =>
+                        update((p) => ({
+                          ...p,
+                          appliedVersion: e.target.value || null,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    {t("Catalog Term", "Catalog Term（目录学期）")}
+                    <input
+                      placeholder="Autumn2026"
+                      value={plan.catalogTerm ?? ""}
+                      onChange={(e) =>
+                        update((p) => ({
+                          ...p,
+                          catalogTerm: e.target.value || null,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    {t("Audit mode", "审核模式")}
+                    <select
+                      value={plan.auditMode}
+                      onChange={(e) =>
+                        update((p) => ({
+                          ...p,
+                          auditMode: e.target.value as Plan["auditMode"],
+                        }))
+                      }
+                    >
+                      <option value="unknown">{t("Unknown", "未知")}</option>
+                      <option value="official">Official</option>
+                      <option value="planned">Planned</option>
+                    </select>
+                  </label>
+                </div>
+              )}
               {!plan.semesters.length && (
                 <div className={styles.empty}>
                   <CalendarDays size={38} />
@@ -477,6 +506,12 @@ export function PlanningWorkspace() {
               {plan.semesters.map((semester, si) => (
                 <article className={styles.semester} key={si}>
                   <div className={styles.semesterHeading}>
+                    <small>
+                      {semester.documentId
+                        ? `${t("Source", "来源")} ${plan.documents.findIndex((d) => d.id === semester.documentId) + 1}`
+                        : t("Manual", "手动")}{" "}
+                      · {semester.creditOrigin ?? "unknown"}
+                    </small>
                     <label className={styles.field}>
                       {t(
                         "Semester · blank means unassigned",
@@ -662,6 +697,8 @@ export function PlanningWorkspace() {
                                 courses: [
                                   ...s.courses,
                                   {
+                                    id: browserUuid(),
+                                    documentId: s.documentId,
                                     kind: "course",
                                     subject: null,
                                     number: null,
@@ -696,6 +733,7 @@ export function PlanningWorkspace() {
                 <Plus size={17} />
                 {t("Add semester", "添加学期")}
               </button>
+              <SourceReview plan={plan} locale={locale} update={update} />
               <div className={styles.review}>
                 <label>
                   <input

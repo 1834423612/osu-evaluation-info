@@ -349,6 +349,19 @@
   padding: 12px;
   line-height: 1.7;
 }
+.allocation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.allocation input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
 .page[data-theme="dark"] {
   --canvas: #16171b;
   --surface: #202126;
