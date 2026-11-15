@@ -69,9 +69,16 @@ try {
     pages.push(p);
     await p.goto(new URL("/account", base).href);
     await p
-      .getByRole("heading", { name: "Continue by email", exact: true })
+      .getByRole("heading", { name: "Welcome back", exact: true })
       .waitFor();
+    await p
+      .getByRole("button", { name: "Use an email code", exact: true })
+      .click();
     await p.getByLabel("Email", { exact: true }).fill(email);
+    if (index === 1) {
+      console.log("Waiting for the resend cooldown before device 2");
+      await new Promise((resolve) => setTimeout(resolve, 61000));
+    }
     if (index === 1) {
       const replay = await context.request.post(
         new URL("/api/auth/sign-in/email-otp", base).href,
@@ -87,16 +94,20 @@ try {
         r.url().endsWith("/email-otp/send-verification-otp") &&
         r.request().method() === "POST",
     );
-    await p.getByRole("button", { name: "Send code", exact: true }).click();
+    await p
+      .getByRole("button", { name: "Send verification code", exact: true })
+      .click();
     assert.equal((await sent).status(), 200);
-    await p.getByLabel("Email code", { exact: true }).waitFor();
+    await p.getByLabel("Verification code", { exact: true }).waitFor();
     console.log(
       "OTP_STAGE_" + (index + 1) + ": awaiting the delivered code on stdin",
     );
     const otp = await code();
     if (!index) firstCode = otp;
-    await p.getByLabel("Email code", { exact: true }).fill(otp);
-    await p.getByRole("button", { name: "Sign in", exact: true }).click();
+    await p.getByLabel("Verification code", { exact: true }).fill(otp);
+    await p
+      .getByRole("button", { name: "Verify and sign in", exact: true })
+      .click();
     await p.getByRole("button", { name: "Sign out", exact: true }).waitFor();
     const session = await (
       await context.request.get(new URL("/api/auth/get-session", base).href)
@@ -109,7 +120,7 @@ try {
   }
   await pages[1].getByRole("button", { name: "Sign out", exact: true }).click();
   await pages[1]
-    .getByRole("heading", { name: "Continue by email", exact: true })
+    .getByRole("heading", { name: "Welcome back", exact: true })
     .waitFor();
   const still = await (
     await contexts[0].request.get(new URL("/api/auth/get-session", base).href)
@@ -117,7 +128,7 @@ try {
   assert.equal(still.user.id, accountId);
   await pages[0].getByRole("button", { name: "Sign out", exact: true }).click();
   await pages[0]
-    .getByRole("heading", { name: "Continue by email", exact: true })
+    .getByRole("heading", { name: "Welcome back", exact: true })
     .waitFor();
   for (const context of contexts)
     assert.equal(

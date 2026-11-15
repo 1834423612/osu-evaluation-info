@@ -138,7 +138,7 @@ try {
   await account.goto(new URL("/account", base).href);
   await account.getByRole("button", { name: "Sign out", exact: true }).click();
   await account
-    .getByText("Could not complete this. Check the code or sign in again.", {
+    .getByText("Could not complete this action. Sign in again or retry.", {
       exact: true,
     })
     .waitFor();
