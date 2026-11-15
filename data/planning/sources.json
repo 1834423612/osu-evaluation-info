@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "coverage": "partial",
+  "sources": [
+    {
+      "id": "university-index",
+      "title": "University majors index",
+      "titleZh": "全校专业索引",
+      "url": "https://undergrad.osu.edu/majors-and-academics/majors-by-college",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "engineering",
+      "title": "Engineering curriculum sheets",
+      "titleZh": "工程学院培养方案",
+      "url": "https://www.advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "music",
+      "title": "Music",
+      "titleZh": "音乐",
+      "url": "https://music.osu.edu/current/ug-curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "public-health",
+      "title": "Public Health",
+      "titleZh": "公共卫生",
+      "url": "https://cph.osu.edu/students/undergraduate/curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "ehe",
+      "title": "Education and Human Ecology",
+      "titleZh": "教育与人类生态",
+      "url": "https://u.osu.edu/ehearg/",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "hrs",
+      "title": "Health and Rehabilitation Sciences",
+      "titleZh": "健康与康复科学",
+      "url": "https://u.osu.edu/hrssso/program-guides/hrs-undergraduate-programs/",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "molgen",
+      "title": "Molecular Genetics",
+      "titleZh": "分子遗传学",
+      "url": "https://molgen.osu.edu/sample-curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "cis",
+      "title": "Computer and Information Science, BA",
+      "titleZh": "计算机与信息科学 BA",
+      "url": "https://cse.osu.edu/ba-cis-program-information",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    }
+  ]
+}
