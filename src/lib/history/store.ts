@@ -1,6 +1,7 @@
 "use client";
 import { browserStorage } from "../preferences/browser-storage";
 import { debugFlag } from "../debug/flags";
+import { withSavedMutation } from "../saved/mutations";
 import {
   HISTORY_ENABLED_KEY,
   HISTORY_EVENT,
@@ -40,11 +41,20 @@ export function historyEnabled() {
     return false;
   }
 }
-export function writeHistory(items: HistoryEntry[]) {
+function writeHistory(items: HistoryEntry[]) {
   try {
     browserStorage().setItem(HISTORY_KEY, JSON.stringify(items));
     window.dispatchEvent(new Event(HISTORY_EVENT));
     return true;
+  } catch {
+    return false;
+  }
+}
+export async function editHistory(
+  edit: (current: HistoryEntry[]) => HistoryEntry[],
+) {
+  try {
+    return await withSavedMutation(() => writeHistory(edit(readHistory())));
   } catch {
     return false;
   }
@@ -57,8 +67,9 @@ export function setHistoryEnabled(enabled: boolean) {
 }
 export function recordHistory(item: Omit<HistoryEntry, "at">) {
   if (!historyEnabled() || debugFlag("skipAnalytics")) return;
-  writeHistory(
-    mergeHistory(readHistory(), { ...item, at: new Date().toISOString() }),
+  const entry = { ...item, at: new Date().toISOString() };
+  void editHistory((current) =>
+    historyEnabled() ? mergeHistory(current, entry) : current,
   );
 }
 export function recordSearchHistory(query: string, currentQuery: string) {

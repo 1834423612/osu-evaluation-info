@@ -15,7 +15,7 @@ import {
   subscribeHistory,
   historyEnabled,
   setHistoryEnabled,
-  writeHistory,
+  editHistory,
 } from "@/lib/history/store";
 import type { HistoryEntry } from "@/lib/history/model";
 import styles from "@/components/ui/workspace.module.css";
@@ -163,9 +163,11 @@ export function HistoryPage() {
                       "Remove history entry",
                       "删除记录",
                     )}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        !writeHistory(entries.filter((x) => x.id !== item.id))
+                        !(await editHistory((current) =>
+                          current.filter((x) => x.id !== item.id),
+                        ))
                       )
                         setNotice(
                           text(
@@ -201,8 +203,8 @@ export function HistoryPage() {
         >
           <div className={styles.actions}>
             <Button
-              onClick={() => {
-                if (writeHistory([])) setClearOpen(false);
+              onClick={async () => {
+                if (await editHistory(() => [])) setClearOpen(false);
                 else
                   setNotice(
                     text(

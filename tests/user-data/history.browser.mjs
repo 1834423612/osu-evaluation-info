@@ -135,6 +135,51 @@ try {
         .count(),
       0,
     );
+    const other = await context.newPage();
+    await other.addInitScript(() =>
+      window.addEventListener(
+        "storage",
+        (event) => event.stopImmediatePropagation(),
+        true,
+      ),
+    );
+    await other.goto(new URL("/history", base).href);
+    const removeOther = other.getByRole("button", {
+      name: t("Remove history entry", "删除记录"),
+      exact: true,
+    });
+    await removeOther.nth(1).waitFor();
+    const math = p
+      .locator("main li")
+      .filter({ has: p.getByRole("link", { name: /MATH 1151/ }) });
+    await math
+      .getByRole("button", {
+        name: t("Remove history entry", "删除记录"),
+        exact: true,
+      })
+      .click();
+    await math.waitFor({ state: "hidden" });
+    assert.equal(
+      await removeOther.count(),
+      2,
+      "The second tab intentionally has a stale rendered list",
+    );
+    await other
+      .locator("main li")
+      .filter({ has: other.getByRole("link", { name: /Calculus I/ }) })
+      .getByRole("button", {
+        name: t("Remove history entry", "删除记录"),
+        exact: true,
+      })
+      .click();
+    await other
+      .getByRole("button", { name: t("Clear", "清空"), exact: true })
+      .waitFor({ state: "visible" });
+    await other.waitForFunction(
+      () =>
+        JSON.parse(localStorage.getItem("course-atlas:history:v1")).length ===
+        0,
+    );
     assert.deepEqual(errors, []);
     await context.close();
     console.log("History passed " + width + " " + locale);
