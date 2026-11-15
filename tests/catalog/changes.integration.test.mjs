@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
+import { captureCourseChanges } from "../../scripts/catalog/changes.mjs";
 
 test(
   "published change history distinguishes baselines, additions, edits, returns and term disappearance without volatile noise",
@@ -14,6 +15,7 @@ test(
     });
     await c.connect();
     const schema = "catalog_changes_test_" + randomUUID().replaceAll("-", "");
+    const secondary = schema + "_chunks";
     const query = (sql, args) =>
       c.query(sql.replaceAll("osu_catalog", schema), args);
     try {
@@ -222,6 +224,100 @@ test(
           .rows[0].n,
         4,
       );
+      // Compare chunked production behavior with the SQL reference over the same full history.
+      const chunkQuery = (sql, args) =>
+        c.query(sql.replaceAll("osu_catalog", secondary), args);
+      for (const file of [
+        "db/schemas/catalog.sql",
+        "db/migrations/catalog/002-versioned-snapshots.sql",
+        "db/migrations/catalog/003-permanent-archive.sql",
+        "db/migrations/catalog/004-term-archives.sql",
+        "db/migrations/catalog/005-course-changes.sql",
+      ])
+        await chunkQuery(
+          await readFile(new URL("../../" + file, import.meta.url), "utf8"),
+        );
+      for (const table of [
+        "sync_runs",
+        "snapshot_versions",
+        "course_snapshots",
+        "section_snapshots",
+      ])
+        await c.query(
+          "INSERT INTO " +
+            secondary +
+            "." +
+            table +
+            " SELECT * FROM " +
+            schema +
+            "." +
+            table,
+        );
+      const batches = (
+        await query(
+          "SELECT * FROM osu_catalog.change_batches ORDER BY observed_at,run_id,term_code",
+        )
+      ).rows;
+      let injected = false;
+      for (const batch of batches) {
+        if (batch.previous_run_id && !injected) {
+          let chunks = 0;
+          await c.query("BEGIN");
+          await assert.rejects(
+            captureCourseChanges(
+              {
+                query: (sql, args) => {
+                  if (
+                    sql.includes("/* course-change-chunk */") &&
+                    ++chunks === 2
+                  )
+                    throw Error("Injected interruption");
+                  return chunkQuery(sql, args);
+                },
+              },
+              batch.run_id,
+              batch.term_code,
+              { chunkSize: 1 },
+            ),
+            /Injected interruption/,
+          );
+          await c.query("ROLLBACK");
+          assert.equal(
+            (
+              await chunkQuery(
+                "SELECT count(*)::int n FROM osu_catalog.change_batches WHERE run_id=$1 AND term_code=$2",
+                [batch.run_id, batch.term_code],
+              )
+            ).rows[0].n,
+            0,
+          );
+          assert.equal(
+            (
+              await chunkQuery(
+                "SELECT count(*)::int n FROM osu_catalog.course_changes WHERE run_id=$1 AND term_code=$2",
+                [batch.run_id, batch.term_code],
+              )
+            ).rows[0].n,
+            0,
+          );
+          injected = true;
+        }
+        await c.query("BEGIN");
+        await captureCourseChanges(
+          { query: chunkQuery },
+          batch.run_id,
+          batch.term_code,
+          { chunkSize: 1 },
+        );
+        await c.query("COMMIT");
+      }
+      const projection =
+        "SELECT run_id,term_code,course_id,offering_number,campus_code,subject,catalog_number,title,kind,fields,before_data,after_data,observed_at::text FROM osu_catalog.course_changes ORDER BY observed_at,run_id,term_code,course_id,offering_number,campus_code";
+      assert.deepEqual(
+        (await chunkQuery(projection)).rows,
+        (await query(projection)).rows,
+      );
+      assert.ok(injected);
       await assert.rejects(
         query("DELETE FROM osu_catalog.course_changes"),
         /append-only/,
@@ -231,6 +327,8 @@ test(
         /append-only/,
       );
     } finally {
+      await c.query("ROLLBACK").catch(() => {});
+      await c.query(`DROP SCHEMA IF EXISTS ${secondary} CASCADE`);
       await c.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
       await c.end();
     }

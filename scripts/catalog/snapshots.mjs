@@ -1,5 +1,6 @@
 import { withPageTransaction } from "./database.mjs";
 import { catalogError } from "./upstream.mjs";
+import { captureCourseChanges } from "./changes.mjs";
 
 /** Validation and publication share one short transaction; readers keep old versions. */
 export async function publishCatalogSnapshot(
@@ -68,10 +69,9 @@ export async function publishCatalogSnapshot(
   for (const { term } of terms.rows) {
     try {
       await withPageTransaction(client, () =>
-        client.query("SELECT osu_catalog.capture_course_changes($1,$2)", [
-          runId,
-          term,
-        ]),
+        captureCourseChanges(client, runId, term, {
+          deadline: performance.now() + 30000,
+        }),
       );
     } catch (error) {
       console.warn(

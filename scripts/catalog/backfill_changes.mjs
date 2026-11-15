@@ -5,25 +5,19 @@ import {
   requireCatalogSchema,
   withPageTransaction,
 } from "./database.mjs";
+import {
+  captureCourseChanges,
+  parseChangeBackfillOptions,
+} from "./changes.mjs";
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
   console.log(
-    "Usage: node scripts/catalog/backfill_changes.mjs [--max-batches 12]\nIndex missing term batches from complete snapshots; no OSU requests or source writes.",
+    "Usage: node scripts/catalog/backfill_changes.mjs [--max-batches 12] [--max-seconds 180]\nIndex missing term batches from complete snapshots; no OSU requests or source writes.",
   );
   process.exit(0);
 }
-let limit = 12;
-if (args.length) {
-  if (
-    args.length !== 2 ||
-    args[0] !== "--max-batches" ||
-    !/^\d+$/.test(args[1]) ||
-    Number(args[1]) < 1 ||
-    Number(args[1]) > 200
-  )
-    throw Error("Expected --max-batches 1..200");
-  limit = Number(args[1]);
-}
+const { maxBatches: limit, maxSeconds } = parseChangeBackfillOptions(args);
+const deadline = performance.now() + maxSeconds * 1000;
 loadCatalogEnvironment();
 const client = createCatalogClient("osu-catalog-change-backfill");
 let locked = false;
@@ -38,18 +32,25 @@ try {
     `SELECT v.run_id,t.value term FROM osu_catalog.snapshot_versions v JOIN osu_catalog.sync_runs r ON r.id=v.run_id CROSS JOIN jsonb_array_elements_text(r.terms) t(value) WHERE v.published_at IS NOT NULL AND r.status='complete' AND NOT EXISTS(SELECT 1 FROM osu_catalog.change_batches b WHERE b.run_id=r.id AND b.term_code=t.value) ORDER BY v.published_at,v.run_id,t.value LIMIT $1`,
     [limit],
   );
+  let processed = 0,
+    pausedForRuntime = false;
   for (const row of rows) {
+    if (performance.now() >= deadline) {
+      pausedForRuntime = true;
+      break;
+    }
     const start = performance.now();
-    const count = await withPageTransaction(client, async () =>
-      Number(
-        (
-          await client.query(
-            "SELECT osu_catalog.capture_course_changes($1,$2) n",
-            [row.run_id, row.term],
-          )
-        ).rows[0].n,
-      ),
-    );
+    let count;
+    try {
+      count = await withPageTransaction(client, () =>
+        captureCourseChanges(client, row.run_id, row.term, { deadline }),
+      );
+    } catch (error) {
+      if (error.code !== "CATALOG_CHANGE_BUDGET") throw error;
+      pausedForRuntime = true;
+      break;
+    }
+    processed++;
     console.log(
       JSON.stringify({
         run: row.run_id,
@@ -61,8 +62,9 @@ try {
   }
   console.log(
     JSON.stringify({
-      processed: rows.length,
-      budgetReached: rows.length === limit,
+      processed,
+      budgetReached: pausedForRuntime || processed === limit,
+      pausedForRuntime,
     }),
   );
 } catch (error) {
