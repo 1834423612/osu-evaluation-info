@@ -21,6 +21,7 @@
 - [课程展示与选课人数审计：2026-11-07](catalog/display-audit-2026-11-07.md)
 - [课程与大纲：当前目录和永久归档](catalog/lifecycle.md)
 - [课程同步运维](catalog/operations.md)
+- [定时来源同步](catalog/scheduled-sync.md)
 - [课程搜索引擎](catalog/search.md)
 - [课程同步隔离基准：2026-11-05](catalog/sync-benchmark-2026-11-05.md)
 - [课程同步可靠性审计：2026-11-07](catalog/sync-reliability.md)

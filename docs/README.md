@@ -21,6 +21,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 - [Course display and official enrollment audit](catalog/display-audit-2026-11-07.md)
 - [Catalog and syllabus retention](catalog/lifecycle.md)
 - [Catalog operations](catalog/operations.md)
+- [Scheduled source synchronization](catalog/scheduled-sync.md)
 - [Course search engine](catalog/search.md)
 - [Catalog sync dry-run benchmark — November 5, 2026](catalog/sync-benchmark-2026-11-05.md)
 - [Catalog sync reliability audit — November 7, 2026](catalog/sync-reliability.md)

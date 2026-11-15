@@ -2,7 +2,7 @@
 
 English · [简体中文](../zh-CN/syllabus/operations.md)
 
-See [catalog and syllabus retention](../catalog/lifecycle.md) for term heads, current removals and recovery. Migration 4 adds complete index heads and term-discovery evidence; rechecking an old document does not replace a newer retained version.
+See [catalog and syllabus retention](../catalog/lifecycle.md) for term heads, current removals and recovery. Migration 5 adds separate document-refresh checkpoints; migration 4 adds complete index heads and term-discovery evidence; rechecking an old document does not replace a newer retained version.
 
 Course cards and details expose section-level syllabi, teacher/section choices, textbooks, assessment and schedules. The reader supports official layout, semantic reading, search, outline, progress, zoom and supported fullscreen. Course lists do not prefetch every document or load PDF libraries.
 
@@ -61,6 +61,7 @@ Use `DATABASE_URL` from the environment or `.env.local`. Migrations are explicit
 | `entry_observations`           | Page staging, deduplication and document checkpoints                                       |
 | `entries`                      | Persistent raw section identity and term/course/class keys                                 |
 | `document_versions`            | Code, published snapshot and SHA-256 versions; identical content only refreshes check time |
+| `document_checks`              | Last conclusive network check, index metadata and refresh status                           |
 | `catalog_links`                | Links to published catalog identity, offering, campus and match method                     |
 
 Matching requires term, subject, full course number and actual class number. Decimal/Honors suffixes stay distinct. An imported alias such as `s_10356` is accepted only with independent same-term/course section evidence; raw identifiers remain unchanged. Title similarity is insufficient.
@@ -74,6 +75,8 @@ SELECT document_status,count(*) FROM osu_syllabus.entry_observations WHERE run_i
 ```
 
 ## Schedule and recovery
+
+See [scheduled source synchronization](../catalog/scheduled-sync.md) for the 25-minute work budget, rotating freshness intervals and migration 5. Document progress survives a fresh index run; cache reuse does not advance the last network-check time.
 
 `.github/workflows/osu-syllabus-sync.yml` targets 03:43 America/New_York daily, using the `DATABASE_URL` Actions secret. Migrate before enabling the schedule. Requests are serial and anonymous, spaced by 350 ms, with bounded retry/backoff for 429/recoverable 5xx. Pages and checkpoints commit together. Index publication follows full term count verification; an advisory lock prevents overlap. Five consecutive document failures stop the run without losing history or resume state.
 
