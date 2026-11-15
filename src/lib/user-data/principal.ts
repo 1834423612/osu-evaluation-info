@@ -51,7 +51,7 @@ export async function actorFor(
     return {
       id,
       accountId: session.user.id,
-      owners: [id, ...(guest ? [guest] : [])],
+      owners: [id],
     };
   }
   if (guest) return { id: guest, owners: [guest] };

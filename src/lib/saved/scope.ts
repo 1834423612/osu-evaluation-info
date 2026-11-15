@@ -4,6 +4,9 @@ export function setAuthenticatedAccount(value: string | null) {
   authenticated = value;
   if (account !== value) setSavedScope(null);
 }
+export function authenticatedAccount() {
+  return authenticated;
+}
 export function assertAuthenticatedAccount(value: string) {
   if (authenticated !== value) throw new Error("account_changed");
 }

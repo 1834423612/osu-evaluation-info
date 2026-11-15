@@ -1,4 +1,5 @@
 "use client";
+import { authClient } from "@/lib/auth/client";
 import { useEffect, useState } from "react";
 import { Link2, Copy, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,13 @@ type Row = {
   imports: number;
 };
 export function SharedManagement({ locale }: { locale: Locale }) {
+  const { data: session, isPending } = authClient.useSession();
+  if (isPending) return null;
+  return (
+    <SharedManagementBody key={session?.user.id ?? "guest"} locale={locale} />
+  );
+}
+function SharedManagementBody({ locale }: { locale: Locale }) {
   const [filter, setFilter] = useState<"active" | "all">("active");
   const [now, setNow] = useState(() => Date.now());
   const [manualUrl, setManualUrl] = useState("");

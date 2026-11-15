@@ -1,4 +1,7 @@
 "use client";
+import { useDraftGuard } from "@/components/forms/draft-guard";
+import { authClient } from "@/lib/auth/client";
+import { savedScope } from "@/lib/saved/scope";
 import { SelectionCheckbox } from "@/components/saved/selection-checkbox";
 import { useState } from "react";
 import type { Route } from "next";
@@ -32,12 +35,18 @@ export function CollectionImport({
   disabled?: boolean;
   mode?: "copy" | "sync";
 }) {
+  const { data: session } = authClient.useSession();
   const [selected, setSelected] = useState(
       () => new Set(snapshot.items.map(itemKey)),
     ),
     [result, setResult] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
     [limit, setLimit] = useState(40);
+  useDraftGuard(
+    !result &&
+      (selected.size !== snapshot.items.length ||
+        snapshot.items.some((item) => !selected.has(itemKey(item)))),
+  );
   let existing = new Set<string>();
   try {
     existing = new Set(readLocalItems().map(itemKey));
@@ -71,6 +80,21 @@ export function CollectionImport({
   }
   return (
     <section className={styles.panel}>
+      <p className={styles.notice}>
+        {text(
+          locale,
+          savedScope()
+            ? "Save to the current account workspace."
+            : session
+              ? "Save in this browser workspace; cloud sync is not active here."
+              : "You are signed out. These items will be saved in this browser only.",
+          savedScope()
+            ? "保存至当前账号的收藏空间。"
+            : session
+              ? "保存至当前浏览器空间，此处尚未启用账号同步。"
+              : "当前未登录，所选内容只会保存在此浏览器。",
+        )}
+      </p>
       <div className={styles.heading}>
         <div>
           <h2>{snapshot.title}</h2>

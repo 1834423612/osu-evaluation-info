@@ -1,5 +1,6 @@
+import { authenticatedAccount } from "./scope.ts";
 import { browserUuid } from "../uuid.ts";
-import { browserStorage } from "../preferences/browser-storage";
+import { browserStorage } from "../preferences/browser-storage.ts";
 export type LocalShare = {
   id: string;
   url: string;
@@ -7,12 +8,14 @@ export type LocalShare = {
   title: string;
   expiresAt: string;
 };
-const KEY = "course-atlas:share-links:v1";
+const shareKey = () =>
+  "course-atlas:share-links:v2:" +
+  (authenticatedAccount() ? "account:" + authenticatedAccount() : "guest");
 export function rememberShare(value: LocalShare) {
   try {
     const current = readShareLinks();
     browserStorage().setItem(
-      KEY,
+      shareKey(),
       JSON.stringify(
         [value, ...current.filter((x) => x.id !== value.id)].slice(0, 100),
       ),
@@ -21,7 +24,7 @@ export function rememberShare(value: LocalShare) {
 }
 export function readShareLinks(): LocalShare[] {
   try {
-    const raw = JSON.parse(browserStorage().getItem(KEY) ?? "[]");
+    const raw = JSON.parse(browserStorage().getItem(shareKey()) ?? "[]");
     return Array.isArray(raw)
       ? raw.filter(
           (x) =>
