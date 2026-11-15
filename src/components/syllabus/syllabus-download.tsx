@@ -2,7 +2,7 @@
 
 import { useDraftGuard } from "@/components/forms/draft-guard";
 import { useEffect, useRef, useState } from "react";
-import { Check, Download, LoaderCircle, X } from "lucide-react";
+import { Check, Download, LoaderCircle, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { text, type Locale } from "@/lib/i18n";
 import {
@@ -55,7 +55,7 @@ export function SyllabusDownload({
     };
   }, [blocked]);
 
-  async function download() {
+  async function download(chooseLocation = false) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
@@ -64,16 +64,20 @@ export function SyllabusDownload({
     setBlocked(false);
     try {
       const fileName =
-        `${syllabus.entry.termName}-${syllabus.entry.title}.pdf`.replace(
+        `${syllabus.entry.termName}-${syllabus.entry.title}${syllabus.translation ? "-translated-" + syllabus.translation.mode : ""}.pdf`.replace(
           /[^a-z0-9. -]/gi,
           "_",
         );
-      const target = await chooseSyllabusSaveTarget(
-        fileName,
-        window as Window & {
-          showSaveFilePicker?: (options: object) => Promise<SyllabusSaveHandle>;
-        },
-      );
+      const target = chooseLocation
+        ? await chooseSyllabusSaveTarget(
+            fileName,
+            window as Window & {
+              showSaveFilePicker?: (
+                options: object,
+              ) => Promise<SyllabusSaveHandle>;
+            },
+          )
+        : ({ kind: "download", pickerBlocked: false } as const);
       if (target.kind === "cancelled" || !mounted.current) return;
       const { createSyllabusPdf } = await import("@/lib/syllabus/pdf");
       const file = await createSyllabusPdf(syllabus);
@@ -115,30 +119,54 @@ export function SyllabusDownload({
   }
   return (
     <div className={styles.group}>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={busy}
-        onClick={() => void download()}
-        title={text(
-          locale,
-          "Create a US Letter PDF on this device",
-          "在本机生成 Letter PDF",
-        )}
-      >
-        {busy ? (
-          <LoaderCircle size={14} className="spin" />
-        ) : saved ? (
-          <Check size={14} />
-        ) : (
-          <Download size={14} />
-        )}
-        {busy
-          ? text(locale, "Preparing…", "正在准备…")
-          : saved
-            ? text(locale, "Saved", "已保存")
-            : text(locale, "Download PDF", "下载 PDF")}
-      </Button>
+      <div className={styles.actions}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() => void download()}
+          title={text(
+            locale,
+            "Create a US Letter PDF on this device",
+            "在本机生成 Letter PDF",
+          )}
+        >
+          {busy ? (
+            <LoaderCircle size={14} className="spin" />
+          ) : saved ? (
+            <Check size={14} />
+          ) : (
+            <Download size={14} />
+          )}
+          {busy
+            ? text(locale, "Preparing…", "正在准备…")
+            : saved
+              ? text(locale, "Saved", "已保存")
+              : text(
+                  locale,
+                  syllabus.translation
+                    ? syllabus.translation.mode === "bilingual"
+                      ? "Download bilingual PDF"
+                      : "Download translated PDF"
+                    : "Download PDF",
+                  syllabus.translation
+                    ? syllabus.translation.mode === "bilingual"
+                      ? "下载双语 PDF"
+                      : "下载译文 PDF"
+                    : "下载 PDF",
+                )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={busy}
+          aria-label={text(locale, "Save PDF as…", "PDF 另存为…")}
+          title={text(locale, "Choose a save location", "选择保存位置")}
+          onClick={() => void download(true)}
+        >
+          <Save size={14} />
+        </Button>
+      </div>
       {fallback ? (
         <a
           className={styles.saveLink}

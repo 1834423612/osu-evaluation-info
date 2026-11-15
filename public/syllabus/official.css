@@ -161,7 +161,7 @@ h4 {
 .fr-view
   p:has(img[alt="The Ohio State University"])
   + h1
-  > span:is(:nth-of-type(1), :nth-of-type(2)) {
+  > span:is(:nth-of-type(1), :nth-of-type(2)):not(.syllabus-translation) {
   font-family: BuckeyeSans, InterNeue, Inter, Arial, sans-serif;
   font-size: 1.25rem;
   font-weight: 400;
@@ -206,4 +206,21 @@ pre {
 strong,
 b {
   font-weight: 700;
+}
+
+@font-face {
+  font-family: WahOCJK;
+  src: url("/fonts/noto-sans-sc-regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+.syllabus-translation {
+  font-family: WahOCJK, BuckeyeSans, sans-serif;
+  overflow-wrap: anywhere;
+}
+.syllabus-translation-references {
+  display: block;
+  font-size: 0.85em;
+  margin-top: 4px;
 }

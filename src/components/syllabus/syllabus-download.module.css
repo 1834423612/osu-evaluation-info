@@ -5,6 +5,11 @@
   gap: 3px;
   min-width: 0;
 }
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
 .saveLink {
   font-size: 10px;
   line-height: 1.4;

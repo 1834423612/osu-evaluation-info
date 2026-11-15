@@ -36,8 +36,15 @@ export function requestTextTranslation(
   model: TranslationModel,
   manual: boolean,
   callbacks: TranslationCallbacks = {},
+  target?: TranslationTarget,
 ) {
-  const pair = translationLanguagePair(source);
+  const inferred = translationLanguagePair(source);
+  const pair = target
+    ? {
+        sourceLanguage: target === "en" ? ("zh" as const) : ("en" as const),
+        targetLanguage: target,
+      }
+    : inferred;
   return debugServiceValue(
     "translation",
     translationCacheKey(source, pair.targetLanguage, model),

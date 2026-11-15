@@ -18,6 +18,7 @@ import type {
 } from "@/lib/syllabus/types";
 import { SyllabusHighlights } from "./syllabus-highlights";
 import { SyllabusDownload } from "./syllabus-download";
+import { SyllabusTranslation } from "./syllabus-translation";
 import { SyllabusViewer, type SyllabusViewerHandle } from "./syllabus-viewer";
 import styles from "./syllabus.module.css";
 
@@ -33,6 +34,7 @@ export function SyllabusReader({
   );
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  const [translated, setTranslated] = useState<SyllabusDocument | null>(null);
   const viewer = useRef<SyllabusViewerHandle>(null);
   const { code, termId, entityId, classNumber } = entry;
   useEffect(() => {
@@ -181,14 +183,20 @@ export function SyllabusReader({
             locale={locale}
             onNavigate={(id) => viewer.current?.goToSection(id, true)}
           />
+          <SyllabusTranslation
+            key={result.data.snapshotId}
+            document={result.data}
+            onDocument={setTranslated}
+            locale={locale}
+          />
           <SyllabusViewer
             ref={viewer}
-            document={result.data}
+            document={translated ?? result.data}
             locale={locale}
             downloadAction={
               <SyllabusDownload
-                key={code}
-                document={result.data}
+                key={code + (translated?.translation?.mode ?? "original")}
+                document={translated ?? result.data}
                 locale={locale}
               />
             }

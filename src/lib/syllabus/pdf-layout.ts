@@ -8,6 +8,13 @@ const fontOrigin = "https://assets.bux.osu.edu/bux-webfonts2";
 type Face = { key: string; file: string; url: string };
 
 function faceFor(style: CSSStyleDeclaration): Face | null {
+  // html-to-pdfmake normalizes family names to initial uppercase + lowercase.
+  if (style.fontFamily.includes("WahOCJK"))
+    return {
+      key: "Wahocjk",
+      file: "WahOCJK.ttf",
+      url: "/fonts/noto-sans-sc-regular.woff2",
+    };
   const family = style.fontFamily.includes("BuckeyeSerif")
     ? "BuckeyeSerif"
     : style.fontFamily.includes("BuckeyeSans")
@@ -31,7 +38,6 @@ function faceFor(style: CSSStyleDeclaration): Face | null {
       ? "Italic"
       : `${variant}Italic`
     : variant;
-  // html-to-pdfmake normalizes family names to initial uppercase + lowercase.
   const key = `Bux${family === "BuckeyeSerif" ? "serif" : "sans"}${name.toLowerCase()}`;
   return {
     key,
@@ -252,7 +258,17 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
         style.listStyleType = computed.listStyleType;
       for (const child of source.childNodes) {
         const copied = clone(child);
-        if (copied) target.append(copied);
+        if (copied) {
+          if (
+            child.nodeType === 1 &&
+            (child as Element).matches(
+              ".syllabus-translation, .syllabus-translation-references",
+            ) &&
+            view!.getComputedStyle(child as Element).display === "block"
+          )
+            target.append(document.createElement("br"));
+          target.append(copied);
+        }
       }
       return target;
     }
@@ -270,7 +286,12 @@ export async function prepareSyllabusPdfLayout(syllabus: SyllabusDocument) {
     const loaded = await Promise.all(
       [...faces.values()].map(async (face) => {
         // Reconstruct transformed WOFF2 glyphs before pdfmake/fontkit subsets them.
-        const bytes = await decompress(await assetBytes(face.url, 2_000_000));
+        const bytes = await decompress(
+          await assetBytes(
+            face.url,
+            face.key === "Wahocjk" ? 12_000_000 : 2_000_000,
+          ),
+        );
         return {
           ...face,
           data: base64(bytes),

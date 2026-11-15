@@ -5,7 +5,7 @@ import { normalizeSyllabusPdfLinks, syllabusPdfColor } from "./pdf-content.ts";
 import type { SyllabusDocument } from "./types.ts";
 
 export function syllabusPdfFileName(document: SyllabusDocument) {
-  return `${document.entry.termName}-${document.entry.title}.pdf`.replace(
+  return `${document.entry.termName}-${document.entry.title}${document.translation ? "-translated-" + document.translation.mode : ""}.pdf`.replace(
     /[^a-z0-9. -]/gi,
     "_",
   );
@@ -156,7 +156,9 @@ export async function createSyllabusPdf(document: SyllabusDocument) {
     footer: (page, count) => ({
       columns: [
         {
-          text: "OSU · Simple Syllabus",
+          text: document.translation
+            ? "Machine translation · verify official source"
+            : "OSU · Simple Syllabus",
           link: officialSyllabusUrl(document.entry.code),
         },
         { text: `${page} / ${count}`, alignment: "right" },

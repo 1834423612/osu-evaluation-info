@@ -34,6 +34,7 @@ export type SyllabusComponent = {
 };
 
 export type SyllabusDocument = {
+  translation?: { mode: "replace" | "bilingual"; target: "en" | "zh-CN" };
   entry: SyllabusEntry;
   snapshotId: string;
   modifiedAt: string | null;
