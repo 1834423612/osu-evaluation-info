@@ -344,3 +344,9 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | [tests/diagnostics/reports.integration.test.mjs](../../tests/diagnostics/reports.integration.test.mjs) | 集成 | 绑定会话的幂等提交、独立观察值、七天访问期及精确游标分页 |
 | [tests/diagnostics/diagnostics.browser.mjs](../../tests/diagnostics/diagnostics.browser.mjs) | 浏览器 | 本机检测、指纹主动开启、权限隔离、预览重试及 320/390/1440 像素布局 |
 | [tests/diagnostics/statistics.browser.mjs](../../tests/diagnostics/statistics.browser.mjs) | 浏览器 | 权限加载、长请求字段、报告预览及 320/390/768/1440 像素布局 |
+
+容量浏览器检查在独立配置中放入合成收藏，模拟数据／统计 API，并检查新增项目之后的撤回失败，不写入服务器数据。与其他浏览器检查相同，可配置 `USER_DATA_TEST_BASE_URL` 和 `USER_DATA_SCREENSHOT_DIR`。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/capacity.browser.mjs](../../tests/user-data/capacity.browser.mjs) | 浏览器 | 收藏已满提示、撤回失败不覆盖数据、保留中途新增项目及手机提示布局 |

@@ -346,3 +346,9 @@ Diagnostic database tests use `USER_DATA_INTEGRATION=1`, generate a disposable s
 | [tests/diagnostics/reports.integration.test.mjs](../tests/diagnostics/reports.integration.test.mjs) | Integration | Idempotent session-bound reports, independent observations, seven-day visibility and exact keyset pagination |
 | [tests/diagnostics/diagnostics.browser.mjs](../tests/diagnostics/diagnostics.browser.mjs) | Browser | Local checks, opt-in fingerprints, permission isolation, reviewed retry and 320/390/1440px layouts |
 | [tests/diagnostics/statistics.browser.mjs](../tests/diagnostics/statistics.browser.mjs) | Browser | Protected loading, long request fields, report preview and 320/390/768/1440px layouts |
+
+The capacity browser check seeds an isolated browser profile with synthetic favorites, mocks data/collector APIs, and tests a failed undo after an intervening addition. It writes no server data. Use `USER_DATA_TEST_BASE_URL` and `USER_DATA_SCREENSHOT_DIR` as for the other browser checks.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/capacity.browser.mjs](../tests/user-data/capacity.browser.mjs) | Browser | Full-collection errors, non-destructive undo failure, retained intervening favorites and phone toast layout |
