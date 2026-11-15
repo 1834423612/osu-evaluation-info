@@ -77,7 +77,7 @@ node scripts/planning/database.mjs backup <new-backup.dump> --apply
 
 ### 2026-11-15 验证记录
 
-初版通过 lint/typecheck/build 和 474 项 Node 测试，27 项跳过。后续本地回归发现并修复表格学分/学期标题遗漏、荣誉课号后缀被误认学分和异步导入覆盖问题。私人 PDF 始终在本地处理，未提交或记录原文件、文件名、原文、凭据或学生字段。未使用 HAR 内容。
+初版通过 lint/typecheck/build 和 474 项 Node 测试，27 项跳过。后续本地回归发现并修复表格学分/学期标题遗漏、荣誉课号后缀被误认学分和异步导入覆盖问题。私人 PDF 始终在本地处理，未提交或记录原文件、文件名、原文、凭据或学生字段。后续经用户明确授权，仅离线使用 HAR 响应 JSON 对照，未使用凭据或请求。
 
 | PDF 类型       | 文档数 | 修复后导入失败 | 课程候选 | 已知 / 未知单课学分 | 已分配上课学期 |
 | -------------- | -----: | -------------: | -------: | ------------------: | -------------: |
@@ -94,4 +94,12 @@ node scripts/planning/database.mjs backup <new-backup.dump> --apply
 
 浏览器执行仍受环境限制：此前 Chromium 出现 `socket() failed: Operation not permitted`，云浏览器访问本地端口返回 `ERR_CONNECTION_REFUSED`。最终生产构建重试已成功访问回环地址上的本地服务器，但 Chromium 再次在创建 socket 时失败，浏览器断言尚未运行。没有开放公网端口或访问用户本机服务。浏览器场景完成前，手机/平板/桌面实际交互、截图和网络断言均不能列为通过。
 
-最终回归：`pnpm lint`、`pnpm typecheck` 和 `pnpm build` 通过。`pnpm test` 共 512 项：485 通过、27 跳过、0 失败。`pnpm test:python` 共 99 项，2 项跳过；单独运行的规划 Python 套件 4 项通过。
+最终回归：`pnpm lint`、`pnpm typecheck` 和 `pnpm build` 通过。`pnpm test` 共 514 项：487 通过、27 跳过、0 失败。`pnpm test:python` 共 99 项，2 项跳过；单独运行的规划 Python 套件 4 项通过。
+
+## 离线 HAR 对照与 OCR 决策
+
+明确选择的私人回归工具可在设置 `PLANNING_PRIVATE_PDF_DIR` 时同时设置 `PLANNING_PRIVATE_HAR_COMPARE=1`。工具仅读取响应正文，处理 JSON anti-XSSI 前缀和 base64 编码，只输出汇总计数，不发送请求、不持久化提取记录。附件和 HAR 必须放在 Git 与公共 CI 之外。这是开发者回归工具，不是浏览器 HAR 上传功能。
+
+提供的归档包含 74 个可读 JSON 响应。符合个人计划结构的响应包含 2 个学期分组、7 条课程记录和 4 个占位项。7 条唯一匹配的课程与 Student Plan 候选的学分、日历年份全部一致，两个课程分组内部一致，占位项数量一致。1 条明确计划状态一致。对照结构中的 7 条注册状态均未知，不能据此判断是否已注册。这些是一个学生的重叠快照一致性计数，不代表一般解析准确率、召回率或完整审核验证。发现 9 个需求树和 9 个审核快照，但未建立可靠的 PDF 需求节点语义映射，需求准确率和召回率仍未测量。Expanded 的 78 个需求候选和 162 个分配候选仍须人工复核。
+
+11 份私人 PDF 的 71 页均有文字层，因此继续优先使用文字坐标；已发现的故障来自排版和符号解释。本次不增加 OCR 依赖或后备，纯图片扫描仍不支持。浏览器 worker 加 WebAssembly 在技术上可实现 OCR，但 [Tesseract.js 不直接支持 PDF](https://github.com/naptha/tesseract.js/blob/master/README.md)，需先本地栅格化页面。未来可选后备须固定并本地提供 worker、WASM 与语言资源，文档处理时不访问远程推理或 CDN，限制分辨率、页数和内存，支持取消并强制预览。OCR 可能误识别课号、后缀与小数学分，也不能解决双栏顺序或需求语义。手机内存与耗时、扫描件准确率和离线资源加载尚未实测；现有文字层样本不能证明 OCR 会改善结果。
