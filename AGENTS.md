@@ -34,3 +34,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Keep historical audits dated and distinguish their observations from current behavior. Do not turn snapshot counts or local benchmarks into current guarantees.
 - Document each test script's purpose, how to run it, required services or flags, and whether it can write data or call external services. Update `docs/testing.md` and its Chinese counterpart when tests change.
 - Run `pnpm lint:docs` after documentation edits. Keep documentation changes separate from implementation commits.
+
+## Saved-data writes
+
+- Route browser favorite mutations through `withSavedMutation` in `src/lib/saved/mutations.ts`. Sync-state edit callbacks already hold the same IndexedDB transaction.
+- Re-read the workspace inside the synchronous transaction callback. Do not await network requests or UI work while editing; await transaction completion before reporting success or acknowledging transfers.
+- Keep all four favorite kinds in one workspace commit. Do not bypass the saved-storage guard or silently evict existing items at capacity.

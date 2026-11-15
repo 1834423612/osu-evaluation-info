@@ -356,3 +356,9 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本 | 类型 | 用途 |
 | --- | --- | --- |
 | [tests/analytics/replay-live.browser.mjs](../../tests/analytics/replay-live.browser.mjs) | 真实浏览器集成 | 分块接收、同一访问初始化、认证读回、完整快照、菜单、暂停浮层和滚动 |
+
+收藏并发检查在同一个独立浏览器配置中打开两个标签页，共享 localStorage／IndexedDB，模拟全部 API。它观察真实事务回调，验证同时删除／撤回操作保留两个项目，不写入服务器数据。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/concurrent-saved.browser.mjs](../../tests/user-data/concurrent-saved.browser.mjs) | 浏览器 | 32 次跨标签提交、共享事务覆盖、保留独立修改及手机布局 |

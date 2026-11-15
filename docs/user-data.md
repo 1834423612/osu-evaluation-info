@@ -73,3 +73,9 @@ Course cards and detail tabs provide **Share**; public pages also expose a foote
 Attributed `/l/` links record metadata previews separately from redirect opens. Recognized preview bots receive escaped Open Graph HTML; prefetches and HEAD requests do not increment opens. These are request counts, not unique people. Repeated creation by the same owner reuses its canonical target. Links preserve public filters, the exact course/term/campus/detail selection, and reference-topic anchors; paging cursors and credentials are excluded. Private workspace routes are not general public page targets.
 
 A course link retains a small public snapshot without emails, live enrollment or section lists. If its course is absent from the current search result window or search fails, that snapshot opens the existing course drawer while official details refresh normally. The attribution parameter does not become a course filter or alter search counts.
+
+## Browser write coordination
+
+Local favorite actions, imports, removal/undo, syllabus observations and cloud reconciliation share short IndexedDB read/write transactions on the `sync` object store. Each action re-reads the current workspace after acquiring the transaction. The callback is synchronous: network calls and UI waits run outside it. A single localStorage workspace replacement commits all four favorite kinds; existing data is kept when capacity or storage writes fail.
+
+Use `withSavedMutation` from `src/lib/saved/mutations.ts` for UI mutations. Sync-state callbacks already hold the same transaction. Browser storage rejects saved-item writes outside this context. Await completion before acknowledging a one-time transfer or reporting an import as complete. IDB access must be available for coordinated writes; read-only/export operations retain their original snapshots.

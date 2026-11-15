@@ -358,3 +358,9 @@ The live replay test is excluded from `pnpm test` and requires `ALLOW_UMAMI_WRIT
 | Script | Type | Purpose |
 | --- | --- | --- |
 | [tests/analytics/replay-live.browser.mjs](../tests/analytics/replay-live.browser.mjs) | Live browser integration | Real chunk acceptance, single-visit startup, authenticated replay retrieval, snapshots, menus, paused portals and scrolling |
+
+Concurrent saved-item checks use two tabs in one isolated browser context, share local storage/IndexedDB, and mock all APIs. They observe real transaction callbacks and assert that overlapping remove/undo operations retain both items. No server data is written.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/concurrent-saved.browser.mjs](../tests/user-data/concurrent-saved.browser.mjs) | Browser | 32 cross-tab commits, shared transaction coverage, retained unrelated edits and phone layout |
