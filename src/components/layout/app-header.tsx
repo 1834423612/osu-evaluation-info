@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Languages } from "lucide-react";
+import { Languages, Bookmark } from "lucide-react";
 import { ResourcesMenu, ExploreMenu, PersonalMenu } from "./resources-menu";
 import resourceStyles from "./resources-menu.module.css";
 import { BrandMascot } from "@/components/brand/brand-mascot";
@@ -127,14 +127,21 @@ export function AppHeader({
             aria-label={text(locale, "Main navigation", "主导航")}
           >
             <ExploreMenu locale={locale} page={current} />
+            <Link
+              href="/saved"
+              className={resourceStyles.savedLink}
+              data-active={current === "saved"}
+              aria-current={current === "saved" ? "page" : undefined}
+            >
+              <Bookmark size={15} />
+              <span>{text(locale, "Saved", "收藏")}</span>
+              <span className="nav-count">{savedCount}</span>
+            </Link>
             <PersonalMenu
               locale={locale}
               page={current}
               status={
                 <>
-                  {current === "saved" ? (
-                    <span className="nav-count">{savedCount}</span>
-                  ) : null}
                   {updates ? (
                     <span
                       className={styles.updateDot}

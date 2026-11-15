@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { authClient } from "@/lib/auth/client";
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import {
@@ -12,7 +13,6 @@ import {
   Search,
   Check,
   History,
-  Bookmark,
   UserRound,
   ArrowRightLeft,
   Link as LinkIcon,
@@ -46,6 +46,7 @@ function NavigationMenu({
   group: "explore" | "guides" | "personal";
   status?: ReactNode;
 }) {
+  const { data: session } = authClient.useSession();
   const exploring = group === "explore",
     personal = group === "personal",
     primary = group !== "guides";
@@ -94,7 +95,7 @@ function NavigationMenu({
           page: "popular",
           href: "/popular",
           Icon: TrendingUp,
-          title: text(locale, "Most saved", "热门收藏"),
+          title: text(locale, "Discover", "发现好课"),
           detail: text(
             locale,
             "Courses, sections and instructors",
@@ -105,21 +106,10 @@ function NavigationMenu({
     : personal
       ? [
           {
-            page: "saved",
-            href: "/saved",
-            Icon: Bookmark,
-            title: text(locale, "Saved items", "收藏"),
-            detail: text(
-              locale,
-              "Courses, sections, instructors and syllabi",
-              "课程、班次、教师与大纲",
-            ),
-          },
-          {
             page: "account",
             href: "/account",
             Icon: UserRound,
-            title: text(locale, "Account & sync", "账号与同步"),
+            title: text(locale, "Account & devices", "账号与设备"),
             detail: text(
               locale,
               "Sign in, devices and cloud favorites",
@@ -197,7 +187,7 @@ function NavigationMenu({
         ];
   const selected = items.some((item) => item.page === page);
   const Icon = personal
-    ? (items.find((x) => x.page === page)?.Icon ?? Bookmark)
+    ? UserRound
     : exploring
       ? page === "rmp"
         ? MessageSquare
@@ -215,12 +205,12 @@ function NavigationMenu({
         aria-label={text(
           locale,
           personal
-            ? "Saved items and account"
+            ? "My account and tools"
             : exploring
               ? "Courses and teachers"
               : "Guides and data",
           personal
-            ? "收藏与账号"
+            ? "账号与个人工具"
             : exploring
               ? "课程与教师"
               : "课程说明与数据方法",
@@ -229,27 +219,7 @@ function NavigationMenu({
         <Icon size={15} aria-hidden="true" />
         <span>
           {personal
-            ? text(
-                locale,
-                page === "account"
-                  ? "Account"
-                  : page === "transfer"
-                    ? "Transfer"
-                    : page === "history"
-                      ? "Recent"
-                      : page === "share"
-                        ? "Shared"
-                        : "Saved",
-                page === "account"
-                  ? "账号"
-                  : page === "transfer"
-                    ? "转存"
-                    : page === "history"
-                      ? "最近"
-                      : page === "share"
-                        ? "分享"
-                        : "收藏",
-              )
+            ? text(locale, "My space", "我的")
             : exploring
               ? text(
                   locale,
@@ -258,14 +228,14 @@ function NavigationMenu({
                     : page === "rmp"
                       ? "Teachers"
                       : page === "popular"
-                        ? "Most saved"
+                        ? "Discover"
                         : "Courses",
                   page === "updates"
                     ? "课程更新"
                     : page === "rmp"
                       ? "RMP 教师库"
                       : page === "popular"
-                        ? "热门收藏"
+                        ? "发现好课"
                         : "课程探索",
                 )
               : text(locale, "Guides & data", "课程说明与数据")}
@@ -280,6 +250,29 @@ function NavigationMenu({
           sideOffset={8}
           collisionPadding={10}
         >
+          {personal ? (
+            <DropdownMenu.Label className={styles.menuProfile}>
+              <UserRound size={19} />
+              <span>
+                <b>
+                  {session?.user.name ?? text(locale, "Your space", "我的空间")}
+                </b>
+                <small>
+                  {session
+                    ? text(
+                        locale,
+                        "Account, security and personal tools",
+                        "账号、安全与个人工具",
+                      )
+                    : text(
+                        locale,
+                        "Sign in to sync your favorites",
+                        "登录后同步你的收藏",
+                      )}
+                </small>
+              </span>
+            </DropdownMenu.Label>
+          ) : null}
           {items.map((item) => (
             <DropdownMenu.Item asChild key={item.page}>
               <Link
