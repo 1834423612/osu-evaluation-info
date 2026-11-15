@@ -135,3 +135,11 @@ test("startup events wait for one visit token, remain bounded, and honor opt-out
   assert.ok((await Promise.all(pending)).every((x) => x === false));
   assert.equal(window.__COURSE_ATLAS_UMAMI_STARTING__.waiting, 0);
 });
+
+test("private planning suppresses all analytics payloads", () => {
+  assert.equal(
+    send({ message: "private PDF text" }, { path: "/planning" }),
+    false,
+  );
+  assert.equal(send({ url: "private" }, { path: "/planning/review" }), false);
+});

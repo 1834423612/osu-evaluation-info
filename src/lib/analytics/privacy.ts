@@ -66,6 +66,7 @@ export function analyticsBeforeSend(
   type: string,
   payload: Record<string, unknown>,
 ) {
+  if (/^\/planning(?:\/|$)/.test(location.pathname)) return false;
   const w = window as Window & {
     __COURSE_ATLAS_DEBUG__?: { skipAnalytics?: boolean };
     __COURSE_ATLAS_UMAMI_STARTING__?: { waiting: number };
