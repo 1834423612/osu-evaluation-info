@@ -2,7 +2,8 @@
 import { TransferSender } from "@/components/transfer/transfer-sender";
 import { SharedManagement } from "@/components/sharing/shared-management";
 import { ShareCollection } from "@/components/sharing/share-collection";
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
+import { savedScope } from "@/lib/saved/scope";
 import {
   Cloud,
   Download,
@@ -37,6 +38,18 @@ import {
 } from "@/lib/saved/exchange";
 import styles from "@/components/ui/workspace.module.css";
 export function SavedManager({ locale }: { locale: Locale }) {
+  const scope = useSyncExternalStore(
+    (callback) => {
+      window.addEventListener("course-atlas:preferences", callback);
+      return () =>
+        window.removeEventListener("course-atlas:preferences", callback);
+    },
+    savedScope,
+    () => null,
+  );
+  return <SavedManagerBody key={scope ?? "guest"} locale={locale} />;
+}
+function SavedManagerBody({ locale }: { locale: Locale }) {
   const file = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<ExchangeItem[]>([]),
     [open, setOpen] = useState(false),
