@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   FileUp,
@@ -29,6 +29,7 @@ import { extractPlan } from "@/lib/planning/pdf";
 import sources from "../../../data/planning/sources.json";
 import curricula from "../../../data/planning/curricula.json";
 import styles from "./planning.module.css";
+import { ImportGuard } from "@/lib/planning/import-guard";
 
 export function PlanningWorkspace() {
   const { locale } = usePreferences();
@@ -40,9 +41,18 @@ export function PlanningWorkspace() {
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<"private" | "official">("private");
   const [dark, setDark] = useState(false);
-  const abort = useRef<AbortController | null>(null);
+  const importGuard = useRef(new ImportGuard());
+  useEffect(() => {
+    const guard = importGuard.current;
+    return () => guard.invalidate();
+  }, []);
+  const cancelImport = () => {
+    importGuard.current.invalidate();
+    setBusy(false);
+  };
   const fileInput = useRef<HTMLInputElement>(null);
   const update = (fn: (p: Plan) => Plan) => {
+    cancelImport();
     setPlan((p) => ({ ...fn(p), reviewed: false }));
     setMessage("");
   };
@@ -74,14 +84,10 @@ export function PlanningWorkspace() {
       return;
     setBusy(true);
     setMessage("");
-    abort.current = new AbortController();
+    const token = importGuard.current.start();
     try {
-      const result = await extractPlan(
-        file,
-        source,
-        abort.current.signal,
-        origin,
-      );
+      const result = await extractPlan(file, source, token.signal, origin);
+      if (!importGuard.current.current(token.generation)) return;
       setPlan(result.plan);
       setMessage(
         result.warnings.includes("empty")
@@ -95,6 +101,7 @@ export function PlanningWorkspace() {
             ),
       );
     } catch {
+      if (!importGuard.current.current(token.generation)) return;
       setMessage(
         t(
           "Could not read this PDF. Use a text PDF under 20 MB and 100 pages; encrypted or scanned files are unsupported.",
@@ -102,9 +109,10 @@ export function PlanningWorkspace() {
         ),
       );
     } finally {
-      setBusy(false);
-      abort.current = null;
-      if (fileInput.current) fileInput.current.value = "";
+      if (importGuard.current.current(token.generation)) {
+        setBusy(false);
+        if (fileInput.current) fileInput.current.value = "";
+      }
     }
   }
   function persist(exporting: boolean) {
@@ -343,9 +351,7 @@ export function PlanningWorkspace() {
                 />
               </label>
               {busy && (
-                <button onClick={() => abort.current?.abort()}>
-                  {t("Cancel", "取消")}
-                </button>
+                <button onClick={cancelImport}>{t("Cancel", "取消")}</button>
               )}
               <div className={styles.divider} />
               <h3>{t("Only what you choose to keep", "仅保留你确认的内容")}</h3>
@@ -370,6 +376,7 @@ export function PlanningWorkspace() {
                         )
                       )
                         return;
+                      cancelImport();
                       setPlan(saved);
                       setMessage(t("Saved plan loaded.", "已载入保存的规划。"));
                     } else
@@ -694,9 +701,10 @@ export function PlanningWorkspace() {
                   <input
                     type="checkbox"
                     checked={plan.reviewed}
-                    onChange={(e) =>
-                      setPlan((p) => ({ ...p, reviewed: e.target.checked }))
-                    }
+                    onChange={(e) => {
+                      cancelImport();
+                      setPlan((p) => ({ ...p, reviewed: e.target.checked }));
+                    }}
                   />
                   {t(
                     "I checked these fields against my source and removed unwanted information.",
@@ -731,6 +739,7 @@ export function PlanningWorkspace() {
                       ) {
                         try {
                           localStorage.removeItem(PLAN_STORAGE_KEY);
+                          cancelImport();
                           setPlan(emptyPlan());
                           setMessage(
                             t("Local plan deleted.", "已删除本地规划。"),
