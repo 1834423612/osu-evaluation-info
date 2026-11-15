@@ -200,7 +200,8 @@ function AccountWorkspace() {
               disabled={busy}
               onClick={() =>
                 void run(async () => {
-                  await authClient.signOut();
+                  const result = await authClient.signOut();
+                  if (result.error) return result;
                   window.location.reload();
                 })
               }

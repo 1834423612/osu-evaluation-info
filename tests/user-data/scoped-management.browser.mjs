@@ -18,7 +18,8 @@ const browser = await chromium.launch({
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
   }),
   context = await browser.newContext({ viewport: { width: 390, height: 950 } });
-let signedIn = true;
+let signedIn = true,
+  rejectSignOut = true;
 try {
   await context.route("**/*", (r) => {
     const u = new URL(r.request().url());
@@ -51,6 +52,13 @@ try {
           : null,
       });
     if (u.pathname === "/api/auth/sign-out") {
+      if (rejectSignOut) {
+        rejectSignOut = false;
+        return r.fulfill({
+          status: 503,
+          json: { code: "QA_UNAVAILABLE", message: "QA unavailable" },
+        });
+      }
       signedIn = false;
       return r.fulfill({ json: { success: true } });
     }
@@ -128,6 +136,21 @@ try {
   await p.getByLabel("Title", { exact: true }).fill("Private A draft");
   const account = await context.newPage();
   await account.goto(new URL("/account", base).href);
+  await account.getByRole("button", { name: "Sign out", exact: true }).click();
+  await account
+    .getByText("Could not complete this. Check the code or sign in again.", {
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(
+    signedIn,
+    true,
+    "A failed sign-out must not be reported as complete",
+  );
+  assert.equal(
+    await p.getByText("Private A cached title", { exact: true }).count(),
+    1,
+  );
   await account.getByRole("button", { name: "Sign out", exact: true }).click();
   await p.bringToFront();
   await p.evaluate(() => {
