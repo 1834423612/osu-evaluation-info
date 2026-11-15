@@ -79,3 +79,62 @@ test("oversized candidate sets fail rather than silently truncate", () => {
     /Too many/,
   );
 });
+
+test("honors suffixes never become credits and metadata can include spaces", () => {
+  const { plan } = parsePlanLines(
+    lines(
+      "MATH 2999H 120 hours required",
+      "Applied Version: AU 2022",
+      "Catalog Term: Autumn 2028 (GEN)",
+    ),
+    "expanded-audit",
+  );
+  assert.equal(plan.semesters[0].courses[0].credits, null);
+  assert.equal(plan.semesters[0].courses[0].number, "2999H");
+  assert.equal(plan.appliedVersion, "AU2022");
+  assert.equal(plan.catalogTerm, "Autumn2028");
+});
+test("student plan table credits require a header and unknown placeholders stay unknown", () => {
+  const { plan } = parsePlanLines(
+    [
+      { text: "Autumn 2028 - 15 hours attempted", page: 1 },
+      {
+        text: "Course Credits Status",
+        page: 1,
+        cells: [
+          { text: "Course", x: 20 },
+          { text: "Credits", x: 300 },
+          { text: "Status", x: 400 },
+        ],
+      },
+      {
+        text: "MATH 2999H 4 Planned",
+        page: 1,
+        cells: [
+          { text: "MATH 2999H", x: 20 },
+          { text: "4", x: 300 },
+          { text: "Planned", x: 400 },
+        ],
+      },
+      {
+        text: "ECON 2999 Placeholder - Planned",
+        page: 1,
+        cells: [
+          { text: "ECON 2999 Placeholder", x: 20 },
+          { text: "-", x: 300 },
+          { text: "Planned", x: 400 },
+        ],
+      },
+      { text: "Transfer Credits", page: 1 },
+      { text: "CHEM 2999 4", page: 1 },
+    ],
+    "student-plan",
+  );
+  assert.equal(plan.semesters[0].term, "Autumn2028");
+  assert.equal(plan.semesters[0].reportedCredits, 15);
+  assert.equal(plan.semesters[0].courses[0].credits, 4);
+  assert.equal(plan.semesters[0].courses[1].credits, null);
+  assert.equal(plan.semesters[1].term, null);
+  assert.equal(plan.semesters[1].creditOrigin, "transfer");
+  assert.equal(plan.semesters[1].courses[0].credits, null);
+});

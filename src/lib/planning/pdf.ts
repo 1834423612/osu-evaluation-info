@@ -1,5 +1,6 @@
 import { parsePlanLines, type PdfLine } from "./parser";
 import type { Plan } from "./model";
+import { planningLines } from "./pdf-lines";
 export async function extractPlan(
   file: File,
   source: Plan["source"],
@@ -34,23 +35,7 @@ export async function extractPlan(
       if (signal?.aborted) throw Error("cancelled");
       const page = await pdf.getPage(n);
       const content = await page.getTextContent();
-      const rows = new Map<number, Array<{ x: number; text: string }>>();
-      for (const item of content.items) {
-        if (!("str" in item)) continue;
-        const y = Math.round(item.transform[5] / 3) * 3;
-        const row = rows.get(y) ?? [];
-        row.push({ x: item.transform[4], text: item.str });
-        rows.set(y, row);
-      }
-      for (const [, row] of [...rows].sort((a, b) => b[0] - a[0])) {
-        lines.push({
-          page: n,
-          text: row
-            .sort((a, b) => a.x - b.x)
-            .map((x) => x.text)
-            .join(" "),
-        });
-      }
+      lines.push(...planningLines(content.items, n));
       page.cleanup();
       if (lines.length > 30000) throw Error("content");
     }

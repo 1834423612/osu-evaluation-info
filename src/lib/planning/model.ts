@@ -44,6 +44,9 @@ export const planSchema = z
         z
           .object({
             term,
+            creditOrigin: z
+              .enum(["institutional", "transfer", "exam", "unknown"])
+              .optional(),
             reportedCredits: credits,
             courses: z.array(courseSchema).max(100),
           })
