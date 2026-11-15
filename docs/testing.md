@@ -370,3 +370,21 @@ The scoped-management browser check uses a synthetic account and local/paused-cl
 | Script | Type | Purpose |
 | --- | --- | --- |
 | [tests/user-data/scoped-management.browser.mjs](../tests/user-data/scoped-management.browser.mjs) | Browser | Workspace-scoped management state and cross-tab sign-out isolation |
+
+Collection and backup browser checks use the Node/Playwright environment above. All APIs are mocked; writes stay in isolated browser storage and local downloads. The migration integration check requires `USER_DATA_INTEGRATION=1`, creates random-prefixed tables, runs the real CLI and removes its temporary tables. The backup unit test does not connect to PostgreSQL.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/collections.test.mjs](../tests/user-data/collections.test.mjs) | Unit | Private collection validation, preserved organization, bounded batches and rename conflicts |
+| [tests/user-data/collections.browser.mjs](../tests/user-data/collections.browser.mjs) | Browser | Create, organize, rename, delete/undo, scoped export and private restore at 1440/768/390/320 pixels |
+| [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs) | Unit | RMP source identities, preserved ratings and public exchange validation |
+| [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs) | Browser | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles |
+| [tests/user-data/backup.test.mjs](../tests/user-data/backup.test.mjs) | Unit | Exact auth model allowlist and credential-safe backup connection options |
+| [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration | Refuse unowned authentication tables in the active search-path schema |
+
+```sh
+node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs
+node tests/user-data/collections.browser.mjs
+node tests/user-data/rmp-favorites.browser.mjs
+USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.test.mjs
+```

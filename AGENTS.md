@@ -40,3 +40,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Route browser favorite mutations through `withSavedMutation` in `src/lib/saved/mutations.ts`. Sync-state edit callbacks already hold the same IndexedDB transaction.
 - Re-read the workspace inside the synchronous transaction callback. Do not await network requests or UI work while editing; await transaction completion before reporting success or acknowledging transfers.
 - Keep all four favorite kinds in one workspace commit. Do not bypass the saved-storage guard or silently evict existing items at capacity.
+- Preserve version-2 collection metadata when editing favorites. Private sync items include collections; public exchange snapshots contain only the four favorite kinds.
+- Use stable `rmp:<profile-id>` identities for RMP bookmarks. Never merge unverified profiles or infer official teaching assignments from equal names or RMP course labels.
+- Authentication models follow the database connection's current schema/search path. Migration ownership checks and backups must resolve that schema instead of assuming `public`.

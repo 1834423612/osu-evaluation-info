@@ -4,6 +4,26 @@ English · [简体中文](zh-CN/user-data.md)
 
 Favorites work locally without an account. The saved page manages courses, sections, instructors and syllabi together, supports selected JSON export/import, and keeps existing items when importing. Removing selected items offers Undo. Imports exceeding a collection limit fail without truncating the collection. Limits are 100 courses and 200 items in each other category.
 
+## Collections and private backups
+
+**Manage** supports up to 30 named collections, each with 12 flat tags of up to 24 characters. Favorites can belong to several collections without duplication. Search matches item details, collection names and tags. Type filters and title/type sorting affect the management list.
+
+Select items to add, move or remove collection membership. Deleting a collection keeps its favorites and offers Undo. Organization follows account sync. Competing edits require a choice; **Keep both collections** retains the cloud version and creates a separate device copy. Reopen a draft if another tab has changed that collection.
+
+Share, transfer and ordinary JSON export use the active collection and explicit selection. Private organization stays out of public snapshots. An empty collection cannot accidentally publish all favorites.
+
+Under **Export / share title**, **Download full backup** saves the current workspace's four favorite categories, cached details, organization and syllabus acknowledgement state. Private backups allow 10 MiB; ordinary exchange files allow 1 MiB. Use **Import**, review the summary and choose **Merge backup**. Existing snapshots and collection names stay; membership and tags form a union. Invalid or over-limit unions fail before the single workspace write. Backups may contain cached contacts: keep them private.
+
+RMP library cards and profile pages support direct favorites. They retain source IDs, ratings and the captured identity state. Equal names do not merge; RMP course labels do not become official teaching assignments. Saved RMP entries link to their profile and support grouping, sharing, sync and Undo.
+
+## Database backup before deployment
+
+Install PostgreSQL client tools matching or newer than the server. Preview with `pnpm user-data:backup --production`; add `--apply` to create a backup. The tool verifies the installation marker and selects exact authentication model names in the current database schema, excluding development tables.
+
+Two custom-format archives share one exported PostgreSQL snapshot: the user-data schema and authentication tables. The tool fully decodes both archives without restoring them, records SHA-256 digests and row counts, and restricts file permissions. Credentials pass through child environment variables, never command arguments. Output stays in the ignored `.cache/user-data-backups/` directory; copy it to protected backup storage before changing hosts.
+
+This is a user/account backup; official catalog, syllabus, evaluation and RMP data are separate. Archive readability is not a restore drill. Test restoration in an isolated database and preserve server secrets before a production rollback.
+
 ## Sign in on another device
 
 Email codes are the initial sign-in method. A verified account can add passkeys, an optional password and ten recovery codes. A passkey provider may synchronize credentials between devices; browsers supporting cross-device authentication can offer a phone/QR option. Email sign-in works independently of passkey availability. This site does not require a particular authenticator platform.
@@ -28,7 +48,7 @@ pnpm account:migrate --apply
 pnpm user-data:migrate --apply
 ```
 
-Commands load `.env.local` and `.env`. Without `--apply`, they show a read-only plan. Production defaults to authentication tables `public.ca_*` and schema `osu_user`; development defaults to `public.ca_dev_*` and `osu_user_dev`. `AUTH_TABLE_PREFIX` and `USER_DATA_SCHEMA` override these defaults. Ownership markers prevent adopting unrelated tables. Applied incremental migrations are checksummed and must not be edited. These migrations do not change official catalog, syllabus, evaluation or RMP tables.
+Commands load `.env.local` and `.env`. Without `--apply`, they show a read-only plan. Production defaults to authentication prefix `ca_` and user-data schema `osu_user`; development uses `ca_dev_` and `osu_user_dev`. Authentication models use the connection's current schema/search path, which need not be `public`. `AUTH_TABLE_PREFIX` and `USER_DATA_SCHEMA` override the defaults. Ownership markers prevent adopting unrelated tables. Applied incremental migrations are checksummed and must not be edited. These migrations do not change official catalog, syllabus, evaluation or RMP tables.
 
 `AUTH_DEV_BASE_URL` defaults to `http://localhost:3000`. Production trusts the configured origin, not arbitrary forwarded-host headers. Set `USER_DATA_TRUSTED_PROXY_HEADER` only when a trusted proxy overwrites that header and direct access to the origin is blocked. Do not use a client-supplied IP header as proof of identity.
 

@@ -368,3 +368,21 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本 | 类型 | 用途 |
 | --- | --- | --- |
 | [tests/user-data/scoped-management.browser.mjs](../../tests/user-data/scoped-management.browser.mjs) | 浏览器 | 管理区工作区隔离及跨标签退出登录 |
+
+分组与备份浏览器检查沿用上述 Node／Playwright 环境，模拟全部 API，仅写入隔离浏览器存储和本地下载文件。迁移集成检查需 `USER_DATA_INTEGRATION=1`，会创建随机前缀表、调用真实 CLI，最后移除临时表。备份单元测试不连接 PostgreSQL。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/collections.test.mjs](../../tests/user-data/collections.test.mjs) | 单元 | 私人分组校验、保留分组结构、批次体积限制与重命名冲突 |
+| [tests/user-data/collections.browser.mjs](../../tests/user-data/collections.browser.mjs) | 浏览器 | 1440／768／390／320 像素下的新建、整理、改名、删除撤销、分组导出和私人恢复 |
+| [tests/user-data/rmp-favorites.test.mjs](../../tests/user-data/rmp-favorites.test.mjs) | 单元 | RMP 来源身份、评分保留及公开交换格式校验 |
+| [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs) | 浏览器 | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回 |
+| [tests/user-data/backup.test.mjs](../../tests/user-data/backup.test.mjs) | 单元 | 认证表精确白名单及安全的备份连接凭据传递 |
+| [tests/user-data/auth-migration.integration.test.mjs](../../tests/user-data/auth-migration.integration.test.mjs) | 集成 | 拒绝接管当前搜索路径 schema 中无归属标记的认证表 |
+
+```sh
+node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs
+node tests/user-data/collections.browser.mjs
+node tests/user-data/rmp-favorites.browser.mjs
+USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.test.mjs
+```
