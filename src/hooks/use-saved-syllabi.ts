@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { runSavedAction } from "@/lib/saved/mutations";
 import { browserStorage } from "@/lib/preferences/browser-storage";
 import { notifySaveFailure } from "@/lib/saved/capacity";
 import { PREFERENCES_EVENT } from "@/lib/preferences/locale";
@@ -63,52 +64,60 @@ export const savedSyllabiActions = {
     entry: SyllabusEntry,
     result?: SyllabusResult<SyllabusDocument>,
   ) {
-    const current = read(),
-      existing = current.find((item) => item.id === entry.code);
-    const added = !existing;
-    if (
-      !write(
-        existing
-          ? current.filter((item) => item.id !== entry.code)
-          : [...current, createSavedSyllabus(course, section, entry, result)],
+    return runSavedAction(() => {
+      const current = read(),
+        existing = current.find((item) => item.id === entry.code);
+      const added = !existing;
+      if (
+        !write(
+          existing
+            ? current.filter((item) => item.id !== entry.code)
+            : [...current, createSavedSyllabus(course, section, entry, result)],
+        )
       )
-    )
-      return false;
-    window.dispatchEvent(
-      new CustomEvent("course-atlas:toast", {
-        detail: {
-          added,
-          label: `${entry.subject} ${entry.catalogNumber} · #${section.classNumber}`,
-          undo: () => {
-            const latest = read();
-            write(
-              added
-                ? latest.filter((item) => item.id !== entry.code)
-                : latest.some((item) => item.id === entry.code)
-                  ? latest
-                  : [...latest, existing!],
-            );
+        return false;
+      window.dispatchEvent(
+        new CustomEvent("course-atlas:toast", {
+          detail: {
+            added,
+            label: `${entry.subject} ${entry.catalogNumber} · #${section.classNumber}`,
+            undo: () =>
+              runSavedAction(() => {
+                const latest = read();
+                write(
+                  added
+                    ? latest.filter((item) => item.id !== entry.code)
+                    : latest.some((item) => item.id === entry.code)
+                      ? latest
+                      : [...latest, existing!],
+                );
+                return true;
+              }),
           },
-        },
-      }),
-    );
-    return true;
+        }),
+      );
+      return true;
+    });
   },
   observe(result: SyllabusResult<SyllabusDocument>) {
-    return write(
-      read().map((item) =>
-        item.id === result.data.entry.code
-          ? observeSyllabus(item, result)
-          : item,
-      ),
-    );
+    return runSavedAction(() => {
+      return write(
+        read().map((item) =>
+          item.id === result.data.entry.code
+            ? observeSyllabus(item, result)
+            : item,
+        ),
+      );
+    });
   },
   acknowledge(code: string, revision: SyllabusRevision) {
-    return write(
-      read().map((item) =>
-        item.id === code ? acknowledgeSyllabus(item, revision) : item,
-      ),
-    );
+    return runSavedAction(() => {
+      return write(
+        read().map((item) =>
+          item.id === code ? acknowledgeSyllabus(item, revision) : item,
+        ),
+      );
+    });
   },
 };
 export function useSavedSyllabi() {

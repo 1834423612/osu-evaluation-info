@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { snapshot, course } from "./fixtures.mjs";
+import { withinSavedTransaction as transaction } from "../../src/lib/saved/mutation-context.ts";
 import {
   SAVED_STORAGE_KEYS,
   SAVED_WORKSPACE_KEY,
@@ -59,7 +60,7 @@ test("import, removal and undo preserve complete existing snapshots and interven
     restoreLocalRemoval,
     readLocalItems,
   } = await import("../../src/lib/saved/local.ts");
-  importLocalItems([snapshot.items[2]]);
+  transaction(() => importLocalItems([snapshot.items[2]]));
   const saved = () =>
     JSON.parse(
       JSON.parse(data.get(SAVED_WORKSPACE_KEY)).records[SAVED_STORAGE_KEYS[0]],
@@ -67,19 +68,23 @@ test("import, removal and undo preserve complete existing snapshots and interven
   assert.equal(saved().description, original.description);
   assert.equal(saved().sections[0].fees[0].amount, 20);
   assert.deepEqual(saved().extraCache, { keep: "original" });
-  const removed = removeLocalItems(new Set(["course:" + course.id]));
+  const removed = transaction(() =>
+    removeLocalItems(new Set(["course:" + course.id])),
+  );
   assert.equal(readLocalItems().filter((x) => x.kind === "course").length, 0);
-  importLocalItems([
-    {
-      kind: "instructor",
-      payload: {
-        ...snapshot.items[2].payload,
-        id: "another.2",
-        name: "Another teacher",
+  transaction(() =>
+    importLocalItems([
+      {
+        kind: "instructor",
+        payload: {
+          ...snapshot.items[2].payload,
+          id: "another.2",
+          name: "Another teacher",
+        },
       },
-    },
-  ]);
-  restoreLocalRemoval(removed);
+    ]),
+  );
+  transaction(() => restoreLocalRemoval(removed));
   assert.equal(
     readLocalItems().filter((x) => x.kind === "instructor").length,
     2,
@@ -89,7 +94,7 @@ test("import, removal and undo preserve complete existing snapshots and interven
   assert.deepEqual(saved().extraCache, { keep: "original" });
   const before = data.get(SAVED_WORKSPACE_KEY);
   fail = true;
-  assert.throws(() => importLocalItems([snapshot.items[1]]));
+  assert.throws(() => transaction(() => importLocalItems([snapshot.items[1]])));
   assert.equal(data.get(SAVED_WORKSPACE_KEY), before);
   fail = false;
   data.set(SAVED_WORKSPACE_KEY, "{broken");

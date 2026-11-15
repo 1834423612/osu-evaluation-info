@@ -1,6 +1,7 @@
 "use client";
 
 import { debugFlag } from "@/lib/debug/flags";
+import { runSavedAction, withSavedMutation } from "@/lib/saved/mutations";
 import { browserStorage } from "@/lib/preferences/browser-storage";
 import { notifySaveFailure } from "@/lib/saved/capacity";
 import { useEffect, useSyncExternalStore } from "react";
@@ -185,7 +186,17 @@ function writeArray(key: string, value: unknown[]) {
 }
 function notifySaved(added: boolean, label: string, undo: () => void) {
   window.dispatchEvent(
-    new CustomEvent(TOAST_EVENT, { detail: { added, label, undo } }),
+    new CustomEvent(TOAST_EVENT, {
+      detail: {
+        added,
+        label,
+        undo: () =>
+          runSavedAction(() => {
+            undo();
+            return true;
+          }),
+      },
+    }),
   );
 }
 function instructorKey(identity: string) {
@@ -196,12 +207,11 @@ export function usePreferences() {
     localePreference.initialize();
     if (storageMigrated) return;
     storageMigrated = true;
-    try {
-      migrateSavedAvailability(browserStorage());
-    } catch {
-      /* Storage may be disabled. */
-    }
-    window.dispatchEvent(new Event(EVENT));
+    void withSavedMutation(() => migrateSavedAvailability(browserStorage()))
+      .then(() => window.dispatchEvent(new Event(EVENT)))
+      .catch(() => {
+        /* Read-only or changed workspaces keep their original data. */
+      });
   }, []);
   const locale = useSyncExternalStore(
     subscribe,
@@ -251,208 +261,215 @@ export function usePreferences() {
     window.dispatchEvent(new Event(EVENT));
   }
   function toggleSaved(value: CatalogCourse) {
-    const course = withoutCourseAvailability(value);
-    const current = getSaved();
-    const next = current.some((item) => item.id === course.id)
-      ? current.filter((item) => item.id !== course.id)
-      : [...current, course];
-    try {
-      browserStorage().setItem(SAVED_KEY, JSON.stringify(next));
-    } catch (error) {
-      notifySaveFailure(error);
-      return false;
-    }
-    window.dispatchEvent(new Event(EVENT));
-    const added = next.some((item) => item.id === course.id);
-    notifySaved(added, `${course.subject} ${course.catalogNumber}`, () => {
-      const latest = getSaved();
-      const undone = added
-        ? latest.filter((item) => item.id !== course.id)
-        : latest.some((item) => item.id === course.id)
-          ? latest
-          : [...latest, course];
+    return runSavedAction(() => {
+      const course = withoutCourseAvailability(value);
+      const current = getSaved();
+      const next = current.some((item) => item.id === course.id)
+        ? current.filter((item) => item.id !== course.id)
+        : [...current, course];
       try {
-        browserStorage().setItem(SAVED_KEY, JSON.stringify(undone));
-        window.dispatchEvent(new Event(EVENT));
+        browserStorage().setItem(SAVED_KEY, JSON.stringify(next));
       } catch (error) {
         notifySaveFailure(error);
+        return false;
       }
+      window.dispatchEvent(new Event(EVENT));
+      const added = next.some((item) => item.id === course.id);
+      notifySaved(added, `${course.subject} ${course.catalogNumber}`, () => {
+        const latest = getSaved();
+        const undone = added
+          ? latest.filter((item) => item.id !== course.id)
+          : latest.some((item) => item.id === course.id)
+            ? latest
+            : [...latest, course];
+        try {
+          browserStorage().setItem(SAVED_KEY, JSON.stringify(undone));
+          window.dispatchEvent(new Event(EVENT));
+        } catch (error) {
+          notifySaveFailure(error);
+        }
+      });
+      return true;
     });
-    return true;
   }
   function toggleSection(course: CatalogCourse, value: CatalogSection) {
-    const section = withoutSectionAvailability(value);
-    const current = getSavedDetails<SavedSection>(
-      SAVED_SECTIONS_KEY,
-      "sections",
-    );
-    const id = `${course.id}:${section.classNumber}`;
-    const previous = current.find((item) => item.id === id);
-    const exists = Boolean(previous);
-    const next = exists
-      ? current.filter((item) => item.id !== id)
-      : [
-          ...current,
-          {
-            id,
-            courseId: course.id,
-            courseLabel: `${course.subject} ${course.catalogNumber}`,
-            courseTitle: course.title,
-            term: course.term,
-            campus: course.campus,
-            termCode: course.termCode,
-            campusCode: course.campusCode,
-            officialCourseId: value.courseId || course.courseId,
-            creditsMin: course.creditsMin,
-            creditsMax: course.creditsMax,
-            section,
-          },
-        ];
-    if (!writeArray(SAVED_SECTIONS_KEY, next)) return false;
-    const added = !exists;
-    notifySaved(
-      added,
-      `${course.subject} ${course.catalogNumber} · ${section.section}`,
-      () => {
-        const latest = getSavedDetails<SavedSection>(
-          SAVED_SECTIONS_KEY,
-          "sections",
-        );
-        const undone = added
-          ? latest.filter((item) => item.id !== id)
-          : latest.some((item) => item.id === id)
-            ? latest
-            : [
-                ...latest,
-                previous ?? {
-                  id,
-                  courseId: course.id,
-                  courseLabel: `${course.subject} ${course.catalogNumber}`,
-                  courseTitle: course.title,
-                  term: course.term,
-                  campus: course.campus,
-                  termCode: course.termCode,
-                  campusCode: course.campusCode,
-                  officialCourseId: value.courseId || course.courseId,
-                  creditsMin: course.creditsMin,
-                  creditsMax: course.creditsMax,
-                  section,
-                },
-              ];
-        writeArray(SAVED_SECTIONS_KEY, undone);
-      },
-    );
-    return true;
+    return runSavedAction(() => {
+      const section = withoutSectionAvailability(value);
+      const current = getSavedDetails<SavedSection>(
+        SAVED_SECTIONS_KEY,
+        "sections",
+      );
+      const id = `${course.id}:${section.classNumber}`;
+      const previous = current.find((item) => item.id === id);
+      const exists = Boolean(previous);
+      const next = exists
+        ? current.filter((item) => item.id !== id)
+        : [
+            ...current,
+            {
+              id,
+              courseId: course.id,
+              courseLabel: `${course.subject} ${course.catalogNumber}`,
+              courseTitle: course.title,
+              term: course.term,
+              campus: course.campus,
+              termCode: course.termCode,
+              campusCode: course.campusCode,
+              officialCourseId: value.courseId || course.courseId,
+              creditsMin: course.creditsMin,
+              creditsMax: course.creditsMax,
+              section,
+            },
+          ];
+      if (!writeArray(SAVED_SECTIONS_KEY, next)) return false;
+      const added = !exists;
+      notifySaved(
+        added,
+        `${course.subject} ${course.catalogNumber} · ${section.section}`,
+        () => {
+          const latest = getSavedDetails<SavedSection>(
+            SAVED_SECTIONS_KEY,
+            "sections",
+          );
+          const undone = added
+            ? latest.filter((item) => item.id !== id)
+            : latest.some((item) => item.id === id)
+              ? latest
+              : [
+                  ...latest,
+                  previous ?? {
+                    id,
+                    courseId: course.id,
+                    courseLabel: `${course.subject} ${course.catalogNumber}`,
+                    courseTitle: course.title,
+                    term: course.term,
+                    campus: course.campus,
+                    termCode: course.termCode,
+                    campusCode: course.campusCode,
+                    officialCourseId: value.courseId || course.courseId,
+                    creditsMin: course.creditsMin,
+                    creditsMax: course.creditsMax,
+                    section,
+                  },
+                ];
+          writeArray(SAVED_SECTIONS_KEY, undone);
+        },
+      );
+      return true;
+    });
   }
   function toggleInstructor(
     course: CatalogCourse,
     instructor: { name: string; email?: string | null },
   ) {
-    const identity = instructorKey(instructor.email || instructor.name);
-    const current = getSavedDetails<SavedInstructor>(
-      SAVED_INSTRUCTORS_KEY,
-      "instructors",
-    );
-    const existing = current.find(
-      (item) => instructorKey(item.id || item.email || item.name) === identity,
-    );
-    const relatedCourse = {
-      id: course.id,
-      label: `${course.subject} ${course.catalogNumber}`,
-      title: course.title,
-      term: course.term,
-      termCode: course.termCode,
-      campusCode: course.campusCode,
-      officialCourseId: course.courseId,
-      courseIds: course.courseIds,
-      creditsMin: course.creditsMin,
-      creditsMax: course.creditsMax,
-    };
-    const next = existing
-      ? existing.courses.some((item) => item.id === course.id)
-        ? current
-            .map((item) =>
-              item === existing
-                ? {
-                    ...item,
-                    courses: item.courses.filter(
-                      (related) => related.id !== course.id,
-                    ),
-                  }
-                : item,
-            )
-            .filter((item) => item.courses.length > 0)
-        : current.map((item) =>
-            item === existing
-              ? {
-                  ...item,
-                  courses: [...item.courses, relatedCourse],
-                }
-              : item,
-          )
-      : [
-          ...current,
-          {
-            id: identity,
-            name: instructor.name,
-            email: instructor.email ?? null,
-            courses: [relatedCourse],
-          },
-        ];
-    if (!writeArray(SAVED_INSTRUCTORS_KEY, next)) return false;
-    const added =
-      !existing || !existing.courses.some((item) => item.id === course.id);
-    notifySaved(added, instructor.name, () => {
-      const latest = getSavedDetails<SavedInstructor>(
+    return runSavedAction(() => {
+      const identity = instructorKey(instructor.email || instructor.name);
+      const current = getSavedDetails<SavedInstructor>(
         SAVED_INSTRUCTORS_KEY,
         "instructors",
       );
-      const currentInstructor = latest.find(
+      const existing = current.find(
         (item) =>
           instructorKey(item.id || item.email || item.name) === identity,
       );
-      if (added) {
-        if (!currentInstructor) return;
-        const courses = currentInstructor.courses.filter(
-          (item) => item.id !== course.id,
-        );
-        writeArray(
-          SAVED_INSTRUCTORS_KEY,
-          courses.length
-            ? latest.map((item) =>
-                item === currentInstructor ? { ...item, courses } : item,
+      const relatedCourse = {
+        id: course.id,
+        label: `${course.subject} ${course.catalogNumber}`,
+        title: course.title,
+        term: course.term,
+        termCode: course.termCode,
+        campusCode: course.campusCode,
+        officialCourseId: course.courseId,
+        courseIds: course.courseIds,
+        creditsMin: course.creditsMin,
+        creditsMax: course.creditsMax,
+      };
+      const next = existing
+        ? existing.courses.some((item) => item.id === course.id)
+          ? current
+              .map((item) =>
+                item === existing
+                  ? {
+                      ...item,
+                      courses: item.courses.filter(
+                        (related) => related.id !== course.id,
+                      ),
+                    }
+                  : item,
               )
-            : latest.filter((item) => item !== currentInstructor),
-        );
-        return;
-      }
-      if (currentInstructor) {
-        if (currentInstructor.courses.some((item) => item.id === course.id))
-          return;
-        writeArray(
+              .filter((item) => item.courses.length > 0)
+          : current.map((item) =>
+              item === existing
+                ? {
+                    ...item,
+                    courses: [...item.courses, relatedCourse],
+                  }
+                : item,
+            )
+        : [
+            ...current,
+            {
+              id: identity,
+              name: instructor.name,
+              email: instructor.email ?? null,
+              courses: [relatedCourse],
+            },
+          ];
+      if (!writeArray(SAVED_INSTRUCTORS_KEY, next)) return false;
+      const added =
+        !existing || !existing.courses.some((item) => item.id === course.id);
+      notifySaved(added, instructor.name, () => {
+        const latest = getSavedDetails<SavedInstructor>(
           SAVED_INSTRUCTORS_KEY,
-          latest.map((item) =>
-            item === currentInstructor
-              ? {
-                  ...item,
-                  courses: [...item.courses, relatedCourse],
-                }
-              : item,
-          ),
+          "instructors",
         );
-        return;
-      }
-      if (!existing) return;
-      writeArray(SAVED_INSTRUCTORS_KEY, [
-        ...latest,
-        {
-          ...existing,
-          id: identity,
-          courses: existing.courses,
-        },
-      ]);
+        const currentInstructor = latest.find(
+          (item) =>
+            instructorKey(item.id || item.email || item.name) === identity,
+        );
+        if (added) {
+          if (!currentInstructor) return;
+          const courses = currentInstructor.courses.filter(
+            (item) => item.id !== course.id,
+          );
+          writeArray(
+            SAVED_INSTRUCTORS_KEY,
+            courses.length
+              ? latest.map((item) =>
+                  item === currentInstructor ? { ...item, courses } : item,
+                )
+              : latest.filter((item) => item !== currentInstructor),
+          );
+          return;
+        }
+        if (currentInstructor) {
+          if (currentInstructor.courses.some((item) => item.id === course.id))
+            return;
+          writeArray(
+            SAVED_INSTRUCTORS_KEY,
+            latest.map((item) =>
+              item === currentInstructor
+                ? {
+                    ...item,
+                    courses: [...item.courses, relatedCourse],
+                  }
+                : item,
+            ),
+          );
+          return;
+        }
+        if (!existing) return;
+        writeArray(SAVED_INSTRUCTORS_KEY, [
+          ...latest,
+          {
+            ...existing,
+            id: identity,
+            courses: existing.courses,
+          },
+        ]);
+      });
+      return true;
     });
-    return true;
   }
   return {
     locale,

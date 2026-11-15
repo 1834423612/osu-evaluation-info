@@ -239,6 +239,7 @@ try {
   await b.page.getByRole("button", { name: "Manage", exact: true }).click();
   await b.page.getByRole("button", { name: /Select results/ }).click();
   await b.page.getByRole("button", { name: "Remove (1)", exact: true }).click();
+  await b.page.getByText("1 removed", { exact: true }).waitFor();
   assert.equal(await count(b.page), 0);
   // Resume sends the deletion with its base revision rather than re-importing cloud data.
   await b.page.goto(new URL("/account", origin).href);

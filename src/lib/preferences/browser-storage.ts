@@ -2,7 +2,9 @@ import {
   isSavedStorageKey,
   readSavedWorkspace,
   writeSavedArray,
+  SAVED_WORKSPACE_KEY,
 } from "../saved/workspace.ts";
+import { assertSavedTransaction } from "../saved/mutation-context.ts";
 import { savedScope, scopedSavedKey } from "../saved/scope.ts";
 import { migrateBrowserStorage } from "./storage-migrations.ts";
 import {
@@ -110,6 +112,11 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
       return raw;
     },
     setItem(key, value) {
+      if (
+        kind === "local" &&
+        (isSavedStorageKey(key) || key === SAVED_WORKSPACE_KEY)
+      )
+        assertSavedTransaction();
       if (kind !== "local" || !isSavedStorageKey(key))
         return physical.setItem(key, value);
       const baseKey = (scope ?? "guest") + ":" + key;
@@ -120,6 +127,11 @@ export function browserStorage(kind: "local" | "session" = "local"): Storage {
       savedBases.set(baseKey, readSavedWorkspace(physical).records[key]);
     },
     removeItem(key) {
+      if (
+        kind === "local" &&
+        (isSavedStorageKey(key) || key === SAVED_WORKSPACE_KEY)
+      )
+        assertSavedTransaction();
       if (kind !== "local" || !isSavedStorageKey(key))
         return physical.removeItem(key);
       this.setItem(key, "[]");

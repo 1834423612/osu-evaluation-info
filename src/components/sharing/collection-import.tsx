@@ -14,6 +14,7 @@ import {
   type SavedSnapshot,
 } from "@/lib/saved/exchange";
 import { importLocalItems, readLocalItems } from "@/lib/saved/local";
+import { withSavedMutation } from "@/lib/saved/mutations";
 import styles from "@/components/ui/workspace.module.css";
 export function CollectionImport({
   snapshot,
@@ -43,9 +44,10 @@ export function CollectionImport({
   async function save() {
     setBusy(true);
     try {
-      const chosen = snapshot.items.filter((x) => selected.has(itemKey(x))),
-        before = new Set(readLocalItems().map(itemKey));
-      const outcome = importLocalItems(chosen, mode);
+      const chosen = snapshot.items.filter((x) => selected.has(itemKey(x)));
+      const outcome = await withSavedMutation(() =>
+        importLocalItems(chosen, mode),
+      );
       setResult(
         text(
           locale,
@@ -53,7 +55,7 @@ export function CollectionImport({
           outcome.added + " 项已转存 · " + outcome.skipped + " 项已收藏",
         ),
       );
-      onImported?.(chosen.filter((x) => !before.has(itemKey(x))).map(itemKey));
+      onImported?.(outcome.addedKeys);
     } catch {
       setResult(
         text(

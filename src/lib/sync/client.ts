@@ -12,6 +12,7 @@ import {
   assertAuthenticatedAccount,
 } from "../saved/scope.ts";
 import { applySyncedItems } from "../saved/provenance.ts";
+import { withSavedMutation } from "../saved/mutations.ts";
 import { debugFlag } from "../debug/flags.ts";
 import { SAVED_WORKSPACE_KEY, SAVED_STORAGE_KEYS } from "../saved/workspace.ts";
 import { readSyncState, updateSyncState } from "./database.ts";
@@ -154,26 +155,31 @@ export async function enableSync(
       });
       return;
     }
-    const sourceItems = readLocalItems();
-    // Guest snapshots remain untouched. Each account has its own physical workspace.
-    if (!localStorage.getItem(scopedSavedKey(SAVED_WORKSPACE_KEY, accountId))) {
-      const guest =
-        localStorage.getItem(SAVED_WORKSPACE_KEY) ??
-        JSON.stringify({
-          version: 1,
-          records: Object.fromEntries(
-            SAVED_STORAGE_KEYS.map((key) => [key, localStorage.getItem(key)]),
-          ),
-        });
-      if (guest)
-        localStorage.setItem(
-          scopedSavedKey(SAVED_WORKSPACE_KEY, accountId),
-          guest,
-        );
-    }
-    setSavedScope(accountId);
-    // Legacy guest keys may not yet have an atomic workspace; import the captured items too.
-    applySyncedItems(() => importLocalItems(sourceItems, "sync"));
+    await withSavedMutation(() => {
+      assertAuthenticatedAccount(accountId);
+      const sourceItems = readLocalItems();
+      // Guest snapshots remain untouched. Each account has its own physical workspace.
+      if (
+        !localStorage.getItem(scopedSavedKey(SAVED_WORKSPACE_KEY, accountId))
+      ) {
+        const guest =
+          localStorage.getItem(SAVED_WORKSPACE_KEY) ??
+          JSON.stringify({
+            version: 1,
+            records: Object.fromEntries(
+              SAVED_STORAGE_KEYS.map((key) => [key, localStorage.getItem(key)]),
+            ),
+          });
+        if (guest)
+          localStorage.setItem(
+            scopedSavedKey(SAVED_WORKSPACE_KEY, accountId),
+            guest,
+          );
+      }
+      setSavedScope(accountId);
+      // Legacy guest keys may not yet have an atomic workspace; import the captured items too.
+      applySyncedItems(() => importLocalItems(sourceItems, "sync"));
+    });
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       const merged = initializeMerge(
@@ -206,7 +212,9 @@ export async function chooseConflict(
   try {
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
-      replaceLocalItems(resolveConflict(s, key, choice, readLocalItems()));
+      applySyncedItems(() =>
+        replaceLocalItems(resolveConflict(s, key, choice, readLocalItems())),
+      );
       captureChanges(s, readLocalItems(), () => crypto.randomUUID());
     });
   } finally {

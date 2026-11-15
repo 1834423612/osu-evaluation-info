@@ -15,6 +15,7 @@ import {
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { withSavedMutation } from "@/lib/saved/mutations";
 import { CollectionImport } from "@/components/sharing/collection-import";
 import { text, type Locale } from "@/lib/i18n";
 import {
@@ -45,7 +46,8 @@ export function SavedManager({ locale }: { locale: Locale }) {
     [preview, setPreview] = useState<SavedSnapshot | null>(null),
     [undo, setUndo] = useState<LocalRemoval | null>(null),
     [limit, setLimit] = useState(40),
-    [title, setTitle] = useState("");
+    [title, setTitle] = useState(""),
+    [mutating, setMutating] = useState(false);
   function manage() {
     try {
       setItems(
@@ -96,10 +98,11 @@ export function SavedManager({ locale }: { locale: Locale }) {
       );
     }
   }
-  function remove() {
+  async function remove() {
+    setMutating(true);
     try {
-      const removed = removeLocalItems(selected);
-      setUndo(removed);
+      const removed = await withSavedMutation(() => removeLocalItems(selected));
+      setUndo(removed.keys.length ? removed : null);
       setItems(createLocalSnapshot(title || "Saved collection").items);
       setSelected(new Set());
       setNotice(
@@ -111,6 +114,8 @@ export function SavedManager({ locale }: { locale: Locale }) {
       );
     } catch {
       setNotice(text(locale, "Could not remove items.", "移除失败。"));
+    } finally {
+      setMutating(false);
     }
   }
   return (
@@ -170,9 +175,11 @@ export function SavedManager({ locale }: { locale: Locale }) {
           {undo ? (
             <Button
               variant="outline"
-              onClick={() => {
+              disabled={mutating}
+              onClick={async () => {
+                setMutating(true);
                 try {
-                  restoreLocalRemoval(undo);
+                  await withSavedMutation(() => restoreLocalRemoval(undo));
                   setUndo(null);
                   setNotice(text(locale, "Restored", "已恢复"));
                   setItems(readLocalItems());
@@ -184,6 +191,8 @@ export function SavedManager({ locale }: { locale: Locale }) {
                       "恢复失败，请先导出备份再清理空间。",
                     ),
                   );
+                } finally {
+                  setMutating(false);
                 }
               }}
             >
@@ -232,7 +241,7 @@ export function SavedManager({ locale }: { locale: Locale }) {
             </Button>
             <Button
               variant="outline"
-              disabled={!selected.size}
+              disabled={!selected.size || mutating}
               onClick={remove}
             >
               <Trash2 size={14} />

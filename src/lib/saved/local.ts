@@ -98,6 +98,7 @@ export function importLocalItems(
     unique = new Map(current.map((item) => [itemKey(item), item]));
   let added = 0,
     skipped = 0;
+  const addedKeys: string[] = [];
   for (const raw of incoming) {
     const item = exchangeItemSchema.parse(raw),
       key = itemKey(item);
@@ -111,10 +112,11 @@ export function importLocalItems(
       item.payload.checkedAt = null;
     }
     unique.set(key, item);
+    addedKeys.push(key);
     added++;
   }
   commit(previous, [...unique.values()]);
-  return { added, skipped, previous };
+  return { added, skipped, previous, addedKeys };
 }
 export function replaceLocalItems(items: ExchangeItem[]) {
   const previous = readSavedWorkspace(browserStorage());
@@ -125,12 +127,13 @@ export function replaceLocalItems(items: ExchangeItem[]) {
 }
 export function removeLocalItems(keys: Set<string>): LocalRemoval {
   const previous = readSavedWorkspace(browserStorage()),
-    current = workspaceItems(previous);
+    current = workspaceItems(previous),
+    removedKeys = current.filter((x) => keys.has(itemKey(x))).map(itemKey);
   commit(
     previous,
     current.filter((x) => !keys.has(itemKey(x))),
   );
-  return { previous, keys: [...keys] };
+  return { previous, keys: removedKeys };
 }
 export function restoreLocalRemoval(undo: LocalRemoval) {
   const previous = readSavedWorkspace(browserStorage()),

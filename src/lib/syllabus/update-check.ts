@@ -23,6 +23,7 @@ export function checkSavedSyllabi(force = false) {
   lastCheck = Date.now();
   const controller = new AbortController();
   const result: SyllabusUpdateCheck = { checked: 0, failed: 0, archived: 0 };
+  const writes: Promise<void>[] = [];
   pending = loadSyllabusDocuments(
     entries,
     controller.signal,
@@ -30,13 +31,20 @@ export function checkSavedSyllabi(force = false) {
       if (!value) result.failed++;
       else if (value.source === "backup") result.archived++;
       else {
-        result.checked++;
-        savedSyllabiActions.observe(value);
+        writes.push(
+          savedSyllabiActions.observe(value).then((saved) => {
+            if (saved) result.checked++;
+            else result.failed++;
+          }),
+        );
       }
     },
     true,
   )
-    .then(() => result)
+    .then(async () => {
+      await Promise.all(writes);
+      return result;
+    })
     .finally(() => {
       pending = null;
     });

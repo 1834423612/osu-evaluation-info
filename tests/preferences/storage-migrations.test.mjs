@@ -5,6 +5,7 @@ import {
   migrateBrowserStorage,
 } from "../../src/lib/preferences/storage-migrations.ts";
 import { browserStorage } from "../../src/lib/preferences/browser-storage.ts";
+import { withinSavedTransaction } from "../../src/lib/saved/mutation-context.ts";
 
 function storage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -95,7 +96,13 @@ test("factory previews and guide replays never write through to real profile dat
   };
   const virtual = browserStorage();
   assert.equal(virtual.getItem("course-atlas:saved:v1"), null);
-  virtual.setItem("course-atlas:saved:v1", '[{"id":"test"}]');
+  assert.throws(
+    () => virtual.setItem("course-atlas:saved:v1", '[{"id":"test"}]'),
+    /saved_transaction_required/,
+  );
+  withinSavedTransaction(() =>
+    virtual.setItem("course-atlas:saved:v1", '[{"id":"test"}]'),
+  );
   assert.equal(local.getItem("course-atlas:saved:v1"), '[{"id":"real"}]');
   window.__COURSE_ATLAS_DEBUG__ = { factory: false, replayTranslation: true };
   assert.equal(virtual.getItem("course-atlas:saved:v1"), '[{"id":"real"}]');
