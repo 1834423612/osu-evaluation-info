@@ -85,7 +85,6 @@ export function parsePlanLines(
         page,
       };
       if (
-        semester.courses.length < 100 &&
         !semester.courses.some(
           (c) =>
             c.subject === course.subject &&
@@ -93,16 +92,17 @@ export function parsePlanLines(
             c.kind === course.kind &&
             course.subject !== null,
         )
-      )
+      ) {
+        if (semester.courses.length >= 100)
+          throw Error("Too many candidates; split the PDF");
         semester.courses.push(course);
+      }
     }
   }
   if (versions.size === 1) plan.appliedVersion = [...versions][0];
   if (catalogs.size === 1) plan.catalogTerm = [...catalogs][0];
   if (modes.size === 1) plan.auditMode = [...modes][0] as Plan["auditMode"];
-  plan.semesters = plan.semesters
-    .filter((s) => s.term || s.courses.length)
-    .slice(0, 40);
+  plan.semesters = plan.semesters.filter((s) => s.term || s.courses.length);
   return {
     plan: planSchema.parse(plan),
     warnings: [

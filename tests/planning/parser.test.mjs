@@ -68,3 +68,14 @@ test("browser print cannot silently inherit export semester order", () => {
   assert.equal(plan.pdfOrigin, "browser-print");
   assert.equal(plan.semesters[0].term, null);
 });
+
+test("oversized candidate sets fail rather than silently truncate", () => {
+  assert.throws(
+    () =>
+      parsePlanLines(
+        lines(...Array(101).fill("Placeholder -")),
+        "student-plan",
+      ),
+    /Too many/,
+  );
+});
