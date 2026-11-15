@@ -35,8 +35,14 @@ CREATE TABLE osu_analytics.visitor_context (
  viewport text NOT NULL,
  network_address inet,
  network_source text NOT NULL,
+ account_id text,
+ browser_context jsonb NOT NULL DEFAULT '{}',
+ network_location jsonb,
+ umami_id text,
  created_at timestamptz NOT NULL DEFAULT now(),
  environment text NOT NULL
 );
 CREATE INDEX visitor_context_expiry ON osu_analytics.visitor_context(created_at);
 CREATE INDEX sync_item_popular ON osu_identity.sync_item(key,updated_at DESC) WHERE item IS NOT NULL;
+
+CREATE INDEX visitor_context_account ON osu_analytics.visitor_context(account_id,created_at DESC);

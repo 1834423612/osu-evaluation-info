@@ -28,7 +28,6 @@ test(
       "20261114_user_data_base.sql",
       "20261114_sync.sql",
       "20261114_telemetry.sql",
-      "20261115_visitor_context.sql",
     ])
       await db.query(
         readFileSync("db/migrations/" + file, "utf8").replace(

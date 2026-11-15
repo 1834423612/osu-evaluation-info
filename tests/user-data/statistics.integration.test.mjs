@@ -36,7 +36,6 @@ test(
       "20261114_sharing.sql",
       "20261114_page_links.sql",
       "20261114_telemetry.sql",
-      "20261115_visitor_context.sql",
     ])
       await db.query(
         readFileSync("db/migrations/" + f, "utf8").replace(
