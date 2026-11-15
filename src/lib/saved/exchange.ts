@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { savedRmpProfileSchema } from "./rmp-profile.ts";
 const str = z.string().max(500),
   id = z
     .string()
@@ -92,12 +93,15 @@ const savedSection = z
     section: sectionSnapshotSchema,
   })
   .refine((s) => s.id === s.courseId + ":" + s.section.classNumber);
-const savedInstructor = z.object({
-  id,
-  name: str,
-  email: str.nullable(),
-  courses: z.array(related).max(100),
-});
+const savedInstructor = z
+  .object({
+    id,
+    name: str,
+    email: str.nullable(),
+    courses: z.array(related).max(100),
+    rmp: savedRmpProfileSchema.optional(),
+  })
+  .refine((value) => !value.rmp || value.id === "rmp:" + value.rmp.id);
 const entry = z.object({
   code: id,
   entityId: str,
@@ -215,6 +219,11 @@ export function itemHref(item: ExchangeItem) {
     section = item.payload.section.classNumber;
     tab = "syllabus";
   } else {
+    if (
+      item.payload.id.startsWith("rmp:") &&
+      /^rmp:[1-9][0-9]{0,14}$/.test(item.payload.id)
+    )
+      return "/rmp/" + item.payload.id.slice(4);
     const c = item.payload.courses[0];
     if (!c) return null;
     course = c.id;

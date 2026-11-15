@@ -1,6 +1,7 @@
 "use client";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import Link from "next/link";
+import { RmpSaveButton } from "./rmp-save-button";
 import { useSyncExternalStore } from "react";
 import { browserStorage } from "@/lib/preferences/browser-storage";
 import { useRouter } from "next/navigation";
@@ -244,10 +245,9 @@ export function RmpLibrary({
           data-view={view}
         >
           {data?.profiles.map((profile) => (
-            <Link
+            <article
               className={styles.profileCard}
               key={profile.id}
-              href={`/rmp/${profile.id}`}
               data-rmp-profile={profile.id}
             >
               <div className={styles.cardIdentity}>
@@ -259,7 +259,14 @@ export function RmpLibrary({
                   {profileInitials(profile.name)}
                 </span>
                 <div className={styles.cardIdentityText}>
-                  <h2>{profile.name}</h2>
+                  <h2>
+                    <Link
+                      className={styles.cardLink}
+                      href={`/rmp/${profile.id}`}
+                    >
+                      {profile.name}
+                    </Link>
+                  </h2>
                   <p className={styles.cardDept}>
                     {profile.department ||
                       text(locale, "Department unspecified", "未注明院系")}
@@ -305,8 +312,11 @@ export function RmpLibrary({
                   {text(locale, "reviews", "条评价")}
                 </span>
                 <span>RMP #{profile.id}</span>
+                <span className={styles.cardSave}>
+                  <RmpSaveButton profile={profile} />
+                </span>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
         {data ? (

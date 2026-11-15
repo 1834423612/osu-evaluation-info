@@ -199,6 +199,22 @@
   text-align: center;
 }
 
+.rmpIdentity {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.rmpIdentity strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+.rmpIdentity span,
+.rmpIdentity small {
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 540px) {
   .item {
     padding: 12px;

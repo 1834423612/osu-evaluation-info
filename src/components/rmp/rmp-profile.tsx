@@ -1,4 +1,5 @@
 "use client";
+import { RmpSaveButton } from "./rmp-save-button";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -85,6 +86,9 @@ export function RmpProfilePage({
                     ) : null}
                   </div>
                   <RmpProfileSource profile={profile} locale={locale} />
+                  <div className={styles.profileSave}>
+                    <RmpSaveButton profile={profile} />
+                  </div>
                 </div>
               </div>
               <div className={styles.ratings}>

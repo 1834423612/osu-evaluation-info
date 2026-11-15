@@ -4,6 +4,11 @@ import { debugFlag } from "@/lib/debug/flags";
 import { runSavedAction, withSavedMutation } from "@/lib/saved/mutations";
 import { browserStorage } from "@/lib/preferences/browser-storage";
 import { notifySaveFailure } from "@/lib/saved/capacity";
+import {
+  rmpFavorite,
+  type SavedRmpProfile,
+  type RmpBookmarkInput,
+} from "@/lib/saved/rmp-profile";
 import { useEffect, useSyncExternalStore } from "react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import type { CatalogSection } from "@/lib/catalog/types";
@@ -69,6 +74,7 @@ export type SavedInstructor = {
   id: string;
   name: string;
   email: string | null;
+  rmp?: SavedRmpProfile;
   courses: {
     id: string;
     label: string;
@@ -471,6 +477,56 @@ export function usePreferences() {
       return true;
     });
   }
+  function toggleRmpProfile(profile: RmpBookmarkInput) {
+    return runSavedAction(() => {
+      const entry = rmpFavorite(profile),
+        current = getSavedDetails<SavedInstructor>(
+          SAVED_INSTRUCTORS_KEY,
+          "instructors",
+        ),
+        previous = current.find((x) => x.id === entry.id),
+        added = !previous?.rmp;
+      const without = (item: SavedInstructor) => {
+        const copy = { ...item };
+        delete copy.rmp;
+        return copy;
+      };
+      const next = added
+        ? previous
+          ? current.map((x) =>
+              x.id === entry.id ? { ...x, rmp: entry.rmp } : x,
+            )
+          : [...current, entry]
+        : current.flatMap((x) =>
+            x.id !== entry.id ? [x] : x.courses.length ? [without(x)] : [],
+          );
+      if (!writeArray(SAVED_INSTRUCTORS_KEY, next)) return false;
+      notifySaved(added, profile.name, () => {
+        const live = getSavedDetails<SavedInstructor>(
+            SAVED_INSTRUCTORS_KEY,
+            "instructors",
+          ),
+          found = live.find((x) => x.id === entry.id);
+        if (added)
+          writeArray(
+            SAVED_INSTRUCTORS_KEY,
+            live.flatMap((x) =>
+              x.id !== entry.id ? [x] : x.courses.length ? [without(x)] : [],
+            ),
+          );
+        else if (previous)
+          writeArray(
+            SAVED_INSTRUCTORS_KEY,
+            found
+              ? live.map((x) =>
+                  x.id === entry.id ? { ...x, rmp: previous.rmp } : x,
+                )
+              : [...live, previous],
+          );
+      });
+      return true;
+    });
+  }
   return {
     locale,
     enrollmentWatch,
@@ -484,6 +540,7 @@ export function usePreferences() {
     toggleSaved,
     toggleSection,
     toggleInstructor,
+    toggleRmpProfile,
   };
 }
 

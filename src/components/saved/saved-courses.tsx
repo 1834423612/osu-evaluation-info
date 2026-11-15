@@ -1,4 +1,5 @@
 "use client";
+import { RmpSavedRemove } from "./rmp-saved-remove";
 
 import { ProjectInfo } from "@/components/layout/project-info";
 import projectStyles from "@/components/layout/project-info.module.css";
@@ -377,20 +378,52 @@ export function SavedCourses() {
                     <article className={styles.item} key={instructor.id}>
                       <div className={styles.instructorHeading}>
                         <div className={styles.peopleIdentity}>
-                          <InstructorDirectoryIdentity
-                            name={instructor.name}
-                            email={instructor.email}
-                            locale={locale}
-                            size={38}
-                            subject={
-                              instructor.courses[0]?.label.split(/\s+/, 1)[0]
-                            }
-                          />
+                          {instructor.rmp ? (
+                            <div className={styles.rmpIdentity}>
+                              <Link href={`/rmp/${instructor.rmp.id}`}>
+                                <strong>{instructor.name}</strong>
+                              </Link>
+                              <span>
+                                RMP #{instructor.rmp.id} ·{" "}
+                                {instructor.rmp.username
+                                  ? text(
+                                      locale,
+                                      "Identity verified",
+                                      "身份已确认",
+                                    )
+                                  : text(
+                                      locale,
+                                      "Identity unconfirmed",
+                                      "身份待确认",
+                                    )}
+                              </span>
+                              <small>
+                                {instructor.rmp.department} · RMP{" "}
+                                {instructor.rmp.quality ?? "–"}/5 ·{" "}
+                                {instructor.rmp.reviewCount}{" "}
+                                {text(locale, "reviews", "条评价")}
+                              </small>
+                            </div>
+                          ) : (
+                            <InstructorDirectoryIdentity
+                              name={instructor.name}
+                              email={instructor.email}
+                              locale={locale}
+                              size={38}
+                              subject={
+                                instructor.courses[0]?.label.split(/\s+/, 1)[0]
+                              }
+                            />
+                          )}
                         </div>
-                        <span className={styles.relationCount}>
-                          {instructor.courses.length}{" "}
-                          {text(locale, "courses", "门课程")}
-                        </span>
+                        {instructor.rmp ? (
+                          <RmpSavedRemove instructor={instructor} />
+                        ) : (
+                          <span className={styles.relationCount}>
+                            {instructor.courses.length}{" "}
+                            {text(locale, "courses", "门课程")}
+                          </span>
+                        )}
                       </div>
                       <div className={styles.relations}>
                         {instructor.courses.map((course) => (
