@@ -22,6 +22,23 @@ export function authBaseURL(env: NodeJS.ProcessEnv = process.env) {
     return null;
   }
 }
+/** Explicit development loopback aliases; production remains pinned. */
+export function authOrigins(env: NodeJS.ProcessEnv = process.env) {
+  const base = authBaseURL(env);
+  if (!base) return [];
+  const url = new URL(base);
+  if (
+    env.NODE_ENV === "production" ||
+    !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
+  )
+    return [base];
+  return [
+    base,
+    ...["localhost", "127.0.0.1", "[::1]"].map(
+      (host) => url.protocol + "//" + host + (url.port ? ":" + url.port : ""),
+    ),
+  ].filter((origin, index, origins) => origins.indexOf(origin) === index);
+}
 export function authTablePrefix(env: NodeJS.ProcessEnv = process.env) {
   const prefix = env.AUTH_TABLE_PREFIX || "";
   if (prefix && !/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))

@@ -10,14 +10,17 @@ import {
   Cloud,
   Eye,
   EyeOff,
+  Mail,
+  KeyRound,
 } from "lucide-react";
+import { authErrorMessage } from "@/lib/auth/errors";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { text, type Locale } from "@/lib/i18n";
 import { OtpInput } from "./otp-input";
 import styles from "./account.module.css";
-type Mode = "password" | "register" | "email" | "reset";
+type Mode = "password" | "passkey" | "register" | "email" | "reset";
 export function AuthEntry({
   locale,
   emailEnabled,
@@ -27,7 +30,7 @@ export function AuthEntry({
   emailEnabled: boolean;
   onSignedIn: () => Promise<unknown>;
 }) {
-  const [mode, setMode] = useState<Mode>("password"),
+  const [mode, setMode] = useState<Mode>(emailEnabled ? "email" : "password"),
     [email, setEmail] = useState(""),
     [name, setName] = useState(""),
     [password, setPassword] = useState(""),
@@ -52,6 +55,7 @@ export function AuthEntry({
     setOtp("");
     setPassword("");
     setNotice("");
+    setVisible(false);
   }
   async function run(action: () => Promise<{ error?: unknown } | void>) {
     if (busy) return;
@@ -61,23 +65,9 @@ export function AuthEntry({
       const result = await action();
       if (result?.error) {
         const error = result.error as { status?: number; code?: string };
-        if (error.status === 429 || error.code === "TOO_MANY_REQUESTS") {
+        if (error.status === 429 || error.code === "TOO_MANY_REQUESTS")
           setCooldown(60);
-          setNotice(
-            text(
-              locale,
-              "Too many attempts. Wait a minute and try again.",
-              "请求过于频繁，请稍等一分钟再试。",
-            ),
-          );
-        } else
-          setNotice(
-            text(
-              locale,
-              "Check your details or code and try again.",
-              "请检查填写内容或验证码后重试。",
-            ),
-          );
+        setNotice(authErrorMessage(locale, result.error));
       }
     } catch {
       setNotice(
@@ -126,6 +116,17 @@ export function AuthEntry({
     return result;
   }
   async function submit() {
+    if (mode === "passkey") {
+      if (!window.isSecureContext || !window.PublicKeyCredential)
+        return { error: { code: "PASSKEY_UNAVAILABLE" } };
+      const result = await authClient.signIn.passkey({
+        fetchOptions: {
+          headers: { "x-waho-passkey-email": email.trim().toLowerCase() },
+        },
+      });
+      if (!result.error) await onSignedIn();
+      return result;
+    }
     if (mode === "password") {
       const result = await authClient.signIn.email({
         email: email.trim(),
@@ -232,13 +233,15 @@ export function AuthEntry({
           <button
             type="button"
             aria-pressed={mode !== "register"}
-            onClick={() => change("password")}
+            disabled={busy}
+            onClick={() => change(emailEnabled ? "email" : "password")}
           >
             {text(locale, "Sign in", "登录")}
           </button>
           <button
             type="button"
             aria-pressed={mode === "register"}
+            disabled={busy}
             onClick={() => change("register")}
           >
             {text(locale, "Create account", "注册")}
@@ -255,16 +258,20 @@ export function AuthEntry({
                 ? "Make yourself at home"
                 : mode === "reset"
                   ? "A fresh start"
-                  : sent
-                    ? "Check your inbox"
-                    : "Welcome back",
+                  : mode === "passkey"
+                    ? "Sign in with your device"
+                    : sent
+                      ? "Check your inbox"
+                      : "Welcome back",
               mode === "register"
                 ? "开启你的课程收藏"
                 : mode === "reset"
                   ? "重置登录密码"
-                  : sent
-                    ? "查收你的验证码"
-                    : "欢迎回来",
+                  : mode === "passkey"
+                    ? "使用设备通行密钥"
+                    : sent
+                      ? "查收你的验证码"
+                      : "欢迎回来",
             )}
           </h2>
           <p>
@@ -274,38 +281,64 @@ export function AuthEntry({
                 ? "Enter the code sent to your email."
                 : mode === "register"
                   ? "Keep your plans close, on every device."
-                  : "Continue where you left off.",
+                  : mode === "passkey"
+                    ? "Enter your email, then unlock your device. No password needed."
+                    : mode === "reset"
+                      ? "Verify your email to set a new password."
+                      : mode === "email"
+                        ? "Sign in with a code sent to your email. No password needed."
+                        : "Use the password you set for your account.",
               sent
                 ? "输入邮件中的验证码。"
                 : mode === "register"
                   ? "在每台设备上，接续你的选课计划。"
-                  : "接着探索你感兴趣的课程。",
+                  : mode === "passkey"
+                    ? "输入邮箱，再用指纹、面容或设备 PIN 验证，无需密码。"
+                    : mode === "reset"
+                      ? "通过邮件验证码，为账号设置新密码。"
+                      : mode === "email"
+                        ? "通过邮件验证码登录，无需设置密码。"
+                        : "使用你为此账号设置的密码登录。",
             )}
           </p>
         </div>
         {mode !== "register" && mode !== "reset" ? (
-          <>
-            <Button
-              className={styles.fullButton}
-              variant="outline"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  const result = await authClient.signIn.passkey();
-                  if (!result.error) await onSignedIn();
-                  return result;
-                })
-              }
-            >
-              <Fingerprint size={18} />
-              {text(locale, "Continue with a passkey", "使用通行密钥登录")}
-            </Button>
-            <div className={styles.divider}>
-              <span>
-                {text(locale, "or continue with email", "或使用邮箱")}
-              </span>
-            </div>
-          </>
+          <div
+            className={styles.loginMethods}
+            role="group"
+            aria-label={text(locale, "Sign-in method", "登录方式")}
+          >
+            {(
+              [
+                {
+                  value: "email",
+                  label: text(locale, "Email code", "验证码"),
+                  Icon: Mail,
+                },
+                {
+                  value: "passkey",
+                  label: text(locale, "Passkey", "通行密钥"),
+                  Icon: Fingerprint,
+                },
+                {
+                  value: "password",
+                  label: text(locale, "Password", "密码"),
+                  Icon: KeyRound,
+                },
+              ] as const
+            ).map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={mode === value}
+                disabled={busy}
+                onClick={() => change(value)}
+              >
+                <Icon size={16} aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
         ) : null}
         <form
           onSubmit={(e) => {
@@ -337,7 +370,10 @@ export function AuthEntry({
             {text(locale, "Email", "邮箱")}
             <input
               type="email"
-              autoComplete="email"
+              autoComplete="username"
+              name="email"
+              autoCapitalize="none"
+              spellCheck={false}
               value={email}
               required
               maxLength={254}
@@ -346,7 +382,7 @@ export function AuthEntry({
               placeholder="you@example.com"
             />
           </label>
-          {mode !== "email" ? (
+          {mode === "password" || mode === "register" || mode === "reset" ? (
             <label>
               {text(
                 locale,
@@ -385,6 +421,25 @@ export function AuthEntry({
               </div>
             </label>
           ) : null}
+          {mode === "passkey" ? (
+            <div className={styles.passkeyHint}>
+              <Fingerprint size={22} aria-hidden="true" />
+              <span>
+                {text(
+                  locale,
+                  "Your email + your device",
+                  "邮箱 + 设备通行密钥",
+                )}
+                <small>
+                  {text(
+                    locale,
+                    "Use a passkey already added to this account.",
+                    "请选择已为此账号添加的通行密钥。",
+                  )}
+                </small>
+              </span>
+            </div>
+          ) : null}
           {sent ? (
             <OtpInput
               value={otp}
@@ -404,35 +459,51 @@ export function AuthEntry({
             className={styles.fullButton}
             disabled={
               busy ||
-              (mode !== "password" && !emailEnabled) ||
-              (!sent && mode !== "password" && cooldown > 0)
+              ((mode === "email" || mode === "register" || mode === "reset") &&
+                !emailEnabled) ||
+              (!sent &&
+                mode !== "password" &&
+                mode !== "passkey" &&
+                cooldown > 0)
             }
           >
-            {busy ? <LoaderCircle size={17} className={styles.spin} /> : null}
+            {busy ? (
+              <LoaderCircle size={17} className={styles.spin} />
+            ) : mode === "passkey" ? (
+              <Fingerprint size={18} />
+            ) : null}
             {text(
               locale,
               busy
                 ? "Please wait…"
-                : mode === "password"
-                  ? "Sign in"
-                  : !sent
-                    ? "Send verification code"
-                    : mode === "register"
-                      ? "Create account"
-                      : mode === "reset"
-                        ? "Reset password"
-                        : "Verify and sign in",
+                : mode === "passkey"
+                  ? "Verify with your device"
+                  : mode === "password"
+                    ? "Sign in"
+                    : !sent
+                      ? cooldown > 0
+                        ? "Send code in " + cooldown + "s"
+                        : "Send verification code"
+                      : mode === "register"
+                        ? "Create account"
+                        : mode === "reset"
+                          ? "Reset password"
+                          : "Verify and sign in",
               busy
                 ? "请稍候…"
-                : mode === "password"
-                  ? "登录"
-                  : !sent
-                    ? "发送验证码"
-                    : mode === "register"
-                      ? "完成注册"
-                      : mode === "reset"
-                        ? "重置密码"
-                        : "验证并登录",
+                : mode === "passkey"
+                  ? "验证设备并登录"
+                  : mode === "password"
+                    ? "登录"
+                    : !sent
+                      ? cooldown > 0
+                        ? cooldown + " 秒后可发送"
+                        : "发送验证码"
+                      : mode === "register"
+                        ? "完成注册"
+                        : mode === "reset"
+                          ? "重置密码"
+                          : "验证并登录",
             )}
             {!busy ? <ArrowRight size={16} /> : null}
           </Button>
@@ -454,7 +525,9 @@ export function AuthEntry({
                 </button>
                 <button
                   type="button"
+                  disabled={busy}
                   onClick={() => {
+                    setNotice("");
                     setSent(false);
                     setOtp("");
                   }}
@@ -463,16 +536,19 @@ export function AuthEntry({
                 </button>
               </>
             ) : mode === "password" ? (
-              <>
-                <button type="button" onClick={() => change("email")}>
-                  {text(locale, "Use an email code", "验证码登录")}
-                </button>
-                <button type="button" onClick={() => change("reset")}>
-                  {text(locale, "Forgot password?", "忘记密码？")}
-                </button>
-              </>
-            ) : mode !== "register" ? (
-              <button type="button" onClick={() => change("password")}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => change("reset")}
+              >
+                {text(locale, "Set or reset password", "设置或重置密码")}
+              </button>
+            ) : mode === "reset" ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => change(emailEnabled ? "email" : "password")}
+              >
                 {text(locale, "Back to sign in", "返回登录")}
               </button>
             ) : null}

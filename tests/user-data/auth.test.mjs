@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { z } from "zod";
 import {
   authBaseURL,
+  authOrigins,
   authConfigured,
   authTablePrefix,
   authSchema,
@@ -120,4 +121,37 @@ test("account schemas are explicit and validate identifiers", () => {
   assert.equal(authSchema({ NODE_ENV: "production" }), "osu_identity");
   assert.equal(authSchema({ NODE_ENV: "development" }), "osu_identity_dev");
   assert.throws(() => authSchema({ AUTH_SCHEMA: "unsafe;DROP" }));
+});
+
+test("only same-port loopback aliases are trusted in development", () => {
+  const dev = {
+    NODE_ENV: "development",
+    AUTH_DEV_BASE_URL: "http://localhost:3000",
+  };
+  assert.deepEqual(authOrigins(dev), [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://[::1]:3000",
+  ]);
+  assert.deepEqual(
+    authOrigins({
+      NODE_ENV: "production",
+      AUTH_BASE_URL: "https://site.example",
+    }),
+    ["https://site.example"],
+  );
+  assert.deepEqual(
+    authOrigins({
+      NODE_ENV: "development",
+      AUTH_DEV_BASE_URL: "http://dev.example:3000",
+    }),
+    ["http://dev.example:3000"],
+  );
+  for (const origin of [
+    "http://localhost:3001",
+    "http://127.0.0.2:3000",
+    "http://localhost.evil.example:3000",
+    "null",
+  ])
+    assert.ok(!authOrigins(dev).includes(origin));
 });

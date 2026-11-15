@@ -1,11 +1,14 @@
 import { recoveryPlugin } from "./recovery.ts";
 import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
+import { z } from "zod";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { passkey } from "@better-auth/passkey";
 import { getAuthPool } from "./database.ts";
 import {
   authBaseURL,
+  authOrigins,
   authConfigured,
   authTablePrefix,
   otpDigest,
@@ -21,7 +24,7 @@ export function createAuth(
     baseURL,
     secret: process.env.BETTER_AUTH_SECRET!,
     database: getAuthPool(),
-    trustedOrigins: [baseURL],
+    trustedOrigins: authOrigins(),
     user: { modelName: prefix + "user" },
     session: {
       modelName: prefix + "session",
@@ -91,6 +94,37 @@ export function createAuth(
         rpName: "WahO!",
         origin: baseURL,
         authenticatorSelection: { userVerification: "required" },
+        authentication: {
+          afterVerification: async ({ ctx, clientData }) => {
+            const email = z
+              .email()
+              .max(254)
+              .safeParse(
+                ctx.headers?.get("x-waho-passkey-email")?.trim().toLowerCase(),
+              );
+            const credential = await ctx.context.adapter.findOne<{
+              userId: string;
+            }>({
+              model: "passkey",
+              where: [{ field: "credentialID", value: clientData.id }],
+            });
+            const user = credential
+              ? await ctx.context.internalAdapter.findUserById(
+                  credential.userId,
+                )
+              : null;
+            if (
+              !email.success ||
+              !user ||
+              user.email.toLowerCase() !== email.data ||
+              !user.emailVerified
+            )
+              throw new APIError("UNAUTHORIZED", {
+                code: "PASSKEY_EMAIL_MISMATCH",
+                message: "Use a passkey registered to the email you entered.",
+              });
+          },
+        },
         schema: { passkey: { modelName: prefix + "passkey" } },
       }),
     ],

@@ -146,20 +146,67 @@
   border-radius: 11px;
   font-size: 13px;
 }
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 11px;
-  margin: 22px 0;
+.loginMethods {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 22px;
 }
-.divider::before,
-.divider::after {
-  content: "";
-  height: 1px;
-  background: var(--line);
-  flex: 1;
+.loginMethods button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 160ms,
+    border-color 160ms,
+    color 160ms;
+}
+.loginMethods button[aria-pressed="true"] {
+  color: var(--accent-foreground);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  font-weight: 650;
+}
+.loginMethods button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.loginMethods button:disabled,
+.authTabs button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.passkeyHint {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--subtle-surface);
+}
+.passkeyHint span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+}
+.passkeyHint small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--muted);
 }
 .authForm {
   display: grid;
@@ -446,6 +493,7 @@
     animation: none;
   }
   .authTabs button,
+  .loginMethods button,
   .authForm input,
   .otp span {
     transition: none;

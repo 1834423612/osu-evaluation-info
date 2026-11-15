@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authBaseURL } from "../auth/config.ts";
+import { authOrigins } from "../auth/config.ts";
 export class UserDataError extends Error {
   code: string;
   status: number;
@@ -11,8 +11,8 @@ export class UserDataError extends Error {
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  const expected = authBaseURL() ?? new URL(request.url).origin;
-  if (!origin || origin !== expected) throw new UserDataError("origin", 403);
+  if (!origin || !authOrigins().includes(origin))
+    throw new UserDataError("origin", 403);
   const type = request.headers.get("content-type") ?? "";
   if (!type.toLowerCase().startsWith("application/json"))
     throw new UserDataError("content_type", 415);
