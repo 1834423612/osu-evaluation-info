@@ -1,3 +1,4 @@
+import { lookupPublicNetwork } from "../telemetry/network.ts";
 import {
   registry,
   probeCategory,
@@ -120,6 +121,44 @@ export async function runDiagnostics(
     }
   } catch {
     signal.throwIfAborted();
+  }
+  if (
+    options.network &&
+    !context.some((row) => row.id === "ip" && row.status === "available")
+  ) {
+    const network = await lookupPublicNetwork(fetch, signal);
+    if (network) {
+      const replacements: Record<string, string | undefined> = {
+        ip: network.ip,
+        geo: [network.city, network.region, network.country]
+          .filter(Boolean)
+          .join(" · "),
+        isp: network.organization,
+      };
+      for (const [id, value] of Object.entries(replacements))
+        if (value) {
+          context = context.filter((row) => row.id !== id);
+          context.push({
+            id,
+            status: "available",
+            source: "browser",
+            value,
+            duration: 0,
+            detail: "Public IP API: " + network.source + " (browser reported)",
+          });
+        }
+    } else {
+      context = context.map((row) =>
+        ["ip", "geo", "isp"].includes(row.id) && row.status !== "available"
+          ? {
+              ...row,
+              status: "unsupported" as const,
+              source: "browser" as const,
+              detail: "Public IP providers unavailable",
+            }
+          : row,
+      );
+    }
   }
   for (const row of registry) {
     signal.throwIfAborted();

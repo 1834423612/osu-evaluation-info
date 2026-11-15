@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  publicNetworkSchema,
+  lookupPublicNetwork,
+  type PublicNetwork,
+} from "./network.ts";
 export const browserContextSchema = z
   .object({
     screen: z
@@ -17,6 +22,10 @@ export const browserContextSchema = z
       .strict(),
     platform: z.string().max(100),
     model: z.string().max(100).optional(),
+    architecture: z.string().max(40).optional(),
+    bitness: z.string().max(10).optional(),
+    browserVersion: z.string().max(100).optional(),
+    network: publicNetworkSchema.optional(),
     platformVersion: z.string().max(100).optional(),
     cores: z.number().int().min(0).max(1024),
     memory: z.number().min(0).max(10000).optional(),
@@ -37,8 +46,19 @@ export const browserContextSchema = z
   })
   .strict();
 export type BrowserContext = z.infer<typeof browserContextSchema>;
-let modelHints: { model?: string; platformVersion?: string } = {};
-export async function prepareBrowserContext() {
+let modelHints: {
+  model?: string;
+  platformVersion?: string;
+  architecture?: string;
+  bitness?: string;
+  browserVersion?: string;
+} = {};
+let networkHints: PublicNetwork | null = null;
+let preparing: Promise<void> | null = null;
+export function prepareBrowserContext() {
+  return (preparing ??= prepare());
+}
+async function prepare() {
   const ua = (
     navigator as Navigator & {
       userAgentData?: {
@@ -52,8 +72,30 @@ export async function prepareBrowserContext() {
     const hints = await ua?.getHighEntropyValues?.([
       "model",
       "platformVersion",
+      "architecture",
+      "bitness",
+      "fullVersionList",
     ]);
     modelHints = {
+      ...(typeof hints?.architecture === "string"
+        ? { architecture: hints.architecture.slice(0, 40) }
+        : {}),
+      ...(typeof hints?.bitness === "string"
+        ? { bitness: hints.bitness.slice(0, 10) }
+        : {}),
+      ...(Array.isArray(hints?.fullVersionList)
+        ? {
+            browserVersion: hints.fullVersionList
+              .map((v) =>
+                typeof v?.brand === "string" && typeof v?.version === "string"
+                  ? v.brand + " " + v.version
+                  : "",
+              )
+              .filter(Boolean)
+              .join("; ")
+              .slice(0, 100),
+          }
+        : {}),
       ...(typeof hints?.model === "string"
         ? { model: hints.model.slice(0, 100) }
         : {}),
@@ -62,6 +104,22 @@ export async function prepareBrowserContext() {
         : {}),
     };
   } catch {}
+  try {
+    const r = await fetch("/api/diagnostics/context", {
+      signal: AbortSignal.timeout(1800),
+      cache: "no-store",
+    });
+    const data = r.ok ? await r.json() : null;
+    if (
+      !data?.results?.some(
+        (row: { id: string; status: string }) =>
+          row.id === "ip" && row.status === "available",
+      )
+    )
+      networkHints = await lookupPublicNetwork();
+  } catch {
+    networkHints = await lookupPublicNetwork();
+  }
 }
 export function browserContext(): BrowserContext {
   const nav = navigator as Navigator & {
@@ -76,6 +134,7 @@ export function browserContext(): BrowserContext {
   };
   return browserContextSchema.parse({
     ...modelHints,
+    ...(networkHints ? { network: networkHints } : {}),
     screen: {
       width: screen.width,
       height: screen.height,

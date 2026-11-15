@@ -44,6 +44,7 @@ type Device = {
 type Metadata = {
   id: string;
   ip: string | null;
+  source?: string;
   agent: string | null;
   location?: { city?: string; region?: string; country?: string } | null;
   context?: { model?: string; platform?: string };
@@ -638,8 +639,8 @@ function AccountWorkspace() {
                               ) : null}
                             </strong>
                             <small>
-                              {device.ipAddress ||
-                                meta?.ip ||
+                              {meta?.ip ||
+                                device.ipAddress ||
                                 text(locale, "IP unavailable", "IP 暂不可用")}
                               {location ? " · " + location : ""}
                               <br />

@@ -1,5 +1,6 @@
 "use client";
-import { browserContext } from "./context.ts";
+import { authenticatedAccount } from "../saved/scope.ts";
+import { browserContext, prepareBrowserContext } from "./context.ts";
 import { userDatabase } from "../user-data/browser-db.ts";
 import { browserUuid } from "../uuid.ts";
 import { debugFlag } from "../debug/flags.ts";
@@ -177,6 +178,8 @@ export async function flushTelemetry(beacon = false) {
   try {
     const events = await pending();
     if (!events.length) return;
+    await prepareBrowserContext();
+    if (!telemetryAllowed()) return;
     const payload = JSON.stringify(await body(events));
     if (beacon && navigator.sendBeacon) {
       navigator.sendBeacon(
@@ -227,4 +230,29 @@ export async function discardTelemetry() {
   memory.clear();
   const db = await userDatabase();
   db.transaction("telemetry", "readwrite").objectStore("telemetry").clear();
+}
+
+let contextAccount: string | null | undefined;
+export async function refreshTelemetryContext(account: string | null) {
+  if (!telemetryAllowed() || contextAccount === account) return;
+  contextAccount = account;
+  const id = browserUuid();
+  volatileIds.session = id;
+  try {
+    sessionStorage.setItem("course-atlas:telemetry-session:v1", id);
+  } catch {}
+  try {
+    await prepareBrowserContext();
+    if (!telemetryAllowed() || authenticatedAccount() !== account) return;
+    const response = await fetch("/api/telemetry", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body([])),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (typeof data.visitorId === "string") bindUmamiVisitor(data.visitorId);
+    }
+  } catch {}
 }

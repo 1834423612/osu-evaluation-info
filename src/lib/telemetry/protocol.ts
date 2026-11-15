@@ -47,7 +47,7 @@ export const telemetryBatchSchema = z.object({
   timeZone: z.string().max(100),
   viewport: z.enum(["small", "medium", "large"]),
   context: browserContextSchema.optional(),
-  events: z.array(productEventSchema).min(1).max(20),
+  events: z.array(productEventSchema).max(20),
 });
 export function telemetryPath(raw: string) {
   try {

@@ -126,5 +126,51 @@ test(
       ).rows.length,
       1,
     );
+    delete process.env.USER_DATA_TRUSTED_PROXY_HEADER;
+    const reportContext = {
+      screen: { width: 1200, height: 800, ratio: 1, depth: 24 },
+      viewport: { width: 1000, height: 700 },
+      platform: "Test OS",
+      cores: 4,
+      touch: 0,
+      cookies: true,
+      online: true,
+      colorScheme: "light",
+      reducedMotion: false,
+      network: {
+        ip: "203.0.113.8",
+        source: "geojs",
+        country: "Test country",
+        city: "Test city",
+      },
+    };
+    const contextSession = randomUUID();
+    const refreshed = await recordProductEvents(
+      headers,
+      { ...batch, session: contextSession, context: reportContext, events: [] },
+      db,
+    );
+    assert.equal(refreshed.accepted, 0);
+    assert.deepEqual(refreshed.receipts, []);
+    const reported = (
+      await db.query(
+        'SELECT network_address::text AS ip,network_source,browser_context FROM "' +
+          schema +
+          '".visitor_context WHERE session_id=$1',
+        [contextSession],
+      )
+    ).rows[0];
+    assert.equal(reported.ip, "203.0.113.8/32");
+    assert.equal(reported.network_source, "browser-reported:geojs");
+    assert.equal(reported.browser_context.accountSessionId, null);
+    const { telemetryBatchSchema } =
+      await import("../../src/lib/telemetry/protocol.ts");
+    assert.equal(
+      telemetryBatchSchema.safeParse({
+        ...batch,
+        context: { ...reportContext, accountSessionId: "forged-session" },
+      }).success,
+      false,
+    );
   },
 );

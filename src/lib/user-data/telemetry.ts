@@ -28,9 +28,26 @@ export async function recordProductEvents(
       process.env.NEXT_PUBLIC_DEPLOYMENT_ENV ??
       (process.env.NODE_ENV === "production" ? "production" : "development"),
     release = process.env.NEXT_PUBLIC_BUILD_SHA || "development";
+  const reported = input.context?.network;
+  const displayIP = network.address ?? reported?.ip ?? null;
+  const displaySource = network.address
+    ? network.source
+    : reported
+      ? "browser-reported:" + reported.source
+      : network.source;
   const [session, place] = await Promise.all([
     accountSession(headers).catch(() => null),
-    networkLocation(network.address),
+    network.address
+      ? networkLocation(network.address)
+      : Promise.resolve(
+          reported
+            ? {
+                country: reported.country ?? "",
+                region: reported.region ?? "",
+                city: reported.city ?? "",
+              }
+            : null,
+        ),
   ]);
   const db = await pool.connect();
   let accepted = 0;
@@ -39,7 +56,7 @@ export async function recordProductEvents(
     await db.query(
       "INSERT INTO " +
         table("visitor_context") +
-        "(session_id,actor_digest,user_agent,accept_language,language,languages,time_zone,viewport,network_address,network_source,environment,account_id,browser_context,network_location,umami_id) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9::inet,$10,$11,$12,$13::jsonb,$14::jsonb,$2) ON CONFLICT(session_id) DO UPDATE SET account_id=EXCLUDED.account_id,browser_context=EXCLUDED.browser_context,network_location=coalesce(EXCLUDED.network_location,visitor_context.network_location) WHERE visitor_context.actor_digest=EXCLUDED.actor_digest",
+        "(session_id,actor_digest,user_agent,accept_language,language,languages,time_zone,viewport,network_address,network_source,environment,account_id,browser_context,network_location,umami_id) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9::inet,$10,$11,$12,$13::jsonb,$14::jsonb,$2) ON CONFLICT(session_id) DO UPDATE SET account_id=EXCLUDED.account_id,network_address=EXCLUDED.network_address,network_source=EXCLUDED.network_source,browser_context=EXCLUDED.browser_context,network_location=coalesce(EXCLUDED.network_location,visitor_context.network_location) WHERE visitor_context.actor_digest=EXCLUDED.actor_digest",
       [
         input.session,
         actor,
@@ -49,11 +66,14 @@ export async function recordProductEvents(
         JSON.stringify(input.languages),
         input.timeZone,
         input.viewport,
-        network.address,
-        network.source,
+        displayIP,
+        displaySource,
         environment,
         session?.user.id ?? null,
-        JSON.stringify(input.context ?? {}),
+        JSON.stringify({
+          ...input.context,
+          accountSessionId: session?.session.id ?? null,
+        }),
         place ? JSON.stringify(place) : null,
       ],
     );

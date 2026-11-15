@@ -2,29 +2,29 @@
   {
     "id": "ip",
     "group": "Network",
-    "method": "CF-Connecting-IP",
+    "method": "Trusted ingress / public IP APIs",
     "mode": "S",
     "label": {
       "en": "IP address",
       "zh": "IP 地址"
     },
     "note": {
-      "en": "Trusted proxy; raw data restricted to security retention",
-      "zh": "可信代理；原值仅按安全日志保留期保存"
+      "en": "Trusted ingress first; fallback values are browser reported, not identity evidence",
+      "zh": "优先可信入口；备用值为浏览器上报，不能证明身份"
     }
   },
   {
     "id": "geo",
     "group": "Network",
-    "method": "request.cf.city",
+    "method": "Trusted ingress / public IP APIs",
     "mode": "B",
     "label": {
       "en": "Location",
       "zh": "位置"
     },
     "note": {
-      "en": "Country/region buckets only in B",
-      "zh": "B 模式仅国家／地区分组"
+      "en": "Trusted ingress first; fallback values are browser reported, not identity evidence",
+      "zh": "优先可信入口；备用值为浏览器上报，不能证明身份"
     }
   },
   {
@@ -44,15 +44,15 @@
   {
     "id": "isp",
     "group": "Network",
-    "method": "request.cf.asOrganization",
+    "method": "Trusted ingress / public IP APIs",
     "mode": "B",
     "label": {
       "en": "Network (ASN)",
       "zh": "网络（ASN）"
     },
     "note": {
-      "en": "Coarse ASN; trusted edge or local database",
-      "zh": "粗粒度 ASN；可信边缘或本地数据库"
+      "en": "Trusted ingress first; fallback values are browser reported, not identity evidence",
+      "zh": "优先可信入口；备用值为浏览器上报，不能证明身份"
     }
   },
   {

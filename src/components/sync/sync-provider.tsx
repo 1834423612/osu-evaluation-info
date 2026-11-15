@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { refreshTelemetryContext } from "@/lib/telemetry/client";
 import { authClient } from "@/lib/auth/client";
 import { setSavedScope, setAuthenticatedAccount } from "@/lib/saved/scope";
 import { SYNC_EVENT, readSyncState, syncCycle } from "@/lib/sync/client";
@@ -10,6 +11,7 @@ export function SyncProvider() {
   useEffect(() => {
     if (isPending) return;
     setAuthenticatedAccount(accountId);
+    void refreshTelemetryContext(accountId);
     let stopped = false,
       running = false,
       retryAfter = 0,
