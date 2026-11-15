@@ -16,7 +16,7 @@ const browser = await chromium.launch({
   headless: true,
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
 });
-const errors=[];
+const errors = [];
 try {
   for (const [width, locale] of [
     [1440, "en"],
@@ -47,7 +47,6 @@ try {
                       label: "MATH 1151 · Calculus I",
                       context: "Autumn 2026 · Columbus",
                       href: "/",
-                      accounts: 12,
                       course: snapshot.items[0].payload,
                     },
                   ],
@@ -62,8 +61,14 @@ try {
       return r.continue();
     });
     const p = await c.newPage();
-    p.on("pageerror",e=>errors.push(e.message));
-    p.on("console",m=>{if(m.type()==="error"&&!m.text().startsWith("Failed to load resource"))errors.push(m.text());});
+    p.on("pageerror", (e) => errors.push(e.message));
+    p.on("console", (m) => {
+      if (
+        m.type() === "error" &&
+        !m.text().startsWith("Failed to load resource")
+      )
+        errors.push(m.text());
+    });
     await p.goto(new URL("/popular", base).href);
     await p.getByRole("button", { name: /MATH 1151/ }).waitFor();
     assert.equal(
@@ -96,7 +101,9 @@ try {
       .click();
     await p
       .getByText(
-        locale === "zh" ? "暂无已同步的收藏" : "No synced favorites yet",
+        locale === "zh"
+          ? "该学科暂无推荐"
+          : "No recommendations in this subject yet",
         { exact: true },
       )
       .waitFor();
@@ -104,7 +111,7 @@ try {
     await p.screenshot({ path: output + "/empty-" + width + ".png" });
     await c.close();
   }
-  assert.deepEqual(errors,[]);
+  assert.deepEqual(errors, []);
   console.log(
     "Popular favorites: bilingual 320/390/1440px, active navigation, in-place course drawers and empty states passed (APIs mocked)",
   );

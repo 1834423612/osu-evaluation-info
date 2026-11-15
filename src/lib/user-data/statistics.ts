@@ -20,11 +20,14 @@ export type PopularItem = {
   label: string;
   context: string;
   href: string | null;
-  accounts: number;
   course?: CatalogCourse;
   focusSection?: string;
 };
-export type PopularResult = { asOf: string; items: PopularItem[] };
+export type PopularResult = {
+  asOf: string;
+  items: PopularItem[];
+  subjects?: string[];
+};
 const popularCache = new Map<
   string,
   { until: number; promise: Promise<PopularResult> }
@@ -73,7 +76,6 @@ export async function popularFavorites(
               ? "/rmp/" + item.payload.id.slice(4)
               : "/rmp?q=" + encodeURIComponent(item.payload.name)
             : itemHref(item),
-        accounts: Number(row.accounts),
         ...(preview
           ? {
               course: {

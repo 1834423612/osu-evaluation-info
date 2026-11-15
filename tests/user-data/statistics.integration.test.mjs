@@ -61,7 +61,7 @@ test(
     });
     let popular = await popularFavorites("course");
     assert.equal(popular.items.length, 1);
-    assert.equal(popular.items[0].accounts, 2);
+    assert.equal("accounts" in popular.items[0], false);
     assert.ok(!JSON.stringify(popular).includes("example.1@osu.edu"));
     const state = await exchangeSync("b", { cursor: 0, operations: [] }),
       record = state.records.find((x) => x.key === itemKey(snapshot.items[0]));
@@ -71,7 +71,10 @@ test(
         { id: randomUUID(), key: record.key, base: record.version, item: null },
       ],
     });
-    assert.equal((await popularFavorites("course")).items[0].accounts, 1);
+    assert.equal(
+      "accounts" in (await popularFavorites("course")).items[0],
+      false,
+    );
     const teacher = structuredClone(snapshot.items[2]);
     teacher.payload.id = "Alex Smith";
     await exchangeSync("a", { cursor: 2, operations: ops([teacher]) });
@@ -79,7 +82,7 @@ test(
     teacher.payload.id = "smith.123";
     await exchangeSync("a", { cursor: 3, operations: ops([teacher]) });
     const teachers = await popularFavorites("instructor");
-    assert.equal(teachers.items[0].accounts, 1);
+    assert.equal("accounts" in teachers.items[0], false);
     assert.equal(teachers.items[0].context, "");
     assert.ok(!JSON.stringify(teachers).includes(teacher.payload.email));
     const event = {
