@@ -26,8 +26,8 @@ export const curriculumSchema = z
       .object({
         url: publicUrl,
         sha256: z.string().regex(/^[a-f0-9]{64}$/),
-        fetchedAt: z.string().datetime(),
-        validatedAt: z.string().datetime().nullable(),
+        fetchedAt: z.string().datetime({ offset: true }),
+        validatedAt: z.string().datetime({ offset: true }).nullable(),
         mediaType: z.enum(["text/html", "application/pdf"]),
       })
       .strict(),
@@ -61,7 +61,7 @@ export const curriculumSchema = z
       )
       .max(20),
     reviewStatus: z.enum(["pending", "approved", "rejected"]),
-    reviewedAt: z.string().datetime().nullable(),
+    reviewedAt: z.string().datetime({ offset: true }).nullable(),
     reviewer: z.string().min(1).max(100).nullable(),
   })
   .strict()

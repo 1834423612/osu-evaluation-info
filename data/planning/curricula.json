@@ -1,0 +1,374 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "molgen-1-9c374d1d9792a4fa",
+    "source": {
+      "url": "https://molgen.osu.edu/sample-curriculum",
+      "sha256": "9c374d1d9792a4fab3d37266ab906c54cb315458701f82c7f2b1f93c4379bb2c",
+      "fetchedAt": "2026-11-15T22:41:33.184283+00:00",
+      "validatedAt": null,
+      "mediaType": "text/html"
+    },
+    "documentKind": "sample-plan",
+    "program": "Molecular Genetics",
+    "specialization": null,
+    "campus": null,
+    "geSystem": null,
+    "version": "9c374d1d9792a4fa",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "evidence": [
+      "Example 1; verify alternatives, footnotes and applicability at the source before use."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "ARTSSCI 1100.07",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          },
+          {
+            "evidence": "MATH 1151",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "CHEM 1210",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GENED 1201",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "CHEM 1220",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "BIO 1113.01",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 18,
+          "max": 18
+        },
+        "entries": [
+          {
+            "evidence": "CHEM 2510",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "CHEM 2540",
+            "credits": {
+              "min": 2,
+              "max": 2
+            }
+          },
+          {
+            "evidence": "BIO 1114.01",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "MOLGEN 4606",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 17,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "CHEM 2520",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "CHEM 2550",
+            "credits": {
+              "min": 2,
+              "max": 2
+            }
+          },
+          {
+            "evidence": "BIOCHEM 4511 / MOLGEN 5601",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "BIOCHEM 4511 / MOLGEN 5602",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "MOLGEN 5607",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "PHYSICS 1200",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 16,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "MOLGEN 5608",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 2,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "PHYSICS 1201",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 12,
+          "max": 14
+        },
+        "entries": [
+          {
+            "evidence": "MOLGEN 5645",
+            "credits": {
+              "min": 2,
+              "max": 2
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 2,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 2,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 14,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 2,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Elective / GE: review source",
+            "credits": {
+              "min": 2,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GENED 4001",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  }
+]

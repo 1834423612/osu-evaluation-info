@@ -14,3 +14,19 @@ test("official imports cannot contain private plan payloads", () => {
     false,
   );
 });
+
+test("checked-in official candidates validate and remain explicitly pending", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const rows = JSON.parse(
+    await readFile(
+      new URL("../../data/planning/curricula.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  for (const row of rows) {
+    const parsed = curriculumSchema.parse(row);
+    assert.equal(parsed.reviewStatus, "pending");
+    assert.equal(parsed.semesters.length, 8);
+    assert.equal(parsed.applicableUntil, null);
+  }
+});

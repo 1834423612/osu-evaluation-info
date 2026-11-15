@@ -15,3 +15,12 @@ class SyncTests(unittest.TestCase):
         parser = sync.Links()
         parser.feed('<script>secret</script><a href="/curriculum">Curriculum</a>')
         self.assertEqual(parser.links, ['/curriculum'])
+
+class StructureTests(unittest.TestCase):
+    def test_unknown_layout_stays_unpublished(self):
+        spec = importlib.util.spec_from_file_location('structure', Path(__file__).parents[2] / 'scripts/planning/structure.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.structure(b'<h2>New unsupported layout</h2>', {'url':'https://molgen.osu.edu/sample-curriculum'}), [])
+        self.assertEqual(module.credit_range('Elective 2-3 credits'), {'min':2,'max':3})
+        self.assertIsNone(module.credit_range('Elective -'))
