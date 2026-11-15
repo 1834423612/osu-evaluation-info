@@ -12,6 +12,7 @@ import {
 } from "../saved/exchange.ts";
 import type { CatalogCourse } from "../catalog/types.ts";
 import { stableFavoriteKey } from "../telemetry/protocol.ts";
+import { readAdminCursor, adminCursor } from "./admin-cursor.ts";
 export type PopularKind = "course" | "section" | "instructor";
 export type PopularItem = {
   key: string;
@@ -108,7 +109,7 @@ export async function analyticsOverview(
   pool: Pool = getTelemetryPool(),
 ) {
   const env = environment === "all" ? null : environment;
-  const [totals, searches, outcomes, paths, contexts, links] =
+  const [totals, searches, outcomes, paths, contexts, links, latency] =
     await Promise.all([
       pool.query(
         "SELECT type,sum(hits)::bigint AS count FROM " +
@@ -134,16 +135,17 @@ export async function analyticsOverview(
           " WHERE day>=((now() AT TIME ZONE 'UTC')::date-$1::int) AND type='page_view' AND dimension<>'' AND ($2::text IS NULL OR environment=$2) GROUP BY dimension ORDER BY sum(hits) DESC LIMIT 30",
         [days - 1, env],
       ),
-      pool.query(
-        "SELECT session_id AS id,user_agent,accept_language,language,languages,time_zone,viewport,network_address::text AS ip,network_source,created_at,environment FROM " +
-          table("visitor_context") +
-          " WHERE created_at>=now()-interval '7 days' AND ($1::text IS NULL OR environment=$1) ORDER BY created_at DESC LIMIT 100",
-        [env],
-      ),
+      analyticsContexts(environment, null, pool),
       pool.query(
         "SELECT coalesce(sum(previews),0)::bigint AS previews,coalesce(sum(opens),0)::bigint AS opens,count(*)::bigint AS links FROM " +
           table("page_link"),
         [],
+      ),
+      pool.query(
+        "SELECT dimension AS bucket,sum(hits)::bigint AS count FROM " +
+          table("product_day") +
+          " WHERE day>=((now() AT TIME ZONE 'UTC')::date-$1::int) AND type='search_latency' AND ($2::text IS NULL OR environment=$2) GROUP BY dimension",
+        [days - 1, env],
       ),
     ]);
   return {
@@ -155,7 +157,28 @@ export async function analyticsOverview(
     outcomes: outcomes.rows,
     paths: paths.rows,
     contexts: contexts.rows,
+    contextsNext: contexts.next,
+    latency: latency.rows,
     pageLinks: links.rows[0],
+  };
+}
+export async function analyticsContexts(
+  environment: string,
+  before: string | null,
+  pool: Pool = getTelemetryPool(),
+) {
+  const cursor = readAdminCursor(before),
+    env = environment === "all" ? null : environment;
+  const result = await pool.query(
+    "SELECT session_id AS id,user_agent,accept_language,language,languages,time_zone,viewport,network_address::text AS ip,network_source,created_at,environment,to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time FROM " +
+      table("visitor_context") +
+      " WHERE created_at>=now()-interval '7 days' AND ($1::text IS NULL OR environment=$1) AND ($2::timestamptz IS NULL OR (created_at,session_id)<($2::timestamptz,$3::uuid)) ORDER BY created_at DESC,session_id DESC LIMIT 101",
+    [env, cursor?.time ?? null, cursor?.id ?? null],
+  );
+  const rows = result.rows.slice(0, 100);
+  return {
+    rows,
+    next: result.rows.length > 100 ? adminCursor(rows[99]) : null,
   };
 }
 

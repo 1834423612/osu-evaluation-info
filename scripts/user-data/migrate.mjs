@@ -14,6 +14,7 @@ const files = [
   "20261114_page_links.sql",
   "20261114_telemetry.sql",
   "20261114_diagnostics.sql",
+  "20261114_statistics.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),

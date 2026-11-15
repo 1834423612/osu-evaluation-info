@@ -417,6 +417,31 @@ export function DebugTools() {
                   </fieldset>
                   <fieldset className={styles.group}>
                     <legend>
+                      {text(locale, "Statistics & diagnostics", "统计与诊断")}
+                    </legend>
+                    <div className={styles.buttons}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          debugTools.toggle();
+                          router.push("/admin/statistics");
+                        }}
+                      >
+                        {text(locale, "Site statistics", "网站统计")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          debugTools.toggle();
+                          router.push("/diagnostics");
+                        }}
+                      >
+                        {text(locale, "Browser diagnostics", "浏览器诊断")}
+                      </button>
+                    </div>
+                  </fieldset>
+                  <fieldset className={styles.group}>
+                    <legend>
                       {text(locale, "Syllabus & scrolling", "教学大纲与滚动")}
                     </legend>
                     <p>

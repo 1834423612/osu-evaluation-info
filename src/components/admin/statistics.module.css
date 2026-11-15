@@ -1,0 +1,151 @@
+.filter {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  min-width: 110px;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.metrics > div {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--surface);
+  display: grid;
+  gap: 7px;
+}
+.metrics small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.metrics strong {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.columns > section {
+  min-width: 0;
+}
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ranking li {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: start;
+  font-size: 12px;
+  border-top: 1px solid var(--line);
+  padding: 9px 0;
+  overflow-wrap: anywhere;
+}
+.ranking strong {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.ranking code {
+  word-break: break-all;
+}
+.facts {
+  display: grid;
+  gap: 0;
+  font-size: 12px;
+}
+.facts > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 9px 0;
+  overflow-wrap: anywhere;
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+}
+.subheading {
+  margin-top: 24px !important;
+}
+.contexts > details {
+  border-top: 1px solid var(--line);
+  padding: 11px 0;
+}
+.contexts summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+.contexts summary > span:last-child {
+  color: var(--muted);
+}
+.reports {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.reports button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  cursor: pointer;
+}
+.reports small {
+  color: var(--muted);
+}
+.report {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 55dvh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--subtle-surface);
+  font: 11px/1.6 monospace;
+  padding: 12px;
+}
+
+.latency {
+  margin-top: 16px;
+  font-size: 12px;
+}
+.latency summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+@media (max-width: 720px) {
+  .metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .columns {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .facts > div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .metrics strong {
+    font-size: 21px;
+  }
+}
