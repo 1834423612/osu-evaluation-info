@@ -33,3 +33,10 @@ test("email code layout is responsive and rejects injected markup", () => {
   assert.match(codeEmail("123456", false), /max-width:480px/);
   assert.throws(() => codeEmail("<img/>", false));
 });
+
+test("quoted authentication references resolve through the same identity domain", () => {
+  assert.equal(
+    domainSQL('REFERENCES osu_identity."user"(id)'),
+    'REFERENCES "' + domainSchema("user") + '"."user"(id)',
+  );
+});

@@ -41,8 +41,8 @@ export function domainSchemas() {
 export function domainSQL(sql: string) {
   return sql
     .replace(
-      /osu_(?:identity|analytics|diagnostics)\.([a-z_]+)/g,
-      (_, name: string) => userDataTable(name),
+      /osu_(?:identity|analytics|diagnostics)\.(?:"([a-z_]+)"|([a-z_]+))/g,
+      (_, quoted: string, plain: string) => userDataTable(quoted ?? plain),
     )
     .replace(
       /CREATE SCHEMA IF NOT EXISTS osu_identity;/g,
