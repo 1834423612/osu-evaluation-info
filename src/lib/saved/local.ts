@@ -1,6 +1,7 @@
 "use client";
 import { browserStorage } from "../preferences/browser-storage.ts";
 import { PREFERENCES_EVENT } from "../preferences/locale.ts";
+import { backupSchema, type LocalBackup } from "./backup-schema.ts";
 import {
   collectionsSchema,
   type SavedCollection,
@@ -166,4 +167,62 @@ export function restoreLocalRemoval(undo: LocalRemoval) {
     if (keys.has(itemKey(item)) && !unique.has(itemKey(item)))
       unique.set(itemKey(item), item);
   commit(previous, [...unique.values()], originals);
+}
+
+export function createLocalBackup(): LocalBackup {
+  const workspace = readSavedWorkspace(browserStorage());
+  workspaceItems(workspace);
+  const backup = backupSchema.parse({
+    format: "waho-private-backup",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    workspace,
+  });
+  if (new TextEncoder().encode(JSON.stringify(backup)).byteLength > 10485760)
+    throw Error("backup_size");
+  return backup;
+}
+/** Private restore is a union. Existing snapshots and collection names win; nothing is replaced or deleted. */
+export function restoreLocalBackup(input: LocalBackup) {
+  const backup = backupSchema.parse(input),
+    previous = readSavedWorkspace(browserStorage()),
+    unique = new Map(workspaceItems(previous).map((x) => [itemKey(x), x])),
+    originals = new Map<string, unknown>();
+  const incoming = workspaceItems(backup.workspace);
+  let added = 0;
+  for (let i = 0; i < kinds.length; i++)
+    for (const payload of JSON.parse(
+      backup.workspace.records[SAVED_STORAGE_KEYS[i]] ?? "[]",
+    ))
+      originals.set(kinds[i] + ":" + payload.id, payload);
+  for (const item of incoming)
+    if (!unique.has(itemKey(item))) {
+      unique.set(itemKey(item), item);
+      added++;
+    }
+  const collections = new Map(
+    (previous.collections ?? []).map((x) => [x.id, x]),
+  );
+  for (const folder of backup.workspace.version === 2
+    ? backup.workspace.collections
+    : []) {
+    const old = collections.get(folder.id);
+    collections.set(
+      folder.id,
+      old
+        ? {
+            ...old,
+            members: [...new Set([...old.members, ...folder.members])],
+            tags: [...new Set([...old.tags, ...folder.tags])],
+          }
+        : folder,
+    );
+  }
+  const nextCollections = collectionsSchema.parse([...collections.values()]);
+  commit(previous, [...unique.values()], originals, nextCollections);
+  return {
+    added,
+    skipped: incoming.length - added,
+    collections: nextCollections.length,
+  };
 }

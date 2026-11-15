@@ -36,6 +36,8 @@ import { CollectionImport } from "@/components/sharing/collection-import";
 import { text, type Locale } from "@/lib/i18n";
 import {
   createLocalSnapshot,
+  createLocalBackup,
+  restoreLocalBackup,
   readLocalItems,
   removeLocalItems,
   restoreLocalRemoval,
@@ -52,6 +54,7 @@ import {
   type SavedSnapshot,
 } from "@/lib/saved/exchange";
 import styles from "@/components/ui/workspace.module.css";
+import { parseLocalBackup, type LocalBackup } from "@/lib/saved/backup-schema";
 export function SavedManager({ locale }: { locale: Locale }) {
   const scope = useSyncExternalStore(
     (callback) => {
@@ -66,6 +69,7 @@ export function SavedManager({ locale }: { locale: Locale }) {
 }
 function SavedManagerBody({ locale }: { locale: Locale }) {
   const file = useRef<HTMLInputElement>(null);
+  const [backup, setBackup] = useState<LocalBackup | null>(null);
   const [collections, setCollections] = useState<SavedCollection[]>([]),
     [active, setActive] = useState("all"),
     [target, setTarget] = useState(""),
@@ -245,6 +249,31 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
       );
     }
   }
+  function exportBackup() {
+    try {
+      const url = URL.createObjectURL(
+          new Blob([JSON.stringify(createLocalBackup())], {
+            type: "application/json",
+          }),
+        ),
+        a = document.createElement("a");
+      a.href = url;
+      a.download =
+        "waho-private-backup-" +
+        new Date().toISOString().slice(0, 10) +
+        ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setNotice(
+        text(
+          locale,
+          "Backup failed. Check storage and the 10 MiB file limit.",
+          "备份失败，请检查存储及 10 MiB 文件上限。",
+        ),
+      );
+    }
+  }
   async function remove() {
     setMutating(true);
     try {
@@ -308,15 +337,22 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
             e.target.value = "";
             if (!value) return;
             try {
-              if (value.size > 1048576) throw Error();
-              setPreview(parseSnapshot(await value.text()));
+              if (value.size > 10485760) throw Error();
+              const raw = await value.text();
+              if (JSON.parse(raw)?.format === "waho-private-backup") {
+                setBackup(parseLocalBackup(raw));
+                setPreview(null);
+              } else {
+                setPreview(parseSnapshot(raw));
+                setBackup(null);
+              }
               setNotice("");
             } catch {
               setNotice(
                 text(
                   locale,
-                  "Invalid or oversized collection file (maximum 1 MiB).",
-                  "收藏文件无效或超过 1 MiB。",
+                  "Invalid file. Collections allow 1 MiB; private backups allow 10 MiB.",
+                  "文件无效；收藏清单上限为 1 MiB，私人备份上限为 10 MiB。",
                 ),
               );
             }
@@ -383,6 +419,17 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
                 />
               </label>
             </div>
+            <Button variant="outline" onClick={exportBackup}>
+              <Download size={14} />
+              {text(locale, "Download full backup", "下载完整备份")}
+            </Button>
+            <p className={styles.muted}>
+              {text(
+                locale,
+                "Includes collections, cached details and update acknowledgements. Keep this file private.",
+                "包含分组、详情缓存和更新确认状态，请妥善保管。",
+              )}
+            </p>
           </details>
           <div className={layout.filters}>
             <label>
@@ -592,6 +639,57 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
             </Button>
           ) : null}
         </div>
+      ) : null}
+      {backup ? (
+        <section className={styles.panel}>
+          <h2>{text(locale, "Restore private backup", "恢复私人备份")}</h2>
+          <p className={styles.muted}>
+            {text(
+              locale,
+              "Merge into this workspace. Existing items and collection names are kept; members and tags are combined.",
+              "合并到当前收藏。保留已有项目和分组名称，合并成员与标签。",
+            )}
+          </p>
+          <div className={styles.tools}>
+            <Button
+              disabled={mutating}
+              onClick={async () => {
+                setMutating(true);
+                try {
+                  const result = await withSavedMutation(() =>
+                    restoreLocalBackup(backup),
+                  );
+                  setNotice(
+                    result.added +
+                      text(locale, " added · ", " 项已恢复 · ") +
+                      result.collections +
+                      text(locale, " collections", " 个分组"),
+                  );
+                  setBackup(null);
+                } catch {
+                  setNotice(
+                    text(
+                      locale,
+                      "Restore failed. Check storage and collection limits. Original data is kept.",
+                      "恢复失败，请检查存储和分组上限，原数据仍保留。",
+                    ),
+                  );
+                } finally {
+                  setMutating(false);
+                }
+              }}
+            >
+              {text(locale, "Merge backup", "合并备份")}
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={mutating}
+              onClick={() => setBackup(null)}
+            >
+              {text(locale, "Cancel", "取消")}
+            </Button>
+          </div>
+        </section>
       ) : null}
       {preview ? (
         <div className={styles.actions}>

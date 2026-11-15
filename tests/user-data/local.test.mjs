@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { randomUUID } from "node:crypto";
 import { snapshot, course } from "./fixtures.mjs";
 import { withinSavedTransaction as transaction } from "../../src/lib/saved/mutation-context.ts";
 import {
@@ -59,6 +60,8 @@ test("import, removal and undo preserve complete existing snapshots and interven
     removeLocalItems,
     restoreLocalRemoval,
     readLocalItems,
+    createLocalBackup,
+    restoreLocalBackup,
   } = await import("../../src/lib/saved/local.ts");
   transaction(() => importLocalItems([snapshot.items[2]]));
   const saved = () =>
@@ -97,6 +100,47 @@ test("import, removal and undo preserve complete existing snapshots and interven
   assert.throws(() => transaction(() => importLocalItems([snapshot.items[1]])));
   assert.equal(data.get(SAVED_WORKSPACE_KEY), before);
   fail = false;
+  const { saveCollection, readCollections } =
+    await import("../../src/lib/saved/collections.ts");
+  const group = {
+    id: randomUUID(),
+    name: "Original group",
+    tags: ["Degree"],
+    members: ["course:" + course.id],
+  };
+  transaction(() => saveCollection(group, null));
+  const backup = createLocalBackup();
+  assert.equal(backup.workspace.version, 2);
+  data.delete(SAVED_WORKSPACE_KEY);
+  for (const key of SAVED_STORAGE_KEYS) data.set(key, "[]");
+  transaction(() => restoreLocalBackup(backup));
+  assert.equal(saved().sections[0].fees[0].amount, 20);
+  assert.equal(saved().description, original.description);
+  assert.deepEqual(readCollections(), [group]);
+  transaction(() =>
+    saveCollection(
+      {
+        ...group,
+        name: "Current name",
+        members: [...group.members, "instructor:another.2"],
+      },
+      group,
+    ),
+  );
+  transaction(() => restoreLocalBackup(backup));
+  assert.equal(readCollections()[0].name, "Current name");
+  assert.equal(readCollections()[0].members.length, 2);
+  transaction(() => restoreLocalBackup(backup));
+  assert.equal(readCollections().length, 1);
+  const full = structuredClone(backup);
+  full.workspace.collections = Array.from({ length: 30 }, (_, i) => ({
+    ...group,
+    id: randomUUID(),
+    name: "Other " + i,
+  }));
+  const beforeOversize = data.get(SAVED_WORKSPACE_KEY);
+  assert.throws(() => transaction(() => restoreLocalBackup(full)));
+  assert.equal(data.get(SAVED_WORKSPACE_KEY), beforeOversize);
   data.set(SAVED_WORKSPACE_KEY, "{broken");
   assert.throws(() => readLocalItems());
 });

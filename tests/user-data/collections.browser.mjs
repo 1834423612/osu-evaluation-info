@@ -181,6 +181,45 @@ try {
       })
       .waitFor();
     assert.equal(await manager.locator("li").count(), 1);
+    await manager
+      .getByText(t("Export / share title", "导出／分享标题"), { exact: true })
+      .click();
+    const backupWait = p.waitForEvent("download");
+    await manager
+      .getByRole("button", {
+        name: t("Download full backup", "下载完整备份"),
+        exact: true,
+      })
+      .click();
+    const backupStream = await (await backupWait).createReadStream();
+    let backupRaw = "";
+    for await (const chunk of backupStream) backupRaw += chunk;
+    const backup = JSON.parse(backupRaw);
+    assert.equal(backup.format, "waho-private-backup");
+    assert.equal(backup.workspace.collections.length, 1);
+    await p.evaluate(() => {
+      const key = "course-atlas:saved-workspace:v1",
+        workspace = JSON.parse(localStorage.getItem(key));
+      for (const key of Object.keys(workspace.records))
+        workspace.records[key] = "[]";
+      workspace.collections = [];
+      localStorage.setItem(key, JSON.stringify(workspace));
+      window.dispatchEvent(new Event("course-atlas:preferences"));
+    });
+    await manager
+      .locator("input[type=file]")
+      .setInputFiles({
+        name: "backup.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(backupRaw),
+      });
+    await manager
+      .getByRole("button", { name: t("Merge backup", "合并备份"), exact: true })
+      .click();
+    await manager
+      .getByText(locale === "zh" ? /2 项已恢复/ : /2 added/)
+      .waitFor();
+    assert.equal(await manager.locator("li").count(), 1);
     assert.equal(
       await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,
