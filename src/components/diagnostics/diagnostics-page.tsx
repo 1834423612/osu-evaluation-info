@@ -127,8 +127,8 @@ export function DiagnosticsPage() {
       setMessage(
         text(
           locale,
-          "Report received. Retained for up to 7 days.",
-          "报告已接收，最多保留 7 天。",
+          "Report received. Admin access expires in 7 days.",
+          "报告已接收，管理端可查看 7 天。",
         ),
       );
     } catch {
@@ -456,7 +456,7 @@ export function DiagnosticsPage() {
           description={text(
             locale,
             "Only the selected values below are submitted. Access is restricted; reports expire after 7 days.",
-            "仅提交下面选中的数据，仅管理端可访问，7 天后清理。",
+            "仅提交下面选中的数据，仅管理端可访问，7 天后到期。",
           )}
           closeLabel={text(locale, "Close", "关闭")}
         >
