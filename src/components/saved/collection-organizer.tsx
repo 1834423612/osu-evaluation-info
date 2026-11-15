@@ -1,4 +1,7 @@
 "use client";
+import { CollectionIcon } from "./collection-icon";
+import { collectionIcons } from "@/lib/saved/collection-icons";
+import { collectionTagGroups } from "@/lib/saved/tag-presets";
 import { browserUuid } from "@/lib/uuid";
 import { useState } from "react";
 import { Folder, FolderPlus, Pencil, Trash2, RotateCcw } from "lucide-react";
@@ -29,6 +32,7 @@ export function CollectionOrganizer({
   onActive,
   counts,
   selected,
+  creationOnly = false,
 }: {
   locale: Locale;
   collections: SavedCollection[];
@@ -36,23 +40,39 @@ export function CollectionOrganizer({
   onActive: (id: string) => void;
   counts: Map<string, number>;
   selected?: Set<string>;
+  creationOnly?: boolean;
 }) {
   const [draft, setDraft] = useState<SavedCollection | null>(null),
     [base, setBase] = useState<SavedCollection | null>(null),
     [tags, setTags] = useState(""),
+    [customTag, setCustomTag] = useState(""),
+    [iconQuery, setIconQuery] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [confirmDelete, setConfirmDelete] = useState(false),
     [removed, setRemoved] = useState<SavedCollection | null>(null);
+  const chosenTags = tags
+    .split(/[,，]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  function addTag() {
+    const value = customTag.trim();
+    if (!value || chosenTags.includes(value) || chosenTags.length >= 12) return;
+    setTags([...chosenTags, value].join(", "));
+    setCustomTag("");
+  }
   const current = collections.find((x) => x.id === active);
   function begin(value?: SavedCollection) {
     setBase(value ?? null);
+    setCustomTag("");
+    setIconQuery("");
     setDraft(
       value
         ? structuredClone(value)
         : {
             id: browserUuid(),
             name: "",
+            icon: "lucide:folder",
             tags: [],
             members: [...(selected ?? [])],
           },
@@ -86,30 +106,34 @@ export function CollectionOrganizer({
     }
   }
   return (
-    <div className={styles.organizer}>
-      <div className={styles.collectionChips}>
-        <button
-          type="button"
-          aria-pressed={active === "all"}
-          onClick={() => onActive("all")}
-        >
-          <Folder size={13} />
-          {text(locale, "All favorites", "全部收藏")}
-          <span>{counts.get("all") ?? 0}</span>
-        </button>
-        {collections.map((group) => (
+    <div className={styles.organizer} data-creation={creationOnly || undefined}>
+      {!creationOnly ? (
+        <div className={styles.collectionChips}>
           <button
-            key={group.id}
             type="button"
-            aria-pressed={group.id === active}
-            onClick={() => onActive(group.id)}
+            aria-pressed={active === "all"}
+            onClick={() => onActive("all")}
           >
             <Folder size={13} />
-            {group.name}
-            <span>{counts.get(group.id) ?? 0}</span>
+            {text(locale, "All favorites", "全部收藏")}
+            <span>{counts.get("all") ?? 0}</span>
           </button>
-        ))}
-      </div>
+          {collections.map((group) => (
+            <button
+              key={group.id}
+              type="button"
+              aria-pressed={group.id === active}
+              onClick={() => onActive(group.id)}
+            >
+              <CollectionIcon icon={group.icon} size={14} />
+              <span className={styles.collectionName} title={group.name}>
+                {group.name}
+              </span>
+              <span>{counts.get(group.id) ?? 0}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className={styles.heading}>
         <label className={styles.selectLabel} hidden>
           <Folder size={16} />
@@ -138,7 +162,7 @@ export function CollectionOrganizer({
             <FolderPlus size={15} />
             {text(locale, "New collection", "新建分组")}
           </Button>
-          {current ? (
+          {current && !creationOnly ? (
             <Button variant="ghost" onClick={() => begin(current)}>
               <Pencil size={14} />
               {text(locale, "Edit collection", "编辑分组")}
@@ -146,7 +170,7 @@ export function CollectionOrganizer({
           ) : null}
         </div>
       </div>
-      {current?.tags.length ? (
+      {!creationOnly && current?.tags.length ? (
         <div className={styles.tags}>
           {current.tags.map((tag) => (
             <span key={tag}>#{tag}</span>
@@ -188,6 +212,13 @@ export function CollectionOrganizer({
         </p>
       ) : null}
       <WorkspaceDialog
+        dirty={
+          !!draft &&
+          (draft.name !== (base?.name ?? "") ||
+            tags !== (base?.tags.join(", ") ?? "") ||
+            customTag.trim().length > 0 ||
+            (draft.icon ?? "lucide:folder") !== (base?.icon ?? "lucide:folder"))
+        }
         open={!!draft}
         onOpenChange={(open) => {
           if (!open && !busy) setDraft(null);
@@ -214,7 +245,10 @@ export function CollectionOrganizer({
                     ...draft,
                     tags: [
                       ...new Set(
-                        tags
+                        (
+                          tags +
+                          (customTag.trim() ? "," + customTag.trim() : "")
+                        )
                           .split(/[,，]/)
                           .map((x) => x.trim())
                           .filter(Boolean),
@@ -252,14 +286,59 @@ export function CollectionOrganizer({
                 />
               </label>
               <label>
-                {text(locale, "Tags · comma separated", "标签 · 逗号分隔")}
-                <input
-                  className={shared.input}
-                  maxLength={310}
-                  value={tags}
-                  placeholder={text(locale, "Degree, Autumn", "学位要求，秋季")}
-                  onChange={(e) => setTags(e.target.value)}
-                />
+                {text(locale, "Your tags", "自定义标签")}
+                <div className={styles.customTagRow}>
+                  <input
+                    className={shared.input}
+                    maxLength={24}
+                    value={customTag}
+                    disabled={busy || chosenTags.length >= 12}
+                    placeholder={text(
+                      locale,
+                      "e.g. Career prep",
+                      "例如：专业必修",
+                    )}
+                    onChange={(e) => setCustomTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      busy || !customTag.trim() || chosenTags.length >= 12
+                    }
+                    onClick={addTag}
+                  >
+                    {text(locale, "Add", "添加")}
+                  </Button>
+                </div>
+                <div className={styles.selectedTags}>
+                  {chosenTags.map((tag) => (
+                    <button
+                      type="button"
+                      key={tag}
+                      aria-label={
+                        text(locale, "Remove tag ", "移除标签 ") + tag
+                      }
+                      onClick={() =>
+                        setTags(
+                          chosenTags
+                            .filter((value) => value !== tag)
+                            .join(", "),
+                        )
+                      }
+                    >
+                      #{tag}
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+                </div>
                 <small className={shared.muted}>
                   {text(
                     locale,
@@ -269,6 +348,98 @@ export function CollectionOrganizer({
                 </small>
               </label>
             </div>
+            <div className={styles.tagSuggestions}>
+              <p>
+                {text(
+                  locale,
+                  "Choose a few labels, or type your own above.",
+                  "点击预选标签，也可在上方自行输入。",
+                )}
+              </p>
+              {collectionTagGroups.map((group) => (
+                <section key={group.en}>
+                  <h3>{text(locale, group.en, group.zh)}</h3>
+                  <div>
+                    {group.tags.map((tag) => {
+                      const chosen = tags
+                        .split(/[,，]/)
+                        .map((x) => x.trim())
+                        .filter(Boolean);
+                      const checked = chosen.includes(tag);
+                      return (
+                        <button
+                          type="button"
+                          key={tag}
+                          aria-pressed={checked}
+                          disabled={busy || (!checked && chosen.length >= 12)}
+                          onClick={() =>
+                            setTags(
+                              (checked
+                                ? chosen.filter((x) => x !== tag)
+                                : [...chosen, tag]
+                              ).join(", "),
+                            )
+                          }
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+              <a
+                href="https://registrar.osu.edu/academic-calendar/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {text(
+                  locale,
+                  "Session terminology · Registrar",
+                  "学期名称参考 · Registrar",
+                )}
+              </a>
+            </div>
+            <section className={styles.iconPicker}>
+              <h3>{text(locale, "Collection icon", "分组图标")}</h3>
+              <input
+                className={shared.input}
+                type="search"
+                value={iconQuery}
+                onChange={(e) => setIconQuery(e.target.value)}
+                placeholder={text(
+                  locale,
+                  "Find icons (book, star, lab…)",
+                  "搜索图标（book、star、lab…）",
+                )}
+                aria-label={text(
+                  locale,
+                  "Find collection icon",
+                  "查找分组图标",
+                )}
+              />
+              <div
+                role="group"
+                aria-label={text(locale, "Choose icon", "选择图标")}
+              >
+                {collectionIcons
+                  .filter((icon) =>
+                    icon.label.toLowerCase().includes(iconQuery.toLowerCase()),
+                  )
+                  .map((icon) => (
+                    <button
+                      type="button"
+                      key={icon.id}
+                      title={icon.label}
+                      aria-label={icon.label}
+                      aria-pressed={(draft.icon ?? "lucide:folder") === icon.id}
+                      onClick={() => setDraft({ ...draft, icon: icon.id })}
+                    >
+                      <CollectionIcon icon={icon.id} size={19} />
+                    </button>
+                  ))}
+              </div>
+            </section>
             {notice ? (
               <p role="status" className={shared.notice}>
                 {notice}

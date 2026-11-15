@@ -152,3 +152,30 @@ test("two devices sync collection membership and preserve competing renames for 
   assert.equal(state.outbox.length, 1);
   assert.notEqual(state.outbox[0].key, key);
 });
+
+test("collection icon metadata validates known local assets and rejects arbitrary remote icon payloads", () => {
+  const group = {
+    id: "52787fd0-4e8e-4dd1-9e90-2dfc02693e58",
+    name: "My plan",
+    tags: ["Undergrad", "1st session"],
+    members: ["course:example"],
+    icon: "lucide:book-open",
+  };
+  assert.equal(collectionSchema.parse(group).icon, group.icon);
+  assert.equal(
+    collectionSchema.safeParse({
+      ...group,
+      icon: "https://evil.example/icon.svg",
+    }).success,
+    false,
+  );
+  assert.equal(
+    collectionSchema.safeParse({ ...group, icon: "lucide:unknown-icon" })
+      .success,
+    false,
+  );
+  assert.equal(
+    collectionSchema.safeParse({ ...group, icon: undefined }).success,
+    true,
+  );
+});

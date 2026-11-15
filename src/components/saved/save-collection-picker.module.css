@@ -1,0 +1,85 @@
+.picker {
+  z-index: 9200;
+  pointer-events: auto;
+  width: min(300px, calc(100vw - 24px));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 12px 48px #24152224;
+}
+.picker > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--primary);
+}
+.picker > p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  margin: 7px 0 13px;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  padding: 9px 2px;
+  min-width: 0;
+}
+.option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.option span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.option small {
+  font-size: 10px;
+  margin-left: auto;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.groups {
+  max-height: 200px;
+  overflow: auto;
+  border-block: 1px solid var(--line);
+}
+.newGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  color: var(--muted);
+}
+.newGroup input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px;
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.picker > button {
+  width: 100%;
+}
+.picker > small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.arrow {
+  fill: var(--surface);
+}

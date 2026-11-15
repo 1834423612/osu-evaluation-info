@@ -52,5 +52,15 @@
 }
 .groupMeta {
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  min-width: 0;
+}
+.groupMeta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+.groupMeta svg {
+  flex-shrink: 0;
 }

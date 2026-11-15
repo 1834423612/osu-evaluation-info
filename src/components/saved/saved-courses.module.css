@@ -217,6 +217,10 @@
   overflow-wrap: anywhere;
 }
 
+.tabs[data-compact] > [role="tabpanel"] {
+  display: none;
+}
+
 @media (max-width: 540px) {
   .item {
     padding: 12px;

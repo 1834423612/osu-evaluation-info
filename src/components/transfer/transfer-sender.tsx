@@ -36,10 +36,12 @@ export function TransferSender({
   locale,
   selected,
   scopeKeys,
+  title,
 }: {
   locale: Locale;
   selected?: Set<string>;
   scopeKeys?: Set<string>;
+  title?: string;
 }) {
   const [picked, setPicked] = useState(new Set<string>());
   const [open, setOpen] = useState(false),
@@ -85,7 +87,7 @@ export function TransferSender({
   function begin() {
     try {
       const s = createLocalSnapshot(
-        text(locale, "Favorites transfer", "收藏转存"),
+        title?.trim() || text(locale, "Favorites transfer", "收藏转存"),
       );
       if (scopeKeys) s.items = s.items.filter((x) => scopeKeys.has(itemKey(x)));
       setPicked(

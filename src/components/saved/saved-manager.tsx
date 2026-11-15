@@ -1,4 +1,5 @@
 "use client";
+import { useDraftGuard } from "@/components/forms/draft-guard";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { useSavedWorkspace } from "./saved-workspace";
 import { SelectionCheckbox } from "./selection-checkbox";
@@ -89,6 +90,8 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
     setSelected,
     selecting,
     setSelecting,
+    compact,
+    setCompact,
     items,
     setItems,
     kind,
@@ -97,7 +100,9 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
   const [exchange, setExchange] = useState<"import" | "export" | null>(null);
   const [backup, setBackup] = useState<LocalBackup | null>(null);
   const [target, setTarget] = useState(""),
-    [sort, setSort] = useState("kind");
+    [sort, setSort] = useState("kind"),
+    [managementKind, setManagementKind] = useState("all");
+  useDraftGuard(selecting && selected.size > 0);
   const collection = collections.find((x) => x.id === active);
   const scopeKeys = collection ? new Set(collection.members) : undefined;
   const [open, setOpen] = useState(false),
@@ -148,20 +153,22 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
               x.id === active
                 ? {
                     ...x,
-                    members: x.members.filter((key) => !selected.has(key)),
+                    members: x.members.filter((key) => !actionKeys.has(key)),
                   }
                 : x,
             ),
           );
         else
           assignCollection(
-            selected,
+            actionKeys,
             target,
             move && active !== "all" ? active : undefined,
           );
       });
       setSelected(new Set());
       setNotice(text(locale, "Collection updated.", "分组已更新。"));
+      setOpen(false);
+      setSelecting(false);
     } catch {
       setNotice(
         text(
@@ -193,7 +200,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
         );
       }
       setSelecting(true);
-      setOpen(true);
+      setOpen(false);
       setNotice("");
     } catch {
       setNotice(
@@ -230,7 +237,8 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
           .toLocaleLowerCase();
       return (
         (!scopeKeys || scopeKeys.has(key)) &&
-        (kind === "all" || kind === item.kind) &&
+        ((open ? managementKind : kind) === "all" ||
+          (open ? managementKind : kind) === item.kind) &&
         search.includes(query.toLocaleLowerCase().trim())
       );
     })
@@ -311,7 +319,9 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
   async function remove() {
     setMutating(true);
     try {
-      const removed = await withSavedMutation(() => removeLocalItems(selected));
+      const removed = await withSavedMutation(() =>
+        removeLocalItems(actionKeys),
+      );
       setUndo(removed.keys.length ? removed : null);
       setItems(createLocalSnapshot(title || "Saved collection").items);
       setSelected(new Set());
@@ -328,6 +338,159 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
       setMutating(false);
     }
   }
+  const displayItems = open
+    ? filtered.filter((item) => selected.has(itemKey(item)))
+    : filtered;
+  const actionKeys = new Set(displayItems.map(itemKey));
+  const filterControls = (
+    <div className={layout.filters} data-draft-ignore>
+      <label>
+        {text(locale, "Find saved items or tags", "查找收藏或标签")}
+        <input
+          className={styles.input}
+          type="search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setLimit(40);
+          }}
+        />
+      </label>
+      <label>
+        {text(locale, "Type", "类型")}
+        <Select
+          value={open ? managementKind : kind}
+          onValueChange={(value) => {
+            (open ? setManagementKind : setKind)(value);
+            setLimit(40);
+          }}
+        >
+          <SelectTrigger aria-label={text(locale, "Saved type", "收藏类型")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {text(locale, "All types", "全部类型")}
+            </SelectItem>
+            {(["course", "section", "instructor", "syllabus"] as const).map(
+              (value) => (
+                <SelectItem key={value} value={value}>
+                  {itemKindName(value, locale)}
+                </SelectItem>
+              ),
+            )}
+          </SelectContent>
+        </Select>
+      </label>
+      <label>
+        {text(locale, "Sort", "排序")}
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger
+            aria-label={text(locale, "Sort favorites", "收藏排序")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[
+              ["saved", "Saved order", "收藏顺序"],
+              ["asc", "Title A–Z", "标题升序"],
+              ["desc", "Title Z–A", "标题降序"],
+              ["kind", "Type", "类型"],
+            ].map(([value, en, zh]) => (
+              <SelectItem key={value} value={value}>
+                {text(locale, en, zh)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </label>
+    </div>
+  );
+  const itemRows = (
+    <>
+      <ul className={styles.list}>
+        {displayItems.slice(0, limit).map((item, index) => {
+          const key = itemKey(item),
+            href = itemHref(item);
+          const subject = itemSubject(item, locale);
+          const subjectKeys = displayItems
+            .filter(
+              (x) =>
+                x.kind === item.kind &&
+                (x.kind === "course"
+                  ? x.payload.subject
+                  : x.kind === "section"
+                    ? x.payload.courseLabel.split(" ")[0]
+                    : x.kind === "syllabus"
+                      ? x.payload.entry.subject
+                      : text(locale, "Instructors", "教师")) === subject,
+            )
+            .map(itemKey);
+          return (
+            <li className={layout.manageItem} key={key}>
+              {index === 0 ||
+              displayItems[index - 1].kind !== item.kind ||
+              itemSubject(displayItems[index - 1], locale) !== subject ? (
+                <div className={layout.subjectHeading}>
+                  <SelectionCheckbox
+                    keys={subjectKeys}
+                    selected={selected}
+                    onChange={setSelected}
+                    label={subject + " · " + subjectKeys.length}
+                  />
+                </div>
+              ) : null}
+              <div className={styles.row}>
+                <label className={styles.pick}>
+                  <input
+                    type="checkbox"
+                    className={styles.checkbox}
+                    checked={selected.has(key)}
+                    onChange={() =>
+                      setSelected((current) => {
+                        const next = new Set(current);
+                        if (next.has(key)) next.delete(key);
+                        else next.add(key);
+                        return next;
+                      })
+                    }
+                  />
+                  <span>
+                    <strong>{itemTitle(item)}</strong>
+                    <small>
+                      {itemKindName(item.kind, locale)} · {itemContext(item)}
+                    </small>
+                    <span className={layout.rowTags}>
+                      {collections
+                        .filter((x) => x.members.includes(key))
+                        .map((x) => (
+                          <span key={x.id} title={x.name}>
+                            {x.name}
+                          </span>
+                        ))}
+                    </span>
+                  </span>
+                </label>
+                {href ? (
+                  <Link
+                    href={href as Route}
+                    aria-label={text(locale, "Open item", "打开项目")}
+                  >
+                    <ExternalLink size={15} />
+                  </Link>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {limit < displayItems.length ? (
+        <Button variant="outline" onClick={() => setLimit((x) => x + 40)}>
+          {text(locale, "Show more", "显示更多")}
+        </Button>
+      ) : null}
+    </>
+  );
   return (
     <section
       className={layout.manager}
@@ -342,7 +505,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
           scopeKeys={scopeKeys}
         />
         <SharedManagement locale={locale} />
-        <Button variant="outline" aria-expanded={open} onClick={manage}>
+        <Button variant="outline" aria-pressed={selecting} onClick={manage}>
           <SlidersHorizontal size={14} />
           {text(locale, "Manage", "管理")}
         </Button>
@@ -434,8 +597,41 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
           <span>
             {selected.size} {text(locale, "selected", "项已选")}
           </span>
-          <Button variant="ghost" onClick={manage}>
-            {text(locale, "Organize selection", "整理所选")}
+          <SelectionCheckbox
+            keys={filtered.map(itemKey)}
+            selected={selected}
+            onChange={setSelected}
+            label={
+              text(locale, "Select this view", "全选当前分区") +
+              " (" +
+              displayItems.length +
+              ")"
+            }
+          />
+          <Button
+            variant="outline"
+            aria-pressed={compact}
+            onClick={() => {
+              setCompact((value) => !value);
+              setQuery("");
+            }}
+          >
+            {text(
+              locale,
+              compact ? "Card view" : "Compact list",
+              compact ? "卡片视图" : "简略列表",
+            )}
+          </Button>
+          <Button
+            variant="default"
+            disabled={!selected.size}
+            onClick={() => {
+              setOpen(true);
+              setManagementKind("all");
+              setQuery("");
+            }}
+          >
+            {text(locale, "Organize selection", "整理选择")}
           </Button>
           <Button
             variant="ghost"
@@ -472,6 +668,16 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
         <div className={layout.exchangeOptions}>
           {exchange === "export" ? (
             <>
+              <label className={layout.titleField}>
+                {text(locale, "Collection title", "清单标题")}
+                <input
+                  className={styles.input}
+                  value={title}
+                  maxLength={80}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={text(locale, "Saved collection", "收藏清单")}
+                />
+              </label>
               <section>
                 <h3>{text(locale, "Save a file", "保存到本地")}</h3>
                 <p>
@@ -485,7 +691,8 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
                   <Download size={14} />
                   {text(locale, "Download collection", "下载收藏清单")}
                 </Button>
-                <Button variant="ghost" onClick={exportBackup}>
+                <Button variant="outline" onClick={exportBackup}>
+                  <Download size={14} />
                   {text(locale, "Full private backup", "完整私人备份")}
                 </Button>
               </section>
@@ -499,6 +706,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
                   )}
                 </p>
                 <TransferSender
+                  title={title}
                   locale={locale}
                   selected={selected}
                   scopeKeys={scopeKeys}
@@ -551,128 +759,52 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
           )}
         </div>
       </WorkspaceDialog>
+      {selecting && compact ? (
+        <section className={layout.compactPanel}>
+          {filterControls}
+          {itemRows}
+        </section>
+      ) : null}
       {open ? (
         <WorkspaceDialog
           open={open}
           onOpenChange={setOpen}
           wide
-          title={text(locale, "Organize favorites", "管理收藏")}
+          title={
+            text(locale, "Organize selection", "整理选择") +
+            " · " +
+            selected.size
+          }
           description={text(
             locale,
-            "Select by category, subject or individual item.",
-            "按当前分类、科目或单个项目选择，再整理到分组。",
+            "Add selected items to a collection, create a collection, or refine this selection.",
+            "将所选项目加入收藏夹、新建收藏夹，或进一步筛选。",
           )}
           closeLabel={text(locale, "Close", "关闭")}
         >
           <CollectionOrganizer
+            creationOnly
             locale={locale}
             collections={collections}
             active={active}
-            onActive={chooseCollection}
+            onActive={(id) => {
+              chooseCollection(id);
+              setOpen(false);
+              setSelecting(false);
+            }}
             counts={counts}
-            selected={selected}
+            selected={actionKeys}
           />
-          <details className={layout.exportTitle}>
-            <summary>
-              {text(locale, "Export / share title", "导出／分享标题")}
-            </summary>
-            <div className={styles.fields}>
-              <label>
-                {text(locale, "Title", "标题")}
-                <input
-                  className={styles.input}
-                  maxLength={80}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={text(locale, "Saved collection", "收藏清单")}
-                />
-              </label>
-            </div>
-            <Button variant="outline" onClick={exportBackup}>
-              <Download size={14} />
-              {text(locale, "Download full backup", "下载完整备份")}
-            </Button>
-            <p className={styles.muted}>
-              {text(
-                locale,
-                "Includes collections, cached details and update acknowledgements. Keep this file private.",
-                "包含分组、详情缓存和更新确认状态，请妥善保管。",
-              )}
-            </p>
-          </details>
-          <div className={layout.filters}>
-            <label>
-              {text(locale, "Find saved items or tags", "查找收藏或标签")}
-              <input
-                className={styles.input}
-                type="search"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setLimit(40);
-                }}
-              />
-            </label>
-            <label>
-              {text(locale, "Type", "类型")}
-              <Select
-                value={kind}
-                onValueChange={(value) => {
-                  setKind(value);
-                  setLimit(40);
-                }}
-              >
-                <SelectTrigger
-                  aria-label={text(locale, "Saved type", "收藏类型")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    {text(locale, "All types", "全部类型")}
-                  </SelectItem>
-                  {(
-                    ["course", "section", "instructor", "syllabus"] as const
-                  ).map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {itemKindName(value, locale)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label>
-              {text(locale, "Sort", "排序")}
-              <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger
-                  aria-label={text(locale, "Sort favorites", "收藏排序")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[
-                    ["saved", "Saved order", "收藏顺序"],
-                    ["asc", "Title A–Z", "标题升序"],
-                    ["desc", "Title Z–A", "标题降序"],
-                    ["kind", "Type", "类型"],
-                  ].map(([value, en, zh]) => (
-                    <SelectItem key={value} value={value}>
-                      {text(locale, en, zh)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-          </div>
+          {filterControls}
           <div className={layout.bulk}>
             <SelectionCheckbox
-              keys={filtered.map(itemKey)}
+              keys={displayItems.map(itemKey)}
               selected={selected}
               onChange={setSelected}
               label={
                 text(locale, "Select this view", "全选当前分区") +
                 " (" +
-                filtered.length +
+                displayItems.length +
                 ")"
               }
             />
@@ -707,10 +839,11 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
                 </Select>
                 <Button
                   variant="outline"
-                  disabled={!target || !selected.size || mutating}
+                  disabled={!target || !actionKeys.size || mutating}
                   onClick={() => void organize()}
                 >
-                  {text(locale, "Add to collection", "加入分组")}
+                  {text(locale, "Add to collection", "加入分组")} (
+                  {actionKeys.size})
                 </Button>
                 {active !== "all" ? (
                   <>
@@ -719,7 +852,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
                       disabled={
                         !target ||
                         target === active ||
-                        !selected.size ||
+                        !actionKeys.size ||
                         mutating
                       }
                       onClick={() => void organize(true)}
@@ -728,7 +861,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
                     </Button>
                     <Button
                       variant="ghost"
-                      disabled={!selected.size || mutating}
+                      disabled={!actionKeys.size || mutating}
                       onClick={() => void organize(false, true)}
                     >
                       {text(locale, "Remove from collection", "移出分组")}
@@ -740,106 +873,27 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
             {selected.size ? (
               <Button
                 variant="outline"
-                disabled={!selected.size || mutating}
+                disabled={!actionKeys.size || mutating}
                 onClick={remove}
               >
                 <Trash2 size={14} />
-                {text(locale, "Remove", "移除")} ({selected.size})
+                {text(locale, "Remove", "移除")} ({actionKeys.size})
               </Button>
             ) : null}
           </div>
           <p className={layout.summary} role="status">
-            {text(locale, "Items · ", "项目 · ") +
-              filtered.length +
-              " · " +
+            {text(locale, "Showing ", "显示 ") +
+              displayItems.length +
+              " / " +
               selected.size +
               text(locale, " selected", " 项已选")}
           </p>
-          {!filtered.length ? (
+          {!displayItems.length ? (
             <p className={styles.muted}>
               {text(locale, "No saved items match.", "没有符合条件的收藏。")}
             </p>
           ) : null}
-          <ul className={styles.list}>
-            {filtered.slice(0, limit).map((item, index) => {
-              const key = itemKey(item),
-                href = itemHref(item);
-              const subject = itemSubject(item, locale);
-              const subjectKeys = filtered
-                .filter(
-                  (x) =>
-                    x.kind === item.kind &&
-                    (x.kind === "course"
-                      ? x.payload.subject
-                      : x.kind === "section"
-                        ? x.payload.courseLabel.split(" ")[0]
-                        : x.kind === "syllabus"
-                          ? x.payload.entry.subject
-                          : text(locale, "Instructors", "教师")) === subject,
-                )
-                .map(itemKey);
-              return (
-                <li className={layout.manageItem} key={key}>
-                  {index === 0 ||
-                  filtered[index - 1].kind !== item.kind ||
-                  itemSubject(filtered[index - 1], locale) !== subject ? (
-                    <div className={layout.subjectHeading}>
-                      <SelectionCheckbox
-                        keys={subjectKeys}
-                        selected={selected}
-                        onChange={setSelected}
-                        label={subject + " · " + subjectKeys.length}
-                      />
-                    </div>
-                  ) : null}
-                  <div className={styles.row}>
-                    <label className={styles.pick}>
-                      <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={selected.has(key)}
-                        onChange={() =>
-                          setSelected((current) => {
-                            const next = new Set(current);
-                            if (next.has(key)) next.delete(key);
-                            else next.add(key);
-                            return next;
-                          })
-                        }
-                      />
-                      <span>
-                        <strong>{itemTitle(item)}</strong>
-                        <small>
-                          {itemKindName(item.kind, locale)} ·{" "}
-                          {itemContext(item)}
-                        </small>
-                        <span className={layout.rowTags}>
-                          {collections
-                            .filter((x) => x.members.includes(key))
-                            .map((x) => (
-                              <span key={x.id}>{x.name}</span>
-                            ))}
-                        </span>
-                      </span>
-                    </label>
-                    {href ? (
-                      <Link
-                        href={href as Route}
-                        aria-label={text(locale, "Open item", "打开项目")}
-                      >
-                        <ExternalLink size={15} />
-                      </Link>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          {limit < filtered.length ? (
-            <Button variant="outline" onClick={() => setLimit((x) => x + 40)}>
-              {text(locale, "Show more", "显示更多")}
-            </Button>
-          ) : null}
+          {itemRows}
         </WorkspaceDialog>
       ) : null}
       {backup ? (

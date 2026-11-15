@@ -167,7 +167,8 @@ function SavedCoursesBody() {
     setEnrollmentWatchInterval,
   } = usePreferences();
   const { savedSyllabi } = useSavedSyllabi();
-  const { collections, active, kind, setKind } = useSavedWorkspace();
+  const { collections, active, kind, setKind, compact, selecting } =
+    useSavedWorkspace();
   const group = collections.find((x) => x.id === active);
   const visible = (key: string) => !group || group.members.includes(key);
   const saved = allSaved.filter((x) => visible("course:" + x.id));
@@ -236,6 +237,7 @@ function SavedCoursesBody() {
               )
             }
             className={styles.tabs}
+            data-compact={(compact && selecting) || undefined}
           >
             <TabsList
               className={styles.tabList}

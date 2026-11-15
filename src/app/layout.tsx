@@ -1,3 +1,4 @@
+import { SaveCollectionPicker } from "@/components/saved/save-collection-picker";
 import { DraftGuard } from "@/components/forms/draft-guard";
 import { Suspense } from "react";
 import { ProductAnalytics } from "@/components/analytics/product-analytics";
@@ -103,6 +104,7 @@ export default function RootLayout({
           }}
         />
         <DraftGuard />
+        <SaveCollectionPicker />
         <SyncProvider />
         <Suspense fallback={null}>
           <ProductAnalytics />

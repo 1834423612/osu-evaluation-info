@@ -32,6 +32,8 @@ type State = {
   setActive: Dispatch<SetStateAction<string>>;
   selected: Set<string>;
   setSelected: Dispatch<SetStateAction<Set<string>>>;
+  compact: boolean;
+  setCompact: Dispatch<SetStateAction<boolean>>;
   selecting: boolean;
   setSelecting: Dispatch<SetStateAction<boolean>>;
   kind: string;
@@ -46,6 +48,7 @@ export function SavedWorkspace({ children }: { children: ReactNode }) {
     [active, setActive] = useState("all"),
     [selected, setSelected] = useState(new Set<string>()),
     [selecting, setSelecting] = useState(false),
+    [compact, setCompact] = useState(false),
     [kind, setKind] = useState("all"),
     [sync, setSync] = useState<SyncState | null>(null),
     [scope, setScope] = useState<string | null>(null);
@@ -102,6 +105,8 @@ export function SavedWorkspace({ children }: { children: ReactNode }) {
         setSelected,
         selecting,
         setSelecting,
+        compact,
+        setCompact,
         kind,
         setKind,
         sync,
@@ -226,9 +231,15 @@ export function SavedCardFrame({
           {cloud ? <Check size={12} /> : null}
         </span>
         {groups.length ? (
-          <span className={styles.groupMeta}>
+          <span
+            className={styles.groupMeta}
+            title={groups.map((x) => x.name).join(" · ")}
+          >
             <Folder size={12} />
-            {groups.map((x) => x.name).join(" · ")}
+            <span>
+              {groups[0].name}
+              {groups.length > 1 ? " +" + (groups.length - 1) : ""}
+            </span>
           </span>
         ) : null}
       </div>

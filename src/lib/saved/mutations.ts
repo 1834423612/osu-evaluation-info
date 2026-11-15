@@ -1,3 +1,5 @@
+import { readLocalItems } from "./local.ts";
+import { itemKey, itemTitle } from "./exchange.ts";
 import { userDatabase } from "../user-data/browser-db.ts";
 import { savedScope } from "./scope.ts";
 import { withinSavedTransaction } from "./mutation-context.ts";
@@ -29,8 +31,36 @@ export async function withSavedMutation<T>(action: () => T): Promise<T> {
   });
 }
 export function runSavedAction(action: () => boolean) {
-  return withSavedMutation(action).catch((error) => {
-    notifySaveFailure(error);
-    return false;
-  });
+  const scope = savedScope();
+  return withSavedMutation(() => {
+    let before = new Set<string>();
+    try {
+      before = new Set(readLocalItems().map(itemKey));
+    } catch {}
+    const result = action();
+    let added: ReturnType<typeof readLocalItems> = [];
+    if (result) {
+      try {
+        added = readLocalItems().filter((item) => !before.has(itemKey(item)));
+      } catch {}
+    }
+    return { result, added };
+  })
+    .then(({ result, added }) => {
+      if (result && added.length === 1 && savedScope() === scope)
+        window.dispatchEvent(
+          new CustomEvent("course-atlas:favorite-added", {
+            detail: {
+              key: itemKey(added[0]),
+              title: itemTitle(added[0]),
+              scope,
+            },
+          }),
+        );
+      return result;
+    })
+    .catch((error) => {
+      notifySaveFailure(error);
+      return false;
+    });
 }
