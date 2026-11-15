@@ -351,7 +351,7 @@ The capacity browser check seeds an isolated browser profile with synthetic favo
 
 | Script | Type | Purpose |
 | --- | --- | --- |
-| [tests/user-data/capacity.browser.mjs](../tests/user-data/capacity.browser.mjs) | Browser | Full-collection errors, non-destructive undo failure, retained intervening favorites and phone toast layout |
+| [tests/user-data/capacity.browser.mjs](../tests/user-data/capacity.browser.mjs) | Browser | Full-collection errors, non-destructive undo failure, retained intervening favorites, empty export rejection and phone toast layout |
 
 The live replay test is excluded from `pnpm test` and requires `ALLOW_UMAMI_WRITES=1`. It uses actual Umami scripts/configuration and creates synthetic remote events and recordings; application APIs are mocked. `REPLAY_REQUIRE_ROUND_TRIP=1` requires authenticated retrieval using server-only `UMAMI_API_KEY`. Use `REPLAY_TEST_WIDTH=390` for the phone run. See [replay operations](analytics/umami.md) for production-build and browser settings.
 
@@ -364,3 +364,9 @@ Concurrent saved-item checks use two tabs in one isolated browser context, share
 | Script | Type | Purpose |
 | --- | --- | --- |
 | [tests/user-data/concurrent-saved.browser.mjs](../tests/user-data/concurrent-saved.browser.mjs) | Browser | 32 cross-tab commits, shared transaction coverage, retained unrelated edits and phone layout |
+
+The scoped-management browser check uses a synthetic account and local/paused-cloud snapshots. Authentication and all API traffic are mocked; cross-tab sign-out must remove the prior account's management rows, selection and draft name without a page reload.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/scoped-management.browser.mjs](../tests/user-data/scoped-management.browser.mjs) | Browser | Workspace-scoped management state and cross-tab sign-out isolation |

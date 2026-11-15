@@ -349,7 +349,7 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 
 | 脚本 | 类型 | 用途 |
 | --- | --- | --- |
-| [tests/user-data/capacity.browser.mjs](../../tests/user-data/capacity.browser.mjs) | 浏览器 | 收藏已满提示、撤回失败不覆盖数据、保留中途新增项目及手机提示布局 |
+| [tests/user-data/capacity.browser.mjs](../../tests/user-data/capacity.browser.mjs) | 浏览器 | 收藏已满提示、撤回失败不覆盖数据、保留中途新增项目、拒绝空导出及手机提示布局 |
 
 真实回放检查不包含在 `pnpm test` 中，需显式设置 `ALLOW_UMAMI_WRITES=1`。它使用真实 Umami 脚本／配置，创建合成远端事件和录制；应用 API 均被模拟。`REPLAY_REQUIRE_ROUND_TRIP=1` 要求用仅服务端的 `UMAMI_API_KEY` 认证读取录制，`REPLAY_TEST_WIDTH=390` 用于手机检查。生产构建和浏览器设置见[回放运维](analytics/umami.md)。
 
@@ -362,3 +362,9 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本 | 类型 | 用途 |
 | --- | --- | --- |
 | [tests/user-data/concurrent-saved.browser.mjs](../../tests/user-data/concurrent-saved.browser.mjs) | 浏览器 | 32 次跨标签提交、共享事务覆盖、保留独立修改及手机布局 |
+
+管理区隔离检查使用合成账号、本地快照和暂停的云端快照，模拟认证及全部 API。另一个标签退出登录后，原页面必须在不重载的情况下清除上个账号的管理行、选择状态和名称草稿。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/scoped-management.browser.mjs](../../tests/user-data/scoped-management.browser.mjs) | 浏览器 | 管理区工作区隔离及跨标签退出登录 |
