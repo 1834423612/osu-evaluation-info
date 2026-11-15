@@ -44,3 +44,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Use stable `rmp:<profile-id>` identities for RMP bookmarks. Never merge unverified profiles or infer official teaching assignments from equal names or RMP course labels.
 - Keep related account and personal-data features in `osu_identity`: identity, sessions, passkeys, favorites sync, collections, sharing, transfers, principals, and abuse budgets. Use descriptive table names without arbitrary prefixes. Store product/visitor analytics in `osu_analytics` and diagnostic reports in `osu_diagnostics`. Development uses `_dev` schemas. A clearly unrelated feature must have its own schema; closely related features share a domain schema.
 - Resolve tables through the domain namespace helpers. Authentication always uses a dedicated schema-scoped pool; never inherit the course database search path. New features must declare their schema in initialization, backups, retention, and tests.
+
+## Drafts and publication privacy
+
+- Use the shared draft guard for editable forms and workspace dialogs. Protect unfinished input on outside click, refresh and navigation; clear guards after persistence or editor unmount. Exclude search/filter-only controls from dirty fingerprints.
+- First-party publishing endpoints must require a verified account and call `requireInstitutionalIdentity`. School-mailbox access is not proof of enrollment or official affiliation.
+- Build public author data through an explicit opt-in allowlist such as `publicAuthor`. Never expose private account IDs, emails without opt-in, sessions, IP/device context, credentials or audit records through public contribution responses. Keep necessary private security records separate from optional public identity and optional analytics.
+- Policies must describe actual encryption, collection and retention. Do not claim end-to-end encryption, universal legal compliance or complete legal immunity without implementation and applicable review establishing it.

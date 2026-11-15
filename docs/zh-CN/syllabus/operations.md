@@ -46,7 +46,7 @@ PDF 库、WOFF2 解码器和导出代码仅在下载时加载，文件完全在�
 
 纸张为 612 × 792 pt（US Letter），支持多页、表格、文本及链接。预览文档以 816px 为基准，四周 48px 留白；PDF 对应四周 36pt 页边距，正文宽度同为 720px / 540pt。手机预览自适应窄屏留白，导出保持 Letter 尺寸。导出保留水平内边距、同一行的 flex 分栏，并合并相邻外边距；链接装饰采用转换器支持的空默认值，避免空数组嵌套导致 pdfmake 报错。表格 caption 单独处理，避免 ART 时间表中的空 caption 被转换为缺列的一行。页脚包含官方来源链接和页码。导出按 Letter 分页；官方上传附件仍通过官网查看，不假装已并入生成文件。
 
-浏览器支持 `showSaveFilePicker` 时，在点击事件内先请求保存位置，待 PDF 生成并写入、关闭成功后显示「已保存」。取消窗口即结束，不继续下载。明确收到 `SecurityError` / `NotAllowedError` 才表示保存窗口被拒绝，并在支持 Popover 的设备上提示；不支持时仅保留按钮下方的小字链接。普通 Blob 下载无法可靠检测浏览器是否弹出保存窗口，因此不使用定时器、失焦或窗口可见性来猜测，不弹此类 toast。写入失败提供手动保存链接。
+「下载 PDF」在本机生成文件，通过标准 Blob 下载并保留手动保存链接。旁边的「另存为」在浏览器支持 `showSaveFilePicker` 时，于点击事件内请求保存位置；写入并关闭成功后显示「已保存」，取消窗口即结束该次导出。明确收到 `SecurityError` / `NotAllowedError` 时提示保存窗口被拒绝并回退为下载。普通下载无法可靠判断浏览器是否显示保存窗口，因此不使用定时器、失焦或窗口可见性来猜测。
 
 图片/字体先尝试浏览器匿名读取；仅已知的官方 account-image UUID 路径和 BUX 字体路径可通过 `/api/syllabus/assets` 兼容转发。接口拒绝其他 URL、凭据、重定向和非预期文件签名，并限制并发、队列、超时及响应大小。服务端只转发字节，不接收用户文档，不构建 PDF。无法读取的图片会使导出明确失败，避免静默生成缺图文件；第三方图片仍取决于其 CORS 和可用性。
 
@@ -191,3 +191,20 @@ node --env-file=.env.local scripts/syllabus/audit-schedules.mjs .cache/syllabus-
 ## BUX 字体来源
 
 字体、预览 CSP、PDF 导出与资源白名单统一使用 `https://assets.bux.osu.edu/bux-webfonts2/`。2026-11-13 的请求验证返回 `Access-Control-Allow-Origin: *`，旧 S3 地址没有该响应头。此处采用 [BUX 官方字体接入方式](https://bux.osu.edu/typography/fonts/)，无需本地复制；外部来源不可用时仍保留明确的字体／导出失败处理。
+
+## 大纲全文翻译
+
+大纲工具栏复用现有翻译客户端，提供自动、浏览器模型、kjch 服务、Google 路由，中英目标语言及替换／双语输出。双语模式在原段落后补充译文；替换模式保留来源链接、图片与表格。两个任务翻译有界、Unicode 安全的文本块，显示进度并复用结果；失败或取消不发布部分文档。上限为 600 个文本块／350,000 个源字符，不对扫描附件执行 OCR，也不翻译官方 API 未暴露可读正文的附件。
+
+预览与 PDF 使用同一份译文，文件名标明翻译模式并附机器翻译提醒；“查看原文”恢复源内容。翻译可能改变换行与页数，不保证学业信息准确。原始快照及已收藏大纲的更新确认不变；翻译或 PDF 生成期间关闭／导航会触发未完成工作守卫。
+
+译文中文采用按需加载的本地 Noto Sans SC Regular WOFF2，保留 `public/fonts/OFL-NotoSansSC.txt`；原文 BUX 拉丁字体仍使用官方 CDN。资源来自[上游 OFL 可变字体](https://github.com/google/fonts/tree/main/ofl/notosanssc)。重建时在隔离 Python 环境安装 `fonttools[woff]` 与 `brotli`，获取上游 TTF 后运行：
+
+```sh
+python scripts/syllabus/build-cjk-font.py NotoSansSC.ttf
+node --test tests/syllabus/translation.test.mjs tests/syllabus/cjk-font.test.mjs
+```
+
+构建脚本不联网，仅写入 `public/fonts/noto-sans-sc-regular.woff2`。测试仅读取本地资源并使用模拟翻译，不请求服务商或写入应用数据。
+
+2026-11-15 验证：已发布的 2026 秋季 BUSFIN 大纲通过 Google 路径完成两种翻译模式。标准下载生成五页双语 PDF 与四页替换译文 PDF，并逐页渲染检查；均使用 Letter 纸张，保留可选择的中文文本与原文链接，中文标题完整显示。原生「另存为」仍以单元测试覆盖，不将原生对话框浏览器验证标为完成。

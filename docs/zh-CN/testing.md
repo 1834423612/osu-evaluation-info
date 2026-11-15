@@ -75,6 +75,17 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 
 每行说明一个脚本的主要目的。完整夹具、断言和启用条件在源文件内；某些集成文件同时含有确定性单元检查和受开关控制的数据库检查。
 
+### 新增账号与大纲检查
+
+| 脚本                                                                                                 | 类型 | 目的                                                                           |
+| ---------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------ |
+| [tests/user-data/draft-guard.test.mjs](../../tests/user-data/draft-guard.test.mjs)                   | 单元 | 草稿注册表、链接／刷新提示及前进后退恢复；模拟历史，不联网或写入               |
+| [tests/user-data/institutional-policy.test.mjs](../../tests/user-data/institutional-policy.test.mjs) | 单元 | 学校邮箱精确域名和主动公开字段；无服务或写入                                   |
+| [tests/user-data/network-fallback.test.mjs](../../tests/user-data/network-fallback.test.mjs)         | 单元 | 模拟降级、取消边界、无坐标／凭据及内网地址排除；不发送外部请求                 |
+| [tests/user-data/share-scope.test.mjs](../../tests/user-data/share-scope.test.mjs)                   | 单元 | 内存存储验证账号与游客切换时的能力缓存隔离                                     |
+| [tests/syllabus/translation.test.mjs](../../tests/syllabus/translation.test.mjs)                     | 单元 | Unicode、替换／双语 HTML、安全翻译文本、原文保留及取消；模拟翻译，无服务或写入 |
+| [tests/syllabus/cjk-font.test.mjs](../../tests/syllabus/cjk-font.test.mjs)                           | 单元 | 本地 WOFF2 解码、真实中文字形和 OFL 署名；无写入                               |
+
 ### analytics
 
 | 脚本                                                                                       | 类型 | 用途                             |
@@ -282,23 +293,23 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 
 `USER_DATA_INTEGRATION=1` 启用认证、分享和同步的数据库测试；创建随机临时表或 schema 并在结束时删除，不发送真实邮件。可用 `USER_DATA_TEST_DATABASE_URL` 指向专用测试数据库；默认读取环境文件中的数据库。分享浏览器测试需 `ALLOW_SERVER_WRITES=1`，会创建并最终撤销测试访客分享，留下审计行；非本机目标另需 `ALLOW_REMOTE_USER_DATA_TESTS=1`。同步和回放浏览器测试拦截认证、同步或统计请求，不写服务器收藏。浏览器测试使用 `USER_DATA_TEST_BASE_URL`；分享、同步截图使用 `USER_DATA_SCREENSHOT_DIR`。
 
-| 脚本                                                                                               | 类型        | 用途                                                                 |
-| -------------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------- |
-| [tests/analytics/privacy.test.mjs](../../tests/analytics/privacy.test.mjs)                         | Unit        | 回放默认值、所有页面可用、序列化过滤与分享凭据处理                   |
-| [tests/analytics/replay.browser.mjs](../../tests/analytics/replay.browser.mjs)                     | Browser     | 模拟统计服务，检查逐页加载、沿用远端参数和已保存的关闭设置           |
-| [tests/user-data/history.test.mjs](../../tests/user-data/history.test.mjs)                         | Unit        | 本机历史去重、保留期限、条数上限和安全导航                           |
-| [tests/user-data/workspace.test.mjs](../../tests/user-data/workspace.test.mjs)                     | Unit        | 本机快照写入、逐字段改动、修订确认和损坏数据处理                     |
-| [tests/user-data/local.test.mjs](../../tests/user-data/local.test.mjs)                             | Unit        | 导入、移除、撤销保留完整快照和中途改动                               |
-| [tests/user-data/exchange.test.mjs](../../tests/user-data/exchange.test.mjs)                       | Unit        | 四类交换格式验证、上限、公开信息筛减和导入身份                       |
-| [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                               | Unit        | 固定来源验证、流式请求上限、开发环境命名空间隔离                     |
-| [tests/user-data/auth-errors.test.mjs](../../tests/user-data/auth-errors.test.mjs) | 单元 | 区分密码、验证码、来源、节流和通行密钥错误；不访问服务或写入数据 |
-| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成 | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、验证码旧账号、密码设置、回环来源与真实签名的通行密钥邮箱匹配；模拟邮件，结束后清理 |
-| [tests/user-data/auth.integration.test.mjs](../../tests/user-data/auth.integration.test.mjs)       | Integration | 真实验证码、密码、密钥、会话和恢复协议；注入邮件投递，使用临时认证表 |
-| [tests/user-data/sharing.integration.test.mjs](../../tests/user-data/sharing.integration.test.mjs) | Integration | 真实 SQL 验证凭据、过期、短码、归属、计数、并发上限和重试            |
-| [tests/user-data/sharing.browser.mjs](../../tests/user-data/sharing.browser.mjs)                   | Browser     | 创建并撤销测试分享；部分转存、原地详情、重试和手机管理               |
-| [tests/user-data/sync-model.test.mjs](../../tests/user-data/sync-model.test.mjs)                   | Unit        | 请求期间改动、删除冲突、游标过期和账号存储键                         |
-| [tests/user-data/sync.integration.test.mjs](../../tests/user-data/sync.integration.test.mjs)       | Integration | 真实 SQL 验证版本、重试、并发冲突、删除、账号隔离和过期合并          |
-| [tests/user-data/sync.browser.mjs](../../tests/user-data/sync.browser.mjs)                         | Browser     | 模拟认证与同步；双设备、响应丢失与刷新、冲突、暂停恢复和游客隔离     |
+| 脚本                                                                                                           | 类型        | 用途                                                                                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [tests/analytics/privacy.test.mjs](../../tests/analytics/privacy.test.mjs)                                     | Unit        | 回放默认值、所有页面可用、序列化过滤与分享凭据处理                                                                                                                                       |
+| [tests/analytics/replay.browser.mjs](../../tests/analytics/replay.browser.mjs)                                 | Browser     | 模拟统计服务，检查逐页加载、沿用远端参数和已保存的关闭设置                                                                                                                               |
+| [tests/user-data/history.test.mjs](../../tests/user-data/history.test.mjs)                                     | Unit        | 本机历史去重、保留期限、条数上限和安全导航                                                                                                                                               |
+| [tests/user-data/workspace.test.mjs](../../tests/user-data/workspace.test.mjs)                                 | Unit        | 本机快照写入、逐字段改动、修订确认和损坏数据处理                                                                                                                                         |
+| [tests/user-data/local.test.mjs](../../tests/user-data/local.test.mjs)                                         | Unit        | 导入、移除、撤销保留完整快照和中途改动                                                                                                                                                   |
+| [tests/user-data/exchange.test.mjs](../../tests/user-data/exchange.test.mjs)                                   | Unit        | 四类交换格式验证、上限、公开信息筛减和导入身份                                                                                                                                           |
+| [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                                           | Unit        | 固定来源验证、流式请求上限、开发环境命名空间隔离                                                                                                                                         |
+| [tests/user-data/auth-errors.test.mjs](../../tests/user-data/auth-errors.test.mjs)                             | 单元        | 区分密码、验证码、来源、节流和通行密钥错误；不访问服务或写入数据                                                                                                                         |
+| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成        | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、条款确认、八位密码、模式内外键、学校验证码限次和一次性使用、回环来源与真实签名通行密钥的邮箱匹配；模拟邮件，结束后清理 |
+| [tests/user-data/auth.integration.test.mjs](../../tests/user-data/auth.integration.test.mjs)                   | Integration | 真实验证码、密码、密钥、会话和恢复协议；注入邮件投递，使用临时认证表                                                                                                                     |
+| [tests/user-data/sharing.integration.test.mjs](../../tests/user-data/sharing.integration.test.mjs)             | Integration | 真实 SQL 验证凭据、过期、短码、归属、计数、并发上限和重试                                                                                                                                |
+| [tests/user-data/sharing.browser.mjs](../../tests/user-data/sharing.browser.mjs)                               | Browser     | 创建并撤销测试分享；部分转存、原地详情、重试和手机管理                                                                                                                                   |
+| [tests/user-data/sync-model.test.mjs](../../tests/user-data/sync-model.test.mjs)                               | Unit        | 请求期间改动、删除冲突、游标过期和账号存储键                                                                                                                                             |
+| [tests/user-data/sync.integration.test.mjs](../../tests/user-data/sync.integration.test.mjs)                   | Integration | 真实 SQL 验证版本、重试、并发冲突、删除、账号隔离和过期合并                                                                                                                              |
+| [tests/user-data/sync.browser.mjs](../../tests/user-data/sync.browser.mjs)                                     | Browser     | 模拟认证与同步；双设备、响应丢失与刷新、冲突、暂停恢复和游客隔离                                                                                                                         |
 
 ```sh
 USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs

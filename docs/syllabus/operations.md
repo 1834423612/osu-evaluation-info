@@ -32,7 +32,7 @@ The relay accepts fixed resources and validated IDs, never arbitrary URLs or vis
 
 `officialHtml` retains sanitized source DOM, layout classes, images, table widths and permitted inline styles. The isolated iframe uses `public/syllabus/official.css`; scripts and forms are blocked. Its constrained scroll region keeps tools, outline and progress available. Mobile outlines start collapsed and close after a jump.
 
-BUX fonts use the [official webfont CDN](https://bux.osu.edu/typography/fonts/): `https://assets.bux.osu.edu/bux-webfonts2/`. On 2026-11-13 it returned `Access-Control-Allow-Origin: *`; the older S3 host did not. CSS, iframe CSP, PDF font URLs and the asset allowlist use the same CDN. Font declarations retain the checked syllabus weights and styles. No local font copies are required while this public source remains usable.
+BUX fonts use the [official webfont CDN](https://bux.osu.edu/typography/fonts/): `https://assets.bux.osu.edu/bux-webfonts2/`. On 2026-11-13 it returned `Access-Control-Allow-Origin: *`; the older S3 host did not. CSS, iframe CSP, PDF font URLs and the asset allowlist use the same CDN. Font declarations retain the checked syllabus weights and styles. The source-layout Latin fonts use that CDN; translated CJK text uses the local face described below.
 
 Semantic reading and `extractSyllabusSections`, `extractSyllabusHighlights`, `extractSyllabusSchedule` support other views. Week paragraphs, ranges, tables, dates, line breaks and reading lists preserve order, repeated/overlapping weeks and full source text. Unknown structures remain source content. Extraction never invents difficulty, workload or missing assessment weights.
 
@@ -40,7 +40,7 @@ PDF code, pdfmake and WOFF2 decoding load on download. Export runs entirely in t
 
 US Letter is 612 × 792 pt. The 816px preview's 48px margins map to 36pt, with a 720px/540pt content width. Adjacent margins collapse; links decorate visible text only. Table captions are handled separately. Footer source links and page numbers remain. Uploaded attachments stay available through OSU rather than being presented as merged PDF content.
 
-Where supported, `showSaveFilePicker` runs within the click event. Success requires writing and closing; cancellation stops export. Explicit `SecurityError`/`NotAllowedError` can show a save-window warning. Ordinary Blob downloads cannot reveal whether a browser displayed a dialog, so timers, blur and visibility are not used to guess. Failed writes retain a manual save link.
+Download PDF creates a browser-local file with a standard Blob download and retains a manual save link. The adjacent Save as action uses `showSaveFilePicker` where supported, within the click event. Its success requires writing and closing; cancellation stops that export. Explicit `SecurityError`/`NotAllowedError` can show a save-window warning and fall back to downloading. Ordinary downloads cannot reveal whether a browser displayed a dialog, so timers, blur and visibility are not used to guess.
 
 Images/fonts first use anonymous browser reads. `/api/syllabus/assets` relays only known public account-image UUID paths and BUX font paths, rejecting other URLs, credentials, redirects and bad signatures. It bounds concurrency, queue, time and bytes and never receives user documents or builds PDFs. Unreadable images fail export explicitly. External assets remain source-dependent; database retention does not archive their binary files.
 
@@ -114,3 +114,20 @@ Database checks use temporary schemas, not cleared business tables. Browser chec
 Browser settings: `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE`, `SYLLABUS_TEST_BASE_URL`, `SYLLABUS_TEST_OUTPUT`. `SYLLABUS_DOCUMENT_FILE` supplies a saved official response for real-layout checks. The font check can accept a pre-rendered `FONT_TEST_DOCUMENT_FILE` when the browser runner cannot resolve Linux package symlinks.
 
 The read-only structure audit visits all retained versions in batches of 100. Its 2026-11-13 run covered 9,578 versions: 8,285 structured and 1,293 source fallbacks, including independent study, internships and flexible schedules. It never fetches, remaps or deletes data.
+
+## Full-document translation
+
+The syllabus toolbar shares the existing translation client. It offers automatic, browser, kjch service and Google routing, Chinese/English targets, and replace/bilingual output. Bilingual appends translated text to source paragraphs; replacement retains source links, images and tables. Two workers translate bounded Unicode-safe chunks with progress and reusable results. Failed/cancelled runs do not publish partial documents. The limit is 600 text blocks / 350,000 source characters. This does not OCR scanned uploads or translate attachments that the official API does not expose as readable content.
+
+Preview and PDF receive the same translated document, with a translated-mode filename and machine-translation warning. **Show original** restores the source. Translation may reflow lines/pages and is not a guarantee of academic accuracy. Source snapshots and saved update acknowledgments are unchanged. Closing or navigating during translation/PDF generation invokes the shared unfinished-work guard.
+
+Translated CJK text uses a local regular Noto Sans SC WOFF2, loaded only when needed; retain `public/fonts/OFL-NotoSansSC.txt`. The original Latin BUX fonts still use the official CDN. The asset is built from the [upstream OFL variable font](https://github.com/google/fonts/tree/main/ofl/notosanssc). To rebuild, install Python `fonttools[woff]` and `brotli` in an isolated environment, obtain the upstream TTF, and run:
+
+```sh
+python scripts/syllabus/build-cjk-font.py NotoSansSC.ttf
+node --test tests/syllabus/translation.test.mjs tests/syllabus/cjk-font.test.mjs
+```
+
+The build script makes no network requests and writes only `public/fonts/noto-sans-sc-regular.woff2`. These tests use local assets and injected translation, without provider requests or application-data writes.
+
+Verification on 2026-11-15: a published Autumn 2026 BUSFIN syllabus completed both translation modes through the Google route. Standard downloads produced a five-page bilingual PDF and a four-page replacement PDF; all pages were rendered for inspection. Both used Letter pages, retained selectable Chinese text and source links, and displayed the complete Chinese title. Native Save as remains covered by unit tests rather than a completed native-dialog browser test.
