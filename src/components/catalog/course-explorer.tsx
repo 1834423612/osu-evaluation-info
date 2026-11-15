@@ -21,6 +21,7 @@ import type {
   CatalogFacet,
 } from "@/lib/catalog/types";
 import { text, localizedCampus, localizedTerm } from "@/lib/i18n";
+import { RecentSearches } from "@/components/history/recent-searches";
 import { recordSearchHistory } from "@/lib/history/store";
 import { usePreferences } from "@/hooks/use-preferences";
 import { AppHeader } from "@/components/layout/app-header";
@@ -207,7 +208,7 @@ export function CourseExplorer() {
     window.history.pushState(null, "", `/?${params}`);
   }
   function chooseSearch(query: string, clearSubject = false) {
-    if(query.trim())recordProductEvents([{ type: "search", term: query }]);
+    if (query.trim()) recordProductEvents([{ type: "search", term: query }]);
     recordSearchHistory(query, searchParams.toString());
     if (!clearSubject) {
       updateParam("q", query);
@@ -537,6 +538,7 @@ export function CourseExplorer() {
           <span className="search-shortcut">↵</span>
           <Button type="submit">{text(locale, "Search", "搜索")}</Button>
         </form>
+        <RecentSearches locale={locale} />
         <div className="workspace-layout">
           <aside className="desktop-filters">{filters}</aside>
           <section

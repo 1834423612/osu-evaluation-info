@@ -1,0 +1,244 @@
+.historyLayout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 42px;
+  margin-top: 36px;
+  align-items: start;
+}
+.sidebar {
+  scrollbar-width: none;
+  position: sticky;
+  top: 100px;
+  display: grid;
+  gap: 6px;
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+.sideLabel {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin: 0 14px 12px;
+}
+.sidebar button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.sidebar button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent-foreground);
+}
+.sidebar button span {
+  flex: 1;
+  text-align: left;
+}
+.sidebar button small {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.sidebar p {
+  padding: 12px 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.9;
+}
+.timeline {
+  min-width: 0;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--muted);
+}
+.search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--ink);
+}
+.search:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 54px;
+  padding-inline: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.day {
+  margin: 8px 0 30px;
+}
+.day h2 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  padding: 13px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+}
+.day h2 span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.day ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.day li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  transition: background 150ms;
+}
+.day li:hover {
+  background: var(--subtle-surface);
+}
+.day li[data-selected="true"] {
+  background: var(--accent-soft);
+}
+.day time {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  width: 58px;
+  flex-shrink: 0;
+}
+.kindIcon {
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.day a {
+  min-width: 0;
+  flex: 1;
+}
+.day strong {
+  font-size: 13px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.day small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.recent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 10px 3px 22px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.recentItems {
+  scrollbar-width: none;
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  min-width: 0;
+  flex: 1;
+  padding: 3px 0;
+}
+.recent a {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  max-width: 170px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--secondary-foreground);
+}
+.recent a:hover {
+  color: var(--primary);
+  border-color: var(--accent-border);
+}
+.recent a span {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.recent .allHistory {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  margin-left: auto;
+}
+@media (max-width: 700px) {
+  .historyLayout {
+    display: block;
+    margin-top: 24px;
+  }
+  .sidebar {
+    position: static;
+    display: flex;
+    gap: 5px;
+    overflow: auto;
+    margin-bottom: 20px;
+  }
+  .sidebar p,
+  .sideLabel {
+    display: none;
+  }
+  .sidebar button {
+    white-space: nowrap;
+    padding: 10px;
+    font-size: 12px;
+    gap: 7px;
+  }
+  .day li {
+    gap: 9px;
+  }
+  .kindIcon {
+    display: none;
+  }
+  .day time {
+    width: 47px;
+  }
+  .recent {
+    margin-bottom: 16px;
+  }
+  .recent > span {
+    display: none;
+  }
+}

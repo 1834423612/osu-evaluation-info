@@ -19,6 +19,8 @@ import {
 } from "@/lib/history/store";
 import type { HistoryEntry } from "@/lib/history/model";
 import styles from "@/components/ui/workspace.module.css";
+import layout from "./history.module.css";
+import { SelectionCheckbox } from "@/components/saved/selection-checkbox";
 const empty: HistoryEntry[] = [];
 export function HistoryPage() {
   const { locale } = usePreferences(),
@@ -28,6 +30,7 @@ export function HistoryPage() {
     historyEnabled,
     () => true,
   );
+  const [selected, setSelected] = useState(new Set<string>());
   const [kind, setKind] = useState<"all" | "search" | "course">("all"),
     [query, setQuery] = useState(""),
     [clearOpen, setClearOpen] = useState(false),
@@ -37,6 +40,24 @@ export function HistoryPage() {
       (kind === "all" || x.kind === kind) &&
       (x.title + x.context).toLowerCase().includes(query.toLowerCase()),
   );
+  const groups = new Map<string, HistoryEntry[]>();
+  for (const item of visible) {
+    const day = new Date(item.at).toLocaleDateString(
+      locale === "zh" ? "zh-CN" : "en-US",
+      { year: "numeric", month: "long", day: "numeric", weekday: "short" },
+    );
+    groups.set(day, [...(groups.get(day) ?? []), item]);
+  }
+  async function removeSelected() {
+    const ids = new Set(selected);
+    if (
+      await editHistory((current) =>
+        current.filter((item) => !ids.has(item.id)),
+      )
+    )
+      setSelected(new Set());
+    else setNotice(text(locale, "Could not update history.", "记录更新失败。"));
+  }
   function exportHistory() {
     try {
       const data = {
@@ -109,87 +130,188 @@ export function HistoryPage() {
             {notice}
           </p>
         ) : null}
-        <section className={styles.panel}>
-          <div className={styles.tools}>
-            {(["all", "search", "course"] as const).map((value) => (
-              <Button
-                key={value}
-                variant={kind === value ? "secondary" : "ghost"}
-                aria-pressed={kind === value}
-                onClick={() => setKind(value)}
-              >
-                {value === "all"
-                  ? text(locale, "All", "全部")
-                  : value === "search"
-                    ? text(locale, "Searches", "搜索")
-                    : text(locale, "Courses", "课程")}
-              </Button>
-            ))}
-          </div>
-          <label className={styles.fields}>
-            <span className={styles.muted}>
-              {text(locale, "Find in history", "查找记录")}
+        <div className={layout.historyLayout}>
+          <aside className={layout.sidebar}>
+            <span className={layout.sideLabel}>
+              {text(locale, "YOUR ACTIVITY", "我的记录")}
             </span>
-            <input
-              className={styles.input}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
-          {visible.length ? (
-            <ul className={styles.list}>
-              {visible.map((item) => (
-                <li className={styles.row} key={item.id}>
-                  {item.kind === "search" ? (
-                    <Search size={17} />
-                  ) : (
-                    <BookOpen size={17} />
+            {(["all", "search", "course"] as const).map((value) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={kind === value}
+                onClick={() => {
+                  setKind(value);
+                  setSelected(new Set());
+                }}
+              >
+                {value === "search" ? (
+                  <Search size={16} />
+                ) : value === "course" ? (
+                  <BookOpen size={16} />
+                ) : (
+                  <Clock3 size={16} />
+                )}
+                <span>
+                  {text(
+                    locale,
+                    value === "all"
+                      ? "All activity"
+                      : value === "search"
+                        ? "Searches"
+                        : "Viewed courses",
+                    value === "all"
+                      ? "全部记录"
+                      : value === "search"
+                        ? "搜索记录"
+                        : "浏览课程",
                   )}
-                  <Link href={item.href as Route}>
-                    <strong>{item.title}</strong>
-                    <small>
-                      {item.context} ·{" "}
-                      {new Date(item.at).toLocaleString(
-                        locale === "zh" ? "zh-CN" : "en-US",
-                        { dateStyle: "medium", timeStyle: "short" },
-                      )}
-                    </small>
-                  </Link>
+                </span>
+                <small>
+                  {
+                    entries.filter((x) => value === "all" || x.kind === value)
+                      .length
+                  }
+                </small>
+              </button>
+            ))}
+            <p>
+              {text(
+                locale,
+                "History stays in this browser for 90 days. You can pause or delete it at any time.",
+                "记录在此浏览器保留 90 天，随时可以暂停或删除。",
+              )}
+            </p>
+          </aside>
+          <section className={layout.timeline}>
+            <label className={layout.search}>
+              <Search size={17} />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={text(
+                  locale,
+                  "Search your history",
+                  "搜索历史记录",
+                )}
+                aria-label={text(locale, "Search your history", "搜索历史记录")}
+              />
+            </label>
+            {visible.length ? (
+              <div className={layout.selection}>
+                <SelectionCheckbox
+                  keys={visible.map((x) => x.id)}
+                  selected={selected}
+                  onChange={setSelected}
+                  label={
+                    selected.size
+                      ? text(
+                          locale,
+                          selected.size + " selected",
+                          selected.size + " 项已选",
+                        )
+                      : text(locale, "Select entries", "选择记录")
+                  }
+                />
+                {selected.size ? (
                   <Button
                     variant="ghost"
-                    size="icon"
-                    aria-label={text(
-                      locale,
-                      "Remove history entry",
-                      "删除记录",
-                    )}
-                    onClick={async () => {
-                      if (
-                        !(await editHistory((current) =>
-                          current.filter((x) => x.id !== item.id),
-                        ))
-                      )
-                        setNotice(
-                          text(
-                            locale,
-                            "Could not update history. Check browser storage.",
-                            "记录更新失败，请检查浏览器存储。",
-                          ),
-                        );
-                    }}
+                    size="sm"
+                    onClick={() => void removeSelected()}
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={13} />
+                    {text(locale, "Delete selected", "删除所选")}
                   </Button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyResult>
-              <Clock3 size={16} />
-              {text(locale, "No recent activity.", "暂无记录。")}
-            </EmptyResult>
-          )}
-        </section>
+                ) : null}
+              </div>
+            ) : null}
+            {[...groups].map(([day, items]) => (
+              <section key={day} className={layout.day}>
+                <h2>
+                  {day}
+                  <span>{items.length}</span>
+                </h2>
+                <ul>
+                  {items.map((item) => (
+                    <li key={item.id} data-selected={selected.has(item.id)}>
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        aria-label={
+                          text(locale, "Select ", "选择 ") + item.title
+                        }
+                        checked={selected.has(item.id)}
+                        onChange={() =>
+                          setSelected((old) => {
+                            const next = new Set(old);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            return next;
+                          })
+                        }
+                      />
+                      <time dateTime={item.at}>
+                        {new Date(item.at).toLocaleTimeString(
+                          locale === "zh" ? "zh-CN" : "en-US",
+                          { hour: "2-digit", minute: "2-digit" },
+                        )}
+                      </time>
+                      <span className={layout.kindIcon}>
+                        {item.kind === "search" ? (
+                          <Search size={16} />
+                        ) : (
+                          <BookOpen size={16} />
+                        )}
+                      </span>
+                      <Link href={item.href as Route}>
+                        <strong>{item.title}</strong>
+                        {item.context ? <small>{item.context}</small> : null}
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={text(
+                          locale,
+                          "Remove history entry",
+                          "删除记录",
+                        )}
+                        onClick={async () => {
+                          if (
+                            !(await editHistory((current) =>
+                              current.filter((x) => x.id !== item.id),
+                            ))
+                          )
+                            setNotice(
+                              text(
+                                locale,
+                                "Could not update history.",
+                                "记录更新失败。",
+                              ),
+                            );
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+            {!visible.length ? (
+              <EmptyResult layout="stack">
+                <Clock3 size={20} />
+                {text(
+                  locale,
+                  query
+                    ? "No matching activity"
+                    : "Your next discovery starts here",
+                  query ? "没有匹配的记录" : "下一次探索，从这里开始",
+                )}
+              </EmptyResult>
+            ) : null}
+          </section>
+        </div>
         <WorkspaceDialog
           open={clearOpen}
           onOpenChange={setClearOpen}
