@@ -6,6 +6,7 @@ import {
   loadCatalogEnvironment,
 } from "../catalog/database.mjs";
 import { anonymousSyllabusFetch } from "../../src/lib/syllabus/anonymous-fetch.ts";
+import { markFreshDocuments, recordDocumentCheck } from "./refresh.mjs";
 import { SyllabusError } from "../../src/lib/syllabus/normalize.ts";
 import { syllabusBudget, SyllabusBudgetReached } from "./budget.mjs";
 import {
@@ -30,6 +31,9 @@ export function parseSyncOptions(args) {
     delayMs: 350,
     maxDocuments: Infinity,
     maxRuntimeSeconds: 0,
+    refreshHours: 24,
+    archiveRefreshHours: 720,
+    missingRefreshHours: 24,
   };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -37,24 +41,33 @@ export function parseSyncOptions(args) {
     else if (arg === "--index-only") options.indexOnly = true;
     else if (arg === "--new-run") options.newRun = true;
     else if (
-      arg === "--delay-ms" ||
-      arg === "--max-documents" ||
-      arg === "--max-runtime-seconds"
+      [
+        "--delay-ms",
+        "--max-documents",
+        "--max-runtime-seconds",
+        "--refresh-hours",
+        "--archive-refresh-hours",
+        "--missing-refresh-hours",
+      ].includes(arg)
     ) {
-      const value = Number(args[++i]);
+      const value = Number(args[++i]),
+        key = {
+          "--delay-ms": "delayMs",
+          "--max-documents": "maxDocuments",
+          "--max-runtime-seconds": "maxRuntimeSeconds",
+          "--refresh-hours": "refreshHours",
+          "--archive-refresh-hours": "archiveRefreshHours",
+          "--missing-refresh-hours": "missingRefreshHours",
+        }[arg];
       if (
         !Number.isSafeInteger(value) ||
         value <
-          (arg === "--delay-ms" ? 200 : arg === "--max-runtime-seconds" ? 0 : 1)
+          (arg === "--delay-ms" ? 200 : arg === "--max-documents" ? 1 : 0) ||
+        (arg.endsWith("hours") && value > 87600) ||
+        (arg === "--max-runtime-seconds" && value > 86400)
       )
-        throw new Error(`Invalid ${arg}`);
-      options[
-        arg === "--delay-ms"
-          ? "delayMs"
-          : arg === "--max-documents"
-            ? "maxDocuments"
-            : "maxRuntimeSeconds"
-      ] = value;
+        throw Error("Invalid " + arg);
+      options[key] = value;
     } else throw new Error(`Unknown argument ${arg}`);
   }
   return options;
@@ -99,18 +112,28 @@ export function pacedFetch(
   };
 }
 
-export async function syncSyllabus(options) {
-  const budget = syllabusBudget(options.maxRuntimeSeconds);
-  const fetcher = pacedFetch(options.delayMs, budget);
+export async function syncSyllabus(
+  options,
+  {
+    createClient = createCatalogClient,
+    fetcher: providedFetcher,
+    budget: providedBudget,
+  } = {},
+) {
+  const budget = providedBudget ?? syllabusBudget(options.maxRuntimeSeconds);
+  const fetcher = providedFetcher ?? pacedFetch(options.delayMs, budget);
   const discovered = await discoverSyllabusTerms(fetcher);
   if (options.discoverOnly) {
     console.log(JSON.stringify(discovered, null, 2));
     return;
   }
   loadCatalogEnvironment();
-  const client = createCatalogClient("osu-syllabus-sync");
+  const client = createClient("osu-syllabus-sync");
   let locked = false,
-    runId;
+    runId,
+    processed = 0,
+    reused = 0,
+    failures = 0;
   try {
     await client.connect();
     locked = (
@@ -125,7 +148,7 @@ export async function syncSyllabus(options) {
       !installed.rows[0].installed ||
       !(
         await client.query(
-          "SELECT 1 FROM osu_syllabus.schema_versions WHERE version=4",
+          "SELECT 1 FROM osu_syllabus.schema_versions WHERE version=5",
         )
       ).rowCount
     )
@@ -135,7 +158,7 @@ export async function syncSyllabus(options) {
       ? null
       : (
           await client.query(
-            "SELECT id,terms FROM osu_syllabus.sync_runs WHERE status IN ('running','partial') ORDER BY started_at DESC LIMIT 1",
+            "SELECT r.id,r.terms FROM osu_syllabus.sync_runs r WHERE r.status IN ('running','partial') AND EXISTS(SELECT 1 FROM osu_syllabus.sync_partitions p WHERE p.run_id=r.id AND p.published_at IS NULL AND p.unavailable_at IS NULL) ORDER BY r.started_at DESC LIMIT 1",
           )
         ).rows[0];
     if (!run) {
@@ -246,8 +269,13 @@ export async function syncSyllabus(options) {
       console.log("Index published. Document archival remains pending.");
       return;
     }
-    let processed = 0,
-      failures = 0;
+    reused = await markFreshDocuments(
+      client,
+      runId,
+      run.terms.filter((term) => termIsAvailableForSync(term, discovered)),
+      options,
+    );
+    console.log(JSON.stringify({ runId, reusedChecks: reused }));
     let consecutiveFailures = 0;
     await client.query(
       "UPDATE osu_syllabus.entry_observations SET document_status=NULL WHERE run_id=$1 AND document_status='failed'",
@@ -257,7 +285,7 @@ export async function syncSyllabus(options) {
     for (;;) {
       const batch = (
         await client.query(
-          "SELECT o.code,o.data FROM osu_syllabus.entry_observations o JOIN osu_syllabus.sync_partitions p USING(run_id,term_id) JOIN osu_syllabus.terms t ON t.id=o.term_id WHERE o.run_id=$1 AND p.published_at IS NOT NULL AND p.unavailable_at IS NULL AND o.document_status IS NULL ORDER BY t.code DESC,o.code LIMIT 50",
+          "SELECT o.code,o.data FROM osu_syllabus.entry_observations o JOIN osu_syllabus.sync_partitions p USING(run_id,term_id) JOIN osu_syllabus.terms t ON t.id=o.term_id LEFT JOIN osu_syllabus.document_checks c ON c.code=o.code WHERE o.run_id=$1 AND p.published_at IS NOT NULL AND p.unavailable_at IS NULL AND o.document_status IS NULL ORDER BY (c.code IS NULL) DESC,t.code DESC,c.checked_at ASC NULLS FIRST,o.code LIMIT 50",
           [runId],
         )
       ).rows;
@@ -269,12 +297,25 @@ export async function syncSyllabus(options) {
             "UPDATE osu_syllabus.sync_runs SET status='partial' WHERE id=$1",
             [runId],
           );
-          console.log(`Paused after ${processed} documents; rerun to resume.`);
+          console.log(
+            JSON.stringify({
+              runId,
+              status: "partial",
+              reason: "document-budget",
+              processed,
+              reusedChecks: reused,
+            }),
+          );
           return;
         }
         let status = "saved";
         try {
           const document = await readSyllabusDocument(row.code, fetcher);
+          if (
+            document.entry.entityId !== row.data.entityId ||
+            document.entry.termId !== row.data.termId
+          )
+            throw Error("Syllabus document identity changed");
           if (!document.components.length && !document.entry.hasUploads)
             status = "missing";
           else {
@@ -290,6 +331,8 @@ export async function syncSyllabus(options) {
               : "failed";
           if (status === "failed") failures++;
         }
+        if (status !== "failed")
+          await recordDocumentCheck(client, row.data, status);
         await client.query(
           "UPDATE osu_syllabus.entry_observations SET document_status=$3 WHERE run_id=$1 AND code=$2",
           [runId, row.code, status],
@@ -330,7 +373,15 @@ export async function syncSyllabus(options) {
       "UPDATE osu_syllabus.sync_runs SET status='complete',completed_at=now() WHERE id=$1",
       [runId],
     );
-    console.log(JSON.stringify({ runId, status: "complete", counts }));
+    console.log(
+      JSON.stringify({
+        runId,
+        status: "complete",
+        counts,
+        networkDocuments: processed,
+        reusedChecks: reused,
+      }),
+    );
   } catch (error) {
     if (error instanceof SyllabusBudgetReached) {
       if (runId)
@@ -339,7 +390,13 @@ export async function syncSyllabus(options) {
           [runId],
         );
       console.log(
-        JSON.stringify({ runId, status: "partial", reason: "runtime-budget" }),
+        JSON.stringify({
+          runId,
+          status: "partial",
+          reason: "runtime-budget",
+          processed,
+          reusedChecks: reused,
+        }),
       );
       return;
     }
@@ -366,14 +423,24 @@ if (
 ) {
   if (process.argv.includes("--help"))
     console.log(
-      "Usage: pnpm syllabus:sync [--discover-only] [--index-only] [--new-run] [--delay-ms 350] [--max-documents N] [--max-runtime-seconds 0]\nExplicit migration required. Sync archives anonymous official responses only; never reuses HAR credentials.",
+      "Usage: pnpm syllabus:sync [--discover-only] [--index-only] [--new-run] [--delay-ms 350] [--max-documents N] [--max-runtime-seconds 0] [--refresh-hours 24] [--archive-refresh-hours 720] [--missing-refresh-hours 24]\nExplicit migration required. Sync archives anonymous official responses only; never reuses HAR credentials.",
     );
   else {
     try {
       await syncSyllabus(parseSyncOptions(process.argv.slice(2)));
     } catch (error) {
-      console.error(`Syllabus sync failed: ${error.message}`);
-      process.exitCode = 1;
+      if (error instanceof SyllabusBudgetReached)
+        console.log(
+          JSON.stringify({
+            status: "partial",
+            reason: "runtime-budget",
+            checkpoint: false,
+          }),
+        );
+      else {
+        console.error(`Syllabus sync failed: ${error.message}`);
+        process.exitCode = 1;
+      }
     }
   }
 }
