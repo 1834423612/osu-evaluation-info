@@ -55,6 +55,20 @@ test(
     await pool.query(
       await (await getMigrations(auth.options)).compileMigrations(),
     );
+    const { domainSQL } = await import("../../src/lib/user-data/namespace.ts");
+    await pool.query(
+      domainSQL(
+        readFileSync("db/migrations/20261115_identity_preferences.sql", "utf8"),
+      ),
+    );
+    const references = await pool.query(
+      "SELECT n.nspname FROM pg_constraint c JOIN pg_class r ON r.oid=c.confrelid JOIN pg_namespace n ON n.oid=r.relnamespace WHERE c.conrelid=$1::regclass AND c.contype='f'",
+      [schema + ".policy_acceptance"],
+    );
+    assert.deepEqual(
+      references.rows.map((row) => row.nspname),
+      [schema],
+    );
     async function request(
       path,
       body,
@@ -66,6 +80,7 @@ test(
           headers: {
             origin,
             "content-type": "application/json",
+            "x-waho-policy-version": "2026-11-15",
             ...headers,
             ...(cookie ? { cookie } : {}),
           },
@@ -82,8 +97,11 @@ test(
           .join("; "),
       };
     }
+    await pool.query(
+      domainSQL(readFileSync("db/migrations/20261114_sharing.sql", "utf8")),
+    );
     const email = "passwordless@example.invalid",
-      password = "Temporary-test-password-8462";
+      password = "eightpwd";
     assert.equal(
       (
         await request("/email-otp/send-verification-otp", {
@@ -106,6 +124,82 @@ test(
     const login = await request("/sign-in/email-otp", { email, otp });
     assert.equal(login.status, 200, JSON.stringify(login.data));
     assert.match(login.cookie, /session_token/);
+    const { actorFor } = await import("../../src/lib/user-data/principal.ts");
+    const guest = await actorFor(
+      new Request("http://localhost:3000/api/shares"),
+      true,
+    );
+    const guestCookie = guest.cookie.split(";")[0];
+    const accountActor = await actorFor(
+      new Request("http://localhost:3000/api/shares", {
+        headers: { cookie: login.cookie + "; " + guestCookie },
+      }),
+      true,
+    );
+    assert.deepEqual(accountActor.owners, ["u:" + login.data.user.id]);
+    const signedOutActor = await actorFor(
+      new Request("http://localhost:3000/api/shares", {
+        headers: { cookie: guestCookie },
+      }),
+    );
+    assert.deepEqual(signedOutActor.owners, [guest.id]);
+    await pool.query(
+      domainSQL(readFileSync("db/migrations/20261114_sync.sql", "utf8")),
+    );
+    await pool.query(
+      domainSQL(readFileSync("db/migrations/20261114_telemetry.sql", "utf8")),
+    );
+    const { recordProductEvents } =
+      await import("../../src/lib/user-data/telemetry.ts");
+    const { readAccountDevices } =
+      await import("../../src/lib/auth/devices.ts");
+    const { randomUUID } = await import("node:crypto");
+    delete process.env.USER_DATA_TRUSTED_PROXY_HEADER;
+    await recordProductEvents(
+      new Headers({ cookie: login.cookie, "user-agent": "Device fixture" }),
+      {
+        device: randomUUID(),
+        session: randomUUID(),
+        language: "en",
+        languages: ["en"],
+        timeZone: "America/New_York",
+        viewport: "small",
+        context: {
+          screen: { width: 390, height: 844, ratio: 2, depth: 24 },
+          viewport: { width: 390, height: 844 },
+          platform: "Test OS",
+          model: "Test device",
+          cores: 4,
+          touch: 1,
+          cookies: true,
+          online: true,
+          colorScheme: "light",
+          reducedMotion: false,
+          network: {
+            ip: "203.0.113.8",
+            source: "geojs",
+            country: "Test",
+            city: "Example city",
+          },
+        },
+        events: [],
+      },
+      db,
+    );
+    const deviceList = await readAccountDevices(
+      login.data.user.id,
+      pool,
+      async () => null,
+    );
+    assert.ok(
+      deviceList.some(
+        (row) =>
+          row.ip === "203.0.113.8" &&
+          row.context.model === "Test device" &&
+          row.source === "browser-reported:geojs",
+      ),
+    );
+    assert.ok(deviceList.every((row) => !Object.hasOwn(row, "token")));
     assert.equal(
       (await request("/get-session", null, { cookie: login.cookie })).data.user
         .email,
@@ -238,6 +332,84 @@ test(
         },
       );
     }
+    const missingPolicy = await request(
+      "/sign-in/email",
+      { email, password },
+      { headers: { "x-waho-policy-version": "" } },
+    );
+    assert.equal(missingPolicy.status, 400);
+    assert.equal(missingPolicy.data.code, "POLICY_REQUIRED");
+    assert.equal(
+      (await pool.query("SELECT count(*)::int AS n FROM policy_acceptance"))
+        .rows[0].n,
+      1,
+    );
+    const { sendInstitutionCode, verifyInstitutionCode, institutionalStatus } =
+      await import("../../src/lib/auth/institution.ts");
+    let schoolCode = "";
+    const deliver = async (_email, code) => {
+      schoolCode = code;
+    };
+    const school = "student.1@osu.edu";
+    await sendInstitutionCode(
+      login.data.user.id,
+      school,
+      "en",
+      "test-source",
+      deliver,
+    );
+    for (let i = 0; i < 3; i++)
+      await assert.rejects(
+        verifyInstitutionCode(
+          login.data.user.id,
+          schoolCode === "000000" ? "111111" : "000000",
+        ),
+        (e) => e.code === "invalid_code",
+      );
+    await assert.rejects(
+      verifyInstitutionCode(login.data.user.id, schoolCode),
+      (e) => e.code === "invalid_code",
+    );
+    await assert.rejects(
+      sendInstitutionCode(
+        login.data.user.id,
+        school,
+        "en",
+        "test-source",
+        deliver,
+      ),
+      (e) => e.status === 429,
+    );
+    await pool.query(
+      "UPDATE cooldown_bucket SET expires_at=now()-interval '1 second'",
+    );
+    await sendInstitutionCode(
+      login.data.user.id,
+      school,
+      "en",
+      "test-source",
+      deliver,
+    );
+    await verifyInstitutionCode(login.data.user.id, schoolCode);
+    await assert.rejects(
+      verifyInstitutionCode(login.data.user.id, schoolCode),
+      (e) => e.code === "invalid_code",
+    );
+    assert.equal(
+      (await institutionalStatus({ ...login.data.user, emailVerified: true }))
+        .verified,
+      true,
+    );
+    assert.equal(
+      (
+        await institutionalStatus({
+          id: "unused",
+          email: "member@osumc.edu",
+          emailVerified: true,
+        })
+      ).primary,
+      true,
+    );
     const sessionsBefore = (
       await pool.query("SELECT count(*)::int AS n FROM session")
     ).rows[0].n;
