@@ -404,3 +404,16 @@ USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.t
 | [tests/syllabus/refresh-budget.test.mjs](../../tests/syllabus/refresh-budget.test.mjs)                       | 单元 | 请求间隔和 Retry-After 遵守运行预算，不额外请求                             |
 | [tests/syllabus/refresh-cache.test.mjs](../../tests/syllabus/refresh-cache.test.mjs)                         | 单元 | 当前／旧学期及缺失文档缓存、结束前一周和学期结束后检查                      |
 | [tests/syllabus/refresh-cache.integration.test.mjs](../../tests/syllabus/refresh-cache.integration.test.mjs) | 集成 | 真实 SQL 验证缓存复用、元数据变化、暂停后新索引、迁移初始化、失败与归档保留 |
+
+## 个人空间与账号验证
+
+以下单元测试随 `pnpm test` 执行，不访问外部服务。账号集成测试需要 PostgreSQL 和 `USER_DATA_INTEGRATION=1`，只创建、删除随机测试模式，使用内存邮件投递替身，不发送真实邮件；覆盖注册、邮箱验证、密码登录、验证码登录及已消费验证码的拒绝。其他个人数据集成测试也使用随机一次性命名空间。
+
+| 脚本                                                                                                             | 类型 | 用途                                                         |
+| ---------------------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------ |
+| [tests/user-data/storage-status.test.mjs](../../tests/user-data/storage-status.test.mjs)                         | 单元 | 云端确认、尚未入队的本地修改和待同步删除不会误报已保存       |
+| [tests/user-data/domains.test.mjs](../../tests/user-data/domains.test.mjs)                                       | 单元 | 账号／分析／诊断命名空间隔离与安全的响应式验证码邮件         |
+| [tests/user-data/recommendations.test.mjs](../../tests/user-data/recommendations.test.mjs)                       | 单元 | 按评价证据推荐、无评价课程参与、跨视图选择保留及权限数据拒绝 |
+| [tests/user-data/account-domain.integration.test.mjs](../../tests/user-data/account-domain.integration.test.mjs) | 集成 | 显式一次性模式内的完整邮箱验证账号流程，模拟邮件             |
+
+使用 `USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs tests/diagnostics/reports.integration.test.mjs` 执行相关数据库测试。只写入一次性测试模式，不调用生产应用接口或真实 SMTP。

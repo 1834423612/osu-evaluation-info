@@ -371,7 +371,7 @@ The scoped-management browser check uses a synthetic account and local/paused-cl
 | ------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------ |
 | [tests/user-data/scoped-management.browser.mjs](../tests/user-data/scoped-management.browser.mjs) | Browser | Workspace-scoped management state and cross-tab sign-out isolation |
 
-Collection and backup browser checks use the Node/Playwright environment above. All APIs are mocked; writes stay in isolated browser storage and local downloads. The migration integration check requires `USER_DATA_INTEGRATION=1`, creates random-prefixed tables, runs the real CLI and removes its temporary tables. The backup unit test does not connect to PostgreSQL.
+Collection and backup browser checks use the Node/Playwright environment above. All APIs are mocked; writes stay in isolated browser storage and local downloads. The migration integration check requires `USER_DATA_INTEGRATION=1`, creates a random disposable account schema, runs the real CLI and removes its temporary tables. The backup unit test does not connect to PostgreSQL.
 
 | Script                                                                                                        | Type         | Purpose                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -380,7 +380,7 @@ Collection and backup browser checks use the Node/Playwright environment above. 
 | [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs)                           | Unit         | RMP source identities, preserved ratings and public exchange validation                                                         |
 | [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs)                     | Browser      | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles                                      |
 | [tests/user-data/backup.test.mjs](../tests/user-data/backup.test.mjs)                                         | Unit         | Exact auth model allowlist and credential-safe backup connection options                                                        |
-| [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration  | Refuse unowned authentication tables in the active search-path schema                                                           |
+| [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration  | Refuse unowned authentication tables in an explicit account schema                                                              |
 | [tests/user-data/history.browser.mjs](../tests/user-data/history.browser.mjs)                                 | Browser      | Mocked APIs; sanitized JSON download, custom clear/cancel dialog, stale cross-tab deletion at 1440 English / 320 Chinese pixels |
 | [tests/user-data/email-login.live.browser.mjs](../tests/user-data/email-login.live.browser.mjs)               | Live browser | Two real delivered email codes, consumed-code rejection, same account on independent devices and separate sign-out              |
 
@@ -406,3 +406,16 @@ The unit checks below run in default `pnpm test` without external requests. The 
 | [tests/syllabus/refresh-budget.test.mjs](../tests/syllabus/refresh-budget.test.mjs)                       | Unit        | Runtime-aware pacing and Retry-After pause without extra requests                                                  |
 | [tests/syllabus/refresh-cache.test.mjs](../tests/syllabus/refresh-cache.test.mjs)                         | Unit        | Active/archive/missing freshness, closing week and final post-term check                                           |
 | [tests/syllabus/refresh-cache.integration.test.mjs](../tests/syllabus/refresh-cache.integration.test.mjs) | Integration | Real SQL cache reuse, changed metadata, fresh index after pause, migration seeding, failures and retained archives |
+
+## Personal workspace and authentication checks
+
+These unit checks run with `pnpm test` without external requests. The account integration check requires PostgreSQL and `USER_DATA_INTEGRATION=1`; it creates and deletes one random test schema, uses an in-memory email delivery stub, and sends no real mail. It exercises registration, verification, password login, OTP login and consumed-code rejection. Other user-data integration tests also use random disposable namespaces.
+
+| Script                                                                                                        | Type        | Purpose                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| [tests/user-data/storage-status.test.mjs](../tests/user-data/storage-status.test.mjs)                         | Unit        | Cloud acknowledgement, pre-outbox edits and pending removals never show a false saved status                                          |
+| [tests/user-data/domains.test.mjs](../tests/user-data/domains.test.mjs)                                       | Unit        | Account/analytics/diagnostic namespace separation and safe responsive code emails                                                     |
+| [tests/user-data/recommendations.test.mjs](../tests/user-data/recommendations.test.mjs)                       | Unit        | Evidence-weighted recommendations, eligibility of unrated courses, preserved multi-view selections and permission-only data rejection |
+| [tests/user-data/account-domain.integration.test.mjs](../tests/user-data/account-domain.integration.test.mjs) | Integration | Complete verified account flow in a disposable explicit schema; mocked email                                                          |
+
+`USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs tests/diagnostics/reports.integration.test.mjs` runs the related database suite. It writes only its disposable schemas. Production application APIs and real SMTP delivery are not used.

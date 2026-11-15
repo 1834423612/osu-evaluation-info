@@ -2,7 +2,7 @@
 
 English · [简体中文](../zh-CN/analytics/first-party.md)
 
-This service is separate from Umami. Browsing remains local unless a feature explicitly sends data: ordinary product events follow the analytics setting; favorites upload after account sync is enabled; diagnostic values upload only after report preview and submission. Umami replay follows its remote configuration on every page, including account, saved, history and sharing pages.
+This service is separate from Umami. Browsing remains local unless a feature explicitly sends data: ordinary product events follow the analytics setting; favorites upload after account sync is enabled; a bounded browser context accompanies normal product events; advanced diagnostic reports upload only after preview and submission. Umami replay follows its remote configuration on every page, including account, saved, history and sharing pages.
 
 ## Events and request context
 
@@ -10,7 +10,7 @@ The event collector records page views, submitted searches, search outcomes and 
 
 The browser queue uses IndexedDB: up to 500 events, retained locally for 24 hours, batches of 20, bounded retry backoff. Failed collection does not block searching or saving. Explicit opt-out, Do Not Track, Global Privacy Control and the developer-tools analytics switch suppress collection.
 
-Request context includes the full User-Agent and Accept-Language, browser-reported languages/time zone, a viewport size bucket, environment, and an IP address only when a trusted proxy header is configured. A random installation ID is HMACed before storage; it is not an account credential. Browser values are not proof of identity.
+Request context in `osu_analytics.visitor_context` includes full User-Agent and Accept-Language, languages/time zone, screen and viewport dimensions, pixel ratio, platform/model when available, CPU count, optional memory/network hints, touch, cookie support, display preferences and environment. IP requires a trusted proxy header; an HTTPS lookup adds approximate country/region/city with a bounded timeout and cache. The HMACed installation ID also serves as the Umami distinct ID; it is not an account credential. A signed-in context can be associated with its own account device list. Browser values are not proof of identity.
 
 Set `USER_DATA_TRUSTED_PROXY_HEADER` only when the ingress removes caller-supplied values and overwrites this header with one validated address. For example, `x-real-ip` is safe only under that deployment contract. Lists and arbitrary `X-Forwarded-For` values are rejected. Without configuration, IP is stored as unavailable.
 
@@ -22,13 +22,13 @@ Open `/admin/statistics` through the **Statistics & diagnostics** section of Dev
 
 The dashboard provides 1–90-day totals, the top 50 search terms, result and latency distributions, page views, lifetime attributed-link counters, request context and diagnostic reports. Request records paginate 100 at a time; report summaries paginate 25 at a time. Cursors retain timestamp microseconds and use an ID tie-breaker. Full diagnostic payloads load only when a report is opened. JSON export includes the displayed results, not an unbounded database dump.
 
-`/popular` counts active favorites in synced accounts, once per account and canonical item. Removing a favorite reduces its count. Ambiguous teacher names do not become shared identities. Anonymous local saves and shares are not people counts. Public responses contain compact course/section snapshots and teacher labels, with contact details removed. Results may be cached for one minute.
+`/popular` provides subject-filtered course, section and instructor recommendations even without synced favorites. It combines published catalog candidates with evaluation evidence, information coverage, diversity and weighted sampling. Internal favorite aggregates remain private; public payloads contain no account counts. Ambiguous teacher names do not become shared identities. Contact details are removed from public favorite summaries.
 
 ## Browser diagnostics
 
 `/diagnostics` lists all 133 entries in the referenced [Who Are You registry](https://github.com/yt1988/who-are-you/blob/cabe524f4cc944dd7c62a30582a395132a4132d6/src/sniffers.mjs). Its MIT notice is retained in `src/lib/diagnostics/UPSTREAM-LICENSE.txt`. This project uses its own probe implementation; inventory method names describe the upstream capabilities, not a promise of identical measurements.
 
-- Basic checks run only after **Run diagnostics**. Device/fingerprint and network groups have separate opt-in switches.
+- The normal visitor context above is collected by default subject to analytics preferences. The complete diagnostics inventory runs only after **Run diagnostics**; device/fingerprint and network groups have separate opt-in switches. Permission-requesting probes never run automatically.
 - Location, motion sensors and keyboard layout use separate actions and browser permissions where required. Camera/microphone inspection lists available device types/labels without requesting recording access. No biometric samples are read.
 - EXIF reads a user-selected JPEG locally, capped at 20 MiB with a 256 KiB metadata read. The file is never uploaded. Storage checks report this origin's counts, not stored values. Tab history exposes only `history.length`.
 - CPU-heavy work is bounded. Stack tests run in a disposable worker; audio fingerprints use offline rendering. Canvas, font and hardware composites are spoofable diagnostics, not serial numbers or authentication identifiers.
@@ -58,18 +58,18 @@ pnpm user-data:migrate --production
 pnpm user-data:migrate --production --apply
 ```
 
-Without `--apply`, commands print a read-only plan. Development defaults use separate authentication tables and `osu_user_dev`; production uses `osu_user`. See [account deployment](../user-data.md) before overriding namespaces.
+Without `--apply`, commands print a read-only plan. Related account data uses `osu_identity`, product/visitor analytics uses `osu_analytics`, and reports use `osu_diagnostics`. Development uses matching `_dev` schemas. See [account deployment](../user-data.md) before overriding namespaces.
 
-| Data | Retention |
-| --- | --- |
-| Security events, full request context, diagnostic reports | 7 days |
-| Raw product events | 30 days |
-| Nonempty daily dimensions, including search terms | 90 days |
-| Daily totals with no dimension | Retained |
-| Expired/revoked shared snapshots | 7-day cleanup grace |
-| Expired/completed/revoked transfers | 1-day cleanup grace |
-| Sync receipts and deletion tombstones | 180 days minimum |
-| Active favorites, official course/syllabus archives | Not removed by this job |
+| Data                                                      | Retention               |
+| --------------------------------------------------------- | ----------------------- |
+| Security events, full request context, diagnostic reports | 7 days                  |
+| Raw product events                                        | 30 days                 |
+| Nonempty daily dimensions, including search terms         | 90 days                 |
+| Daily totals with no dimension                            | Retained                |
+| Expired/revoked shared snapshots                          | 7-day cleanup grace     |
+| Expired/completed/revoked transfers                       | 1-day cleanup grace     |
+| Sync receipts and deletion tombstones                     | 180 days minimum        |
+| Active favorites, official course/syllabus archives       | Not removed by this job |
 
 ```sh
 pnpm user-data:maintain --production
@@ -78,6 +78,6 @@ pnpm user-data:maintain --production --apply
 
 The first command is a dry run. Applied cleanup checks the installation ownership marker, locks only its own maintenance job, uses bounded deletion batches and reports remaining work. Tombstone removal advances the account's reconciliation floor transactionally; a device with an expired cursor must review its merge before restoring local items.
 
-`.github/workflows/user-data-maintenance.yml` runs every four hours only after repository variable `USER_DATA_MAINTENANCE_ENABLED=true` is set. Scheduled cleanup is **disabled by default**. Manual dispatch defaults to a dry run; enable its apply option to remove expired data. Configure `DATABASE_URL` and the production namespace/table-prefix variables consistently with the application. Apply migrations before enabling the schedule. Until the job runs, expired rows may remain physically stored even when report APIs deny access. Database backups have their own retention policy.
+`.github/workflows/user-data-maintenance.yml` runs every four hours only after repository variable `USER_DATA_MAINTENANCE_ENABLED=true` is set. Scheduled cleanup is **disabled by default**. Manual dispatch defaults to a dry run; enable its apply option to remove expired data. Configure `DATABASE_URL` and the production namespace variables consistently with the application. Apply migrations before enabling the schedule. Until the job runs, expired rows may remain physically stored even when report APIs deny access. Database backups have their own retention policy.
 
 [Testing](../testing.md) · [Umami](umami.md) · [Accounts and sharing](../user-data.md)
