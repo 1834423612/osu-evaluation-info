@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { EmptyResult } from "@/components/brand/empty-result";
 import { Button } from "@/components/ui/button";
+import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 import {
@@ -28,7 +29,9 @@ export function HistoryPage() {
     () => true,
   );
   const [kind, setKind] = useState<"all" | "search" | "course">("all"),
-    [query, setQuery] = useState("");
+    [query, setQuery] = useState(""),
+    [clearOpen, setClearOpen] = useState(false),
+    [notice, setNotice] = useState("");
   const visible = entries.filter(
     (x) =>
       (kind === "all" || x.kind === kind) &&
@@ -61,16 +64,8 @@ export function HistoryPage() {
               variant="outline"
               disabled={!entries.length}
               onClick={() => {
-                if (
-                  confirm(
-                    text(
-                      locale,
-                      "Clear all recent activity?",
-                      "清空所有最近记录？",
-                    ),
-                  )
-                )
-                  writeHistory([]);
+                setNotice("");
+                setClearOpen(true);
               }}
             >
               <Trash2 size={14} />
@@ -78,6 +73,11 @@ export function HistoryPage() {
             </Button>
           </div>
         </div>
+        {notice ? (
+          <p className={styles.notice} role="status">
+            {notice}
+          </p>
+        ) : null}
         <section className={styles.panel}>
           <div className={styles.tools}>
             {(["all", "search", "course"] as const).map((value) => (
@@ -132,9 +132,18 @@ export function HistoryPage() {
                       "Remove history entry",
                       "删除记录",
                     )}
-                    onClick={() =>
-                      writeHistory(entries.filter((x) => x.id !== item.id))
-                    }
+                    onClick={() => {
+                      if (
+                        !writeHistory(entries.filter((x) => x.id !== item.id))
+                      )
+                        setNotice(
+                          text(
+                            locale,
+                            "Could not update history. Check browser storage.",
+                            "记录更新失败，请检查浏览器存储。",
+                          ),
+                        );
+                    }}
                   >
                     <Trash2 size={15} />
                   </Button>
@@ -148,6 +157,38 @@ export function HistoryPage() {
             </EmptyResult>
           )}
         </section>
+        <WorkspaceDialog
+          open={clearOpen}
+          onOpenChange={setClearOpen}
+          title={text(locale, "Clear recent activity?", "清空最近记录？")}
+          description={text(
+            locale,
+            "Remove search and course history from this browser. Favorites stay saved.",
+            "移除此浏览器的搜索和浏览记录，收藏仍保留。",
+          )}
+          closeLabel={text(locale, "Close", "关闭")}
+        >
+          <div className={styles.actions}>
+            <Button
+              onClick={() => {
+                if (writeHistory([])) setClearOpen(false);
+                else
+                  setNotice(
+                    text(
+                      locale,
+                      "Could not clear history. Check browser storage.",
+                      "清空失败，请检查浏览器存储。",
+                    ),
+                  );
+              }}
+            >
+              {text(locale, "Clear history", "清空记录")}
+            </Button>
+            <Button variant="outline" onClick={() => setClearOpen(false)}>
+              {text(locale, "Cancel", "取消")}
+            </Button>
+          </div>
+        </WorkspaceDialog>
       </main>
       <AppFooter />
     </>
