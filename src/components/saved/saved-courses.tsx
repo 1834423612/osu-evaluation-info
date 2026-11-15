@@ -1,17 +1,15 @@
 "use client";
 import { RmpSavedRemove } from "./rmp-saved-remove";
 
-import { ProjectInfo } from "@/components/layout/project-info";
-import projectStyles from "@/components/layout/project-info.module.css";
-import Link from "next/link";
 import {
-  BookOpen,
-  FileText,
-  GraduationCap,
-  HardDrive,
-  Star,
-  Trash2,
-} from "lucide-react";
+  SavedWorkspace,
+  SavedCardFrame,
+  SavedStorageSummary,
+  useSavedWorkspace,
+} from "./saved-workspace";
+
+import Link from "next/link";
+import { BookOpen, FileText, GraduationCap, Star, Trash2 } from "lucide-react";
 import { useSavedSyllabi } from "@/hooks/use-saved-syllabi";
 import { syllabusHasUpdate } from "@/lib/syllabus/saved";
 import { SavedSyllabi } from "./saved-syllabi";
@@ -148,11 +146,18 @@ function SavedCourseFacts({
 }
 
 export function SavedCourses() {
+  return (
+    <SavedWorkspace>
+      <SavedCoursesBody />
+    </SavedWorkspace>
+  );
+}
+function SavedCoursesBody() {
   const {
     locale,
-    saved,
-    savedSections,
-    savedInstructors,
+    saved: allSaved,
+    savedSections: allSections,
+    savedInstructors: allInstructors,
     toggleSaved,
     toggleSection,
     toggleInstructor,
@@ -162,12 +167,23 @@ export function SavedCourses() {
     setEnrollmentWatchInterval,
   } = usePreferences();
   const { savedSyllabi } = useSavedSyllabi();
+  const { collections, active, kind, setKind } = useSavedWorkspace();
+  const group = collections.find((x) => x.id === active);
+  const visible = (key: string) => !group || group.members.includes(key);
+  const saved = allSaved.filter((x) => visible("course:" + x.id));
+  const savedSections = allSections.filter((x) => visible("section:" + x.id));
+  const savedInstructors = allInstructors.filter((x) =>
+    visible("instructor:" + x.id),
+  );
   const syllabusUpdates = savedSyllabi.filter(syllabusHasUpdate).length;
+  const visibleSyllabi = savedSyllabi.filter((x) =>
+    visible("syllabus:" + x.id),
+  );
   const savedCount =
     saved.length +
     savedSections.length +
     savedInstructors.length +
-    savedSyllabi.length;
+    visibleSyllabi.length;
   return (
     <>
       <AppHeader active="saved" />
@@ -178,30 +194,46 @@ export function SavedCourses() {
             <p>
               {text(
                 locale,
-                `${savedCount} saved items · Kept on this device`,
-                `${savedCount} 个收藏 · 保存在当前设备`,
+                `${savedCount} saved items`,
+                `${savedCount} 个收藏`,
               )}
             </p>
           </div>
-          <div className={projectStyles.savedTools}>
-            <ProjectInfo locale={locale} />
-            <span className="saved-note">
-              <HardDrive size={13} />
-              {text(locale, "Saved on this device", "保存在当前设备")}
-            </span>
-          </div>
+          <SavedStorageSummary locale={locale} />
         </div>
         <SavedManager locale={locale} />
-        {savedCount ? (
+        {allSaved.length +
+        allSections.length +
+        allInstructors.length +
+        savedSyllabi.length ? (
           <Tabs
-            defaultValue={
-              saved.length
-                ? "courses"
-                : savedSections.length
-                  ? "sections"
-                  : savedInstructors.length
-                    ? "instructors"
-                    : "syllabi"
+            value={
+              kind !== "all"
+                ? ({
+                    course: "courses",
+                    section: "sections",
+                    instructor: "instructors",
+                    syllabus: "syllabi",
+                  }[kind] ?? "courses")
+                : saved.length
+                  ? "courses"
+                  : savedSections.length
+                    ? "sections"
+                    : savedInstructors.length
+                      ? "instructors"
+                      : "syllabi"
+            }
+            onValueChange={(value) =>
+              setKind(
+                (
+                  {
+                    courses: "course",
+                    sections: "section",
+                    instructors: "instructor",
+                    syllabi: "syllabus",
+                  } as Record<string, string>
+                )[value],
+              )
             }
             className={styles.tabs}
           >
@@ -227,7 +259,7 @@ export function SavedCourses() {
               <TabsTrigger value="syllabi">
                 <FileText size={14} />
                 {text(locale, "Syllabi", "大纲")}
-                <span>{savedSyllabi.length}</span>
+                <span>{visibleSyllabi.length}</span>
                 {syllabusUpdates ? (
                   <b className={styles.syllabusUpdates}>
                     {text(
@@ -246,19 +278,26 @@ export function SavedCourses() {
               {saved.length ? (
                 <div className="course-list">
                   {saved.map((course) => (
-                    <CourseCard
+                    <SavedCardFrame
                       key={course.id}
-                      course={course}
+                      id={"course:" + course.id}
+                      title={course.subject + " " + course.catalogNumber}
                       locale={locale}
-                      saved
-                      enrollmentWatch={enrollmentWatch}
-                      enrollmentWatchInterval={enrollmentWatchInterval}
-                      onEnrollmentWatchChange={setEnrollmentWatch}
-                      onEnrollmentWatchIntervalChange={
-                        setEnrollmentWatchInterval
-                      }
-                      onSave={toggleSaved}
-                    />
+                    >
+                      <CourseCard
+                        key={course.id}
+                        course={course}
+                        locale={locale}
+                        saved
+                        enrollmentWatch={enrollmentWatch}
+                        enrollmentWatchInterval={enrollmentWatchInterval}
+                        onEnrollmentWatchChange={setEnrollmentWatch}
+                        onEnrollmentWatchIntervalChange={
+                          setEnrollmentWatchInterval
+                        }
+                        onSave={toggleSaved}
+                      />
+                    </SavedCardFrame>
                   ))}
                 </div>
               ) : (
@@ -271,98 +310,105 @@ export function SavedCourses() {
               {savedSections.length ? (
                 <div className={styles.list}>
                   {savedSections.map((item) => (
-                    <article className={styles.item} key={item.id}>
-                      <div className={styles.itemHeading}>
-                        <div className={styles.itemIdentity}>
-                          <Link
-                            className={styles.sectionDestination}
-                            href={courseHref(
-                              {
-                                id: item.courseId,
-                                label: item.courseLabel,
-                                termCode: item.termCode,
-                                campusCode: item.campusCode,
-                              },
-                              item.section.classNumber,
+                    <SavedCardFrame
+                      key={item.id}
+                      id={"section:" + item.id}
+                      title={item.courseLabel}
+                      locale={locale}
+                    >
+                      <article className={styles.item}>
+                        <div className={styles.itemHeading}>
+                          <div className={styles.itemIdentity}>
+                            <Link
+                              className={styles.sectionDestination}
+                              href={courseHref(
+                                {
+                                  id: item.courseId,
+                                  label: item.courseLabel,
+                                  termCode: item.termCode,
+                                  campusCode: item.campusCode,
+                                },
+                                item.section.classNumber,
+                              )}
+                            >
+                              <span className={styles.courseCode}>
+                                {item.courseLabel}
+                              </span>
+                              <strong>
+                                {item.section.component} {item.section.section}
+                              </strong>
+                              <span className={styles.muted}>
+                                #{item.section.classNumber} · {item.term} ·{" "}
+                                {item.campus}
+                              </span>
+                            </Link>
+                            <SavedSectionFacts item={item} locale={locale} />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={text(
+                              locale,
+                              `Remove ${item.courseLabel} section ${item.section.section}`,
+                              `取消收藏 ${item.courseLabel} ${item.section.section} 班次`,
                             )}
+                            title={text(
+                              locale,
+                              "Remove saved section",
+                              "取消收藏班次",
+                            )}
+                            onClick={() =>
+                              toggleSection(
+                                relatedCourse({
+                                  id: item.courseId,
+                                  label: item.courseLabel,
+                                  title: item.courseTitle,
+                                  term: item.term,
+                                }),
+                                item.section,
+                              )
+                            }
                           >
-                            <span className={styles.courseCode}>
-                              {item.courseLabel}
-                            </span>
-                            <strong>
-                              {item.section.component} {item.section.section}
-                            </strong>
-                            <span className={styles.muted}>
-                              #{item.section.classNumber} · {item.term} ·{" "}
-                              {item.campus}
-                            </span>
-                          </Link>
-                          <SavedSectionFacts item={item} locale={locale} />
+                            <Trash2 />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={text(
-                            locale,
-                            `Remove ${item.courseLabel} section ${item.section.section}`,
-                            `取消收藏 ${item.courseLabel} ${item.section.section} 班次`,
-                          )}
-                          title={text(
-                            locale,
-                            "Remove saved section",
-                            "取消收藏班次",
-                          )}
-                          onClick={() =>
-                            toggleSection(
-                              relatedCourse({
-                                id: item.courseId,
-                                label: item.courseLabel,
-                                title: item.courseTitle,
-                                term: item.term,
-                              }),
-                              item.section,
-                            )
-                          }
-                        >
-                          <Trash2 />
-                        </Button>
-                      </div>
-                      <div className={styles.relatedTitle}>
-                        {item.courseTitle}
-                      </div>
-                      {item.section.instructors.length ? (
-                        <div className={styles.people}>
-                          {item.section.instructors.map((instructor) => (
-                            <div key={instructor.email ?? instructor.name}>
-                              <InstructorDirectoryIdentity
-                                name={instructor.name}
-                                email={instructor.email}
+                        <div className={styles.relatedTitle}>
+                          {item.courseTitle}
+                        </div>
+                        {item.section.instructors.length ? (
+                          <div className={styles.people}>
+                            {item.section.instructors.map((instructor) => (
+                              <div key={instructor.email ?? instructor.name}>
+                                <InstructorDirectoryIdentity
+                                  name={instructor.name}
+                                  email={instructor.email}
+                                  locale={locale}
+                                  size={24}
+                                  subject={item.courseLabel.split(/\s+/, 1)[0]}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className={styles.meetings}>
+                          {item.section.meetings.length ? (
+                            item.section.meetings.map((meeting, index) => (
+                              <MeetingStrip
+                                key={index}
+                                meeting={meeting}
+                                instructionMode={item.section.instructionMode}
                                 locale={locale}
-                                size={24}
-                                subject={item.courseLabel.split(/\s+/, 1)[0]}
                               />
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className={styles.meetings}>
-                        {item.section.meetings.length ? (
-                          item.section.meetings.map((meeting, index) => (
+                            ))
+                          ) : (
                             <MeetingStrip
-                              key={index}
-                              meeting={meeting}
                               instructionMode={item.section.instructionMode}
                               locale={locale}
                             />
-                          ))
-                        ) : (
-                          <MeetingStrip
-                            instructionMode={item.section.instructionMode}
-                            locale={locale}
-                          />
-                        )}
-                      </div>
-                    </article>
+                          )}
+                        </div>
+                      </article>
+                    </SavedCardFrame>
                   ))}
                 </div>
               ) : (
@@ -375,98 +421,108 @@ export function SavedCourses() {
               {savedInstructors.length ? (
                 <div className={styles.list}>
                   {savedInstructors.map((instructor) => (
-                    <article className={styles.item} key={instructor.id}>
-                      <div className={styles.instructorHeading}>
-                        <div className={styles.peopleIdentity}>
+                    <SavedCardFrame
+                      key={instructor.id}
+                      id={"instructor:" + instructor.id}
+                      title={instructor.name}
+                      locale={locale}
+                    >
+                      <article className={styles.item}>
+                        <div className={styles.instructorHeading}>
+                          <div className={styles.peopleIdentity}>
+                            {instructor.rmp ? (
+                              <div className={styles.rmpIdentity}>
+                                <Link href={`/rmp/${instructor.rmp.id}`}>
+                                  <strong>{instructor.name}</strong>
+                                </Link>
+                                <span>
+                                  RMP #{instructor.rmp.id} ·{" "}
+                                  {instructor.rmp.username
+                                    ? text(
+                                        locale,
+                                        "Identity verified",
+                                        "身份已确认",
+                                      )
+                                    : text(
+                                        locale,
+                                        "Identity unconfirmed",
+                                        "身份待确认",
+                                      )}
+                                </span>
+                                <small>
+                                  {instructor.rmp.department} · RMP{" "}
+                                  {instructor.rmp.quality ?? "–"}/5 ·{" "}
+                                  {instructor.rmp.reviewCount}{" "}
+                                  {text(locale, "reviews", "条评价")}
+                                </small>
+                              </div>
+                            ) : (
+                              <InstructorDirectoryIdentity
+                                name={instructor.name}
+                                email={instructor.email}
+                                locale={locale}
+                                size={38}
+                                subject={
+                                  instructor.courses[0]?.label.split(
+                                    /\s+/,
+                                    1,
+                                  )[0]
+                                }
+                              />
+                            )}
+                          </div>
                           {instructor.rmp ? (
-                            <div className={styles.rmpIdentity}>
-                              <Link href={`/rmp/${instructor.rmp.id}`}>
-                                <strong>{instructor.name}</strong>
-                              </Link>
-                              <span>
-                                RMP #{instructor.rmp.id} ·{" "}
-                                {instructor.rmp.username
-                                  ? text(
-                                      locale,
-                                      "Identity verified",
-                                      "身份已确认",
-                                    )
-                                  : text(
-                                      locale,
-                                      "Identity unconfirmed",
-                                      "身份待确认",
-                                    )}
-                              </span>
-                              <small>
-                                {instructor.rmp.department} · RMP{" "}
-                                {instructor.rmp.quality ?? "–"}/5 ·{" "}
-                                {instructor.rmp.reviewCount}{" "}
-                                {text(locale, "reviews", "条评价")}
-                              </small>
-                            </div>
+                            <RmpSavedRemove instructor={instructor} />
                           ) : (
-                            <InstructorDirectoryIdentity
-                              name={instructor.name}
-                              email={instructor.email}
-                              locale={locale}
-                              size={38}
-                              subject={
-                                instructor.courses[0]?.label.split(/\s+/, 1)[0]
-                              }
-                            />
+                            <span className={styles.relationCount}>
+                              {instructor.courses.length}{" "}
+                              {text(locale, "courses", "门课程")}
+                            </span>
                           )}
                         </div>
-                        {instructor.rmp ? (
-                          <RmpSavedRemove instructor={instructor} />
-                        ) : (
-                          <span className={styles.relationCount}>
-                            {instructor.courses.length}{" "}
-                            {text(locale, "courses", "门课程")}
-                          </span>
-                        )}
-                      </div>
-                      <div className={styles.relations}>
-                        {instructor.courses.map((course) => (
-                          <div className={styles.relation} key={course.id}>
-                            <div className={styles.relationInfo}>
-                              <Link href={courseHref(course)}>
-                                <span className={styles.courseCode}>
-                                  {course.label}
-                                </span>
-                                <span>{course.title}</span>
-                                <small>{course.term}</small>
-                              </Link>
-                              <SavedCourseFacts
-                                snapshot={course}
-                                locale={locale}
-                              />
+                        <div className={styles.relations}>
+                          {instructor.courses.map((course) => (
+                            <div className={styles.relation} key={course.id}>
+                              <div className={styles.relationInfo}>
+                                <Link href={courseHref(course)}>
+                                  <span className={styles.courseCode}>
+                                    {course.label}
+                                  </span>
+                                  <span>{course.title}</span>
+                                  <small>{course.term}</small>
+                                </Link>
+                                <SavedCourseFacts
+                                  snapshot={course}
+                                  locale={locale}
+                                />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={text(
+                                  locale,
+                                  `Unsave ${instructor.name} for ${course.label}`,
+                                  `取消收藏 ${instructor.name} 在 ${course.label} 的关系`,
+                                )}
+                                title={text(
+                                  locale,
+                                  "Remove instructor course relation",
+                                  "取消教师课程关联收藏",
+                                )}
+                                onClick={() =>
+                                  toggleInstructor(
+                                    relatedCourse(course),
+                                    instructor,
+                                  )
+                                }
+                              >
+                                <Trash2 />
+                              </Button>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={text(
-                                locale,
-                                `Unsave ${instructor.name} for ${course.label}`,
-                                `取消收藏 ${instructor.name} 在 ${course.label} 的关系`,
-                              )}
-                              title={text(
-                                locale,
-                                "Remove instructor course relation",
-                                "取消教师课程关联收藏",
-                              )}
-                              onClick={() =>
-                                toggleInstructor(
-                                  relatedCourse(course),
-                                  instructor,
-                                )
-                              }
-                            >
-                              <Trash2 />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </article>
+                          ))}
+                        </div>
+                      </article>
+                    </SavedCardFrame>
                   ))}
                 </div>
               ) : (

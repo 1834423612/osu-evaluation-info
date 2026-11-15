@@ -1,4 +1,5 @@
 "use client";
+import { SavedCardFrame, useSavedWorkspace } from "./saved-workspace";
 import { useRef, useState } from "react";
 import { useSyllabusScroll } from "@/hooks/use-syllabus-scroll";
 import { EmptyResult } from "@/components/brand/empty-result";
@@ -66,6 +67,8 @@ function RelatedLinks({
 }
 export function SavedSyllabi({ locale }: { locale: Locale }) {
   const { savedSyllabi, toggle } = useSavedSyllabi();
+  const { collections, active } = useSavedWorkspace();
+  const collection = collections.find((x) => x.id === active);
   const scrollRef = useSyllabusScroll();
   const [selected, setSelected] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -73,9 +76,13 @@ export function SavedSyllabi({ locale }: { locale: Locale }) {
   const opener = useRef<HTMLButtonElement | null>(null);
   const chosen = savedSyllabi.find((item) => item.id === selected);
   const unread = savedSyllabi.filter(syllabusHasUpdate).length;
-  const items = [...savedSyllabi].sort(
-    (a, b) => Number(syllabusHasUpdate(b)) - Number(syllabusHasUpdate(a)),
-  );
+  const items = savedSyllabi
+    .filter(
+      (x) => !collection || collection.members.includes("syllabus:" + x.id),
+    )
+    .sort(
+      (a, b) => Number(syllabusHasUpdate(b)) - Number(syllabusHasUpdate(a)),
+    );
   return (
     <>
       <div className={styles.toolbar}>
@@ -139,64 +146,67 @@ export function SavedSyllabi({ locale }: { locale: Locale }) {
       ) : null}
       <div className={styles.list}>
         {items.map((item) => (
-          <article
+          <SavedCardFrame
             key={item.id}
-            className={styles.card}
-            data-saved-syllabus={item.id}
+            id={"syllabus:" + item.id}
+            title={item.entry.subject + " " + item.entry.catalogNumber}
+            locale={locale}
           >
-            <div className={styles.heading}>
-              <button
-                type="button"
-                className={styles.open}
-                data-open-syllabus={item.id}
-                onClick={(event) => {
-                  opener.current = event.currentTarget;
-                  setSelected(item.id);
-                }}
-              >
-                <FileText size={17} />
-                <span>
-                  <strong>
-                    {item.entry.subject} {item.entry.catalogNumber}
-                  </strong>
-                  <span>{item.entry.subtitle || item.course.title}</span>
-                </span>
-                {syllabusHasUpdate(item) ? (
-                  <b className={styles.updated}>
-                    {text(locale, "Updated", "有更新")}
-                  </b>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                className={styles.remove}
-                aria-label={text(
-                  locale,
-                  `Unsave syllabus #${item.section.classNumber}`,
-                  `取消收藏大纲 #${item.section.classNumber}`,
-                )}
-                onClick={() => toggle(item.course, item.section, item.entry)}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-            <p className={styles.meta}>
-              {item.entry.termName} · {item.course.campus} ·{" "}
-              {item.section.component} {item.section.section} · #
-              {item.section.classNumber}
-            </p>
-            <SyllabusTeachers
-              people={item.section.instructors}
-              course={item.course}
-              locale={locale}
-            />
-            <p className={styles.meta}>
-              {text(locale, "Official update", "官方更新")}{" "}
-              {formatSyllabusTime(item.latest?.modifiedAt, locale) ??
-                text(locale, "Not provided", "未提供")}
-            </p>
-            <RelatedLinks item={item} locale={locale} />
-          </article>
+            <article className={styles.card} data-saved-syllabus={item.id}>
+              <div className={styles.heading}>
+                <button
+                  type="button"
+                  className={styles.open}
+                  data-open-syllabus={item.id}
+                  onClick={(event) => {
+                    opener.current = event.currentTarget;
+                    setSelected(item.id);
+                  }}
+                >
+                  <FileText size={17} />
+                  <span>
+                    <strong>
+                      {item.entry.subject} {item.entry.catalogNumber}
+                    </strong>
+                    <span>{item.entry.subtitle || item.course.title}</span>
+                  </span>
+                  {syllabusHasUpdate(item) ? (
+                    <b className={styles.updated}>
+                      {text(locale, "Updated", "有更新")}
+                    </b>
+                  ) : null}
+                </button>
+                <button
+                  type="button"
+                  className={styles.remove}
+                  aria-label={text(
+                    locale,
+                    `Unsave syllabus #${item.section.classNumber}`,
+                    `取消收藏大纲 #${item.section.classNumber}`,
+                  )}
+                  onClick={() => toggle(item.course, item.section, item.entry)}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <p className={styles.meta}>
+                {item.entry.termName} · {item.course.campus} ·{" "}
+                {item.section.component} {item.section.section} · #
+                {item.section.classNumber}
+              </p>
+              <SyllabusTeachers
+                people={item.section.instructors}
+                course={item.course}
+                locale={locale}
+              />
+              <p className={styles.meta}>
+                {text(locale, "Official update", "官方更新")}{" "}
+                {formatSyllabusTime(item.latest?.modifiedAt, locale) ??
+                  text(locale, "Not provided", "未提供")}
+              </p>
+              <RelatedLinks item={item} locale={locale} />
+            </article>
+          </SavedCardFrame>
         ))}
       </div>
       {!items.length ? (

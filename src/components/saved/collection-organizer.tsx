@@ -28,12 +28,14 @@ export function CollectionOrganizer({
   active,
   onActive,
   counts,
+  selected,
 }: {
   locale: Locale;
   collections: SavedCollection[];
   active: string;
   onActive: (id: string) => void;
   counts: Map<string, number>;
+  selected?: Set<string>;
 }) {
   const [draft, setDraft] = useState<SavedCollection | null>(null),
     [base, setBase] = useState<SavedCollection | null>(null),
@@ -48,17 +50,23 @@ export function CollectionOrganizer({
     setDraft(
       value
         ? structuredClone(value)
-        : { id: browserUuid(), name: "", tags: [], members: [] },
+        : {
+            id: browserUuid(),
+            name: "",
+            tags: [],
+            members: [...(selected ?? [])],
+          },
     );
     setTags(value?.tags.join(", ") ?? "");
     setConfirmDelete(false);
     setNotice("");
   }
-  async function run(action: () => void) {
+  async function run(action: () => void, after?: () => void) {
     setBusy(true);
     setNotice("");
     try {
       await withSavedMutation(action);
+      after?.();
     } catch (error) {
       setNotice(
         error instanceof Error && error.message === "collection_changed"
@@ -79,8 +87,31 @@ export function CollectionOrganizer({
   }
   return (
     <div className={styles.organizer}>
+      <div className={styles.collectionChips}>
+        <button
+          type="button"
+          aria-pressed={active === "all"}
+          onClick={() => onActive("all")}
+        >
+          <Folder size={13} />
+          {text(locale, "All favorites", "全部收藏")}
+          <span>{counts.get("all") ?? 0}</span>
+        </button>
+        {collections.map((group) => (
+          <button
+            key={group.id}
+            type="button"
+            aria-pressed={group.id === active}
+            onClick={() => onActive(group.id)}
+          >
+            <Folder size={13} />
+            {group.name}
+            <span>{counts.get(group.id) ?? 0}</span>
+          </button>
+        ))}
+      </div>
       <div className={styles.heading}>
-        <label className={styles.selectLabel}>
+        <label className={styles.selectLabel} hidden>
           <Folder size={16} />
           <span>{text(locale, "Collection", "收藏分组")}</span>
           <Select value={current?.id ?? "all"} onValueChange={onActive}>
@@ -135,11 +166,15 @@ export function CollectionOrganizer({
             variant="outline"
             disabled={busy}
             onClick={() =>
-              void run(() => {
-                saveCollection(removed, null);
-                setRemoved(null);
-                onActive(removed.id);
-              })
+              void run(
+                () => {
+                  saveCollection(removed, null);
+                },
+                () => {
+                  setRemoved(null);
+                  onActive(removed.id);
+                },
+              )
             }
           >
             <RotateCcw size={14} />
@@ -173,24 +208,37 @@ export function CollectionOrganizer({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void run(() => {
-                const next = {
-                  ...draft,
-                  tags: [
-                    ...new Set(
-                      tags
-                        .split(/[,，]/)
-                        .map((x) => x.trim())
-                        .filter(Boolean),
-                    ),
-                  ],
-                };
-                saveCollection(next, base);
-                onActive(next.id);
-                setDraft(null);
-              });
+              void run(
+                () => {
+                  const next = {
+                    ...draft,
+                    tags: [
+                      ...new Set(
+                        tags
+                          .split(/[,，]/)
+                          .map((x) => x.trim())
+                          .filter(Boolean),
+                      ),
+                    ],
+                  };
+                  saveCollection(next, base);
+                },
+                () => {
+                  onActive(draft.id);
+                  setDraft(null);
+                },
+              );
             }}
           >
+            {!base && draft.members.length ? (
+              <p className={shared.notice}>
+                {text(
+                  locale,
+                  `Add ${draft.members.length} selected items to this collection.`,
+                  `将 ${draft.members.length} 项所选收藏加入新分组。`,
+                )}
+              </p>
+            ) : null}
             <div className={shared.fields}>
               <label>
                 {text(locale, "Name", "名称")}
@@ -256,19 +304,23 @@ export function CollectionOrganizer({
                   variant="outline"
                   disabled={busy}
                   onClick={() =>
-                    void run(() => {
-                      const live = readCollections().find(
-                        (x) => x.id === base.id,
-                      );
-                      if (JSON.stringify(live) !== JSON.stringify(base))
-                        throw Error("collection_changed");
-                      editCollections((all) =>
-                        all.filter((x) => x.id !== base.id),
-                      );
-                      setRemoved(base);
-                      onActive("all");
-                      setDraft(null);
-                    })
+                    void run(
+                      () => {
+                        const live = readCollections().find(
+                          (x) => x.id === base.id,
+                        );
+                        if (JSON.stringify(live) !== JSON.stringify(base))
+                          throw Error("collection_changed");
+                        editCollections((all) =>
+                          all.filter((x) => x.id !== base.id),
+                        );
+                      },
+                      () => {
+                        setRemoved(base);
+                        onActive("all");
+                        setDraft(null);
+                      },
+                    )
                   }
                 >
                   {text(locale, "Confirm deletion", "确认删除")}

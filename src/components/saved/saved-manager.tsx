@@ -1,4 +1,7 @@
 "use client";
+import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
+import { useSavedWorkspace } from "./saved-workspace";
+import { SelectionCheckbox } from "./selection-checkbox";
 import { TransferSender } from "@/components/transfer/transfer-sender";
 import { SharedManagement } from "@/components/sharing/shared-management";
 import { ShareCollection } from "@/components/sharing/share-collection";
@@ -9,7 +12,7 @@ import {
   assignCollection,
   editCollections,
 } from "@/lib/saved/collections";
-import type { SavedCollection } from "@/lib/saved/collection-schema";
+
 import {
   Select,
   SelectTrigger,
@@ -20,7 +23,6 @@ import {
 import layout from "./collections.module.css";
 import { savedScope } from "@/lib/saved/scope";
 import {
-  Cloud,
   Download,
   Upload,
   SlidersHorizontal,
@@ -67,19 +69,38 @@ export function SavedManager({ locale }: { locale: Locale }) {
   );
   return <SavedManagerBody key={scope ?? "guest"} locale={locale} />;
 }
+function itemSubject(item: ExchangeItem, locale: Locale): string {
+  return item.kind === "course"
+    ? item.payload.subject
+    : item.kind === "section"
+      ? item.payload.courseLabel.split(" ")[0]
+      : item.kind === "syllabus"
+        ? item.payload.entry.subject
+        : text(locale, "Instructors", "教师");
+}
 function SavedManagerBody({ locale }: { locale: Locale }) {
   const file = useRef<HTMLInputElement>(null);
+  const {
+    collections,
+    setCollections,
+    active,
+    setActive,
+    selected,
+    setSelected,
+    selecting,
+    setSelecting,
+    items,
+    setItems,
+    kind,
+    setKind,
+  } = useSavedWorkspace();
+  const [exchange, setExchange] = useState<"import" | "export" | null>(null);
   const [backup, setBackup] = useState<LocalBackup | null>(null);
-  const [collections, setCollections] = useState<SavedCollection[]>([]),
-    [active, setActive] = useState("all"),
-    [target, setTarget] = useState(""),
-    [sort, setSort] = useState("saved"),
-    [kind, setKind] = useState("all");
+  const [target, setTarget] = useState(""),
+    [sort, setSort] = useState("kind");
   const collection = collections.find((x) => x.id === active);
   const scopeKeys = collection ? new Set(collection.members) : undefined;
-  const [items, setItems] = useState<ExchangeItem[]>([]),
-    [open, setOpen] = useState(false),
-    [selected, setSelected] = useState(new Set<string>()),
+  const [open, setOpen] = useState(false),
     [query, setQuery] = useState(""),
     [notice, setNotice] = useState(""),
     [preview, setPreview] = useState<SavedSnapshot | null>(null),
@@ -109,7 +130,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
       window.removeEventListener("course-atlas:preferences", refresh);
       window.removeEventListener("storage", refresh);
     };
-  }, [open, locale]);
+  }, [open, locale, setItems, setCollections]);
   function chooseCollection(id: string) {
     setActive(id);
     setSelected(new Set());
@@ -159,7 +180,20 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
         createLocalSnapshot(text(locale, "Saved collection", "收藏清单")).items,
       );
       setCollections(readCollections());
-      setOpen(!open);
+      if (kind === "all") {
+        const current = readLocalItems();
+        setKind(
+          current.some((x) => x.kind === "course")
+            ? "course"
+            : current.some((x) => x.kind === "section")
+              ? "section"
+              : current.some((x) => x.kind === "instructor")
+                ? "instructor"
+                : "syllabus",
+        );
+      }
+      setSelecting(true);
+      setOpen(true);
       setNotice("");
     } catch {
       setNotice(
@@ -295,7 +329,11 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
     }
   }
   return (
-    <section className={styles.panel} data-telemetry-private data-saved-manager>
+    <section
+      className={layout.manager}
+      data-telemetry-private
+      data-saved-manager
+    >
       <div className={styles.tools}>
         <ShareCollection
           locale={locale}
@@ -304,26 +342,15 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
           scopeKeys={scopeKeys}
         />
         <SharedManagement locale={locale} />
-        <TransferSender
-          locale={locale}
-          selected={selected}
-          scopeKeys={scopeKeys}
-        />
-        <Button asChild variant="outline">
-          <a href="/account">
-            <Cloud size={14} />
-            {text(locale, "Account & sync", "账号与同步")}
-          </a>
-        </Button>
         <Button variant="outline" aria-expanded={open} onClick={manage}>
           <SlidersHorizontal size={14} />
           {text(locale, "Manage", "管理")}
         </Button>
-        <Button variant="outline" onClick={exportItems}>
+        <Button variant="outline" onClick={() => setExchange("export")}>
           <Download size={14} />
           {text(locale, "Export", "导出")}
         </Button>
-        <Button variant="outline" onClick={() => file.current?.click()}>
+        <Button variant="outline" onClick={() => setExchange("import")}>
           <Upload size={14} />
           {text(locale, "Import", "导入")}
         </Button>
@@ -394,14 +421,156 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
           ) : null}
         </div>
       ) : null}
+      <CollectionOrganizer
+        locale={locale}
+        collections={collections}
+        active={active}
+        onActive={chooseCollection}
+        counts={counts}
+        selected={selected}
+      />
+      {selecting ? (
+        <div className={layout.selectionBar}>
+          <span>
+            {selected.size} {text(locale, "selected", "项已选")}
+          </span>
+          <Button variant="ghost" onClick={manage}>
+            {text(locale, "Organize selection", "整理所选")}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setSelecting(false);
+              setSelected(new Set());
+            }}
+          >
+            {text(locale, "Done", "完成")}
+          </Button>
+        </div>
+      ) : null}
+      <WorkspaceDialog
+        open={exchange !== null}
+        onOpenChange={(value) => {
+          if (!value) setExchange(null);
+        }}
+        title={text(
+          locale,
+          exchange === "export" ? "Export favorites" : "Import favorites",
+          exchange === "export" ? "导出收藏" : "导入收藏",
+        )}
+        description={text(
+          locale,
+          exchange === "export"
+            ? "Download a file or send directly to another device."
+            : "Choose a file or receive a collection online.",
+          exchange === "export"
+            ? "下载文件保存，或直接在线转存。"
+            : "从本地文件恢复，或在线接收收藏。",
+        )}
+        closeLabel={text(locale, "Close", "关闭")}
+      >
+        <div className={layout.exchangeOptions}>
+          {exchange === "export" ? (
+            <>
+              <section>
+                <h3>{text(locale, "Save a file", "保存到本地")}</h3>
+                <p>
+                  {text(
+                    locale,
+                    "Export this selection or keep a complete private backup.",
+                    "导出当前选择，或保留包含分组的完整私人备份。",
+                  )}
+                </p>
+                <Button variant="outline" onClick={exportItems}>
+                  <Download size={14} />
+                  {text(locale, "Download collection", "下载收藏清单")}
+                </Button>
+                <Button variant="ghost" onClick={exportBackup}>
+                  {text(locale, "Full private backup", "完整私人备份")}
+                </Button>
+              </section>
+              <section>
+                <h3>{text(locale, "Send online", "在线转存")}</h3>
+                <p>
+                  {text(
+                    locale,
+                    "Receive on another device without downloading a file.",
+                    "无需下载文件，在另一台设备接收收藏。",
+                  )}
+                </p>
+                <TransferSender
+                  locale={locale}
+                  selected={selected}
+                  scopeKeys={scopeKeys}
+                />
+              </section>
+            </>
+          ) : (
+            <>
+              <section>
+                <h3>{text(locale, "From a file", "从本地文件导入")}</h3>
+                <p>
+                  {text(
+                    locale,
+                    "Collection files and private backups are supported.",
+                    "支持收藏清单文件与完整私人备份。",
+                  )}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    file.current?.click();
+                    setExchange(null);
+                  }}
+                >
+                  <Upload size={14} />
+                  {text(locale, "Choose a file", "选择文件")}
+                </Button>
+              </section>
+              <section>
+                <h3>{text(locale, "Receive online", "在线接收")}</h3>
+                <p>
+                  {text(
+                    locale,
+                    "Open a transfer or share code to preview before saving.",
+                    "输入转存码或分享码，预览后再保存。",
+                  )}
+                </p>
+                <Button asChild variant="outline">
+                  <Link href="/transfer">
+                    {text(locale, "Receive a transfer", "接收转存")}
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost">
+                  <Link href="/share">
+                    {text(locale, "Open share code", "打开分享码")}
+                  </Link>
+                </Button>
+              </section>
+            </>
+          )}
+        </div>
+      </WorkspaceDialog>
       {open ? (
-        <div>
+        <WorkspaceDialog
+          open={open}
+          onOpenChange={setOpen}
+          wide
+          title={text(locale, "Organize favorites", "管理收藏")}
+          description={text(
+            locale,
+            "Select by category, subject or individual item.",
+            "按当前分类、科目或单个项目选择，再整理到分组。",
+          )}
+          closeLabel={text(locale, "Close", "关闭")}
+        >
           <CollectionOrganizer
             locale={locale}
             collections={collections}
             active={active}
             onActive={chooseCollection}
             counts={counts}
+            selected={selected}
           />
           <details className={layout.exportTitle}>
             <summary>
@@ -496,13 +665,17 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
             </label>
           </div>
           <div className={layout.bulk}>
-            <Button
-              variant="outline"
-              onClick={() => setSelected(new Set(filtered.map(itemKey)))}
-            >
-              {text(locale, "Select results", "选择筛选结果")} (
-              {filtered.length})
-            </Button>
+            <SelectionCheckbox
+              keys={filtered.map(itemKey)}
+              selected={selected}
+              onChange={setSelected}
+              label={
+                text(locale, "Select this view", "全选当前分区") +
+                " (" +
+                filtered.length +
+                ")"
+              }
+            />
             <Button variant="ghost" onClick={() => setSelected(new Set())}>
               {text(locale, "Clear selection", "取消选择")}
             </Button>
@@ -588,47 +761,76 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
             </p>
           ) : null}
           <ul className={styles.list}>
-            {filtered.slice(0, limit).map((item) => {
+            {filtered.slice(0, limit).map((item, index) => {
               const key = itemKey(item),
                 href = itemHref(item);
+              const subject = itemSubject(item, locale);
+              const subjectKeys = filtered
+                .filter(
+                  (x) =>
+                    x.kind === item.kind &&
+                    (x.kind === "course"
+                      ? x.payload.subject
+                      : x.kind === "section"
+                        ? x.payload.courseLabel.split(" ")[0]
+                        : x.kind === "syllabus"
+                          ? x.payload.entry.subject
+                          : text(locale, "Instructors", "教师")) === subject,
+                )
+                .map(itemKey);
               return (
-                <li className={styles.row} key={key}>
-                  <label className={styles.pick}>
-                    <input
-                      type="checkbox"
-                      className={styles.checkbox}
-                      checked={selected.has(key)}
-                      onChange={() =>
-                        setSelected((current) => {
-                          const next = new Set(current);
-                          if (next.has(key)) next.delete(key);
-                          else next.add(key);
-                          return next;
-                        })
-                      }
-                    />
-                    <span>
-                      <strong>{itemTitle(item)}</strong>
-                      <small>
-                        {itemKindName(item.kind, locale)} · {itemContext(item)}
-                      </small>
-                      <span className={layout.rowTags}>
-                        {collections
-                          .filter((x) => x.members.includes(key))
-                          .map((x) => (
-                            <span key={x.id}>{x.name}</span>
-                          ))}
-                      </span>
-                    </span>
-                  </label>
-                  {href ? (
-                    <Link
-                      href={href as Route}
-                      aria-label={text(locale, "Open item", "打开项目")}
-                    >
-                      <ExternalLink size={15} />
-                    </Link>
+                <li className={layout.manageItem} key={key}>
+                  {index === 0 ||
+                  filtered[index - 1].kind !== item.kind ||
+                  itemSubject(filtered[index - 1], locale) !== subject ? (
+                    <div className={layout.subjectHeading}>
+                      <SelectionCheckbox
+                        keys={subjectKeys}
+                        selected={selected}
+                        onChange={setSelected}
+                        label={subject + " · " + subjectKeys.length}
+                      />
+                    </div>
                   ) : null}
+                  <div className={styles.row}>
+                    <label className={styles.pick}>
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={selected.has(key)}
+                        onChange={() =>
+                          setSelected((current) => {
+                            const next = new Set(current);
+                            if (next.has(key)) next.delete(key);
+                            else next.add(key);
+                            return next;
+                          })
+                        }
+                      />
+                      <span>
+                        <strong>{itemTitle(item)}</strong>
+                        <small>
+                          {itemKindName(item.kind, locale)} ·{" "}
+                          {itemContext(item)}
+                        </small>
+                        <span className={layout.rowTags}>
+                          {collections
+                            .filter((x) => x.members.includes(key))
+                            .map((x) => (
+                              <span key={x.id}>{x.name}</span>
+                            ))}
+                        </span>
+                      </span>
+                    </label>
+                    {href ? (
+                      <Link
+                        href={href as Route}
+                        aria-label={text(locale, "Open item", "打开项目")}
+                      >
+                        <ExternalLink size={15} />
+                      </Link>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -638,7 +840,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
               {text(locale, "Show more", "显示更多")}
             </Button>
           ) : null}
-        </div>
+        </WorkspaceDialog>
       ) : null}
       {backup ? (
         <section className={styles.panel}>

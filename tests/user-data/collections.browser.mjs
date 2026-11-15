@@ -65,16 +65,31 @@ try {
     const t = (en, zh) => (locale === "zh" ? zh : en);
     await p.goto(new URL("/saved", base).href);
     const manager = p.locator("[data-saved-manager]");
-    await manager
-      .getByRole("button", { name: t("Manage", "管理"), exact: true })
-      .click();
-    await manager
+    const button = (name) => manager.getByRole("button", { name, exact: true });
+    const close = async (dialog) => {
+      await dialog
+        .getByRole("button", { name: t("Close", "关闭"), exact: true })
+        .last()
+        .click();
+      await dialog.waitFor({ state: "hidden" });
+    };
+    await button(t("Manage", "管理")).click();
+    let manage = p
+      .getByRole("dialog")
+      .filter({
+        has: p.getByRole("heading", {
+          name: t("Organize favorites", "管理收藏"),
+          exact: true,
+        }),
+      });
+    await manage.locator("li input[type=checkbox]").last().check();
+    await manage
       .getByRole("button", {
         name: t("New collection", "新建分组"),
         exact: true,
       })
       .click();
-    let dialog = p.getByRole("dialog");
+    let dialog = p.getByRole("dialog").last();
     await dialog
       .getByLabel(t("Name", "名称"), { exact: true })
       .fill("Autumn / 秋季");
@@ -88,48 +103,25 @@ try {
       })
       .click();
     await dialog.waitFor({ state: "hidden" });
-    await manager
-      .getByRole("combobox", { name: t("Collection", "收藏分组"), exact: true })
-      .click();
-    await p
-      .getByRole("option", { name: new RegExp(t("All favorites", "全部收藏")) })
-      .click();
-    await manager.locator("li input[type=checkbox]").first().check();
-    await manager
-      .getByRole("combobox", { name: t("Destination collection", "目标分组") })
-      .click();
-    await p.getByRole("option", { name: "Autumn / 秋季", exact: true }).click();
-    await manager
+    assert.equal(await manage.locator("li").count(), 1);
+    await close(manage);
+    let downloadWait = p.waitForEvent("download");
+    await button(t("Export", "导出")).click();
+    dialog = p.getByRole("dialog");
+    await dialog
       .getByRole("button", {
-        name: t("Add to collection", "加入分组"),
+        name: t("Download collection", "下载收藏清单"),
         exact: true,
       })
       .click();
-    await manager
-      .getByText(t("Collection updated.", "分组已更新。"), { exact: true })
-      .waitFor();
-    await manager
-      .getByRole("combobox", { name: t("Collection", "收藏分组"), exact: true })
-      .click();
-    await p.getByRole("option", { name: /Autumn \/ 秋季 · 1/ }).click();
-    assert.equal(await manager.locator("li").count(), 1);
-    let downloadPromise = p.waitForEvent("download");
-    await manager
-      .getByRole("button", { name: t("Export", "导出"), exact: true })
-      .click();
-    const download = await downloadPromise,
-      stream = await download.createReadStream();
     let raw = "";
-    for await (const chunk of stream) raw += chunk;
+    for await (const chunk of await (await downloadWait).createReadStream())
+      raw += chunk;
     assert.equal(JSON.parse(raw).items.length, 1);
     assert.equal(JSON.parse(raw).title, "Autumn / 秋季");
     assert.equal(JSON.parse(raw).collections, undefined);
-    await manager
-      .getByRole("button", {
-        name: t("Edit collection", "编辑分组"),
-        exact: true,
-      })
-      .click();
+    await close(dialog);
+    await button(t("Edit collection", "编辑分组")).click();
     dialog = p.getByRole("dialog");
     await dialog
       .getByLabel(t("Name", "名称"), { exact: true })
@@ -142,20 +134,9 @@ try {
       .click();
     await dialog.waitFor({ state: "hidden" });
     await p.reload();
-    await manager
-      .getByRole("button", { name: t("Manage", "管理"), exact: true })
-      .click();
-    await manager
-      .getByRole("combobox", { name: t("Collection", "收藏分组"), exact: true })
-      .click();
-    await p.getByRole("option", { name: /Updated term · 1/ }).click();
-    assert.equal(await manager.locator("li").count(), 1);
-    await manager
-      .getByRole("button", {
-        name: t("Edit collection", "编辑分组"),
-        exact: true,
-      })
-      .click();
+    await manager.getByRole("button", { name: /Updated term/ }).click();
+    assert.equal(await p.locator(".course-card").count(), 1);
+    await button(t("Edit collection", "编辑分组")).click();
     dialog = p.getByRole("dialog");
     await dialog
       .getByRole("button", {
@@ -170,33 +151,26 @@ try {
       })
       .click();
     await dialog.waitFor({ state: "hidden" });
-    assert.equal(await manager.locator("li").count(), 2);
-    await manager
-      .getByRole("button", { name: t("Undo", "撤销"), exact: true })
-      .click();
-    await manager
+    assert.equal(await p.locator(".course-card").count(), 2);
+    await button(t("Undo", "撤销")).click();
+    await button(t("Edit collection", "编辑分组")).waitFor();
+    assert.equal(await p.locator(".course-card").count(), 1);
+    downloadWait = p.waitForEvent("download");
+    await button(t("Export", "导出")).click();
+    dialog = p.getByRole("dialog");
+    await dialog
       .getByRole("button", {
-        name: t("Edit collection", "编辑分组"),
-        exact: true,
-      })
-      .waitFor();
-    assert.equal(await manager.locator("li").count(), 1);
-    await manager
-      .getByText(t("Export / share title", "导出／分享标题"), { exact: true })
-      .click();
-    const backupWait = p.waitForEvent("download");
-    await manager
-      .getByRole("button", {
-        name: t("Download full backup", "下载完整备份"),
+        name: t("Full private backup", "完整私人备份"),
         exact: true,
       })
       .click();
-    const backupStream = await (await backupWait).createReadStream();
     let backupRaw = "";
-    for await (const chunk of backupStream) backupRaw += chunk;
+    for await (const chunk of await (await downloadWait).createReadStream())
+      backupRaw += chunk;
     const backup = JSON.parse(backupRaw);
     assert.equal(backup.format, "waho-private-backup");
     assert.equal(backup.workspace.collections.length, 1);
+    await close(dialog);
     await p.evaluate(() => {
       const key = "course-atlas:saved-workspace:v1",
         workspace = JSON.parse(localStorage.getItem(key));
@@ -219,7 +193,7 @@ try {
     await manager
       .getByText(locale === "zh" ? /2 项已恢复/ : /2 added/)
       .waitFor();
-    assert.equal(await manager.locator("li").count(), 1);
+    assert.equal(await p.locator(".course-card").count(), 1);
     assert.equal(
       await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,

@@ -1,0 +1,56 @@
+.storage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.cardFrame {
+  position: relative;
+  min-width: 0;
+  border-radius: 16px;
+}
+.cardFrame[data-selected="true"] {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.cardPick {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  background: var(--subtle-surface);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.cardPick input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary);
+}
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 15px;
+  padding: 10px 13px 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.cardMeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.5;
+}
+.cardMeta > span[data-cloud="true"] {
+  color: #386a5d;
+}
+.groupMeta {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
