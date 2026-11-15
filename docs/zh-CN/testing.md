@@ -379,6 +379,9 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs) | 浏览器 | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回 |
 | [tests/user-data/backup.test.mjs](../../tests/user-data/backup.test.mjs) | 单元 | 认证表精确白名单及安全的备份连接凭据传递 |
 | [tests/user-data/auth-migration.integration.test.mjs](../../tests/user-data/auth-migration.integration.test.mjs) | 集成 | 拒绝接管当前搜索路径 schema 中无归属标记的认证表 |
+| [tests/user-data/history.browser.mjs](../../tests/user-data/history.browser.mjs) | 浏览器 | API 全部模拟；英文 1440／中文 320 像素下的 JSON 清理导出、站内清空／取消弹窗及旧标签页删除 |
+
+通过 `node tests/user-data/history.browser.mjs` 运行记录界面检查。脚本使用隔离浏览器存储和本地下载，不发送真实邮件或外部统计。
 
 ```sh
 node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs

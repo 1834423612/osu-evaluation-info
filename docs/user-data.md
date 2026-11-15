@@ -74,7 +74,7 @@ The separate share page supports partial import and in-place course details. Exi
 
 ## Local activity
 
-`/history` stores submitted searches and deliberately opened courses in this browser for 90 days, with at most 100 searches and 200 course opens. Reopening an item moves it to the top. History can be disabled, cleared or edited individually. Keystrokes and prefetched courses are not history entries. History is currently local and is not uploaded by favorites sync.
+`/history` stores submitted searches and deliberately opened courses in this browser for 90 days, with at most 100 searches and 200 course opens. Reopening an item moves it to the top. History can be disabled, cleared after confirmation, edited individually or exported as JSON. Export uses sanitized local URLs and includes all retained entries, independent of the visible filter. Cross-tab edits re-read the latest history inside the shared IndexedDB transaction. Durable writes need IndexedDB and browser storage; export remains available when writes fail. Keystrokes and prefetched courses are not history entries. History is local and is not uploaded by favorites sync.
 
 See [Testing](testing.md) for isolated database tests and mocked browser flows, [Umami analytics](analytics/umami.md) for recording settings, and the dated [design record](design/sharing-sync-analytics.md) for the broader architecture. Design proposals do not imply that every proposed subsystem has shipped.
 

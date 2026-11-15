@@ -381,6 +381,9 @@ Collection and backup browser checks use the Node/Playwright environment above. 
 | [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs) | Browser | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles |
 | [tests/user-data/backup.test.mjs](../tests/user-data/backup.test.mjs) | Unit | Exact auth model allowlist and credential-safe backup connection options |
 | [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration | Refuse unowned authentication tables in the active search-path schema |
+| [tests/user-data/history.browser.mjs](../tests/user-data/history.browser.mjs) | Browser | Mocked APIs; sanitized JSON download, custom clear/cancel dialog, stale cross-tab deletion at 1440 English / 320 Chinese pixels |
+
+Run the history UI check with `node tests/user-data/history.browser.mjs`. It uses isolated browser storage, triggers a local download and sends no real mail or external analytics.
 
 ```sh
 node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs
