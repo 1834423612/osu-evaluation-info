@@ -61,6 +61,7 @@
 ## 访问统计
 
 - [Umami 统计与只读检索审计](analytics/umami.md)
+- [本站统计与诊断](analytics/first-party.md)
 
 ## 编辑站内文章
 

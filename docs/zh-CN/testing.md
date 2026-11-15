@@ -327,3 +327,20 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | [tests/user-data/telemetry.test.mjs](../../tests/user-data/telemetry.test.mjs) | Unit | 事件字段筛减、查询归一化、教师稳定标识和可信网络请求头 |
 | [tests/user-data/telemetry.integration.test.mjs](../../tests/user-data/telemetry.integration.test.mjs) | Integration | 批量 SQL 幂等确认、每日统计维度、IP 来源；临时 schema |
 | [tests/user-data/telemetry.browser.mjs](../../tests/user-data/telemetry.browser.mjs) | Browser | 模拟收集接口；持久重试、严格模式、跨标签收藏、实际打开课程和关闭统计 |
+
+清理和统计数据库测试使用 `USER_DATA_INTEGRATION=1`，仅操作随机临时 schema。热门收藏浏览器测试模拟接口，不写真实排名或访问统计；地址与截图变量沿用 `USER_DATA_TEST_BASE_URL`、`USER_DATA_SCREENSHOT_DIR`。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/user-data/maintenance.integration.test.mjs](../../tests/user-data/maintenance.integration.test.mjs) | Integration | 带归属检查的保留期限、预览、永久来源保留、有效收藏和过期游标合并 |
+| [tests/user-data/statistics.integration.test.mjs](../../tests/user-data/statistics.integration.test.mjs) | Integration | 账号有效收藏计数、删除、排除不明确身份、公开摘要和环境隔离聚合 |
+| [tests/user-data/popular.browser.mjs](../../tests/user-data/popular.browser.mjs) | Browser | 模拟中英文 320/390/1440 像素列表、首屏渲染错误、导航、原地详情和空状态 |
+
+诊断数据库测试使用 `USER_DATA_INTEGRATION=1`，创建随机临时 schema 并在结束后移除。诊断浏览器测试仅在主动开启后读取本机能力，统计请求和报告提交 API 均被拦截，不会上传报告。可配置 `USER_DATA_TEST_BASE_URL`、`USER_DATA_SCREENSHOT_DIR` 及通常的 Playwright 模块／浏览器路径。统计检查使用合成响应，并覆盖管理端未解锁状态。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/diagnostics/protocol.test.mjs](../../tests/diagnostics/protocol.test.mjs) | 单元 | 完整清单、授权分类、报告限制、凭据字段拒绝、可信请求头与受限 JPEG 元数据 |
+| [tests/diagnostics/reports.integration.test.mjs](../../tests/diagnostics/reports.integration.test.mjs) | 集成 | 绑定会话的幂等提交、独立观察值、七天访问期及精确游标分页 |
+| [tests/diagnostics/diagnostics.browser.mjs](../../tests/diagnostics/diagnostics.browser.mjs) | 浏览器 | 本机检测、指纹主动开启、权限隔离、预览重试及 320/390/1440 像素布局 |
+| [tests/diagnostics/statistics.browser.mjs](../../tests/diagnostics/statistics.browser.mjs) | 浏览器 | 权限加载、长请求字段、报告预览及 320/390/768/1440 像素布局 |

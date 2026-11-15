@@ -61,6 +61,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 ## Analytics
 
 - [Umami analytics](analytics/umami.md)
+- [First-party statistics and diagnostics](analytics/first-party.md)
 
 ## Editing site articles
 

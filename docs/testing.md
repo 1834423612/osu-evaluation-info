@@ -329,3 +329,20 @@ First-party telemetry database checks use `USER_DATA_INTEGRATION=1`. The browser
 | [tests/user-data/telemetry.test.mjs](../tests/user-data/telemetry.test.mjs) | Unit | Typed event redaction, query normalization, stable instructor keys and trusted network headers |
 | [tests/user-data/telemetry.integration.test.mjs](../tests/user-data/telemetry.integration.test.mjs) | Integration | Atomic batched SQL replay receipts, daily dimensions and IP provenance; disposable schema |
 | [tests/user-data/telemetry.browser.mjs](../tests/user-data/telemetry.browser.mjs) | Browser | Mocked collector; durable retries, Strict Mode, cross-tab favorites, actual course opens and opt-out |
+
+Maintenance/statistics database checks use `USER_DATA_INTEGRATION=1` and random disposable schemas. Popular-page browser tests mock APIs and write no live ranking or visit data; they use `USER_DATA_TEST_BASE_URL` and `USER_DATA_SCREENSHOT_DIR`.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/user-data/maintenance.integration.test.mjs](../tests/user-data/maintenance.integration.test.mjs) | Integration | Ownership-checked retention, dry runs, permanent source preservation, live favorites and expired-cursor reconciliation |
+| [tests/user-data/statistics.integration.test.mjs](../tests/user-data/statistics.integration.test.mjs) | Integration | Active-account popularity, deletion, ambiguous-identity exclusion, public summaries and environment-separated aggregates |
+| [tests/user-data/popular.browser.mjs](../tests/user-data/popular.browser.mjs) | Browser | Mocked bilingual 320/390/1440px lists, initial-render errors, navigation, in-place details and empty states |
+
+Diagnostic database tests use `USER_DATA_INTEGRATION=1`, generate a disposable schema and remove it afterward. Diagnostic browser tests read browser/device capabilities locally after explicit toggles; collectors and submission APIs are intercepted, so they upload no reports. Set `USER_DATA_TEST_BASE_URL`, `USER_DATA_SCREENSHOT_DIR`, and the usual Playwright module/executable overrides as needed. Statistics checks use synthetic responses and include a locked administrator view.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/diagnostics/protocol.test.mjs](../tests/diagnostics/protocol.test.mjs) | Unit | Complete registry, consent categories, budgets, credential-field rejection, trusted headers and bounded JPEG metadata |
+| [tests/diagnostics/reports.integration.test.mjs](../tests/diagnostics/reports.integration.test.mjs) | Integration | Idempotent session-bound reports, independent observations, seven-day visibility and exact keyset pagination |
+| [tests/diagnostics/diagnostics.browser.mjs](../tests/diagnostics/diagnostics.browser.mjs) | Browser | Local checks, opt-in fingerprints, permission isolation, reviewed retry and 320/390/1440px layouts |
+| [tests/diagnostics/statistics.browser.mjs](../tests/diagnostics/statistics.browser.mjs) | Browser | Protected loading, long request fields, report preview and 320/390/768/1440px layouts |
