@@ -1,4 +1,5 @@
 "use client";
+import { ReportDetail } from "./report-detail";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { BarChart3, RefreshCw, Download, LockKeyhole } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
@@ -50,6 +51,7 @@ type Reports = {
     id: string;
     captured_at: string;
     readings: number;
+    summary?: Record<string, unknown>;
     created_at: string;
   }[];
   next: string | null;
@@ -96,7 +98,11 @@ export function StatisticsPage() {
     [loading, setLoading] = useState(true),
     [detail, setDetail] = useState<unknown>(null),
     [reportLoading, setReportLoading] = useState(false),
-    [contextLoading, setContextLoading] = useState(false);
+    [contextLoading, setContextLoading] = useState(false),
+    [contextPages, setContextPages] = useState<
+      { contexts: Context[]; contextsNext?: string | null }[]
+    >([]),
+    [reportPages, setReportPages] = useState<Reports[]>([]);
   useEffect(() => {
     if (!debug.authorized) return;
     const c = new AbortController();
@@ -111,6 +117,8 @@ export function StatisticsPage() {
         if (!c.signal.aborted) {
           setData(overview);
           setReports(reports);
+          setContextPages([]);
+          setReportPages([]);
         }
       })
       .catch((e) => {
@@ -126,11 +134,11 @@ export function StatisticsPage() {
     if (!reports?.next) return;
     setReportLoading(true);
     try {
-      setReports(
-        await json<Reports>(
-          "/api/admin/diagnostics?before=" + encodeURIComponent(reports.next),
-        ),
+      const page = await json<Reports>(
+        "/api/admin/diagnostics?before=" + encodeURIComponent(reports.next),
       );
+      setReportPages((old) => [...old, reports]);
+      setReports(page);
     } catch {
       setError("unavailable");
     } finally {
@@ -145,6 +153,10 @@ export function StatisticsPage() {
         "/api/admin/analytics/contexts?" +
           new URLSearchParams({ environment, before: data.contextsNext }),
       );
+      setContextPages((old) => [
+        ...old,
+        { contexts: data.contexts, contextsNext: data.contextsNext },
+      ]);
       setData((old) =>
         old ? { ...old, contexts: page.items, contextsNext: page.next } : old,
       );
@@ -438,20 +450,41 @@ export function StatisticsPage() {
                 <section className={ui.panel}>
                   <div className={ui.panelHeading}>
                     <h2>{text(locale, "Request context", "请求信息")}</h2>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={contextLoading || !data.contextsNext}
-                      onClick={() => void moreContexts()}
-                    >
-                      {text(locale, "Older sessions", "更早会话")}
-                    </Button>
+                    <div className={ui.tools}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={!contextPages.length || contextLoading}
+                        onClick={() => {
+                          const previous = contextPages.at(-1);
+                          if (previous) {
+                            setData((old) =>
+                              old ? { ...old, ...previous } : old,
+                            );
+                            setContextPages((old) => old.slice(0, -1));
+                          }
+                        }}
+                      >
+                        {text(locale, "Previous", "上一页")}
+                      </Button>
+                      <span className={ui.muted}>
+                        {contextPages.length + 1}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={contextLoading || !data.contextsNext}
+                        onClick={() => void moreContexts()}
+                      >
+                        {text(locale, "Older sessions", "更早会话")}
+                      </Button>
+                    </div>
                   </div>
                   <p className={ui.muted}>
                     {text(
                       locale,
-                      "100 sessions per page, within 7 days. Browser fields are reported; IP is accepted only from a configured trusted proxy.",
-                      "最近 7 天的会话，每页 100 条。浏览器字段为上报值；IP 仅取已配置的可信代理。",
+                      "100 sessions per page, within 7 days. Network sources distinguish trusted ingress and browser-reported public IP.",
+                      "最近 7 天的会话，每页 100 条。网络来源区分可信入口与浏览器上报公网 IP。",
                     )}
                   </p>
                   {!data.contexts.length ? (
@@ -463,7 +496,12 @@ export function StatisticsPage() {
                           <summary>
                             <span>{sharingDate(row.created_at, locale)}</span>
                             <span>
-                              {row.language} · {row.time_zone}
+                              {row.ip ?? row.language} ·{" "}
+                              {String(
+                                row.browser_context?.model ||
+                                  row.browser_context?.platform ||
+                                  row.time_zone,
+                              )}
                             </span>
                           </summary>
                           <dl className={styles.facts}>
@@ -546,7 +584,23 @@ export function StatisticsPage() {
                         disabled={reportLoading}
                         onClick={() => void openReport(row.id)}
                       >
-                        <span>{sharingDate(row.created_at, locale)}</span>
+                        <span>
+                          <strong>{row.id.slice(0, 8)}</strong>
+                          <small>{sharingDate(row.created_at, locale)}</small>
+                          <span className={styles.reportSummary}>
+                            {Object.entries(row.summary ?? {})
+                              .filter(([key]) =>
+                                ["os", "browser", "ip", "tz"].includes(key),
+                              )
+                              .map(([key, value]) => (
+                                <span key={key}>
+                                  {typeof value === "string"
+                                    ? value
+                                    : JSON.stringify(value).slice(0, 90)}
+                                </span>
+                              ))}
+                          </span>
+                        </span>
                         <small>
                           {row.readings} {text(locale, "readings", "项数据")}
                         </small>
@@ -555,15 +609,31 @@ export function StatisticsPage() {
                   ))}
                 </ul>
               )}
-              {reports?.next ? (
+              <div className={ui.actions}>
                 <Button
-                  disabled={reportLoading}
-                  variant="outline"
-                  onClick={() => void moreReports()}
+                  variant="ghost"
+                  disabled={!reportPages.length || reportLoading}
+                  onClick={() => {
+                    const previous = reportPages.at(-1);
+                    if (previous) {
+                      setReports(previous);
+                      setReportPages((old) => old.slice(0, -1));
+                    }
+                  }}
                 >
-                  {text(locale, "Older reports", "更早报告")}
+                  {text(locale, "Previous", "上一页")}
                 </Button>
-              ) : null}
+                <span className={ui.muted}>{reportPages.length + 1}</span>
+                {reports?.next ? (
+                  <Button
+                    disabled={reportLoading}
+                    variant="outline"
+                    onClick={() => void moreReports()}
+                  >
+                    {text(locale, "Older reports", "更早报告")}
+                  </Button>
+                ) : null}
+              </div>
             </section>
           </>
         )}
@@ -580,7 +650,7 @@ export function StatisticsPage() {
           )}
           closeLabel={text(locale, "Close", "关闭")}
         >
-          <pre className={styles.report}>{JSON.stringify(detail, null, 2)}</pre>
+          <ReportDetail detail={detail} locale={locale} />
           <Button variant="outline" onClick={() => download(detail)}>
             <Download size={14} />
             {text(locale, "Download JSON", "下载 JSON")}

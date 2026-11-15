@@ -46,7 +46,7 @@ export async function listDiagnosticReports(
 ) {
   const cursor = readAdminCursor(before);
   const result = await pool.query(
-    "SELECT id,payload->>'capturedAt' AS captured_at,jsonb_array_length(payload->'results') AS readings,created_at,to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time FROM " +
+    "SELECT id,(SELECT jsonb_object_agg(r->>'id',r->'value') FROM jsonb_array_elements(payload->'results') r WHERE r->>'id' IN ('os','browser','ip','screen','tz','h_ua')) AS summary,payload->>'capturedAt' AS captured_at,jsonb_array_length(payload->'results') AS readings,created_at,to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time FROM " +
       table("diagnostic_report") +
       " WHERE created_at>=now()-interval '7 days' AND ($1::timestamptz IS NULL OR (created_at,id)<($1::timestamptz,$2::uuid)) ORDER BY created_at DESC,id DESC LIMIT 26",
     [cursor?.time ?? null, cursor?.id ?? null],
