@@ -352,3 +352,9 @@ The capacity browser check seeds an isolated browser profile with synthetic favo
 | Script | Type | Purpose |
 | --- | --- | --- |
 | [tests/user-data/capacity.browser.mjs](../tests/user-data/capacity.browser.mjs) | Browser | Full-collection errors, non-destructive undo failure, retained intervening favorites and phone toast layout |
+
+The live replay test is excluded from `pnpm test` and requires `ALLOW_UMAMI_WRITES=1`. It uses actual Umami scripts/configuration and creates synthetic remote events and recordings; application APIs are mocked. `REPLAY_REQUIRE_ROUND_TRIP=1` requires authenticated retrieval using server-only `UMAMI_API_KEY`. Use `REPLAY_TEST_WIDTH=390` for the phone run. See [replay operations](analytics/umami.md) for production-build and browser settings.
+
+| Script | Type | Purpose |
+| --- | --- | --- |
+| [tests/analytics/replay-live.browser.mjs](../tests/analytics/replay-live.browser.mjs) | Live browser integration | Real chunk acceptance, single-visit startup, authenticated replay retrieval, snapshots, menus, paused portals and scrolling |

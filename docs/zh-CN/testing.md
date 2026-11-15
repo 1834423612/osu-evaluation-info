@@ -350,3 +350,9 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本 | 类型 | 用途 |
 | --- | --- | --- |
 | [tests/user-data/capacity.browser.mjs](../../tests/user-data/capacity.browser.mjs) | 浏览器 | 收藏已满提示、撤回失败不覆盖数据、保留中途新增项目及手机提示布局 |
+
+真实回放检查不包含在 `pnpm test` 中，需显式设置 `ALLOW_UMAMI_WRITES=1`。它使用真实 Umami 脚本／配置，创建合成远端事件和录制；应用 API 均被模拟。`REPLAY_REQUIRE_ROUND_TRIP=1` 要求用仅服务端的 `UMAMI_API_KEY` 认证读取录制，`REPLAY_TEST_WIDTH=390` 用于手机检查。生产构建和浏览器设置见[回放运维](analytics/umami.md)。
+
+| 脚本 | 类型 | 用途 |
+| --- | --- | --- |
+| [tests/analytics/replay-live.browser.mjs](../../tests/analytics/replay-live.browser.mjs) | 真实浏览器集成 | 分块接收、同一访问初始化、认证读回、完整快照、菜单、暂停浮层和滚动 |

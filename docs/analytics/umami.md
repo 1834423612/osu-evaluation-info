@@ -87,3 +87,42 @@ zero failed searches. Result loads and submissions should not share a denominato
 
 API contracts: [Umami 3.4.1 event data](https://github.com/umami-software/umami/blob/v3.4.1/src/app/api/websites/%5BwebsiteId%5D/event-data/route.ts)
 and [API-key authentication](https://umami.is/blog/umami-v3.4).
+
+## Recorder startup and replay rendering
+
+Concurrent startup payloads wait for the first collector visit token, with a 100-payload / 30-second bound. The recorder loads after that token is available, so the SDK's short session-start window is not spent waiting for a slow initial collector response. Sampling, masking and maximum duration still come from the remote configuration.
+
+Paused/seeked replays can freeze portal entrance animations at their first frame. A replay-only CSS rule displays open drawer, sheet, dialog, select and popover surfaces in their open layout while `html.rrweb-paused` is present. It does not change live-site or playing animations.
+
+## Firewall checks
+
+A successful tracker request does not prove recordings are complete. Verify the **full snapshot** request as well as smaller mutation chunks. A firewall may reject a large HTML/CSS snapshot with 403 while accepting subsequent events. Without CORS headers, the browser can report only `net::ERR_FAILED`; the dashboard may then contain mutations without a usable baseline.
+
+On November 14, 2026, a synthetic production-build check reproduced a roughly 340 KiB full-snapshot rejection by BaoTa WAF. After an exact collector-path exception, both 1440px and 390px runs sent all chunks successfully, read their own replay back through the authenticated API, and matched live/rebuilt search inputs, term menus, details and scroll offsets. This is dated evidence for those flows, not a guarantee for every recording.
+
+Prefer a site-specific exception for the falsely triggered body-inspection rule on `POST /api/record`. Do not disable the entire firewall or exempt every API. BaoTa URL allowlists can skip most WAF defenses, so retain endpoint rate limiting separately if a path allowlist is the only available control. See [BaoTa's WAF guide](https://www.bt.cn/bbs/thread-73847-1-1.html). Keep Umami token validation and request-size bounds. A missing snapshot cannot be reconstructed from later mutations alone; check new recordings after fixing the rule.
+
+## Live replay regression
+
+`tests/analytics/replay.browser.mjs` uses mocked scripts and validates defaults, all-page coverage, a six-second collector startup delay and opt-out behavior. The separate live check deliberately creates synthetic Umami traffic:
+
+```sh
+pnpm build
+pnpm exec next start --hostname 127.0.0.1 --port 3001
+```
+
+Run in another terminal with the configured public tracker/website values and server-only `UMAMI_API_KEY`:
+
+```sh
+ALLOW_UMAMI_WRITES=1 REPLAY_REQUIRE_ROUND_TRIP=1 \
+USER_DATA_TEST_BASE_URL=http://127.0.0.1:3001 \
+node tests/analytics/replay-live.browser.mjs
+
+ALLOW_UMAMI_WRITES=1 REPLAY_REQUIRE_ROUND_TRIP=1 REPLAY_TEST_WIDTH=390 \
+USER_DATA_TEST_BASE_URL=http://127.0.0.1:3001 \
+node tests/analytics/replay-live.browser.mjs
+```
+
+Catalog and other application data APIs use synthetic fixtures; first-party collectors receive no live test writes. The real Umami tracker/recorder and remote configuration are used. The check requires one visit token, accepted recording chunks, a full snapshot in the API response, and matching visible control counts, rectangles and panel scrolling. It rebuilds with pinned rrweb 2.1.7 and saves synthetic screenshots/events under `USER_DATA_SCREENSHOT_DIR` (default `.cache/replay-live`). Do not publish recordings from real profiles. These synthetic visits remain subject to Umami retention; `qa_replay_verification` marks their activity.
+
+Use the standard `PLAYWRIGHT_MODULE` and `PLAYWRIGHT_CHROMIUM_EXECUTABLE` overrides when needed. `REPLAY_RRWEB_DIR` can name the installed rrweb package directory when the host cannot follow workspace symlinks. The API key stays in the test process and authenticated request headers; it is never injected into the browser.

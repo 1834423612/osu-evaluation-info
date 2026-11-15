@@ -43,3 +43,42 @@ node --env-file=.env.local scripts/analytics/analyze-search.mjs /tmp/osu-search-
 | `index_fallback`                   | `none`、`unavailable` 或 `filter`，区分索引查询与有限实时回退         |
 | `term` / `campus` / `filter_count` | 所选学期、校区和筛选数量，不复制任意筛选值                            |
 | `duration_ms`                      | 结果加载耗时，取整并限制在两分钟内                                    |
+
+## 录制启动与回放显示
+
+并发启动事件会等待首次采集返回的访问令牌，最多暂候 100 个载荷、30 秒。录制脚本在令牌可用后加载，避免 SDK 的短暂启动窗口被慢速首次请求耗尽。采样、遮挡和最长时长仍使用远端配置。
+
+暂停或定位回放时，播放器可能把浮层的入场动画冻结在第一帧。仅回放生效的 CSS 会在 `html.rrweb-paused` 存在时，让已打开的抽屉、面板、对话框、选择器和浮窗保持展开布局，不改变网站正常使用或播放过程中的动画。
+
+## 防火墙检查
+
+追踪请求成功不代表录制完整。除小型变化事件外，还需确认**完整快照**请求成功。防火墙可能拒绝较大的 HTML/CSS 快照并返回 403，却接收后续事件。缺少 CORS 响应头时，浏览器可能只显示 `net::ERR_FAILED`，导致后台仅有变化记录而缺少可用的初始页面。
+
+2026 年 11 月 14 日的合成生产构建检查复现了宝塔 WAF 对约 340 KiB 完整快照的拦截。为采集路径配置精确例外后，1440 和 390 像素检查均成功上传全部分块，通过认证 API 读回自己的录制，并核对了现场与重建后的搜索框、学期菜单、详情和滚动偏移。这是上述流程在该日期的验证结果，不代表所有录制都已验证。
+
+优先仅对 `POST /api/record` 设置站点级的正文误报规则例外，不关闭整个防火墙，也不放行全部 API。宝塔 URL 白名单可能跳过大部分 WAF 检查；如果只能使用路径白名单，应另外保留该接口限流，参见[宝塔 WAF 说明](https://www.bt.cn/bbs/thread-73847-1-1.html)。保留 Umami 令牌校验和请求大小限制。缺失快照无法仅从后续变化还原，修复规则后应检查新录制。
+
+## 真实回放回归检查
+
+`tests/analytics/replay.browser.mjs` 使用模拟脚本，验证默认设置、全页面覆盖、六秒采集启动延迟和主动关闭行为。单独的真实检查会有意创建合成 Umami 流量：
+
+```sh
+pnpm build
+pnpm exec next start --hostname 127.0.0.1 --port 3001
+```
+
+在另一个终端使用已配置的公开追踪／网站参数及仅服务端使用的 `UMAMI_API_KEY` 执行：
+
+```sh
+ALLOW_UMAMI_WRITES=1 REPLAY_REQUIRE_ROUND_TRIP=1 \
+USER_DATA_TEST_BASE_URL=http://127.0.0.1:3001 \
+node tests/analytics/replay-live.browser.mjs
+
+ALLOW_UMAMI_WRITES=1 REPLAY_REQUIRE_ROUND_TRIP=1 REPLAY_TEST_WIDTH=390 \
+USER_DATA_TEST_BASE_URL=http://127.0.0.1:3001 \
+node tests/analytics/replay-live.browser.mjs
+```
+
+课程及其他应用数据 API 使用合成数据，本站统计接口不写入真实测试事件。Umami 脚本、录制接口和远端配置则是真实服务。检查要求使用同一访问令牌、录制分块均被接收、API 响应包含完整快照，并比较可见控件数量、位置、尺寸和面板滚动。它使用固定的 rrweb 2.1.7 重建，将合成截图／事件放在 `USER_DATA_SCREENSHOT_DIR`，默认 `.cache/replay-live`。不要发布真实浏览器配置中的录制。这些合成访问按 Umami 保留期清理，活动由 `qa_replay_verification` 标记。
+
+必要时使用通用的 `PLAYWRIGHT_MODULE`、`PLAYWRIGHT_CHROMIUM_EXECUTABLE` 配置。宿主无法读取工作区符号链接时，可用 `REPLAY_RRWEB_DIR` 指定已安装的 rrweb 包目录。API key 仅存在于测试进程和认证请求头，不注入浏览器。
