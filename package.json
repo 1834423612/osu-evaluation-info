@@ -39,7 +39,8 @@
     "syllabus:sync": "node scripts/syllabus/sync.mjs",
     "account:migrate": "node scripts/user-data/auth-migrate.mjs",
     "user-data:migrate": "node scripts/user-data/migrate.mjs",
-    "user-data:maintain": "node scripts/user-data/maintain.mjs"
+    "user-data:maintain": "node scripts/user-data/maintain.mjs",
+    "user-data:backup": "node scripts/user-data/backup.mjs"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.23",
