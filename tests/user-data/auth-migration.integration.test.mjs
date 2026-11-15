@@ -16,10 +16,13 @@ test(
       schema = "osu_user_test_" + tag;
     process.env.AUTH_TABLE_PREFIX = prefix;
     process.env.USER_DATA_SCHEMA = schema;
+    process.env.AUTH_SCHEMA = schema;
+    const { getAuthPool } = await import("../../src/lib/auth/database.ts");
     const { getDatabasePool } = await import("../../src/lib/db.ts"),
-      db = getDatabasePool(),
+      db = getAuthPool(),
       { createAuth } = await import("../../src/lib/auth/server.ts"),
       { getMigrations } = await import("better-auth/db/migration");
+    await getDatabasePool().query('CREATE SCHEMA "' + schema + '"');
     const plan = await getMigrations(createAuth().options),
       tables = plan.toBeCreated.map((x) => x.table);
     t.after(async () => {
@@ -32,6 +35,7 @@ test(
         await db.query('DROP SCHEMA IF EXISTS "' + schema + '" CASCADE');
       } finally {
         await db.end();
+        await getDatabasePool().end();
       }
     });
     await db.query(await plan.compileMigrations());

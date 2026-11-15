@@ -38,8 +38,8 @@ test(
       "20261114_share_requests.sql",
     ])
       await db.query(
-        readFileSync("db/migrations/" + file, "utf8").replaceAll(
-          "osu_user",
+        readFileSync("db/migrations/" + file, "utf8").replace(
+          /osu_(?:identity|analytics|diagnostics)/g,
           schema,
         ),
       );

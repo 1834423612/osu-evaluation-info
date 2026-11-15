@@ -48,7 +48,7 @@ export function otpDigest(otp: string, secret: string) {
 export function authSchema(env: NodeJS.ProcessEnv = process.env) {
   const name =
     env.AUTH_SCHEMA ||
-    (env.NODE_ENV === "production" ? "osu_account" : "osu_account_dev");
+    (env.NODE_ENV === "production" ? "osu_identity" : "osu_identity_dev");
   if (!/^[a-z][a-z0-9_]{0,50}$/.test(name))
     throw Error("Invalid account schema");
   return name;

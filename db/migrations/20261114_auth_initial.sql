@@ -1,23 +1,26 @@
 BEGIN;
-CREATE SCHEMA IF NOT EXISTS osu_account;
-SET LOCAL search_path = osu_account;
-CREATE SCHEMA IF NOT EXISTS osu_user;
-CREATE TABLE IF NOT EXISTS osu_user.rate_bucket (
+CREATE SCHEMA IF NOT EXISTS osu_identity;
+SET LOCAL search_path = osu_identity;
+CREATE SCHEMA IF NOT EXISTS osu_identity;
+CREATE TABLE IF NOT EXISTS osu_identity.rate_bucket (
   bucket text NOT NULL,
   window_start bigint NOT NULL,
   hits integer NOT NULL DEFAULT 1,
   expires_at timestamptz NOT NULL,
   PRIMARY KEY (bucket, window_start)
 );
-CREATE INDEX IF NOT EXISTS rate_bucket_expiry ON osu_user.rate_bucket(expires_at);
-CREATE TABLE IF NOT EXISTS osu_user.security_event (
+CREATE INDEX IF NOT EXISTS rate_bucket_expiry ON osu_identity.rate_bucket(expires_at);
+CREATE TABLE IF NOT EXISTS osu_identity.security_event (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   principal text,
   action text NOT NULL,
   network_digest text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS security_event_time ON osu_user.security_event(created_at);
+CREATE INDEX IF NOT EXISTS security_event_time ON osu_identity.security_event(created_at);
+
+CREATE TABLE IF NOT EXISTS osu_identity.cooldown_bucket (bucket text PRIMARY KEY, expires_at timestamptz NOT NULL);
+CREATE INDEX IF NOT EXISTS cooldown_bucket_expiry ON osu_identity.cooldown_bucket(expires_at);
 
 create table "user" ("id" text not null primary key, "name" text not null, "recoveryGeneration" text, "email" text not null unique, "emailVerified" boolean not null, "image" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null);
 
@@ -41,5 +44,5 @@ create index "passkey_userId_idx" on "passkey" ("userId");
 
 create index "passkey_credentialID_idx" on "passkey" ("credentialID");
 CREATE UNIQUE INDEX IF NOT EXISTS "passkey_credential_unique" ON "passkey" ("credentialID");
-CREATE TABLE IF NOT EXISTS "osu_user".installation (name text PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now()); INSERT INTO "osu_user".installation(name) VALUES ('auth:') ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS "osu_identity".installation (name text PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now()); INSERT INTO "osu_identity".installation(name) VALUES ('auth:') ON CONFLICT DO NOTHING;
 COMMIT;

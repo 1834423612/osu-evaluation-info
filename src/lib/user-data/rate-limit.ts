@@ -47,3 +47,21 @@ export async function checkBudget(
   );
   if (!result.rows.length) throw new UserDataError("rate_limited", 429);
 }
+
+export async function reserveCooldown(
+  scope: string,
+  subject: string,
+  seconds: number,
+) {
+  if (!Number.isInteger(seconds) || seconds < 1 || seconds > 86400)
+    throw Error("Invalid cooldown");
+  const result = await queryDatabase(
+    "INSERT INTO " +
+      userDataTable("cooldown_bucket") +
+      "(bucket,expires_at) VALUES($1,statement_timestamp()+$2::int*interval '1 second') ON CONFLICT(bucket) DO UPDATE SET expires_at=EXCLUDED.expires_at WHERE " +
+      userDataTable("cooldown_bucket") +
+      ".expires_at<=statement_timestamp() RETURNING bucket",
+    [privateDigest(scope + ":" + subject, "cooldown"), seconds],
+  );
+  if (!result.rows.length) throw new UserDataError("rate_limited", 429);
+}

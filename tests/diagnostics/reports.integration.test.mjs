@@ -26,8 +26,8 @@ test(
     });
     await db.query('CREATE SCHEMA "' + schema + '"');
     await db.query(
-      readFileSync("db/migrations/20261114_diagnostics.sql", "utf8").replaceAll(
-        "osu_user",
+      readFileSync("db/migrations/20261114_diagnostics.sql", "utf8").replace(
+        /osu_(?:identity|analytics|diagnostics)/g,
         schema,
       ),
     );

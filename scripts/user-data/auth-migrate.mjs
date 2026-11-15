@@ -70,7 +70,11 @@ try {
     if (!path) throw new Error("Output file missing");
     writeFileSync(
       path,
-      "BEGIN;\n" +
+      'BEGIN;\nCREATE SCHEMA IF NOT EXISTS "' +
+        authSchema() +
+        '";\nSET LOCAL search_path="' +
+        authSchema() +
+        '";\n' +
         baseSQL +
         "\n" +
         sql +

@@ -25,8 +25,6 @@ jobs:
     timeout-minutes: 15
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      USER_DATA_SCHEMA: ${{ vars.USER_DATA_SCHEMA || 'osu_user' }}
-      AUTH_TABLE_PREFIX: ${{ vars.AUTH_TABLE_PREFIX || 'ca_' }}
     steps:
       - name: Validate database configuration
         shell: bash

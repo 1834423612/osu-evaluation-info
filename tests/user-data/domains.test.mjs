@@ -4,10 +4,10 @@ import { domainSchema, domainSQL } from "../../src/lib/user-data/namespace.ts";
 import { codeEmail } from "../../src/lib/auth/mail.ts";
 test("independent production domains never inherit course search paths", () => {
   for (const [table, schema] of [
-    ["principal", "osu_user"],
-    ["sync_item", "osu_saved"],
-    ["shared_collection", "osu_sharing"],
-    ["transfer_pair", "osu_transfer"],
+    ["principal", "osu_identity"],
+    ["sync_item", "osu_identity"],
+    ["shared_collection", "osu_identity"],
+    ["transfer_pair", "osu_identity"],
     ["visitor_context", "osu_analytics"],
     ["diagnostic_report", "osu_diagnostics"],
   ]) {
@@ -24,8 +24,8 @@ test("isolated integration namespaces and SQL resolve consistently", () => {
     "test_domain",
   );
   assert.match(
-    domainSQL("CREATE TABLE osu_saved.sync_item (id text)"),
-    /"osu_saved(?:_dev)?"."sync_item"/,
+    domainSQL("CREATE TABLE osu_identity.sync_item (id text)"),
+    /"osu_identity(?:_dev)?"."sync_item"/,
   );
 });
 test("email code layout is responsive and rejects injected markup", () => {

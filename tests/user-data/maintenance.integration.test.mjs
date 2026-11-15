@@ -33,8 +33,8 @@ test(
       "20261114_telemetry.sql",
     ])
       await db.query(
-        readFileSync("db/migrations/" + f, "utf8").replaceAll(
-          "osu_user",
+        readFileSync("db/migrations/" + f, "utf8").replace(
+          /osu_(?:identity|analytics|diagnostics)/g,
           schema,
         ),
       );

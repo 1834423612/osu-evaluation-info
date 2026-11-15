@@ -7,7 +7,7 @@ import {
   userRoute,
 } from "@/lib/user-data/http";
 import { requestNetwork } from "@/lib/user-data/network";
-import { checkBudget } from "@/lib/user-data/rate-limit";
+import { checkBudget, reserveCooldown } from "@/lib/user-data/rate-limit";
 export const runtime = "nodejs";
 async function handle(request: Request) {
   const auth = getAuth();
@@ -47,7 +47,7 @@ async function handle(request: Request) {
         )
       ) {
         const email = z.email().max(254).parse(body.email).toLowerCase();
-        await checkBudget("mail-cooldown", email, 60, 1);
+        await reserveCooldown("mail-cooldown", email, 60);
         await checkBudget("mail-address", email, 3600, 6);
         await checkBudget(
           "mail-source",

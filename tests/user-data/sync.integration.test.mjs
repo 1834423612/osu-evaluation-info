@@ -27,8 +27,8 @@ test(
     });
     for (const file of ["20261114_user_data_base.sql", "20261114_sync.sql"])
       await db.query(
-        readFileSync("db/migrations/" + file, "utf8").replaceAll(
-          "osu_user",
+        readFileSync("db/migrations/" + file, "utf8").replace(
+          /osu_(?:identity|analytics|diagnostics)/g,
           schema,
         ),
       );

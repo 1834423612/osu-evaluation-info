@@ -39,4 +39,4 @@ CREATE TABLE osu_analytics.visitor_context (
  environment text NOT NULL
 );
 CREATE INDEX visitor_context_expiry ON osu_analytics.visitor_context(created_at);
-CREATE INDEX sync_item_popular ON osu_saved.sync_item(key,updated_at DESC) WHERE item IS NOT NULL;
+CREATE INDEX sync_item_popular ON osu_identity.sync_item(key,updated_at DESC) WHERE item IS NOT NULL;

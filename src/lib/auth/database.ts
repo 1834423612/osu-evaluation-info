@@ -1,6 +1,9 @@
 import { Pool } from "pg";
 import { authSchema } from "./config.ts";
-const pools = new Map<string, Pool>();
+declare global {
+  var osuAccountPools: Map<string, Pool> | undefined;
+}
+const pools = (global.osuAccountPools ??= new Map<string, Pool>());
 export function getAuthPool() {
   const schema = authSchema();
   let pool = pools.get(schema);

@@ -17,6 +17,7 @@ const files = [
   "20261114_diagnostics.sql",
   "20261114_statistics.sql",
   "20261115_visitor_context.sql",
+  "20261115_cooldowns.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),

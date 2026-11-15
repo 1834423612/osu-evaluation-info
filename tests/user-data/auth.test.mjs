@@ -108,8 +108,8 @@ test("streaming JSON bodies are bounded even without Content-Length", async () =
 test("development identities and cloud data are isolated from production by default", () => {
   assert.equal(authTablePrefix({ NODE_ENV: "production" }), "");
   assert.equal(authTablePrefix({ NODE_ENV: "development" }), "");
-  assert.equal(userDataSchema({ NODE_ENV: "production" }), "osu_user");
-  assert.equal(userDataSchema({ NODE_ENV: "development" }), "osu_user_dev");
+  assert.equal(userDataSchema({ NODE_ENV: "production" }), "osu_identity");
+  assert.equal(userDataSchema({ NODE_ENV: "development" }), "osu_identity_dev");
   assert.equal(
     userDataSchema({ NODE_ENV: "production", USER_DATA_SCHEMA: "isolated" }),
     "isolated",
@@ -117,7 +117,7 @@ test("development identities and cloud data are isolated from production by defa
 });
 
 test("account schemas are explicit and validate identifiers", () => {
-  assert.equal(authSchema({ NODE_ENV: "production" }), "osu_account");
-  assert.equal(authSchema({ NODE_ENV: "development" }), "osu_account_dev");
+  assert.equal(authSchema({ NODE_ENV: "production" }), "osu_identity");
+  assert.equal(authSchema({ NODE_ENV: "development" }), "osu_identity_dev");
   assert.throws(() => authSchema({ AUTH_SCHEMA: "unsafe;DROP" }));
 });

@@ -29,7 +29,7 @@ export async function sendSignInCode(
   await mailTransport().sendMail({
     from: process.env.SMTP_FROM,
     to: email,
-    subject: zh ? "WahO! 登录验证码" : "Your WahO! sign-in code",
+    subject: zh ? "WahO! 邮箱验证码" : "Your WahO! verification code",
     html: codeEmail(otp, zh),
     text: zh
       ? "验证码：" +

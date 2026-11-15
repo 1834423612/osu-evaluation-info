@@ -17,7 +17,7 @@ test(
     const { getDatabasePool } = await import("../../src/lib/db.ts"),
       db = getDatabasePool(),
       { exchangeSync } = await import("../../src/lib/user-data/sync.ts"),
-      { popularFavorites, analyticsOverview,analyticsContexts } =
+      { popularFavorites, analyticsOverview, analyticsContexts } =
         await import("../../src/lib/user-data/statistics.ts"),
       { recordProductEvents } =
         await import("../../src/lib/user-data/telemetry.ts"),
@@ -36,10 +36,11 @@ test(
       "20261114_sharing.sql",
       "20261114_page_links.sql",
       "20261114_telemetry.sql",
+      "20261115_visitor_context.sql",
     ])
       await db.query(
-        readFileSync("db/migrations/" + f, "utf8").replaceAll(
-          "osu_user",
+        readFileSync("db/migrations/" + f, "utf8").replace(
+          /osu_(?:identity|analytics|diagnostics)/g,
           schema,
         ),
       );
@@ -116,10 +117,27 @@ test(
       (await analyticsOverview(7, "production", db)).contexts.length,
       0,
     );
-    await db.query('INSERT INTO "'+schema+'".visitor_context SELECT x.id,v.actor_digest,v.user_agent,v.accept_language,v.language,v.languages,v.time_zone,v.viewport,v.network_address,v.network_source,v.created_at,v.environment FROM (SELECT * FROM "'+schema+'".visitor_context LIMIT 1)v CROSS JOIN unnest($1::uuid[])x(id)',[Array.from({length:101},()=>randomUUID())]);
-    await db.query('UPDATE "'+schema+'".visitor_context SET created_at=date_trunc(\'second\',now())+interval \'0.123456 seconds\'');
-    const first=await analyticsContexts("development",null,db),second=await analyticsContexts("development",first.next,db);
-    assert.equal(first.rows.length,100);assert.equal(second.rows.length,2);assert.equal(new Set([...first.rows,...second.rows].map(r=>r.id)).size,102);
-    assert.equal(overview.latency[0].bucket,"under1000");
+    await db.query(
+      'INSERT INTO "' +
+        schema +
+        '".visitor_context(session_id,actor_digest,user_agent,accept_language,language,languages,time_zone,viewport,network_address,network_source,created_at,environment) SELECT x.id,v.actor_digest,v.user_agent,v.accept_language,v.language,v.languages,v.time_zone,v.viewport,v.network_address,v.network_source,v.created_at,v.environment FROM (SELECT * FROM "' +
+        schema +
+        '".visitor_context LIMIT 1)v CROSS JOIN unnest($1::uuid[])x(id)',
+      [Array.from({ length: 101 }, () => randomUUID())],
+    );
+    await db.query(
+      'UPDATE "' +
+        schema +
+        "\".visitor_context SET created_at=date_trunc('second',now())+interval '0.123456 seconds'",
+    );
+    const first = await analyticsContexts("development", null, db),
+      second = await analyticsContexts("development", first.next, db);
+    assert.equal(first.rows.length, 100);
+    assert.equal(second.rows.length, 2);
+    assert.equal(
+      new Set([...first.rows, ...second.rows].map((r) => r.id)).size,
+      102,
+    );
+    assert.equal(overview.latency[0].bucket, "under1000");
   },
 );

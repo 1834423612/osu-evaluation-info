@@ -18,13 +18,15 @@ test(
       AUTH_DEV_BASE_URL: "http://localhost:3000",
       AUTH_TABLE_PREFIX: prefix,
       USER_DATA_SCHEMA: schema,
+      AUTH_SCHEMA: schema,
       BETTER_AUTH_SECRET: randomBytes(32).toString("hex"),
       USER_DATA_SECRET: randomBytes(32).toString("hex"),
     });
     const { getMigrations } = await import("better-auth/db/migration");
     const { createAuth } = await import("../../src/lib/auth/server.ts");
+    const { getAuthPool } = await import("../../src/lib/auth/database.ts");
     const { getDatabasePool } = await import("../../src/lib/db.ts");
-    const { checkBudget } =
+    const { checkBudget, reserveCooldown } =
       await import("../../src/lib/user-data/rate-limit.ts");
     const codes = new Map(),
       auth = createAuth({
@@ -32,7 +34,8 @@ test(
           codes.set(email, code);
         },
       }),
-      db = getDatabasePool();
+      db = getAuthPool();
+    await getDatabasePool().query('CREATE SCHEMA "' + schema + '"');
     const plan = await getMigrations(auth.options);
     assert.ok(plan.toBeCreated.length >= 6);
     assert.ok(plan.toBeCreated.every((x) => x.table.startsWith(prefix)));
@@ -47,15 +50,27 @@ test(
         await db.query('DROP SCHEMA IF EXISTS "' + schema + '" CASCADE');
       } finally {
         await db.end();
+        await getDatabasePool().end();
       }
     });
     await db.query(
-      readFileSync(
-        "db/migrations/20261114_user_data_base.sql",
-        "utf8",
-      ).replaceAll("osu_user", schema),
+      readFileSync("db/migrations/20261114_user_data_base.sql", "utf8").replace(
+        /osu_(?:identity|analytics|diagnostics)/g,
+        schema,
+      ),
     );
     await plan.runMigrations();
+    const cooldown = await Promise.allSettled(
+      Array.from({ length: 10 }, () =>
+        reserveCooldown("mail", "test-address", 60),
+      ),
+    );
+    assert.equal(cooldown.filter((x) => x.status === "fulfilled").length, 1);
+    assert.ok(
+      cooldown
+        .filter((x) => x.status === "rejected")
+        .every((x) => x.reason.status === 429),
+    );
     const make = async (path, body, cookie = "") => {
       const r = await auth.handler(
         new Request("http://localhost:3000/api/auth" + path, {

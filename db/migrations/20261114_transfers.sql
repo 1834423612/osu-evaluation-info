@@ -1,6 +1,6 @@
-CREATE TABLE osu_transfer.transfer (
+CREATE TABLE osu_identity.transfer (
  id uuid PRIMARY KEY,
- owner_id text NOT NULL REFERENCES osu_user.principal(id),
+ owner_id text NOT NULL REFERENCES osu_identity.principal(id),
  request_digest text NOT NULL,
  seed uuid NOT NULL,
  snapshot jsonb NOT NULL,
@@ -13,21 +13,21 @@ CREATE TABLE osu_transfer.transfer (
  lease_until timestamptz,
  completed_at timestamptz
 );
-CREATE INDEX transfer_owner ON osu_transfer.transfer(owner_id,created_at DESC);
-CREATE INDEX transfer_expiry ON osu_transfer.transfer(expires_at);
-CREATE TABLE osu_transfer.transfer_code (
+CREATE INDEX transfer_owner ON osu_identity.transfer(owner_id,created_at DESC);
+CREATE INDEX transfer_expiry ON osu_identity.transfer(expires_at);
+CREATE TABLE osu_identity.transfer_code (
  code text PRIMARY KEY CHECK(code ~ '^[0-9]{6}$'),
- transfer_id uuid NOT NULL REFERENCES osu_transfer.transfer(id) ON DELETE CASCADE,
+ transfer_id uuid NOT NULL REFERENCES osu_identity.transfer(id) ON DELETE CASCADE,
  expires_at timestamptz NOT NULL,
  reusable_after timestamptz NOT NULL
 );
-CREATE TABLE osu_transfer.transfer_pair (
+CREATE TABLE osu_identity.transfer_pair (
  id uuid PRIMARY KEY,
- transfer_id uuid NOT NULL REFERENCES osu_transfer.transfer(id) ON DELETE CASCADE,
- recipient_id text NOT NULL REFERENCES osu_user.principal(id),
+ transfer_id uuid NOT NULL REFERENCES osu_identity.transfer(id) ON DELETE CASCADE,
+ recipient_id text NOT NULL REFERENCES osu_identity.principal(id),
  challenge text NOT NULL,
  expires_at timestamptz NOT NULL,
  approved_at timestamptz,
  UNIQUE(transfer_id,recipient_id)
 );
-CREATE INDEX transfer_pair_expiry ON osu_transfer.transfer_pair(expires_at);
+CREATE INDEX transfer_pair_expiry ON osu_identity.transfer_pair(expires_at);
