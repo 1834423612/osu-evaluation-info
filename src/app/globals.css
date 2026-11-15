@@ -1472,6 +1472,23 @@ h1 {
   border: 0;
 }
 
+/* A seek can freeze an entrance keyframe off-screen. Preserve the open state
+   of portal surfaces while rrweb is paused; live and playing animations stay intact. */
+html.rrweb-paused
+  :is(
+    [data-slot="drawer-content"],
+    [data-slot="drawer-overlay"],
+    [data-slot="sheet-content"],
+    [data-slot="sheet-overlay"],
+    [data-slot="dialog-content"],
+    [data-slot="dialog-overlay"],
+    [data-slot="select-content"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="popover-content"]
+  )[data-state="open"] {
+  animation-name: none !important;
+}
+
 .detail-tabs-row {
   display: flex;
   align-items: center;
