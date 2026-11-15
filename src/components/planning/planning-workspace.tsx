@@ -225,8 +225,8 @@ export function PlanningWorkspace() {
             </div>
             <p>
               {t(
-                "Partial directory · 8 source entrances · 0 human-approved structured plans. Historical versions may not be public. These links do not establish university-wide coverage.",
-                "部分目录 · 8 个来源入口 · 0 份人工审核通过的结构化样表。历史版本可能不公开，这些链接不代表全校覆盖。",
+                `Partial directory · ${sources.sources.length} source entrances · 0 human-approved structured plans. Historical versions may not be public. These links do not establish university-wide coverage.`,
+                `部分目录 · ${sources.sources.length} 个来源入口 · 0 份人工审核通过的结构化样表。历史版本可能不公开，这些链接不代表全校覆盖。`,
               )}
             </p>
             {curricula.map((candidate) => (
@@ -285,7 +285,9 @@ export function PlanningWorkspace() {
               {sources.sources.map((s) => (
                 <article key={s.id}>
                   <span className={styles.chip}>
-                    {t("Pending review", "待复核")}
+                    {s.publicationStatus === "draft"
+                      ? t("Draft · pending review", "草案 · 待复核")
+                      : t("Pending review", "待复核")}
                   </span>
                   <h3>{locale === "zh" ? s.titleZh : s.title}</h3>
                   <p>

@@ -70,7 +70,7 @@ try {
       [sourceId, s.url, s.sha256, s.fetchedAt, s.validatedAt, s.mediaType],
     );
     await client.query(
-      `INSERT INTO ${planningTable("curriculum_version")} (id,source_id,document_kind,program,specialization,campus,ge_system,version,applicable_from,applicable_until,evidence,curriculum,review_status,reviewed_at,reviewer) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) ON CONFLICT DO NOTHING`,
+      `INSERT INTO ${planningTable("curriculum_version")} (id,source_id,document_kind,program,specialization,campus,ge_system,version,applicable_from,applicable_until,evidence,curriculum,review_status,reviewed_at,reviewer,publication_status,plan_scope,academic_year) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) ON CONFLICT DO NOTHING`,
       [
         candidate.id,
         sourceId,
@@ -87,6 +87,9 @@ try {
         candidate.reviewStatus,
         candidate.reviewedAt,
         candidate.reviewer,
+        candidate.publicationStatus,
+        candidate.planScope,
+        candidate.academicYear,
       ],
     );
   }

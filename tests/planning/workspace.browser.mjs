@@ -107,7 +107,7 @@ try {
   await page.getByText(/0 human-approved structured plans/).waitFor();
   assert.equal(
     await page.getByRole("link", { name: "Open official source" }).count(),
-    8,
+    12,
   );
   await page.evaluate(() => {
     localStorage.setItem("course-atlas:locale:v1", "zh");

@@ -30,3 +30,33 @@ test("checked-in official candidates validate and remain explicitly pending", as
     assert.equal(parsed.applicableUntil, null);
   }
 });
+
+test("drafts cannot become approved requirements and academic years remain independent", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const [source] = JSON.parse(
+    await readFile(
+      new URL("../../data/planning/curricula.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const candidate = {
+    ...source,
+    publicationStatus: "draft",
+    planScope: "multi-program",
+    academicYear: "2026-2027",
+    documentKind: "requirements",
+    reviewStatus: "approved",
+    reviewer: "synthetic reviewer",
+    reviewedAt: "2026-01-01T00:00:00Z",
+    source: { ...source.source, validatedAt: "2026-01-01T00:00:00Z" },
+  };
+  assert.equal(curriculumSchema.safeParse(candidate).success, false);
+  const parsed = curriculumSchema.parse({
+    ...candidate,
+    documentKind: "sample-plan",
+    reviewStatus: "pending",
+  });
+  assert.equal(parsed.academicYear, "2026-2027");
+  assert.equal(parsed.planScope, "multi-program");
+  assert.equal(parsed.applicableUntil, null);
+});

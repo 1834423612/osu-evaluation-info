@@ -17,9 +17,7 @@
     "version": "9c374d1d9792a4fa",
     "applicableFrom": null,
     "applicableUntil": null,
-    "evidence": [
-      "Example 1; verify alternatives, footnotes and applicability at the source before use."
-    ],
+    "evidence": ["Example 1 (MolGen 4606 in Autumn of Year 2)"],
     "semesters": [
       {
         "label": "Year 1: Autumn",
@@ -29,35 +27,35 @@
         },
         "entries": [
           {
-            "evidence": "ARTSSCI 1100.07",
+            "evidence": "ARTSSCI 1100.07 (College Survey) - 1 credit",
             "credits": {
               "min": 1,
               "max": 1
             }
           },
           {
-            "evidence": "MATH 1151",
+            "evidence": "MATH 1151 or 1156 (Calculus 1) - 5 credits",
             "credits": {
               "min": 5,
               "max": 5
             }
           },
           {
-            "evidence": "CHEM 1210",
+            "evidence": "CHEM 1210 (Gen Chem 1) - 5 credits",
             "credits": {
               "min": 5,
               "max": 5
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE or MolGen Major ElectiveA - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "GENED 1201",
+            "evidence": "GENED 1201 (GE Launch Seminar)B - 1 credit",
             "credits": {
               "min": 1,
               "max": 1
@@ -73,28 +71,28 @@
         },
         "entries": [
           {
-            "evidence": "CHEM 1220",
+            "evidence": "CHEM 1220 (Gen Chem 2) - 5 credits",
             "credits": {
               "min": 5,
               "max": 5
             }
           },
           {
-            "evidence": "BIO 1113.01",
+            "evidence": "BIO 1113.01 (Energy Transfer) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE (First Semester of Foreign Language) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE or MolGen Major ElectiveA - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
@@ -110,35 +108,35 @@
         },
         "entries": [
           {
-            "evidence": "CHEM 2510",
+            "evidence": "CHEM 2510 (Organic Chem Lecture 1) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "CHEM 2540",
+            "evidence": "CHEM 2540 (Organic Chem Lab 1) - 2 credits",
             "credits": {
               "min": 2,
               "max": 2
             }
           },
           {
-            "evidence": "BIO 1114.01",
+            "evidence": "BIO 1114.01 (Form & Function) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "MOLGEN 4606",
+            "evidence": "MOLGEN 4606 (Molecular Genetics) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE (Second Semester of Foreign Language) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
@@ -154,35 +152,35 @@
         },
         "entries": [
           {
-            "evidence": "CHEM 2520",
+            "evidence": "CHEM 2520 (Organic Chem Lecture 2) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "CHEM 2550",
+            "evidence": "CHEM 2550 (Organic Chem Lab 2) - 2 credits",
             "credits": {
               "min": 2,
               "max": 2
             }
           },
           {
-            "evidence": "BIOCHEM 4511 / MOLGEN 5601",
+            "evidence": "BIOCHEM 4511 (Introduction to Biological Chemistry) or MOLGEN 5601 (Eukaryotic Molecular Genetics Lab)C - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE (Third Semester of Foreign Language) - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE or Free Elective - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
@@ -198,28 +196,28 @@
         },
         "entries": [
           {
-            "evidence": "BIOCHEM 4511 / MOLGEN 5602",
+            "evidence": "BIOCHEM 4511 (Introduction to Biological Chemistry) or MOLGEN 5602 (Eukaryotic Cell and Developmental Biology Lab)C - 4 credits",
             "credits": {
               "min": 4,
               "max": 4
             }
           },
           {
-            "evidence": "MOLGEN 5607",
+            "evidence": "MOLGEN 5607 (Cell Biology) - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "PHYSICS 1200",
+            "evidence": "PHYSICS 1200 or 1250 (Physics 1) - 5 credits",
             "credits": {
               "min": 5,
               "max": 5
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
@@ -235,35 +233,35 @@
         },
         "entries": [
           {
-            "evidence": "MOLGEN 5608",
+            "evidence": "MOLGEN 5608 (Genes and Development) - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "MolGen Major ElectiveA - 2-3 credits",
             "credits": {
               "min": 2,
               "max": 3
             }
           },
           {
-            "evidence": "PHYSICS 1201",
+            "evidence": "PHYSICS 1201 or 1251 (Physics 2) - 5 credits",
             "credits": {
               "min": 5,
               "max": 5
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
@@ -279,35 +277,35 @@
         },
         "entries": [
           {
-            "evidence": "MOLGEN 5645",
+            "evidence": "MOLGEN 5645 (Quantitative, Population, and Evolutionary Genetics) - 2 credits",
             "credits": {
               "min": 2,
               "max": 2
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "MolGen Major ElectiveA - 2-3 credits",
             "credits": {
               "min": 2,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE or MolGen Major ElectiveA - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE or Free Elective (as needed) - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "Free Elective (as needed) - 2-3 credits",
             "credits": {
               "min": 2,
               "max": 3
@@ -323,42 +321,42 @@
         },
         "entries": [
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "MolGen Major ElectiveA - 2-3 credits",
             "credits": {
               "min": 2,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "GE or MolGen Major ElectiveA - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "Free Elective (as needed) - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "Free Elective (as needed) - 3 credits",
             "credits": {
               "min": 3,
               "max": 3
             }
           },
           {
-            "evidence": "Elective / GE: review source",
+            "evidence": "Free Elective (as needed) - 2-3 credits",
             "credits": {
               "min": 2,
               "max": 3
             }
           },
           {
-            "evidence": "GENED 4001",
+            "evidence": "GENED 4001 (GE Reflection Seminar)B - 1 credit",
             "credits": {
               "min": 1,
               "max": 1
@@ -369,6 +367,9 @@
     ],
     "reviewStatus": "pending",
     "reviewedAt": null,
-    "reviewer": null
+    "reviewer": null,
+    "publicationStatus": "unknown",
+    "planScope": "single-program",
+    "academicYear": null
   }
 ]

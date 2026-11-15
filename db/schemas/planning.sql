@@ -29,3 +29,7 @@ CREATE TABLE IF NOT EXISTS osu_planning.curriculum_version (
   UNIQUE(source_id, program, version)
 );
 -- Immutable versions; no TTL or automatic deletion. Private plans never enter this schema.
+ALTER TABLE osu_planning.curriculum_version
+  ADD COLUMN IF NOT EXISTS publication_status text NOT NULL DEFAULT 'unknown' CHECK (publication_status IN ('draft','published','unknown') AND NOT (publication_status='draft' AND document_kind='requirements' AND review_status='approved')),
+  ADD COLUMN IF NOT EXISTS plan_scope text NOT NULL DEFAULT 'unknown' CHECK (plan_scope IN ('single-program','multi-program','unknown')),
+  ADD COLUMN IF NOT EXISTS academic_year text CHECK (academic_year IS NULL OR academic_year ~ '^20[0-9]{2}-20[0-9]{2}$');

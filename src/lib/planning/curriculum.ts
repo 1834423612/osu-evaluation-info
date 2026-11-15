@@ -32,6 +32,17 @@ export const curriculumSchema = z
       })
       .strict(),
     documentKind: z.enum(["sample-plan", "requirements"]),
+    publicationStatus: z
+      .enum(["draft", "published", "unknown"])
+      .default("unknown"),
+    planScope: z
+      .enum(["single-program", "multi-program", "unknown"])
+      .default("unknown"),
+    academicYear: z
+      .string()
+      .regex(/^20\d{2}-20\d{2}$/)
+      .nullable()
+      .default(null),
     program: z.string().min(1).max(150),
     specialization: z.string().max(150).nullable(),
     campus: z.string().max(80).nullable(),
@@ -65,6 +76,15 @@ export const curriculumSchema = z
     reviewer: z.string().min(1).max(100).nullable(),
   })
   .strict()
+  .refine(
+    (x) =>
+      !(
+        x.publicationStatus === "draft" &&
+        x.documentKind === "requirements" &&
+        x.reviewStatus === "approved"
+      ),
+    { message: "Drafts cannot be approved as authoritative requirements" },
+  )
   .refine(
     (x) =>
       x.reviewStatus !== "approved" ||

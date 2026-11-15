@@ -81,6 +81,9 @@ def structure_tables(data, record):
         return []
     return [{'schemaVersion': 1, 'id': 'table-' + record['sha256'][:24],
              'source': {'url': record['url'], 'sha256': record['sha256'], 'fetchedAt': record['fetchedAt'], 'validatedAt': None, 'mediaType': 'text/html'},
+             'publicationStatus': 'draft' if re.search(r'\bdraft\b', ' '.join(parser.text), re.I) else 'unknown',
+             'planScope': 'multi-program' if re.search(r'\b(?:double|dual) major', ' '.join(parser.text), re.I) else 'unknown',
+             'academicYear': None,
              'documentKind': 'sample-plan', 'program': 'Unassigned; review source', 'specialization': None,
              'campus': None, 'geSystem': None, 'version': record['sha256'][:16], 'applicableFrom': None, 'applicableUntil': None,
              'evidence': ['Eight explicitly captioned semester tables; verify program, footnotes and applicability.'],
