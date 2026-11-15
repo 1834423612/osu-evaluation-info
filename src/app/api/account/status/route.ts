@@ -12,7 +12,7 @@ export async function GET() {
     try {
       const result = await queryDatabase<{ ready: boolean }>(
         "SELECT to_regclass($1) IS NOT NULL AS ready",
-        ["public." + authTablePrefix() + "user"],
+        [authTablePrefix() + "user"],
       );
       ready = result.rows[0].ready;
     } catch {}
