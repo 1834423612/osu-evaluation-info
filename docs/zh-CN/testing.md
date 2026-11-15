@@ -380,8 +380,11 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | [tests/user-data/backup.test.mjs](../../tests/user-data/backup.test.mjs) | 单元 | 认证表精确白名单及安全的备份连接凭据传递 |
 | [tests/user-data/auth-migration.integration.test.mjs](../../tests/user-data/auth-migration.integration.test.mjs) | 集成 | 拒绝接管当前搜索路径 schema 中无归属标记的认证表 |
 | [tests/user-data/history.browser.mjs](../../tests/user-data/history.browser.mjs) | 浏览器 | API 全部模拟；英文 1440／中文 320 像素下的 JSON 清理导出、站内清空／取消弹窗及旧标签页删除 |
+| [tests/user-data/email-login.live.browser.mjs](../../tests/user-data/email-login.live.browser.mjs) | 真实浏览器 | 两封实际投递的验证码、拒绝重复使用、独立设备登录同一账号与分别退出 |
 
 通过 `node tests/user-data/history.browser.mjs` 运行记录界面检查。脚本使用隔离浏览器存储和本地下载，不发送真实邮件或外部统计。
+
+真实邮件检查需要已配置的 SMTP 和交互式终端。设置 `ALLOW_SMTP_TEST_EMAILS=1`，将 `AUTH_TEST_EMAIL` 设为自己控制的邮箱，再运行 `node tests/user-data/email-login.live.browser.mjs`。按提示依次输入收到的六位验证码，终端不回显。脚本实际发送两封邮件，可能在目标服务的认证空间中创建账号，并创建、退出两个会话，不上传收藏。默认使用开发服务器；远程目标额外要求 `ALLOW_REMOTE_USER_DATA_TESTS=1`。浏览器模块、可执行文件及 `USER_DATA_TEST_BASE_URL` 与其他用户数据检查一致。不要把验证码写入脚本、日志或 CI 变量。
 
 ```sh
 node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs

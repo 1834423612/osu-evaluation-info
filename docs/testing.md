@@ -382,8 +382,11 @@ Collection and backup browser checks use the Node/Playwright environment above. 
 | [tests/user-data/backup.test.mjs](../tests/user-data/backup.test.mjs) | Unit | Exact auth model allowlist and credential-safe backup connection options |
 | [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration | Refuse unowned authentication tables in the active search-path schema |
 | [tests/user-data/history.browser.mjs](../tests/user-data/history.browser.mjs) | Browser | Mocked APIs; sanitized JSON download, custom clear/cancel dialog, stale cross-tab deletion at 1440 English / 320 Chinese pixels |
+| [tests/user-data/email-login.live.browser.mjs](../tests/user-data/email-login.live.browser.mjs) | Live browser | Two real delivered email codes, consumed-code rejection, same account on independent devices and separate sign-out |
 
 Run the history UI check with `node tests/user-data/history.browser.mjs`. It uses isolated browser storage, triggers a local download and sends no real mail or external analytics.
+
+The live email check requires configured SMTP and an interactive terminal. Set `ALLOW_SMTP_TEST_EMAILS=1` and `AUTH_TEST_EMAIL` to a mailbox you control, then run `node tests/user-data/email-login.live.browser.mjs`. Enter each delivered six-digit code when prompted; terminal echo is disabled. The script sends two real messages, can create an account in the target server's authentication namespace, and creates then signs out two sessions. It does not upload favorites. Use the development server by default; remote targets additionally require `ALLOW_REMOTE_USER_DATA_TESTS=1`. Browser module/executable variables and `USER_DATA_TEST_BASE_URL` match the other user-data checks. Do not store codes in scripts, logs or CI variables.
 
 ```sh
 node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs
