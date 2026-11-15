@@ -296,7 +296,12 @@ try {
     return new Promise((resolve) => {
       const req = db.transaction("sync").objectStore("sync").get(id);
       req.onsuccess = () => {
-        resolve(req.result?.outbox.length === 0);
+        resolve(
+          req.result?.outbox.length === 0 &&
+            Object.values(req.result.baseline).filter(
+              (x) => x.item?.kind === "collection",
+            ).length === 2,
+        );
         db.close();
       };
     });
@@ -305,6 +310,7 @@ try {
     .filter((x) => x.item?.kind === "collection")
     .map((x) => x.item.payload.name)
     .sort();
+
   assert.deepEqual(folders, [
     "Cloud collection name",
     "Device collection name (copy)",
