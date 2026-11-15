@@ -291,6 +291,8 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 | [tests/user-data/local.test.mjs](../../tests/user-data/local.test.mjs)                             | Unit        | 导入、移除、撤销保留完整快照和中途改动                               |
 | [tests/user-data/exchange.test.mjs](../../tests/user-data/exchange.test.mjs)                       | Unit        | 四类交换格式验证、上限、公开信息筛减和导入身份                       |
 | [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                               | Unit        | 固定来源验证、流式请求上限、开发环境命名空间隔离                     |
+| [tests/user-data/auth-errors.test.mjs](../../tests/user-data/auth-errors.test.mjs) | 单元 | 区分密码、验证码、来源、节流和通行密钥错误；不访问服务或写入数据 |
+| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成 | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、验证码旧账号、密码设置、回环来源与真实签名的通行密钥邮箱匹配；模拟邮件，结束后清理 |
 | [tests/user-data/auth.integration.test.mjs](../../tests/user-data/auth.integration.test.mjs)       | Integration | 真实验证码、密码、密钥、会话和恢复协议；注入邮件投递，使用临时认证表 |
 | [tests/user-data/sharing.integration.test.mjs](../../tests/user-data/sharing.integration.test.mjs) | Integration | 真实 SQL 验证凭据、过期、短码、归属、计数、并发上限和重试            |
 | [tests/user-data/sharing.browser.mjs](../../tests/user-data/sharing.browser.mjs)                   | Browser     | 创建并撤销测试分享；部分转存、原地详情、重试和手机管理               |
