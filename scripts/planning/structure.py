@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import importlib.util
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -31,7 +32,10 @@ def credit_range(text):
 
 def structure(data, record):
     if record['url'] != 'https://molgen.osu.edu/sample-curriculum':
-        return []
+        spec = importlib.util.spec_from_file_location('planning_tables', Path(__file__).with_name('table_adapter.py'))
+        adapter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(adapter)
+        return adapter.structure_tables(data, record)
     parser = Blocks()
     parser.feed(data.decode('utf-8'))
     candidates = []

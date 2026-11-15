@@ -24,3 +24,17 @@ class StructureTests(unittest.TestCase):
         self.assertEqual(module.structure(b'<h2>New unsupported layout</h2>', {'url':'https://molgen.osu.edu/sample-curriculum'}), [])
         self.assertEqual(module.credit_range('Elective 2-3 credits'), {'min':2,'max':3})
         self.assertIsNone(module.credit_range('Elective -'))
+
+class TableAdapterTests(unittest.TestCase):
+    def test_captioned_public_tables_are_pending_and_unknown_layouts_are_rejected(self):
+        spec = importlib.util.spec_from_file_location('tables', Path(__file__).parents[2] / 'scripts/planning/table_adapter.py')
+        adapter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(adapter)
+        html = '<h1>Sample four-year plan</h1>' + ''.join('<table><caption>Year %s: %s</caption><tr><th>Course</th><th>Credits</th></tr><tr><td>CSE 2999H</td><td>3-4</td></tr></table>' % (year, term) for year in range(1,5) for term in ['Autumn','Spring'])
+        record={'url':'https://example.osu.edu/sample', 'sha256':'a'*64, 'fetchedAt':'2026-01-01T00:00:00Z'}
+        candidate=adapter.structure_tables(html.encode(),record)[0]
+        self.assertEqual(candidate['reviewStatus'],'pending')
+        self.assertIsNone(candidate['semesters'][0]['credits'])
+        self.assertEqual(candidate['semesters'][0]['entries'][0]['credits'],{'min':3,'max':4})
+        self.assertEqual(adapter.structure_tables(html.replace('CSE 2999H','CSE 2999H or MATH 2999').encode(),record),[])
+        self.assertEqual(adapter.structure_tables(html.encode(),{**record,'url':'https://evil.example/'}),[])
