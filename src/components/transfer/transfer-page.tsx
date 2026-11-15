@@ -1,4 +1,5 @@
 "use client";
+import { DraftForm } from "@/components/forms/draft-guard";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
@@ -217,7 +218,7 @@ export function TransferPage({ id }: { id?: string }) {
                   "输入发送设备上的配对码，无需文件或账号。",
                 )}
               </p>
-              <form
+              <DraftForm
                 className={styles.fields}
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -246,7 +247,7 @@ export function TransferPage({ id }: { id?: string }) {
                 <Button disabled={busy || code.length !== 6}>
                   {text(locale, "Request transfer", "请求接收")}
                 </Button>
-              </form>
+              </DraftForm>
             </section>
             <section className={styles.panel}>
               <h2>

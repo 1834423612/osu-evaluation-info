@@ -1,4 +1,5 @@
 "use client";
+import { DraftForm } from "@/components/forms/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -177,7 +178,7 @@ export function SharedPage({ id }: { id?: string }) {
                 "输入分享码，先预览清单，再选择喜欢的内容。",
               )}
             </p>
-            <form
+            <DraftForm
               className={styles.fields}
               onSubmit={(e) => {
                 e.preventDefault();
@@ -194,7 +195,7 @@ export function SharedPage({ id }: { id?: string }) {
                 <Share2 size={14} />
                 {text(locale, "Open collection", "打开清单")}
               </Button>
-            </form>
+            </DraftForm>
           </section>
         ) : loading ? (
           <p>{text(locale, "Loading shared items…", "正在读取分享…")}</p>
