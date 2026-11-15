@@ -1,4 +1,5 @@
 "use client";
+import { confirmDiscard } from "@/components/forms/draft-guard";
 import { recordCourseOpen } from "@/lib/telemetry/client";
 import { PageShare } from "@/components/sharing/page-share";
 import { SearchMatch } from "./search-match";
@@ -458,6 +459,7 @@ export function CourseCard({
       closeDetails();
       return;
     }
+    if (tab && nextTab !== tab && !confirmDiscard()) return;
     const params = new URLSearchParams(window.location.search);
     const needsHistoryEntry =
       params.get("course") !== course.id || params.get("detailTab") !== nextTab;
@@ -493,6 +495,7 @@ export function CourseCard({
         return;
       }
     }
+    if (!confirmDiscard()) return;
     const params = new URLSearchParams(window.location.search);
     params.delete("course");
     params.delete("detailTab");

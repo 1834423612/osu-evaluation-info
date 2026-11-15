@@ -16,7 +16,7 @@
   border-color: #b3c6bf;
 }
 .content {
-  z-index: 180;
+  z-index: 8510;
   width: var(--radix-select-trigger-width);
   min-width: 130px;
   max-width: calc(100vw - 20px);

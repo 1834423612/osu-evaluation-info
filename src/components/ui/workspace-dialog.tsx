@@ -2,7 +2,15 @@
 import { Dialog } from "radix-ui";
 import { Drawer } from "vaul";
 import { X } from "lucide-react";
-import { useSyncExternalStore, type ReactNode } from "react";
+import {
+  useSyncExternalStore,
+  useCallback,
+  useRef,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useDraftGuard, formFingerprint } from "@/components/forms/draft-guard";
 import { Button } from "./button";
 import { DrawerDismissHandle } from "./drawer-dismiss-handle";
 import styles from "./workspace.module.css";
@@ -20,6 +28,8 @@ export function WorkspaceDialog({
   closeLabel,
   children,
   wide = false,
+  dirty = false,
+  guard = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -28,14 +38,73 @@ export function WorkspaceDialog({
   closeLabel: string;
   children: ReactNode;
   wide?: boolean;
+  dirty?: boolean;
+  guard?: boolean;
 }) {
   const mobile = useSyncExternalStore(subscribe, snapshot, () => false);
-  const content = <div className={styles.dialogBody}>{children}</div>;
+  const body = useRef<HTMLDivElement>(null);
+  const baseline = useRef<string | null>(null);
+  const observer = useRef<MutationObserver | null>(null);
+  const [edited, setEdited] = useState(false);
+  const [previousOpen, setPreviousOpen] = useState(open);
+  if (previousOpen !== open) {
+    setPreviousOpen(open);
+    if (!open) setEdited(false);
+  }
+  useDraftGuard(guard && open && (dirty || edited));
+  useEffect(() => {
+    if (!open) baseline.current = null;
+    else if (body.current && baseline.current === null)
+      baseline.current = formFingerprint(body.current);
+  }, [open]);
+  const bindBody = useCallback((node: HTMLDivElement | null) => {
+    body.current = node;
+    observer.current?.disconnect();
+    if (!node) return;
+    if (baseline.current === null) baseline.current = formFingerprint(node);
+    observer.current = new MutationObserver(() =>
+      setEdited(formFingerprint(node) !== baseline.current),
+    );
+    observer.current.observe(node, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["checked", "value"],
+    });
+  }, []);
+  const change = (next: boolean) => {
+    if (
+      !next &&
+      guard &&
+      (dirty || edited) &&
+      !window.confirm(
+        closeLabel === "关闭"
+          ? "有尚未保存的修改，确定放弃？"
+          : "Discard your unsaved changes?",
+      )
+    )
+      return;
+    if (!next) setEdited(false);
+    onOpenChange(next);
+  };
+  const content = (
+    <div
+      ref={bindBody}
+      className={styles.dialogBody}
+      onInputCapture={() => {
+        if (body.current)
+          setEdited(formFingerprint(body.current) !== baseline.current);
+      }}
+    >
+      {children}
+    </div>
+  );
   if (mobile)
     return (
       <Drawer.Root
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={change}
         shouldScaleBackground={false}
         repositionInputs={false}
         handleOnly
@@ -50,7 +119,7 @@ export function WorkspaceDialog({
           >
             <DrawerDismissHandle
               label={closeLabel}
-              onDismiss={() => onOpenChange(false)}
+              onDismiss={() => change(false)}
             />
             <div className={styles.dialogHeading}>
               <Drawer.Title className={styles.dialogTitle}>
@@ -76,7 +145,7 @@ export function WorkspaceDialog({
       </Drawer.Root>
     );
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={change}>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content

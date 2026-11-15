@@ -1,5 +1,6 @@
 "use client";
 
+import { useDraftGuard } from "@/components/forms/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import { Check, Download, LoaderCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function SyllabusDownload({
     fileName: string;
   } | null>(null);
   const [blocked, setBlocked] = useState(false);
+  useDraftGuard(busy);
   const url = useRef<string | null>(null),
     mounted = useRef(false),
     pending = useRef(false),

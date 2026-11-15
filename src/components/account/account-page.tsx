@@ -1,4 +1,5 @@
 "use client";
+import { confirmDiscard, DraftForm } from "@/components/forms/draft-guard";
 import { useEffect, useState } from "react";
 import {
   Fingerprint,
@@ -223,8 +224,9 @@ function AccountWorkspace() {
                 disabled={busy}
                 onClick={() =>
                   void run(async () => {
+                    if (!confirmDiscard()) return;
                     const result = await authClient.signOut();
-                    if (!result.error) window.location.reload();
+                    if (!result.error) await refetch();
                     return result;
                   })
                 }
@@ -272,7 +274,7 @@ function AccountWorkspace() {
                     <UserRound size={18} />
                     {text(locale, "Profile", "个人资料")}
                   </h2>
-                  <form
+                  <DraftForm
                     onSubmit={(e) => {
                       e.preventDefault();
                       void run(
@@ -310,7 +312,7 @@ function AccountWorkspace() {
                     >
                       {text(locale, "Save changes", "保存更改")}
                     </Button>
-                  </form>
+                  </DraftForm>
                 </section>
                 <div id="sync" className={layout.section}>
                   <SyncPanel accountId={session.user.id} locale={locale} />
@@ -430,7 +432,7 @@ function AccountWorkspace() {
                         <KeyRound size={18} />
                         {text(locale, "Password", "登录密码")}
                       </h2>
-                      <form
+                      <DraftForm
                         onSubmit={(e) => {
                           e.preventDefault();
                           void run(
@@ -496,7 +498,7 @@ function AccountWorkspace() {
                         <Button variant="outline" disabled={busy}>
                           {text(locale, "Update password", "更新密码")}
                         </Button>
-                      </form>
+                      </DraftForm>
                       <details className={layout.recovery}>
                         <summary>
                           {text(locale, "Recovery codes", "恢复码")}

@@ -144,6 +144,7 @@ export function ShareCollection({
         </span>
       ) : null}
       <WorkspaceDialog
+        guard={!created}
         open={open}
         onOpenChange={(value) => {
           setOpen(value);

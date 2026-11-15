@@ -1,3 +1,4 @@
+import { DraftGuard } from "@/components/forms/draft-guard";
 import { Suspense } from "react";
 import { ProductAnalytics } from "@/components/analytics/product-analytics";
 import { SyncProvider } from "@/components/sync/sync-provider";
@@ -101,6 +102,7 @@ export default function RootLayout({
             window.umamiBeforeSend = ${analyticsBeforeSend.toString()};`,
           }}
         />
+        <DraftGuard />
         <SyncProvider />
         <Suspense fallback={null}>
           <ProductAnalytics />

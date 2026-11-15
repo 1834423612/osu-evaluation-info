@@ -151,6 +151,7 @@ export function TransferSender({
       </Button>
       {notice && !open ? <small role="status">{notice}</small> : null}
       <WorkspaceDialog
+        guard={!created}
         open={open}
         onOpenChange={setOpen}
         title={text(locale, "Transfer to another device", "转存到其他设备")}
