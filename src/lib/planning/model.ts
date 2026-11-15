@@ -25,6 +25,7 @@ export const courseSchema = z
 export const planSchema = z
   .object({
     schemaVersion: z.literal(1),
+    pdfOrigin: z.enum(["export", "browser-print"]).default("export"),
     source: z.enum([
       "student-plan",
       "standard-audit",
@@ -57,6 +58,7 @@ export type PlanCourse = z.infer<typeof courseSchema>;
 export function emptyPlan(): Plan {
   return {
     schemaVersion: 1,
+    pdfOrigin: "export",
     source: "manual",
     auditMode: "unknown",
     appliedVersion: null,
