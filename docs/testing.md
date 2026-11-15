@@ -309,80 +309,80 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 
 Temporary transfer tests use the sharing database/browser flags. The browser test creates synthetic transfers and revokes them in cleanup, retaining audit rows.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
-| [tests/user-data/transfers.integration.test.mjs](../tests/user-data/transfers.integration.test.mjs) | Integration | Real SQL pairing approval, ownership, concurrent leases, expiry, idempotent completion and read-only access |
-| [tests/user-data/transfers.browser.mjs](../tests/user-data/transfers.browser.mjs) | Browser | Real API two-browser pairing, partial import, refresh recovery, lost completion response and 320/390px layouts |
+| Script                                                                                              | Type        | Purpose                                                                                                        |
+| --------------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------- |
+| [tests/user-data/transfers.integration.test.mjs](../tests/user-data/transfers.integration.test.mjs) | Integration | Real SQL pairing approval, ownership, concurrent leases, expiry, idempotent completion and read-only access    |
+| [tests/user-data/transfers.browser.mjs](../tests/user-data/transfers.browser.mjs)                   | Browser     | Real API two-browser pairing, partial import, refresh recovery, lost completion response and 320/390px layouts |
 
 Page-link browser tests require `ALLOW_SERVER_WRITES=1`, create synthetic public links and delete them through the owner API in cleanup. Course source requests and external collectors are intercepted. Database tests use `USER_DATA_INTEGRATION=1` and disposable schemas; target/opt-in variables match other sharing tests.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
-| [tests/user-data/page-links.test.mjs](../tests/user-data/page-links.test.mjs) | Unit | Public URL allowlist, secret removal and exact course/detail identities |
-| [tests/user-data/page-links.integration.test.mjs](../tests/user-data/page-links.integration.test.mjs) | Integration | Real SQL canonical-link reuse, public snapshots and separate preview/open counters |
-| [tests/user-data/page-links.browser.mjs](../tests/user-data/page-links.browser.mjs) | Browser | Real link creation and removal, bot previews, missing-result course drawers, reference anchors and cancellation |
+| Script                                                                                                | Type        | Purpose                                                                                                         |
+| ----------------------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| [tests/user-data/page-links.test.mjs](../tests/user-data/page-links.test.mjs)                         | Unit        | Public URL allowlist, secret removal and exact course/detail identities                                         |
+| [tests/user-data/page-links.integration.test.mjs](../tests/user-data/page-links.integration.test.mjs) | Integration | Real SQL canonical-link reuse, public snapshots and separate preview/open counters                              |
+| [tests/user-data/page-links.browser.mjs](../tests/user-data/page-links.browser.mjs)                   | Browser     | Real link creation and removal, bot previews, missing-result course drawers, reference anchors and cancellation |
 
 First-party telemetry database checks use `USER_DATA_INTEGRATION=1`. The browser test mocks collectors and other data APIs, writes no live telemetry, and uses `USER_DATA_TEST_BASE_URL` with an isolated browser profile.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
-| [tests/user-data/telemetry.test.mjs](../tests/user-data/telemetry.test.mjs) | Unit | Typed event redaction, query normalization, stable instructor keys and trusted network headers |
-| [tests/user-data/telemetry.integration.test.mjs](../tests/user-data/telemetry.integration.test.mjs) | Integration | Atomic batched SQL replay receipts, daily dimensions and IP provenance; disposable schema |
-| [tests/user-data/telemetry.browser.mjs](../tests/user-data/telemetry.browser.mjs) | Browser | Mocked collector; durable retries, Strict Mode, cross-tab favorites, actual course opens and opt-out |
+| Script                                                                                              | Type        | Purpose                                                                                              |
+| --------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| [tests/user-data/telemetry.test.mjs](../tests/user-data/telemetry.test.mjs)                         | Unit        | Typed event redaction, query normalization, stable instructor keys and trusted network headers       |
+| [tests/user-data/telemetry.integration.test.mjs](../tests/user-data/telemetry.integration.test.mjs) | Integration | Atomic batched SQL replay receipts, daily dimensions and IP provenance; disposable schema            |
+| [tests/user-data/telemetry.browser.mjs](../tests/user-data/telemetry.browser.mjs)                   | Browser     | Mocked collector; durable retries, Strict Mode, cross-tab favorites, actual course opens and opt-out |
 
 Maintenance/statistics database checks use `USER_DATA_INTEGRATION=1` and random disposable schemas. Popular-page browser tests mock APIs and write no live ranking or visit data; they use `USER_DATA_TEST_BASE_URL` and `USER_DATA_SCREENSHOT_DIR`.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
-| [tests/user-data/maintenance.integration.test.mjs](../tests/user-data/maintenance.integration.test.mjs) | Integration | Ownership-checked retention, dry runs, permanent source preservation, live favorites and expired-cursor reconciliation |
-| [tests/user-data/statistics.integration.test.mjs](../tests/user-data/statistics.integration.test.mjs) | Integration | Active-account popularity, deletion, ambiguous-identity exclusion, public summaries and environment-separated aggregates |
-| [tests/user-data/popular.browser.mjs](../tests/user-data/popular.browser.mjs) | Browser | Mocked bilingual 320/390/1440px lists, initial-render errors, navigation, in-place details and empty states |
+| Script                                                                                                  | Type        | Purpose                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [tests/user-data/maintenance.integration.test.mjs](../tests/user-data/maintenance.integration.test.mjs) | Integration | Ownership-checked retention, dry runs, permanent source preservation, live favorites and expired-cursor reconciliation   |
+| [tests/user-data/statistics.integration.test.mjs](../tests/user-data/statistics.integration.test.mjs)   | Integration | Active-account popularity, deletion, ambiguous-identity exclusion, public summaries and environment-separated aggregates |
+| [tests/user-data/popular.browser.mjs](../tests/user-data/popular.browser.mjs)                           | Browser     | Mocked bilingual 320/390/1440px lists, initial-render errors, navigation, in-place details and empty states              |
 
 Diagnostic database tests use `USER_DATA_INTEGRATION=1`, generate a disposable schema and remove it afterward. Diagnostic browser tests read browser/device capabilities locally after explicit toggles; collectors and submission APIs are intercepted, so they upload no reports. Set `USER_DATA_TEST_BASE_URL`, `USER_DATA_SCREENSHOT_DIR`, and the usual Playwright module/executable overrides as needed. Statistics checks use synthetic responses and include a locked administrator view.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
-| [tests/diagnostics/protocol.test.mjs](../tests/diagnostics/protocol.test.mjs) | Unit | Complete registry, consent categories, budgets, credential-field rejection, trusted headers and bounded JPEG metadata |
-| [tests/diagnostics/reports.integration.test.mjs](../tests/diagnostics/reports.integration.test.mjs) | Integration | Idempotent session-bound reports, independent observations, seven-day visibility and exact keyset pagination |
-| [tests/diagnostics/diagnostics.browser.mjs](../tests/diagnostics/diagnostics.browser.mjs) | Browser | Local checks, opt-in fingerprints, permission isolation, reviewed retry and 320/390/1440px layouts |
-| [tests/diagnostics/statistics.browser.mjs](../tests/diagnostics/statistics.browser.mjs) | Browser | Protected loading, long request fields, report preview and 320/390/768/1440px layouts |
+| Script                                                                                              | Type        | Purpose                                                                                                               |
+| --------------------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------- |
+| [tests/diagnostics/protocol.test.mjs](../tests/diagnostics/protocol.test.mjs)                       | Unit        | Complete registry, consent categories, budgets, credential-field rejection, trusted headers and bounded JPEG metadata |
+| [tests/diagnostics/reports.integration.test.mjs](../tests/diagnostics/reports.integration.test.mjs) | Integration | Idempotent session-bound reports, independent observations, seven-day visibility and exact keyset pagination          |
+| [tests/diagnostics/diagnostics.browser.mjs](../tests/diagnostics/diagnostics.browser.mjs)           | Browser     | Local checks, opt-in fingerprints, permission isolation, reviewed retry and 320/390/1440px layouts                    |
+| [tests/diagnostics/statistics.browser.mjs](../tests/diagnostics/statistics.browser.mjs)             | Browser     | Protected loading, long request fields, report preview and 320/390/768/1440px layouts                                 |
 
 The capacity browser check seeds an isolated browser profile with synthetic favorites, mocks data/collector APIs, and tests a failed undo after an intervening addition. It writes no server data. Use `USER_DATA_TEST_BASE_URL` and `USER_DATA_SCREENSHOT_DIR` as for the other browser checks.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
+| Script                                                                          | Type    | Purpose                                                                                                                             |
+| ------------------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | [tests/user-data/capacity.browser.mjs](../tests/user-data/capacity.browser.mjs) | Browser | Full-collection errors, non-destructive undo failure, retained intervening favorites, empty export rejection and phone toast layout |
 
 The live replay test is excluded from `pnpm test` and requires `ALLOW_UMAMI_WRITES=1`. It uses actual Umami scripts/configuration and creates synthetic remote events and recordings; application APIs are mocked. `REPLAY_REQUIRE_ROUND_TRIP=1` requires authenticated retrieval using server-only `UMAMI_API_KEY`. Use `REPLAY_TEST_WIDTH=390` for the phone run. See [replay operations](analytics/umami.md) for production-build and browser settings.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
+| Script                                                                                | Type                     | Purpose                                                                                                                     |
+| ------------------------------------------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
 | [tests/analytics/replay-live.browser.mjs](../tests/analytics/replay-live.browser.mjs) | Live browser integration | Real chunk acceptance, single-visit startup, authenticated replay retrieval, snapshots, menus, paused portals and scrolling |
 
 Concurrent saved-item checks use two tabs in one isolated browser context, share local storage/IndexedDB, and mock all APIs. They observe real transaction callbacks and assert that overlapping remove/undo operations retain both items. No server data is written.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
+| Script                                                                                          | Type    | Purpose                                                                                      |
+| ----------------------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------- |
 | [tests/user-data/concurrent-saved.browser.mjs](../tests/user-data/concurrent-saved.browser.mjs) | Browser | 32 cross-tab commits, shared transaction coverage, retained unrelated edits and phone layout |
 
 The scoped-management browser check uses a synthetic account and local/paused-cloud snapshots. Authentication and all API traffic are mocked; cross-tab sign-out must remove the prior account's management rows, selection and draft name without a page reload.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
+| Script                                                                                            | Type    | Purpose                                                            |
+| ------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------ |
 | [tests/user-data/scoped-management.browser.mjs](../tests/user-data/scoped-management.browser.mjs) | Browser | Workspace-scoped management state and cross-tab sign-out isolation |
 
 Collection and backup browser checks use the Node/Playwright environment above. All APIs are mocked; writes stay in isolated browser storage and local downloads. The migration integration check requires `USER_DATA_INTEGRATION=1`, creates random-prefixed tables, runs the real CLI and removes its temporary tables. The backup unit test does not connect to PostgreSQL.
 
-| Script | Type | Purpose |
-| --- | --- | --- |
-| [tests/user-data/collections.test.mjs](../tests/user-data/collections.test.mjs) | Unit | Private collection validation, preserved organization, bounded batches and rename conflicts |
-| [tests/user-data/collections.browser.mjs](../tests/user-data/collections.browser.mjs) | Browser | Create, organize, rename, delete/undo, scoped export and private restore at 1440/768/390/320 pixels |
-| [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs) | Unit | RMP source identities, preserved ratings and public exchange validation |
-| [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs) | Browser | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles |
-| [tests/user-data/backup.test.mjs](../tests/user-data/backup.test.mjs) | Unit | Exact auth model allowlist and credential-safe backup connection options |
-| [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration | Refuse unowned authentication tables in the active search-path schema |
-| [tests/user-data/history.browser.mjs](../tests/user-data/history.browser.mjs) | Browser | Mocked APIs; sanitized JSON download, custom clear/cancel dialog, stale cross-tab deletion at 1440 English / 320 Chinese pixels |
-| [tests/user-data/email-login.live.browser.mjs](../tests/user-data/email-login.live.browser.mjs) | Live browser | Two real delivered email codes, consumed-code rejection, same account on independent devices and separate sign-out |
+| Script                                                                                                        | Type         | Purpose                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| [tests/user-data/collections.test.mjs](../tests/user-data/collections.test.mjs)                               | Unit         | Private collection validation, preserved organization, bounded batches and rename conflicts                                     |
+| [tests/user-data/collections.browser.mjs](../tests/user-data/collections.browser.mjs)                         | Browser      | Create, organize, rename, delete/undo, scoped export and private restore at 1440/768/390/320 pixels                             |
+| [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs)                           | Unit         | RMP source identities, preserved ratings and public exchange validation                                                         |
+| [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs)                     | Browser      | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles                                      |
+| [tests/user-data/backup.test.mjs](../tests/user-data/backup.test.mjs)                                         | Unit         | Exact auth model allowlist and credential-safe backup connection options                                                        |
+| [tests/user-data/auth-migration.integration.test.mjs](../tests/user-data/auth-migration.integration.test.mjs) | Integration  | Refuse unowned authentication tables in the active search-path schema                                                           |
+| [tests/user-data/history.browser.mjs](../tests/user-data/history.browser.mjs)                                 | Browser      | Mocked APIs; sanitized JSON download, custom clear/cancel dialog, stale cross-tab deletion at 1440 English / 320 Chinese pixels |
+| [tests/user-data/email-login.live.browser.mjs](../tests/user-data/email-login.live.browser.mjs)               | Live browser | Two real delivered email codes, consumed-code rejection, same account on independent devices and separate sign-out              |
 
 Run the history UI check with `node tests/user-data/history.browser.mjs`. It uses isolated browser storage, triggers a local download and sends no real mail or external analytics.
 
@@ -394,3 +394,15 @@ node tests/user-data/collections.browser.mjs
 node tests/user-data/rmp-favorites.browser.mjs
 USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.test.mjs
 ```
+
+## Browser compatibility and synchronization budgets
+
+The unit checks below run in default `pnpm test` without external requests. The syllabus integration check requires `SYLLABUS_DATABASE_TEST=1` and `DATABASE_URL`; it creates, writes and removes a random disposable schema, mocks official requests and does not rewrite business archives. Catalog history integration also compares chunked results with the original SQL and verifies interrupted rollback. `telemetry.browser.mjs` additionally disables randomUUID and then all crypto to verify navigation remains usable; collectors are mocked. RMP Python collector tests cover request/runtime ceilings, long cooldown pauses and completeness checks after pipeline flush.
+
+| Script                                                                                                    | Type        | Purpose                                                                                                            |
+| --------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| [tests/user-data/uuid.test.mjs](../tests/user-data/uuid.test.mjs)                                         | Unit        | Secure UUID fallback when randomUUID is unavailable; native binding and failure without a secure random source     |
+| [tests/catalog/change-budgets.test.mjs](../tests/catalog/change-budgets.test.mjs)                         | Unit        | Bounded history batches/runtime and no completion marker after expiry                                              |
+| [tests/syllabus/refresh-budget.test.mjs](../tests/syllabus/refresh-budget.test.mjs)                       | Unit        | Runtime-aware pacing and Retry-After pause without extra requests                                                  |
+| [tests/syllabus/refresh-cache.test.mjs](../tests/syllabus/refresh-cache.test.mjs)                         | Unit        | Active/archive/missing freshness, closing week and final post-term check                                           |
+| [tests/syllabus/refresh-cache.integration.test.mjs](../tests/syllabus/refresh-cache.integration.test.mjs) | Integration | Real SQL cache reuse, changed metadata, fresh index after pause, migration seeding, failures and retained archives |

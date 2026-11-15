@@ -307,80 +307,80 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 
 临时转存测试使用与分享测试相同的数据库和浏览器开关；浏览器测试创建并最终撤销测试转存，保留审计行。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
-| [tests/user-data/transfers.integration.test.mjs](../../tests/user-data/transfers.integration.test.mjs) | Integration | 真实 SQL 的配对确认、权限、并发租约、过期、幂等完成和只读访问 |
-| [tests/user-data/transfers.browser.mjs](../../tests/user-data/transfers.browser.mjs) | Browser | 真实接口的双浏览器配对、部分导入、刷新恢复、确认响应丢失及 320/390 像素布局 |
+| 脚本                                                                                                   | 类型        | 用途                                                                        |
+| ------------------------------------------------------------------------------------------------------ | ----------- | --------------------------------------------------------------------------- |
+| [tests/user-data/transfers.integration.test.mjs](../../tests/user-data/transfers.integration.test.mjs) | Integration | 真实 SQL 的配对确认、权限、并发租约、过期、幂等完成和只读访问               |
+| [tests/user-data/transfers.browser.mjs](../../tests/user-data/transfers.browser.mjs)                   | Browser     | 真实接口的双浏览器配对、部分导入、刷新恢复、确认响应丢失及 320/390 像素布局 |
 
 页面分享浏览器测试使用 `ALLOW_SERVER_WRITES=1`，创建测试公开链接并在结束时通过所有者接口删除；课程来源请求和外部统计被拦截。数据库测试使用 `USER_DATA_INTEGRATION=1` 和临时 schema，开关及目标地址与其他分享测试一致。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
-| [tests/user-data/page-links.test.mjs](../../tests/user-data/page-links.test.mjs) | Unit | 公开 URL 白名单、凭据剔除及课程和详情身份 |
-| [tests/user-data/page-links.integration.test.mjs](../../tests/user-data/page-links.integration.test.mjs) | Integration | 真实 SQL 的规范链接复用、公开快照和独立预览/打开计数 |
-| [tests/user-data/page-links.browser.mjs](../../tests/user-data/page-links.browser.mjs) | Browser | 真实链接创建与清理、爬虫预览、缺失结果时的课程抽屉、文档锚点和取消分享 |
+| 脚本                                                                                                     | 类型        | 用途                                                                   |
+| -------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
+| [tests/user-data/page-links.test.mjs](../../tests/user-data/page-links.test.mjs)                         | Unit        | 公开 URL 白名单、凭据剔除及课程和详情身份                              |
+| [tests/user-data/page-links.integration.test.mjs](../../tests/user-data/page-links.integration.test.mjs) | Integration | 真实 SQL 的规范链接复用、公开快照和独立预览/打开计数                   |
+| [tests/user-data/page-links.browser.mjs](../../tests/user-data/page-links.browser.mjs)                   | Browser     | 真实链接创建与清理、爬虫预览、缺失结果时的课程抽屉、文档锚点和取消分享 |
 
 站内统计的数据库测试使用 `USER_DATA_INTEGRATION=1`；浏览器测试拦截统计与其他数据请求，不写真实统计记录。浏览器目标仍使用 `USER_DATA_TEST_BASE_URL`，设备和会话标识仅在独立测试浏览器环境生成。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
-| [tests/user-data/telemetry.test.mjs](../../tests/user-data/telemetry.test.mjs) | Unit | 事件字段筛减、查询归一化、教师稳定标识和可信网络请求头 |
-| [tests/user-data/telemetry.integration.test.mjs](../../tests/user-data/telemetry.integration.test.mjs) | Integration | 批量 SQL 幂等确认、每日统计维度、IP 来源；临时 schema |
-| [tests/user-data/telemetry.browser.mjs](../../tests/user-data/telemetry.browser.mjs) | Browser | 模拟收集接口；持久重试、严格模式、跨标签收藏、实际打开课程和关闭统计 |
+| 脚本                                                                                                   | 类型        | 用途                                                                 |
+| ------------------------------------------------------------------------------------------------------ | ----------- | -------------------------------------------------------------------- |
+| [tests/user-data/telemetry.test.mjs](../../tests/user-data/telemetry.test.mjs)                         | Unit        | 事件字段筛减、查询归一化、教师稳定标识和可信网络请求头               |
+| [tests/user-data/telemetry.integration.test.mjs](../../tests/user-data/telemetry.integration.test.mjs) | Integration | 批量 SQL 幂等确认、每日统计维度、IP 来源；临时 schema                |
+| [tests/user-data/telemetry.browser.mjs](../../tests/user-data/telemetry.browser.mjs)                   | Browser     | 模拟收集接口；持久重试、严格模式、跨标签收藏、实际打开课程和关闭统计 |
 
 清理和统计数据库测试使用 `USER_DATA_INTEGRATION=1`，仅操作随机临时 schema。热门收藏浏览器测试模拟接口，不写真实排名或访问统计；地址与截图变量沿用 `USER_DATA_TEST_BASE_URL`、`USER_DATA_SCREENSHOT_DIR`。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
-| [tests/user-data/maintenance.integration.test.mjs](../../tests/user-data/maintenance.integration.test.mjs) | Integration | 带归属检查的保留期限、预览、永久来源保留、有效收藏和过期游标合并 |
-| [tests/user-data/statistics.integration.test.mjs](../../tests/user-data/statistics.integration.test.mjs) | Integration | 账号有效收藏计数、删除、排除不明确身份、公开摘要和环境隔离聚合 |
-| [tests/user-data/popular.browser.mjs](../../tests/user-data/popular.browser.mjs) | Browser | 模拟中英文 320/390/1440 像素列表、首屏渲染错误、导航、原地详情和空状态 |
+| 脚本                                                                                                       | 类型        | 用途                                                                   |
+| ---------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
+| [tests/user-data/maintenance.integration.test.mjs](../../tests/user-data/maintenance.integration.test.mjs) | Integration | 带归属检查的保留期限、预览、永久来源保留、有效收藏和过期游标合并       |
+| [tests/user-data/statistics.integration.test.mjs](../../tests/user-data/statistics.integration.test.mjs)   | Integration | 账号有效收藏计数、删除、排除不明确身份、公开摘要和环境隔离聚合         |
+| [tests/user-data/popular.browser.mjs](../../tests/user-data/popular.browser.mjs)                           | Browser     | 模拟中英文 320/390/1440 像素列表、首屏渲染错误、导航、原地详情和空状态 |
 
 诊断数据库测试使用 `USER_DATA_INTEGRATION=1`，创建随机临时 schema 并在结束后移除。诊断浏览器测试仅在主动开启后读取本机能力，统计请求和报告提交 API 均被拦截，不会上传报告。可配置 `USER_DATA_TEST_BASE_URL`、`USER_DATA_SCREENSHOT_DIR` 及通常的 Playwright 模块／浏览器路径。统计检查使用合成响应，并覆盖管理端未解锁状态。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
-| [tests/diagnostics/protocol.test.mjs](../../tests/diagnostics/protocol.test.mjs) | 单元 | 完整清单、授权分类、报告限制、凭据字段拒绝、可信请求头与受限 JPEG 元数据 |
-| [tests/diagnostics/reports.integration.test.mjs](../../tests/diagnostics/reports.integration.test.mjs) | 集成 | 绑定会话的幂等提交、独立观察值、七天访问期及精确游标分页 |
-| [tests/diagnostics/diagnostics.browser.mjs](../../tests/diagnostics/diagnostics.browser.mjs) | 浏览器 | 本机检测、指纹主动开启、权限隔离、预览重试及 320/390/1440 像素布局 |
-| [tests/diagnostics/statistics.browser.mjs](../../tests/diagnostics/statistics.browser.mjs) | 浏览器 | 权限加载、长请求字段、报告预览及 320/390/768/1440 像素布局 |
+| 脚本                                                                                                   | 类型   | 用途                                                                     |
+| ------------------------------------------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------ |
+| [tests/diagnostics/protocol.test.mjs](../../tests/diagnostics/protocol.test.mjs)                       | 单元   | 完整清单、授权分类、报告限制、凭据字段拒绝、可信请求头与受限 JPEG 元数据 |
+| [tests/diagnostics/reports.integration.test.mjs](../../tests/diagnostics/reports.integration.test.mjs) | 集成   | 绑定会话的幂等提交、独立观察值、七天访问期及精确游标分页                 |
+| [tests/diagnostics/diagnostics.browser.mjs](../../tests/diagnostics/diagnostics.browser.mjs)           | 浏览器 | 本机检测、指纹主动开启、权限隔离、预览重试及 320/390/1440 像素布局       |
+| [tests/diagnostics/statistics.browser.mjs](../../tests/diagnostics/statistics.browser.mjs)             | 浏览器 | 权限加载、长请求字段、报告预览及 320/390/768/1440 像素布局               |
 
 容量浏览器检查在独立配置中放入合成收藏，模拟数据／统计 API，并检查新增项目之后的撤回失败，不写入服务器数据。与其他浏览器检查相同，可配置 `USER_DATA_TEST_BASE_URL` 和 `USER_DATA_SCREENSHOT_DIR`。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
+| 脚本                                                                               | 类型   | 用途                                                                         |
+| ---------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------- |
 | [tests/user-data/capacity.browser.mjs](../../tests/user-data/capacity.browser.mjs) | 浏览器 | 收藏已满提示、撤回失败不覆盖数据、保留中途新增项目、拒绝空导出及手机提示布局 |
 
 真实回放检查不包含在 `pnpm test` 中，需显式设置 `ALLOW_UMAMI_WRITES=1`。它使用真实 Umami 脚本／配置，创建合成远端事件和录制；应用 API 均被模拟。`REPLAY_REQUIRE_ROUND_TRIP=1` 要求用仅服务端的 `UMAMI_API_KEY` 认证读取录制，`REPLAY_TEST_WIDTH=390` 用于手机检查。生产构建和浏览器设置见[回放运维](analytics/umami.md)。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
+| 脚本                                                                                     | 类型           | 用途                                                               |
+| ---------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------ |
 | [tests/analytics/replay-live.browser.mjs](../../tests/analytics/replay-live.browser.mjs) | 真实浏览器集成 | 分块接收、同一访问初始化、认证读回、完整快照、菜单、暂停浮层和滚动 |
 
 收藏并发检查在同一个独立浏览器配置中打开两个标签页，共享 localStorage／IndexedDB，模拟全部 API。它观察真实事务回调，验证同时删除／撤回操作保留两个项目，不写入服务器数据。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
+| 脚本                                                                                               | 类型   | 用途                                                  |
+| -------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------- |
 | [tests/user-data/concurrent-saved.browser.mjs](../../tests/user-data/concurrent-saved.browser.mjs) | 浏览器 | 32 次跨标签提交、共享事务覆盖、保留独立修改及手机布局 |
 
 管理区隔离检查使用合成账号、本地快照和暂停的云端快照，模拟认证及全部 API。另一个标签退出登录后，原页面必须在不重载的情况下清除上个账号的管理行、选择状态和名称草稿。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
+| 脚本                                                                                                 | 类型   | 用途                             |
+| ---------------------------------------------------------------------------------------------------- | ------ | -------------------------------- |
 | [tests/user-data/scoped-management.browser.mjs](../../tests/user-data/scoped-management.browser.mjs) | 浏览器 | 管理区工作区隔离及跨标签退出登录 |
 
 分组与备份浏览器检查沿用上述 Node／Playwright 环境，模拟全部 API，仅写入隔离浏览器存储和本地下载文件。迁移集成检查需 `USER_DATA_INTEGRATION=1`，会创建随机前缀表、调用真实 CLI，最后移除临时表。备份单元测试不连接 PostgreSQL。
 
-| 脚本 | 类型 | 用途 |
-| --- | --- | --- |
-| [tests/user-data/collections.test.mjs](../../tests/user-data/collections.test.mjs) | 单元 | 私人分组校验、保留分组结构、批次体积限制与重命名冲突 |
-| [tests/user-data/collections.browser.mjs](../../tests/user-data/collections.browser.mjs) | 浏览器 | 1440／768／390／320 像素下的新建、整理、改名、删除撤销、分组导出和私人恢复 |
-| [tests/user-data/rmp-favorites.test.mjs](../../tests/user-data/rmp-favorites.test.mjs) | 单元 | RMP 来源身份、评分保留及公开交换格式校验 |
-| [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs) | 浏览器 | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回 |
-| [tests/user-data/backup.test.mjs](../../tests/user-data/backup.test.mjs) | 单元 | 认证表精确白名单及安全的备份连接凭据传递 |
-| [tests/user-data/auth-migration.integration.test.mjs](../../tests/user-data/auth-migration.integration.test.mjs) | 集成 | 拒绝接管当前搜索路径 schema 中无归属标记的认证表 |
-| [tests/user-data/history.browser.mjs](../../tests/user-data/history.browser.mjs) | 浏览器 | API 全部模拟；英文 1440／中文 320 像素下的 JSON 清理导出、站内清空／取消弹窗及旧标签页删除 |
-| [tests/user-data/email-login.live.browser.mjs](../../tests/user-data/email-login.live.browser.mjs) | 真实浏览器 | 两封实际投递的验证码、拒绝重复使用、独立设备登录同一账号与分别退出 |
+| 脚本                                                                                                             | 类型       | 用途                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
+| [tests/user-data/collections.test.mjs](../../tests/user-data/collections.test.mjs)                               | 单元       | 私人分组校验、保留分组结构、批次体积限制与重命名冲突                                       |
+| [tests/user-data/collections.browser.mjs](../../tests/user-data/collections.browser.mjs)                         | 浏览器     | 1440／768／390／320 像素下的新建、整理、改名、删除撤销、分组导出和私人恢复                 |
+| [tests/user-data/rmp-favorites.test.mjs](../../tests/user-data/rmp-favorites.test.mjs)                           | 单元       | RMP 来源身份、评分保留及公开交换格式校验                                                   |
+| [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs)                     | 浏览器     | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回                                 |
+| [tests/user-data/backup.test.mjs](../../tests/user-data/backup.test.mjs)                                         | 单元       | 认证表精确白名单及安全的备份连接凭据传递                                                   |
+| [tests/user-data/auth-migration.integration.test.mjs](../../tests/user-data/auth-migration.integration.test.mjs) | 集成       | 拒绝接管当前搜索路径 schema 中无归属标记的认证表                                           |
+| [tests/user-data/history.browser.mjs](../../tests/user-data/history.browser.mjs)                                 | 浏览器     | API 全部模拟；英文 1440／中文 320 像素下的 JSON 清理导出、站内清空／取消弹窗及旧标签页删除 |
+| [tests/user-data/email-login.live.browser.mjs](../../tests/user-data/email-login.live.browser.mjs)               | 真实浏览器 | 两封实际投递的验证码、拒绝重复使用、独立设备登录同一账号与分别退出                         |
 
 通过 `node tests/user-data/history.browser.mjs` 运行记录界面检查。脚本使用隔离浏览器存储和本地下载，不发送真实邮件或外部统计。
 
@@ -392,3 +392,15 @@ node tests/user-data/collections.browser.mjs
 node tests/user-data/rmp-favorites.browser.mjs
 USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.test.mjs
 ```
+
+## 浏览器兼容与同步预算回归
+
+以下单元测试包含在默认 `pnpm test` 中，不请求外部来源。大纲集成测试需要 `SYLLABUS_DATABASE_TEST=1` 和 `DATABASE_URL`，会创建、写入并移除随机临时 schema，官方请求使用夹具，不改写业务归档。课程历史集成测试另外比较分块结果与原 SQL，并验证中断回滚。`telemetry.browser.mjs` 还覆盖禁用 randomUUID 和完全缺少 crypto 时页面仍可打开；采集接口均被模拟。RMP Python 采集器测试覆盖时间／请求预算、长冷却暂停及 pipeline 刷新后再校验提交。
+
+| 脚本                                                                                                         | 类型 | 目的                                                                        |
+| ------------------------------------------------------------------------------------------------------------ | ---- | --------------------------------------------------------------------------- |
+| [tests/user-data/uuid.test.mjs](../../tests/user-data/uuid.test.mjs)                                         | 单元 | 缺少 randomUUID 时的安全 UUID 回退、原生方法绑定及无安全随机源时拒绝生成    |
+| [tests/catalog/change-budgets.test.mjs](../../tests/catalog/change-budgets.test.mjs)                         | 单元 | 历史批次与运行时间上限，以及预算耗尽时不写完成标记                          |
+| [tests/syllabus/refresh-budget.test.mjs](../../tests/syllabus/refresh-budget.test.mjs)                       | 单元 | 请求间隔和 Retry-After 遵守运行预算，不额外请求                             |
+| [tests/syllabus/refresh-cache.test.mjs](../../tests/syllabus/refresh-cache.test.mjs)                         | 单元 | 当前／旧学期及缺失文档缓存、结束前一周和学期结束后检查                      |
+| [tests/syllabus/refresh-cache.integration.test.mjs](../../tests/syllabus/refresh-cache.integration.test.mjs) | 集成 | 真实 SQL 验证缓存复用、元数据变化、暂停后新索引、迁移初始化、失败与归档保留 |
