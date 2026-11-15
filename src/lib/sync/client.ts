@@ -1,10 +1,7 @@
 "use client";
-import {
-  readLocalItems,
-  replaceLocalItems,
-  importLocalItems,
-} from "../saved/local.ts";
-import { itemKey, type ExchangeItem } from "../saved/exchange.ts";
+import { importLocalItems } from "../saved/local.ts";
+import { syncItemKey as itemKey, syncBatch, type SyncItem } from "./items.ts";
+import { readSyncItems, replaceSyncItems } from "./workspace.ts";
 import {
   savedScope,
   setSavedScope,
@@ -12,6 +9,7 @@ import {
   assertAuthenticatedAccount,
 } from "../saved/scope.ts";
 import { applySyncedItems } from "../saved/provenance.ts";
+import { editCollections } from "../saved/collections.ts";
 import { withSavedMutation } from "../saved/mutations.ts";
 import { debugFlag } from "../debug/flags.ts";
 import { SAVED_WORKSPACE_KEY, SAVED_STORAGE_KEYS } from "../saved/workspace.ts";
@@ -67,26 +65,25 @@ export async function syncCycle(accountId: string) {
     const state = await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       if (s.enabled && !s.needsReview)
-        captureChanges(s, readLocalItems(), () => crypto.randomUUID());
+        captureChanges(s, readSyncItems(), () => crypto.randomUUID());
       if (!navigator.onLine) s.problem = "offline";
       return structuredClone(s);
     });
     if (!state.enabled || state.needsReview || !navigator.onLine) return;
     const response = await exchange(accountId, {
       cursor: state.cursor,
-      operations: state.outbox.slice(0, 100),
+      operations: syncBatch(state.outbox),
     });
     validAccount(accountId);
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       if (s.lease?.id !== token) throw new Error("lease_expired");
-      const live = readLocalItems(),
+      const live = readSyncItems(),
         next = acceptResponse(s, response, live);
       delete s.problem;
-      if (!sameItem(next, live))
-        applySyncedItems(() => replaceLocalItems(next));
+      if (!sameItem(next, live)) applySyncedItems(() => replaceSyncItems(next));
       if (!s.needsReview)
-        captureChanges(s, readLocalItems(), () => crypto.randomUUID());
+        captureChanges(s, readSyncItems(), () => crypto.randomUUID());
       if (s.once && !s.outbox.length && !s.conflicts.length && !s.needsReview)
         s.enabled = false;
     });
@@ -107,7 +104,7 @@ export async function syncCycle(accountId: string) {
 }
 export type MergePreview = {
   response: SyncResponse;
-  local: ExchangeItem[];
+  local: SyncItem[];
   incoming: number;
   outgoing: number;
   conflicts: number;
@@ -115,7 +112,7 @@ export type MergePreview = {
 export async function previewMerge(accountId: string): Promise<MergePreview> {
   assertAuthenticatedAccount(accountId);
   if (debugFlag("factory")) throw new Error("simulation");
-  const local = readLocalItems(),
+  const local = readSyncItems(),
     response = await exchange(accountId, { cursor: 0, operations: [] }),
     live = new Map(local.map((x) => [itemKey(x), x]));
   let incoming = 0,
@@ -157,7 +154,7 @@ export async function enableSync(
     }
     await withSavedMutation(() => {
       assertAuthenticatedAccount(accountId);
-      const sourceItems = readLocalItems();
+      const sourceItems = readSyncItems();
       // Guest snapshots remain untouched. Each account has its own physical workspace.
       if (
         !localStorage.getItem(scopedSavedKey(SAVED_WORKSPACE_KEY, accountId))
@@ -178,17 +175,26 @@ export async function enableSync(
       }
       setSavedScope(accountId);
       // Legacy guest keys may not yet have an atomic workspace; import the captured items too.
-      applySyncedItems(() => importLocalItems(sourceItems, "sync"));
+      applySyncedItems(() => {
+        importLocalItems(
+          sourceItems.filter((x) => x.kind !== "collection"),
+          "sync",
+        );
+        editCollections((current) => {
+          const merged = new Map(current.map((x) => [x.id, x]));
+          for (const item of sourceItems)
+            if (item.kind === "collection" && !merged.has(item.payload.id))
+              merged.set(item.payload.id, item.payload);
+          return [...merged.values()];
+        });
+      });
     });
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
-      const merged = initializeMerge(
-        s,
-        preview.response,
-        readLocalItems(),
-        () => crypto.randomUUID(),
+      const merged = initializeMerge(s, preview.response, readSyncItems(), () =>
+        crypto.randomUUID(),
       );
-      applySyncedItems(() => replaceLocalItems(merged));
+      applySyncedItems(() => replaceSyncItems(merged));
       s.once = once;
     });
   } finally {
@@ -213,9 +219,9 @@ export async function chooseConflict(
     await updateSyncState(accountId, (s) => {
       validAccount(accountId);
       applySyncedItems(() =>
-        replaceLocalItems(resolveConflict(s, key, choice, readLocalItems())),
+        replaceSyncItems(resolveConflict(s, key, choice, readSyncItems())),
       );
-      captureChanges(s, readLocalItems(), () => crypto.randomUUID());
+      captureChanges(s, readSyncItems(), () => crypto.randomUUID());
     });
   } finally {
     await release(accountId, token);

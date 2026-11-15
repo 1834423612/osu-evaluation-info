@@ -4,7 +4,10 @@ import { Cloud, RefreshCw, Pause, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { text, type Locale } from "@/lib/i18n";
-import { itemTitle, itemContext } from "@/lib/saved/exchange";
+import {
+  syncItemTitle as itemTitle,
+  syncItemContext as itemContext,
+} from "@/lib/sync/items";
 import type { SyncState } from "@/lib/sync/model";
 import {
   readSyncState,

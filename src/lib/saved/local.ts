@@ -2,6 +2,10 @@
 import { browserStorage } from "../preferences/browser-storage.ts";
 import { PREFERENCES_EVENT } from "../preferences/locale.ts";
 import {
+  collectionsSchema,
+  type SavedCollection,
+} from "./collection-schema.ts";
+import {
   SAVED_STORAGE_KEYS,
   SAVED_WORKSPACE_KEY,
   readSavedWorkspace,
@@ -59,6 +63,7 @@ function commit(
   previous: SavedWorkspace,
   next: ExchangeItem[],
   originals = new Map<string, unknown>(),
+  collections?: SavedCollection[],
 ) {
   const before = workspaceItems(previous),
     records: Record<string, string> = {};
@@ -85,7 +90,13 @@ function commit(
   }
   browserStorage().setItem(
     SAVED_WORKSPACE_KEY,
-    JSON.stringify({ version: 1, records }),
+    JSON.stringify({
+      ...previous,
+      records,
+      ...(collections
+        ? { version: 2, collections: collectionsSchema.parse(collections) }
+        : {}),
+    }),
   );
   window.dispatchEvent(new Event(PREFERENCES_EVENT));
 }
@@ -118,11 +129,16 @@ export function importLocalItems(
   commit(previous, [...unique.values()]);
   return { added, skipped, previous, addedKeys };
 }
-export function replaceLocalItems(items: ExchangeItem[]) {
+export function replaceLocalItems(
+  items: ExchangeItem[],
+  collections?: SavedCollection[],
+) {
   const previous = readSavedWorkspace(browserStorage());
   commit(
     previous,
     items.map((x) => exchangeItemSchema.parse(x)),
+    undefined,
+    collections,
   );
 }
 export function removeLocalItems(keys: Set<string>): LocalRemoval {

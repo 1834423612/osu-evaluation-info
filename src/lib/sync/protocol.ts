@@ -1,23 +1,20 @@
 import { z } from "zod";
-import {
-  exchangeItemSchema,
-  itemKey,
-  type ExchangeItem,
-} from "../saved/exchange.ts";
+import { syncItemSchema, syncItemKey, type SyncItem } from "./items.ts";
 export const syncOperationSchema = z
   .object({
     id: z.uuid(),
     key: z.string().min(1).max(320),
     base: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
-    item: exchangeItemSchema.nullable(),
+    item: syncItemSchema.nullable(),
   })
   .superRefine((op, ctx) => {
     if (
-      !/^(course|section|instructor|syllabus):[^\u0000-\u001f]+$/.test(
+      !/^(course|section|instructor|syllabus|collection):[^\u0000-\u001f]+$/.test(
         op.key,
       ) ||
-      (op.item && itemKey(op.item) !== op.key) ||
-      JSON.stringify(op.item).length > 32000
+      (op.item && syncItemKey(op.item) !== op.key) ||
+      new TextEncoder().encode(JSON.stringify(op.item)).byteLength >
+        (op.item?.kind === "collection" ? 256000 : 32000)
     )
       ctx.addIssue({
         code: "custom",
@@ -32,7 +29,7 @@ export type SyncOperation = z.infer<typeof syncOperationSchema>;
 export type SyncRecord = {
   key: string;
   version: number;
-  item: ExchangeItem | null;
+  item: SyncItem | null;
 };
 export type SyncReceipt = {
   id: string;
@@ -50,7 +47,7 @@ export type SyncResponse = {
 const recordSchema = z.object({
   key: z.string().max(320),
   version: z.number().int().min(0),
-  item: exchangeItemSchema.nullable(),
+  item: syncItemSchema.nullable(),
 });
 export const syncResponseSchema = z.object({
   accountId: z.string(),

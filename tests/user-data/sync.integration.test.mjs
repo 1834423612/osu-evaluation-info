@@ -101,6 +101,54 @@ test(
     assert.equal(expired.reset, true);
     assert.equal(expired.receipts.length, 0);
     assert.equal(expired.records.length, 2);
+    // Organization stays account-private and uses the same CAS/receipt protocol.
+    const folders = Array.from({ length: 30 }, (_, i) => ({
+      kind: "collection",
+      payload: {
+        id: randomUUID(),
+        name: "Term " + i,
+        tags: [],
+        members: [key],
+      },
+    }));
+    const foldersResult = await exchangeSync("folders", {
+      cursor: 0,
+      operations: folders.map((item) => ({
+        id: randomUUID(),
+        key: "collection:" + item.payload.id,
+        base: 0,
+        item,
+      })),
+    });
+    assert.equal(foldersResult.records.length, 30);
+    const extra = {
+      ...folders[0],
+      payload: { ...folders[0].payload, id: randomUUID() },
+    };
+    await assert.rejects(
+      exchangeSync("folders", {
+        cursor: 30,
+        operations: [
+          {
+            id: randomUUID(),
+            key: "collection:" + extra.payload.id,
+            base: 0,
+            item: extra,
+          },
+        ],
+      }),
+      (e) => e.code === "quota",
+    );
+    assert.equal(
+      (await exchangeSync("folders", { cursor: 0, operations: [] })).records
+        .length,
+      30,
+    );
+    assert.equal(
+      (await exchangeSync("other-folder-owner", { cursor: 0, operations: [] }))
+        .records.length,
+      0,
+    );
     const bad = { ...first, id: randomUUID(), key: "course:wrong" };
     await assert.rejects(exchangeSync("a", { cursor: 5, operations: [bad] }));
     await assert.rejects(

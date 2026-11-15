@@ -1,4 +1,4 @@
-import { itemKey, type ExchangeItem } from "../saved/exchange.ts";
+import { syncItemKey as itemKey, type SyncItem } from "./items.ts";
 import {
   sameItem,
   type SyncRecord,
@@ -7,7 +7,7 @@ import {
 } from "./protocol.ts";
 export type SyncConflict = {
   key: string;
-  local: ExchangeItem | null;
+  local: SyncItem | null;
   remote: SyncRecord;
 };
 export type SyncState = {
@@ -18,7 +18,7 @@ export type SyncState = {
   once: boolean;
   cursor: number;
   baseline: Record<string, SyncRecord>;
-  seen: Record<string, ExchangeItem | null>;
+  seen: Record<string, SyncItem | null>;
   outbox: SyncOperation[];
   conflicts: SyncConflict[];
   needsReview: boolean;
@@ -46,7 +46,7 @@ export function newSyncState(accountId: string): SyncState {
 export function initializeMerge(
   state: SyncState,
   response: SyncResponse,
-  items: ExchangeItem[],
+  items: SyncItem[],
   uuid: () => string,
 ) {
   if (response.accountId !== state.accountId)
@@ -87,7 +87,7 @@ export function initializeMerge(
 }
 export function captureChanges(
   state: SyncState,
-  items: ExchangeItem[],
+  items: SyncItem[],
   uuid: () => string,
 ) {
   const live = new Map(items.map((x) => [itemKey(x), x]));
@@ -114,7 +114,7 @@ export function captureChanges(
 export function acceptResponse(
   state: SyncState,
   response: SyncResponse,
-  items: ExchangeItem[],
+  items: SyncItem[],
 ) {
   if (response.accountId !== state.accountId || response.cursor < state.cursor)
     throw new Error("Account or cursor changed");
@@ -177,7 +177,7 @@ export function resolveConflict(
   state: SyncState,
   key: string,
   choice: "local" | "cloud",
-  items: ExchangeItem[],
+  items: SyncItem[],
 ) {
   const conflict = state.conflicts.find((x) => x.key === key);
   if (!conflict) throw new Error("Conflict was already resolved");

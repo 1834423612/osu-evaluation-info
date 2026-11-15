@@ -3,7 +3,7 @@ import { getDatabasePool } from "../db.ts";
 import { userDataTable as table } from "./namespace.ts";
 import { privateDigest, checkBudget } from "./rate-limit.ts";
 import { UserDataError } from "./http.ts";
-import { itemKey } from "../saved/exchange.ts";
+import { syncItemKey as itemKey } from "../sync/items.ts";
 import {
   sameItem,
   syncRequestSchema,
@@ -117,7 +117,11 @@ export async function exchangeSync(
       )
     ).rows;
     if (
-      quota.some((x) => Number(x.n) > (x.kind === "course" ? 100 : 200)) ||
+      quota.some(
+        (x) =>
+          Number(x.n) >
+          (x.kind === "collection" ? 30 : x.kind === "course" ? 100 : 200),
+      ) ||
       quota.reduce((n, x) => n + Number(x.bytes), 0) > 10485760
     )
       throw new UserDataError("quota", 409);

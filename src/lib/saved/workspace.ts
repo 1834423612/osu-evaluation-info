@@ -1,4 +1,8 @@
 import { checkSavedCapacity } from "./capacity.ts";
+import {
+  collectionsSchema,
+  type SavedCollection,
+} from "./collection-schema.ts";
 export const SAVED_WORKSPACE_KEY = "course-atlas:saved-workspace:v1";
 export const SAVED_STORAGE_KEYS = [
   "course-atlas:saved:v1",
@@ -9,8 +13,9 @@ export const SAVED_STORAGE_KEYS = [
 export type SavedStorageKey = (typeof SAVED_STORAGE_KEYS)[number];
 type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 export type SavedWorkspace = {
-  version: 1;
+  version: 1 | 2;
   records: Record<string, string | null>;
+  collections?: SavedCollection[];
 };
 let decodedRaw: string | undefined;
 let decodedWorkspace: SavedWorkspace | undefined;
@@ -27,10 +32,10 @@ export function readSavedWorkspace(store: Store): SavedWorkspace {
       ),
     };
   if (raw === decodedRaw && decodedWorkspace)
-    return { version: 1, records: { ...decodedWorkspace.records } };
+    return structuredClone(decodedWorkspace);
   const parsed = JSON.parse(raw);
   if (
-    parsed?.version !== 1 ||
+    ![1, 2].includes(parsed?.version) ||
     !parsed.records ||
     SAVED_STORAGE_KEYS.some(
       (key) =>
@@ -39,13 +44,16 @@ export function readSavedWorkspace(store: Store): SavedWorkspace {
   )
     throw new Error("Saved workspace is unavailable");
   decodedWorkspace = {
-    version: 1,
+    version: parsed.version,
     records: Object.fromEntries(
       SAVED_STORAGE_KEYS.map((key) => [key, parsed.records[key]]),
     ),
+    ...(parsed.version === 2
+      ? { collections: collectionsSchema.parse(parsed.collections) }
+      : {}),
   };
   decodedRaw = raw;
-  return { version: 1, records: { ...decodedWorkspace.records } };
+  return structuredClone(decodedWorkspace);
 }
 function array(raw: string | null): Record<string, unknown>[] {
   const value = raw ? JSON.parse(raw) : [];
@@ -145,5 +153,5 @@ export function replaceSavedWorkspace(
   const current = readSavedWorkspace(store);
   for (const key of SAVED_STORAGE_KEYS)
     checkSavedCapacity(key, array(records[key]), array(current.records[key]));
-  store.setItem(SAVED_WORKSPACE_KEY, JSON.stringify({ version: 1, records }));
+  store.setItem(SAVED_WORKSPACE_KEY, JSON.stringify({ ...current, records }));
 }
