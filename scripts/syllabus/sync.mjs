@@ -7,6 +7,7 @@ import {
 } from "../catalog/database.mjs";
 import { anonymousSyllabusFetch } from "../../src/lib/syllabus/anonymous-fetch.ts";
 import { SyllabusError } from "../../src/lib/syllabus/normalize.ts";
+import { syllabusBudget, SyllabusBudgetReached } from "./budget.mjs";
 import {
   discoverSyllabusTerms,
   readSyllabusDocument,
@@ -28,43 +29,63 @@ export function parseSyncOptions(args) {
     newRun: false,
     delayMs: 350,
     maxDocuments: Infinity,
+    maxRuntimeSeconds: 0,
   };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--discover-only") options.discoverOnly = true;
     else if (arg === "--index-only") options.indexOnly = true;
     else if (arg === "--new-run") options.newRun = true;
-    else if (arg === "--delay-ms" || arg === "--max-documents") {
+    else if (
+      arg === "--delay-ms" ||
+      arg === "--max-documents" ||
+      arg === "--max-runtime-seconds"
+    ) {
       const value = Number(args[++i]);
       if (
         !Number.isSafeInteger(value) ||
-        value < (arg === "--delay-ms" ? 200 : 1)
+        value <
+          (arg === "--delay-ms" ? 200 : arg === "--max-runtime-seconds" ? 0 : 1)
       )
         throw new Error(`Invalid ${arg}`);
-      options[arg === "--delay-ms" ? "delayMs" : "maxDocuments"] = value;
+      options[
+        arg === "--delay-ms"
+          ? "delayMs"
+          : arg === "--max-documents"
+            ? "maxDocuments"
+            : "maxRuntimeSeconds"
+      ] = value;
     } else throw new Error(`Unknown argument ${arg}`);
   }
   return options;
 }
 
 /** Sequential, paced anonymous requests; only transient errors are retried. */
-function pacedFetch(delayMs) {
+export function pacedFetch(
+  delayMs,
+  budget = syllabusBudget(),
+  { sleep = delay, fetcher = anonymousSyllabusFetch } = {},
+) {
   return async (url, init) => {
     for (let attempt = 0; ; attempt++) {
-      await delay(delayMs);
+      await budget.wait(delayMs, sleep);
       let response;
       try {
-        response = await anonymousSyllabusFetch(url, init);
+        response = await fetcher(url, {
+          ...init,
+          signal: budget.signal(init?.signal),
+        });
       } catch (error) {
+        budget.check();
         if (init.signal?.aborted || attempt >= 2) throw error;
-        await delay(1000 * 2 ** attempt);
+        await budget.wait(1000 * 2 ** attempt, sleep);
         continue;
       }
       if (![429, 500, 502, 503, 504].includes(response.status) || attempt >= 2)
         return response;
       const retry = Number(response.headers.get("retry-after"));
       await response.body?.cancel();
-      await delay(
+      await budget.wait(
         Math.min(
           60_000,
           Math.max(
@@ -72,13 +93,15 @@ function pacedFetch(delayMs) {
             Number.isFinite(retry) ? retry * 1000 : 0,
           ),
         ),
+        sleep,
       );
     }
   };
 }
 
 export async function syncSyllabus(options) {
-  const fetcher = pacedFetch(options.delayMs);
+  const budget = syllabusBudget(options.maxRuntimeSeconds);
+  const fetcher = pacedFetch(options.delayMs, budget);
   const discovered = await discoverSyllabusTerms(fetcher);
   if (options.discoverOnly) {
     console.log(JSON.stringify(discovered, null, 2));
@@ -180,6 +203,7 @@ export async function syncSyllabus(options) {
       if (partition.published_at) continue;
       try {
         for (let page = partition.next_page; page <= 2000; page++) {
+          budget.check();
           const result = await readSyllabusPage(term, page, undefined, fetcher);
           await savePage(client, runId, term, page, result);
           console.log(
@@ -239,6 +263,7 @@ export async function syncSyllabus(options) {
       ).rows;
       if (!batch.length) break;
       for (const row of batch) {
+        budget.check();
         if (processed >= options.maxDocuments) {
           await client.query(
             "UPDATE osu_syllabus.sync_runs SET status='partial' WHERE id=$1",
@@ -257,6 +282,7 @@ export async function syncSyllabus(options) {
             if (document.entry.hasUploads) status = "uploaded";
           }
         } catch (error) {
+          if (error instanceof SyllabusBudgetReached) throw error;
           status =
             error instanceof SyllabusError &&
             ["restricted", "missing"].includes(error.kind)
@@ -306,6 +332,17 @@ export async function syncSyllabus(options) {
     );
     console.log(JSON.stringify({ runId, status: "complete", counts }));
   } catch (error) {
+    if (error instanceof SyllabusBudgetReached) {
+      if (runId)
+        await client.query(
+          "UPDATE osu_syllabus.sync_runs SET status='partial',error=NULL WHERE id=$1",
+          [runId],
+        );
+      console.log(
+        JSON.stringify({ runId, status: "partial", reason: "runtime-budget" }),
+      );
+      return;
+    }
     if (runId)
       await client
         .query("UPDATE osu_syllabus.sync_runs SET error=$2 WHERE id=$1", [
@@ -329,7 +366,7 @@ if (
 ) {
   if (process.argv.includes("--help"))
     console.log(
-      "Usage: pnpm syllabus:sync [--discover-only] [--index-only] [--new-run] [--delay-ms 350] [--max-documents N]\nExplicit migration required. Daily sync archives anonymous official responses only; never reuses HAR credentials.",
+      "Usage: pnpm syllabus:sync [--discover-only] [--index-only] [--new-run] [--delay-ms 350] [--max-documents N] [--max-runtime-seconds 0]\nExplicit migration required. Sync archives anonymous official responses only; never reuses HAR credentials.",
     );
   else {
     try {
