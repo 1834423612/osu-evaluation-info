@@ -46,7 +46,9 @@ const pool = new Pool({
   connectionString: process.env.PLANNING_DATABASE_URL,
   max: 1,
 });
-const client = await pool.connect();
+const client = await pool.connect().catch(() => {
+  throw Error("Planning database connection failed");
+});
 try {
   await client.query("BEGIN");
   if (action === "init") {

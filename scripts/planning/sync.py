@@ -84,8 +84,10 @@ def run(args):
             if not robot.can_fetch(AGENT, url):
                 raise ValueError('robots denied')
             crawl_delay = robot.crawl_delay(AGENT) or robot.crawl_delay('*') or 0
+            if crawl_delay > 60:
+                raise ValueError('Crawl delay exceeds this bounded runner budget')
             if crawl_delay > args.delay:
-                time.sleep(min(crawl_delay, 300))
+                time.sleep(crawl_delay)
             data, content_type = fetch(url)
             digest = hashlib.sha256(data).hexdigest()
             (out / digest).write_bytes(data)
@@ -107,6 +109,8 @@ def run(args):
         except Exception as error:
             # Only exception class is stored; HTTP errors can include sensitive redirect URLs.
             record.update(status='pending', failure=type(error).__name__)
+            if isinstance(getattr(error, 'code', None), int):
+                record['httpStatus'] = error.code
         history = old.get('versions', [])
         if old.get('sha256') and old['sha256'] != record.get('sha256'):
             history = history + [{k: v for k, v in old.items() if k != 'versions'}]
