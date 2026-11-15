@@ -90,6 +90,10 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
       );
       if (selected.size)
         snapshot.items = snapshot.items.filter((x) => selected.has(itemKey(x)));
+      if (!snapshot.items.length) {
+        setNotice(text(locale, "No items to export.", "没有可导出的收藏。"));
+        return;
+      }
       const url = URL.createObjectURL(
           new Blob([JSON.stringify(snapshot, null, 2)], {
             type: "application/json",

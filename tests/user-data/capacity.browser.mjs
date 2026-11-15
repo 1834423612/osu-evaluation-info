@@ -80,6 +80,18 @@ try {
     false,
   );
   await p.screenshot({ path: out + "/capacity-390.png" });
+  let downloads = 0;
+  p.on("download", () => downloads++);
+  await p.evaluate(() => {
+    const key = "course-atlas:saved-workspace:v1",
+      w = JSON.parse(localStorage.getItem(key));
+    for (const k of Object.keys(w.records)) w.records[k] = "[]";
+    localStorage.setItem(key, JSON.stringify(w));
+    window.dispatchEvent(new Event("course-atlas:preferences"));
+  });
+  await p.getByRole("button", { name: "Export", exact: true }).click();
+  await p.getByText("No items to export.", { exact: true }).waitFor();
+  assert.equal(downloads, 0);
   console.log(
     "Capacity: failed undo preserves all existing favorites and shows an actionable error",
   );
