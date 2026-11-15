@@ -176,15 +176,27 @@ export function acceptResponse(
 export function resolveConflict(
   state: SyncState,
   key: string,
-  choice: "local" | "cloud",
+  choice: "local" | "cloud" | "both",
   items: SyncItem[],
+  uuid: () => string = () => crypto.randomUUID(),
 ) {
   const conflict = state.conflicts.find((x) => x.key === key);
   if (!conflict) throw new Error("Conflict was already resolved");
   const live = new Map(items.map((x) => [itemKey(x), x]));
   state.baseline[key] = conflict.remote;
   state.seen[key] = conflict.remote.item;
-  if (choice === "cloud") {
+  if (choice === "both") {
+    if (conflict.local?.kind !== "collection")
+      throw new Error("copy_not_supported");
+    const copy = structuredClone(conflict.local);
+    copy.payload.id = uuid();
+    copy.payload.name = copy.payload.name.slice(0, 53) + " (copy)";
+    const copyKey = itemKey(copy);
+    if (live.has(copyKey) || state.baseline[copyKey])
+      throw new Error("copy_identity_exists");
+    live.set(copyKey, copy);
+  }
+  if (choice === "cloud" || choice === "both") {
     if (conflict.remote.item) live.set(key, conflict.remote.item);
     else live.delete(key);
   }

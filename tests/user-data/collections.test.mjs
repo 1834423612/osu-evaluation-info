@@ -143,4 +143,12 @@ test("two devices sync collection membership and preserve competing renames for 
     resolveConflict(state, key, "cloud", next)[0].payload.name,
     "Cloud name",
   );
+  state.conflicts = [{ key, local: edit[0], remote: row }];
+  const both = resolveConflict(state, key, "both", edit, randomUUID);
+  assert.equal(both.length, 2);
+  assert.ok(both.some((x) => x.payload.name === "Cloud name"));
+  assert.ok(both.some((x) => x.payload.name === "Local name (copy)"));
+  captureChanges(state, both, randomUUID);
+  assert.equal(state.outbox.length, 1);
+  assert.notEqual(state.outbox[0].key, key);
 });

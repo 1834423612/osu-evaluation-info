@@ -47,6 +47,14 @@
 .comparison > summary {
   margin-bottom: 8px;
 }
+.memberComparison {
+  max-height: 160px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding-left: 16px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
 .heading h1 {
   margin: 0 0 6px;
   font-size: clamp(24px, 3vw, 32px);
@@ -212,7 +220,11 @@
 .popularHeading {
   flex-wrap: wrap;
 }
-.pageTitle { display: flex; align-items: center; gap: 9px; }
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
 .popularItem {
   width: 100%;
   min-width: 0;

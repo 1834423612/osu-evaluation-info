@@ -241,6 +241,17 @@ export function SyncPanel({
                   </small>
                 </span>
                 <div className={styles.actions}>
+                  {c.local?.kind === "collection" ? (
+                    <Button
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(() => chooseConflict(accountId, c.key, "both"))
+                      }
+                    >
+                      {text(locale, "Keep both collections", "保留两个分组")}
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     disabled={busy}
@@ -272,6 +283,13 @@ export function SyncPanel({
                         : text(locale, "Removed", "已移除")}
                     </p>
                     {c.local ? <small>{itemContext(c.local)}</small> : null}
+                    {c.local?.kind === "collection" ? (
+                      <ul className={styles.memberComparison}>
+                        {c.local.payload.members.map((key) => (
+                          <li key={key}>{key}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                   <div>
                     <strong>{text(locale, "Cloud", "云端")}</strong>
@@ -282,6 +300,13 @@ export function SyncPanel({
                     </p>
                     {c.remote.item ? (
                       <small>{itemContext(c.remote.item)}</small>
+                    ) : null}
+                    {c.remote.item?.kind === "collection" ? (
+                      <ul className={styles.memberComparison}>
+                        {c.remote.item.payload.members.map((key) => (
+                          <li key={key}>{key}</li>
+                        ))}
+                      </ul>
                     ) : null}
                   </div>
                 </details>

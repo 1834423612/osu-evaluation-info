@@ -39,6 +39,26 @@ async function device(width, seed) {
           "course-atlas:saved:v1",
           JSON.stringify([item.payload]),
         );
+        localStorage.setItem(
+          "course-atlas:saved-workspace:v1",
+          JSON.stringify({
+            version: 2,
+            records: {
+              "course-atlas:saved:v1": JSON.stringify([item.payload]),
+              "course-atlas:saved-sections:v1": "[]",
+              "course-atlas:saved-instructors:v1": "[]",
+              "course-atlas:saved-syllabi:v1": "[]",
+            },
+            collections: [
+              {
+                id: "a2222222-2222-4222-8222-222222222222",
+                name: "Autumn collection",
+                tags: ["Degree"],
+                members: ["course:" + item.payload.id],
+              },
+            ],
+          }),
+        );
         localStorage.setItem("qa-seeded", "true");
       }
     },
@@ -166,7 +186,7 @@ try {
   );
   await setup(b.page);
   assert.equal(await count(b.page), 1);
-  assert.equal(cloud.size, 1);
+  assert.equal(cloud.size, 2);
   const before = calls;
   await b.page.waitForTimeout(2500);
   assert.ok(calls - before < 5, "empty sync must not loop");
@@ -234,6 +254,61 @@ try {
     .getByRole("heading", { name: "Choose a version", exact: true })
     .waitFor({ state: "hidden" });
 
+  await b.page.getByRole("button", { name: "Pause", exact: true }).click();
+  const collectionKey = "collection:a2222222-2222-4222-8222-222222222222",
+    folderEdit = structuredClone(cloud.get(collectionKey).item);
+  folderEdit.payload.name = "Cloud collection name";
+  cloud.set(collectionKey, {
+    key: collectionKey,
+    item: folderEdit,
+    version: ++seq,
+  });
+  await b.page.evaluate((id) => {
+    const key = "course-atlas:saved-workspace:v1:account:" + id,
+      w = JSON.parse(localStorage.getItem(key));
+    w.collections[0].name = "Device collection name";
+    localStorage.setItem(key, JSON.stringify(w));
+    window.dispatchEvent(new Event("course-atlas:preferences"));
+  }, user.id);
+  await b.page
+    .getByRole("button", { name: "Resume sync", exact: true })
+    .click();
+  await b.page
+    .getByRole("button", { name: "Keep both collections", exact: true })
+    .waitFor();
+  await b.page.getByText("Compare versions", { exact: true }).click();
+  await b.page.screenshot({
+    path: output + "/phone-collection-conflict.png",
+    fullPage: true,
+  });
+  await b.page
+    .getByRole("button", { name: "Keep both collections", exact: true })
+    .click();
+  await b.page
+    .getByRole("heading", { name: "Choose a version", exact: true })
+    .waitFor({ state: "hidden" });
+  await b.page.getByRole("button", { name: "Sync now", exact: true }).click();
+  await b.page.waitForFunction(async (id) => {
+    const db = await new Promise((resolve) => {
+      const req = indexedDB.open("waho-user-data");
+      req.onsuccess = () => resolve(req.result);
+    });
+    return new Promise((resolve) => {
+      const req = db.transaction("sync").objectStore("sync").get(id);
+      req.onsuccess = () => {
+        resolve(req.result?.outbox.length === 0);
+        db.close();
+      };
+    });
+  }, user.id);
+  const folders = [...cloud.values()]
+    .filter((x) => x.item?.kind === "collection")
+    .map((x) => x.item.payload.name)
+    .sort();
+  assert.deepEqual(folders, [
+    "Cloud collection name",
+    "Device collection name (copy)",
+  ]);
   await b.page.getByRole("button", { name: "Pause", exact: true }).click();
   await b.page.goto(new URL("/saved", origin).href);
   await b.page.getByRole("button", { name: "Manage", exact: true }).click();

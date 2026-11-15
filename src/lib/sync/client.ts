@@ -210,7 +210,7 @@ export async function pauseSync(accountId: string) {
 export async function chooseConflict(
   accountId: string,
   key: string,
-  choice: "local" | "cloud",
+  choice: "local" | "cloud" | "both",
 ) {
   validAccount(accountId);
   const token = await lease(accountId);
