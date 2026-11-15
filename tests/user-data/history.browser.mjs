@@ -34,7 +34,7 @@ try {
             kind: "search",
             title: "MATH 1151",
             context: "1268 · COL",
-            href: "/?q=MATH+1151&term=1268",
+            href: "/?q=MATH+1151&term=1268&token=qa-private#private",
             at: new Date().toISOString(),
           },
           {
@@ -77,6 +77,21 @@ try {
         .count(),
       2,
     );
+    const exported = p.waitForEvent("download");
+    await p
+      .getByRole("button", {
+        name: t("Export history", "导出记录"),
+        exact: true,
+      })
+      .click();
+    const stream = await (await exported).createReadStream();
+    let raw = "";
+    for await (const chunk of stream) raw += chunk;
+    const data = JSON.parse(raw);
+    assert.equal(data.format, "waho-history");
+    assert.equal(data.items.length, 2);
+    assert.equal(raw.includes("qa-private"), false);
+    assert.equal(data.items[0].href.includes("token="), false);
     await p
       .getByRole("button", { name: t("Clear", "清空"), exact: true })
       .click();

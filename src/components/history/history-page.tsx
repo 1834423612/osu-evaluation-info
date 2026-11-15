@@ -2,7 +2,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { Clock3, Search, BookOpen, Trash2 } from "lucide-react";
+import { Clock3, Search, BookOpen, Trash2, Download } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { EmptyResult } from "@/components/brand/empty-result";
@@ -37,6 +37,29 @@ export function HistoryPage() {
       (kind === "all" || x.kind === kind) &&
       (x.title + x.context).toLowerCase().includes(query.toLowerCase()),
   );
+  function exportHistory() {
+    try {
+      const data = {
+          format: "waho-history",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          items: readHistory(),
+        },
+        url = URL.createObjectURL(
+          new Blob([JSON.stringify(data, null, 2)], {
+            type: "application/json",
+          }),
+        ),
+        a = document.createElement("a");
+      a.href = url;
+      a.download =
+        "waho-history-" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setNotice(text(locale, "Could not export history.", "记录导出失败。"));
+    }
+  }
   return (
     <>
       <AppHeader />
@@ -49,6 +72,14 @@ export function HistoryPage() {
             </p>
           </div>
           <div className={styles.tools}>
+            <Button
+              variant="outline"
+              disabled={!entries.length}
+              onClick={exportHistory}
+            >
+              <Download size={14} />
+              {text(locale, "Export history", "导出记录")}
+            </Button>
             <Button
               variant="outline"
               aria-pressed={enabled}
