@@ -284,8 +284,7 @@
   line-height: 1.5;
   cursor: pointer;
 }
-.tagSuggestions button[aria-pressed="true"],
-.iconPicker button[aria-pressed="true"] {
+.tagSuggestions button[aria-pressed="true"] {
   color: var(--accent-foreground);
   background: var(--accent-soft);
   border-color: var(--accent-border);
@@ -293,23 +292,115 @@
 .tagSuggestions button:disabled {
   opacity: 0.45;
 }
-.iconPicker > div {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
-  gap: 6px;
-  max-height: 190px;
-  overflow-y: auto;
-  padding: 8px 1px;
+/* Scoped neutral tiles keep line icons visible; accent is reserved for selection. */
+.iconPicker {
+  min-width: 0;
 }
-.iconPicker button {
+.iconPicker > input {
+  width: 100%;
+  min-width: 0;
+}
+.iconPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--subtle-surface);
+  color: var(--ink);
+}
+.iconPreviewGlyph {
   display: grid;
   place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+}
+.iconPreview strong {
+  display: block;
+  font-size: 13px;
+}
+.iconPreview small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.iconCategories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.iconCategories button {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--secondary-foreground);
+  padding: 7px 10px;
+  min-height: 36px;
+  font-size: 11px;
+}
+.iconCategories button[aria-pressed="true"] {
+  color: var(--accent-foreground);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+.iconResultCount,
+.iconEmpty {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 3px;
+}
+.iconGrid button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 44px;
   aspect-ratio: 1;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
-  color: var(--muted);
+  color: var(--secondary-foreground);
   cursor: pointer;
+}
+.iconGrid button:hover {
+  background: var(--secondary);
+  border-color: var(--muted);
+}
+.iconGrid button[aria-pressed="true"] {
+  color: var(--accent-foreground);
+  background: var(--accent-soft);
+  border: 2px solid var(--accent-foreground);
+}
+.iconGrid button:focus-visible,
+.iconCategories button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.iconGrid button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.iconCheck {
+  position: absolute;
+  top: 3px;
+  right: 3px;
 }
 
 .exchangeOptions section {
