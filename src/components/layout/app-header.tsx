@@ -131,6 +131,11 @@ export function AppHeader({
             <Link
               href="/saved"
               className={resourceStyles.savedLink}
+              aria-label={text(
+                locale,
+                `Saved ${savedCount}`,
+                `收藏 ${savedCount}`,
+              )}
               data-active={current === "saved"}
               aria-current={current === "saved" ? "page" : undefined}
             >

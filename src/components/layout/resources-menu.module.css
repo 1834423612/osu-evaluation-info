@@ -147,6 +147,21 @@
   .header :global(.main-nav) {
     gap: 11px;
   }
+  .explore > span {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .header :global(.brand) > span {
+    display: none;
+  }
+  .header :global([data-analytics-action="locale_switch"]) {
+    width: 32px;
+    padding-inline: 0;
+  }
+  .header :global([data-analytics-action="locale_switch"]) > svg {
+    display: none;
+  }
 }
 @media (max-width: 420px) {
   .header:global(.header-inner) {
@@ -184,11 +199,41 @@
     display: none;
   }
   .header :global(.brand) {
-    gap: 5px;
+    gap: 0;
+  }
+  .header :global(.brand-mark) {
+    width: 32px;
+    height: 32px;
   }
 }
 @media (max-width: 360px) {
-  .header :global(.brand-mark) {
+  .header:global(.header-inner) {
+    gap: 4px;
+  }
+  .header :global(.main-nav) {
+    gap: 6px;
+  }
+  .header :global(.header-actions) {
+    gap: 2px;
+  }
+  .header :global([data-nav-group="personal"]) > span:first-of-type {
     display: none;
+  }
+  .header :global([data-nav-group="personal"]) > svg:first-child {
+    display: block;
+  }
+  .header :global(.brand-mark) {
+    display: block;
+  }
+  .savedLink > span:not(:last-child) {
+    display: none;
+  }
+  .savedLink > svg {
+    display: block;
+  }
+  .explore > span {
+    max-width: 52px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
