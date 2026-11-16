@@ -30,14 +30,14 @@ python3 -m unittest tests.rmp.test_course_matching
 
 使用独立测试库或已备份的开发库。schema 测试建立随机临时 schema，结束后回滚／清理，需要建 schema 权限；RMP 集成查询对现有数据使用只读事务。普通迁移／采集命令不一定具备同样隔离，不能把它们当成测试直接执行。
 
-| 开关                           | 范围与影响                                  |
-| ------------------------------ | ------------------------------------------- |
-| `CATALOG_DATABASE_TEST=1`      | 临时 schema 中的快照、学期主版本和命令恢复  |
-| `SYLLABUS_DATABASE_TEST=1`     | 临时 schema 中的大纲索引与正文留存          |
-| `TRANSLATION_DATABASE_TEST=1`  | 临时 schema 中的节点协调与使用汇总          |
-| `RMP_INTEGRATION_TESTS=1`      | 只读现有 RMP、课程和评价数据                |
-| `RMP_RESEARCH_DATABASE_TEST=1` | Python 身份证据的临时数据库测试             |
-| `CATALOG_LIVE_TEST=1`          | 真实请求 OSU 并写入隔离存储，不属于默认检查 |
+| 开关                           | 范围与影响                                       |
+| ------------------------------ | ------------------------------------------------ |
+| `CATALOG_DATABASE_TEST=1`      | 临时 schema 中的快照、学期主版本和命令恢复       |
+| `SYLLABUS_DATABASE_TEST=1`     | 临时 schema 中的大纲索引、正文留存与往年参考匹配 |
+| `TRANSLATION_DATABASE_TEST=1`  | 临时 schema 中的节点协调与使用汇总               |
+| `RMP_INTEGRATION_TESTS=1`      | 只读现有 RMP、课程和评价数据                     |
+| `RMP_RESEARCH_DATABASE_TEST=1` | Python 身份证据的临时数据库测试                  |
+| `CATALOG_LIVE_TEST=1`          | 真实请求 OSU 并写入隔离存储，不属于默认检查      |
 
 ```sh
 RMP_INTEGRATION_TESTS=1 CATALOG_DATABASE_TEST=1 SYLLABUS_DATABASE_TEST=1 TRANSLATION_DATABASE_TEST=1 \
@@ -96,37 +96,38 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 
 ### catalog
 
-| 脚本                                                                                                       | 类型   | 用途                             |
-| ---------------------------------------------------------------------------------------------------------- | ------ | -------------------------------- |
-| [tests/catalog/availability.test.mjs](../../tests/catalog/availability.test.mjs)                           | 单元   | 实时席位与归档数据隔离           |
-| [tests/catalog/browser-transport.test.mjs](../../tests/catalog/browser-transport.test.mjs)                 | 单元   | 官方直连、发现配置与副本回退     |
-| [tests/catalog/detail-refresh.test.mjs](../../tests/catalog/detail-refresh.test.mjs)                       | 单元   | 详情去重、取消和过期响应隔离     |
-| [tests/catalog/empty-card.browser.mjs](../../tests/catalog/empty-card.browser.mjs)                         | 浏览器 | 搜索卡片无数据时只显示文本       |
-| [tests/catalog/exact-search.test.mjs](../../tests/catalog/exact-search.test.mjs)                           | 单元   | 完整课程代码解析与学科筛选       |
-| [tests/catalog/experience.browser.mjs](../../tests/catalog/experience.browser.mjs)                         | 浏览器 | 完整页面操作、响应式布局与滚动   |
-| [tests/catalog/filters.browser.mjs](../../tests/catalog/filters.browser.mjs)                               | 浏览器 | 课程筛选层级、选中与移动布局     |
-| [tests/catalog/floating-controls.test.mjs](../../tests/catalog/floating-controls.test.mjs)                 | 单元   | 回顶等悬浮控件的视口避让         |
-| [tests/catalog/live-sync.integration.test.mjs](../../tests/catalog/live-sync.integration.test.mjs)         | 集成   | 真实官方全量同步到隔离存储       |
-| [tests/catalog/official-availability.test.mjs](../../tests/catalog/official-availability.test.mjs)         | 单元   | 固定官方空位地址、限流与匿名请求 |
-| [tests/catalog/official-exact.test.mjs](../../tests/catalog/official-exact.test.mjs)                       | 单元   | 精确编号、筛选、跨页和校区边界   |
-| [tests/catalog/permanent-archive.test.mjs](../../tests/catalog/permanent-archive.test.mjs)                 | 单元   | 永久副本不会被旧清理选项删除     |
-| [tests/catalog/presentation.test.mjs](../../tests/catalog/presentation.test.mjs)                           | 单元   | 学生层级与线上授课显示证据       |
-| [tests/catalog/ranked-search.test.mjs](../../tests/catalog/ranked-search.test.mjs)                         | 单元   | 字段相关性、排序与分页边界       |
-| [tests/catalog/related-search.test.mjs](../../tests/catalog/related-search.test.mjs)                       | 单元   | 近似学科与官方请求次数边界       |
-| [tests/catalog/request-pool.test.mjs](../../tests/catalog/request-pool.test.mjs)                           | 单元   | 请求并发、去重、优先级与取消     |
-| [tests/catalog/search-debug.browser.mjs](../../tests/catalog/search-debug.browser.mjs)                     | 浏览器 | 调试模拟与真实搜索隔离           |
-| [tests/catalog/search-query.test.mjs](../../tests/catalog/search-query.test.mjs)                           | 单元   | 学科名、简称、歧义和筛选冲突     |
-| [tests/catalog/search.browser.mjs](../../tests/catalog/search.browser.mjs)                                 | 浏览器 | 检索页面的匹配、分页与来源       |
-| [tests/catalog/section-availability.test.mjs](../../tests/catalog/section-availability.test.mjs)           | 单元   | 班次实时空位与课程身份           |
-| [tests/catalog/section-filters.test.mjs](../../tests/catalog/section-filters.test.mjs)                     | 单元   | 多个筛选必须匹配同一班次         |
-| [tests/catalog/smart-search.test.mjs](../../tests/catalog/smart-search.test.mjs)                           | 单元   | 检索规划、回退与原输入保留       |
-| [tests/catalog/snapshots.integration.test.mjs](../../tests/catalog/snapshots.integration.test.mjs)         | 集成   | 不可变版本、发布与失败恢复       |
-| [tests/catalog/sync-cli.integration.test.mjs](../../tests/catalog/sync-cli.integration.test.mjs)           | 集成   | 真实命令的断点恢复和损坏数据拒绝 |
-| [tests/catalog/sync-safety.test.mjs](../../tests/catalog/sync-safety.test.mjs)                             | 单元   | 同步分页、计数和安全发布         |
-| [tests/catalog/term-archives.integration.test.mjs](../../tests/catalog/term-archives.integration.test.mjs) | 集成   | 学期消失、删改和历史恢复         |
-| [tests/catalog/transactions.test.mjs](../../tests/catalog/transactions.test.mjs)                           | 单元   | 事务提交、回滚与版本边界         |
-| [tests/catalog/watch-selection.test.mjs](../../tests/catalog/watch-selection.test.mjs)                     | 单元   | 班次监控选择与本机偏好           |
-| [tests/catalog/workflow.test.mjs](../../tests/catalog/workflow.test.mjs)                                   | 单元   | 计划任务和同步运行约束           |
+| 脚本                                                                                                       | 类型   | 用途                                               |
+| ---------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------- |
+| [tests/catalog/availability.test.mjs](../../tests/catalog/availability.test.mjs)                           | 单元   | 实时席位与归档数据隔离                             |
+| [tests/catalog/browser-transport.test.mjs](../../tests/catalog/browser-transport.test.mjs)                 | 单元   | 官方直连、发现配置与副本回退                       |
+| [tests/catalog/detail-refresh.test.mjs](../../tests/catalog/detail-refresh.test.mjs)                       | 单元   | 详情去重、取消和过期响应隔离                       |
+| [tests/catalog/empty-card.browser.mjs](../../tests/catalog/empty-card.browser.mjs)                         | 浏览器 | 搜索卡片无数据时只显示文本                         |
+| [tests/catalog/exact-search.test.mjs](../../tests/catalog/exact-search.test.mjs)                           | 单元   | 完整课程代码解析与学科筛选                         |
+| [tests/catalog/experience.browser.mjs](../../tests/catalog/experience.browser.mjs)                         | 浏览器 | 完整页面操作、响应式布局与滚动                     |
+| [tests/catalog/filters.browser.mjs](../../tests/catalog/filters.browser.mjs)                               | 浏览器 | 课程筛选层级、选中与移动布局                       |
+| [tests/catalog/floating-controls.test.mjs](../../tests/catalog/floating-controls.test.mjs)                 | 单元   | 回顶等悬浮控件的视口避让                           |
+| [tests/catalog/live-sync.integration.test.mjs](../../tests/catalog/live-sync.integration.test.mjs)         | 集成   | 真实官方全量同步到隔离存储                         |
+| [tests/catalog/official-availability.test.mjs](../../tests/catalog/official-availability.test.mjs)         | 单元   | 固定官方空位地址、限流与匿名请求                   |
+| [tests/catalog/official-exact.test.mjs](../../tests/catalog/official-exact.test.mjs)                       | 单元   | 精确编号、筛选、跨页和校区边界                     |
+| [tests/catalog/permanent-archive.test.mjs](../../tests/catalog/permanent-archive.test.mjs)                 | 单元   | 永久副本不会被旧清理选项删除                       |
+| [tests/catalog/presentation.test.mjs](../../tests/catalog/presentation.test.mjs)                           | 单元   | 学生层级与线上授课显示证据                         |
+| [tests/catalog/ranked-search.test.mjs](../../tests/catalog/ranked-search.test.mjs)                         | 单元   | 字段相关性、排序与分页边界                         |
+| [tests/catalog/related-search.test.mjs](../../tests/catalog/related-search.test.mjs)                       | 单元   | 近似学科与官方请求次数边界                         |
+| [tests/catalog/request-pool.test.mjs](../../tests/catalog/request-pool.test.mjs)                           | 单元   | 请求并发、去重、优先级与取消                       |
+| [tests/catalog/search-debug.browser.mjs](../../tests/catalog/search-debug.browser.mjs)                     | 浏览器 | 调试模拟与真实搜索隔离                             |
+| [tests/catalog/search-query.test.mjs](../../tests/catalog/search-query.test.mjs)                           | 单元   | 学科名、简称、歧义和筛选冲突                       |
+| [tests/catalog/search.browser.mjs](../../tests/catalog/search.browser.mjs)                                 | 浏览器 | 检索页面的匹配、分页与来源                         |
+| [tests/catalog/section-availability.test.mjs](../../tests/catalog/section-availability.test.mjs)           | 单元   | 班次实时空位与课程身份                             |
+| [tests/catalog/active-filters.test.mjs](../../tests/catalog/active-filters.test.mjs)                       | 单元   | 默认校区、取消校区限制与实际筛选计数；无服务或写入 |
+| [tests/catalog/section-filters.test.mjs](../../tests/catalog/section-filters.test.mjs)                     | 单元   | 多个筛选必须匹配同一班次                           |
+| [tests/catalog/smart-search.test.mjs](../../tests/catalog/smart-search.test.mjs)                           | 单元   | 检索规划、回退与原输入保留                         |
+| [tests/catalog/snapshots.integration.test.mjs](../../tests/catalog/snapshots.integration.test.mjs)         | 集成   | 不可变版本、发布与失败恢复                         |
+| [tests/catalog/sync-cli.integration.test.mjs](../../tests/catalog/sync-cli.integration.test.mjs)           | 集成   | 真实命令的断点恢复和损坏数据拒绝                   |
+| [tests/catalog/sync-safety.test.mjs](../../tests/catalog/sync-safety.test.mjs)                             | 单元   | 同步分页、计数和安全发布                           |
+| [tests/catalog/term-archives.integration.test.mjs](../../tests/catalog/term-archives.integration.test.mjs) | 集成   | 学期消失、删改和历史恢复                           |
+| [tests/catalog/transactions.test.mjs](../../tests/catalog/transactions.test.mjs)                           | 单元   | 事务提交、回滚与版本边界                           |
+| [tests/catalog/watch-selection.test.mjs](../../tests/catalog/watch-selection.test.mjs)                     | 单元   | 班次监控选择与本机偏好                             |
+| [tests/catalog/workflow.test.mjs](../../tests/catalog/workflow.test.mjs)                                   | 单元   | 计划任务和同步运行约束                             |
 
 | [tests/catalog/changes.test.mjs](../../tests/catalog/changes.test.mjs) | 单元 | 变化筛选和固定游标校验 |
 | [tests/catalog/changes.integration.test.mjs](../../tests/catalog/changes.integration.test.mjs) | 集成 | 完整快照变化、基线、噪声和只追加保护 |
@@ -232,28 +233,29 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 
 ### syllabus
 
-| 脚本                                                                                             | 类型     | 用途                                  |
-| ------------------------------------------------------------------------------------------------ | -------- | ------------------------------------- |
-| [tests/syllabus/assets.test.mjs](../../tests/syllabus/assets.test.mjs)                           | 单元     | 字体／图片白名单、文件签名和字节上限  |
-| [tests/syllabus/check-pdf.py](../../tests/syllabus/check-pdf.py)                                 | PDF 检查 | 生成 PDF 的页面、文本、链接与布局检查 |
-| [tests/syllabus/choices.test.mjs](../../tests/syllabus/choices.test.mjs)                         | 单元     | 大纲默认顺序、教师与评分筛选          |
-| [tests/syllabus/experience.browser.mjs](../../tests/syllabus/experience.browser.mjs)             | 浏览器   | 完整页面操作、响应式布局与滚动        |
-| [tests/syllabus/fonts.browser.mjs](../../tests/syllabus/fonts.browser.mjs)                       | 浏览器   | 真实官方 CDN 字体的跨域和 CSP         |
-| [tests/syllabus/insights.test.mjs](../../tests/syllabus/insights.test.mjs)                       | 单元     | 周次、日期、表格与课程安排提取        |
-| [tests/syllabus/normalize.test.mjs](../../tests/syllabus/normalize.test.mjs)                     | 单元     | 官方大纲结构、分页和精确身份          |
-| [tests/syllabus/official-render.test.mjs](../../tests/syllabus/official-render.test.mjs)         | 单元     | 官方 DOM、样式清理与隔离 CSP          |
-| [tests/syllabus/pdf-content.test.mjs](../../tests/syllabus/pdf-content.test.mjs)                 | 单元     | PDF 文字、标题、链接及下划线范围      |
-| [tests/syllabus/pdf-typography.test.mjs](../../tests/syllabus/pdf-typography.test.mjs)           | 单元     | 嵌入字体高度与 CSS 行距               |
-| [tests/syllabus/save.test.mjs](../../tests/syllabus/save.test.mjs)                               | 单元     | 原生保存取消、写入和失败分支          |
-| [tests/syllabus/saved.test.mjs](../../tests/syllabus/saved.test.mjs)                             | 单元     | 收藏更新基线、通知与显式确认          |
-| [tests/syllabus/scroll-chain.test.mjs](../../tests/syllabus/scroll-chain.test.mjs)               | 单元     | 容器边界和外层滚动距离计算            |
-| [tests/syllabus/scroll-intent.test.mjs](../../tests/syllabus/scroll-intent.test.mjs)             | 单元     | 连续手势归属、速度与边界交接          |
-| [tests/syllabus/selection.test.mjs](../../tests/syllabus/selection.test.mjs)                     | 单元     | 首份可读大纲和异步选择顺序            |
-| [tests/syllabus/source-layout.browser.mjs](../../tests/syllabus/source-layout.browser.mjs)       | 浏览器   | 真实官方日期课表及窄屏阅读            |
-| [tests/syllabus/storage.integration.test.mjs](../../tests/syllabus/storage.integration.test.mjs) | 集成     | 索引版本、归档、断点和数据库回退      |
-| [tests/syllabus/teacher-data.test.mjs](../../tests/syllabus/teacher-data.test.mjs)               | 单元     | 教师精确评分、来源和颜色              |
-| [tests/syllabus/time.test.mjs](../../tests/syllabus/time.test.mjs)                               | 单元     | 浏览器时区中的官方更新时间            |
-| [tests/syllabus/transport.test.mjs](../../tests/syllabus/transport.test.mjs)                     | 单元     | 官方大纲直连、兼容和缓存更新          |
+| 脚本                                                                                             | 类型     | 用途                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| [tests/syllabus/assets.test.mjs](../../tests/syllabus/assets.test.mjs)                           | 单元     | 字体／图片白名单、文件签名和字节上限                                                                                                           |
+| [tests/syllabus/check-pdf.py](../../tests/syllabus/check-pdf.py)                                 | PDF 检查 | 生成 PDF 的页面、文本、链接与布局检查                                                                                                          |
+| [tests/syllabus/choices.test.mjs](../../tests/syllabus/choices.test.mjs)                         | 单元     | 大纲默认顺序、教师与评分筛选                                                                                                                   |
+| [tests/syllabus/experience.browser.mjs](../../tests/syllabus/experience.browser.mjs)             | 浏览器   | 完整页面操作、响应式布局与滚动                                                                                                                 |
+| [tests/syllabus/fonts.browser.mjs](../../tests/syllabus/fonts.browser.mjs)                       | 浏览器   | 真实官方 CDN 字体的跨域和 CSP                                                                                                                  |
+| [tests/syllabus/insights.test.mjs](../../tests/syllabus/insights.test.mjs)                       | 单元     | 周次、日期、表格与课程安排提取                                                                                                                 |
+| [tests/syllabus/normalize.test.mjs](../../tests/syllabus/normalize.test.mjs)                     | 单元     | 官方大纲结构、分页和精确身份                                                                                                                   |
+| [tests/syllabus/official-render.test.mjs](../../tests/syllabus/official-render.test.mjs)         | 单元     | 官方 DOM、样式清理与隔离 CSP                                                                                                                   |
+| [tests/syllabus/pdf-content.test.mjs](../../tests/syllabus/pdf-content.test.mjs)                 | 单元     | PDF 文字、标题、链接及下划线范围                                                                                                               |
+| [tests/syllabus/pdf-typography.test.mjs](../../tests/syllabus/pdf-typography.test.mjs)           | 单元     | 嵌入字体高度与 CSS 行距                                                                                                                        |
+| [tests/syllabus/save.test.mjs](../../tests/syllabus/save.test.mjs)                               | 单元     | 原生保存取消、写入和失败分支                                                                                                                   |
+| [tests/syllabus/saved.test.mjs](../../tests/syllabus/saved.test.mjs)                             | 单元     | 收藏更新基线、通知与显式确认                                                                                                                   |
+| [tests/syllabus/scroll-chain.test.mjs](../../tests/syllabus/scroll-chain.test.mjs)               | 单元     | 容器边界和外层滚动距离计算                                                                                                                     |
+| [tests/syllabus/scroll-intent.test.mjs](../../tests/syllabus/scroll-intent.test.mjs)             | 单元     | 连续手势归属、速度与边界交接                                                                                                                   |
+| [tests/syllabus/selection.test.mjs](../../tests/syllabus/selection.test.mjs)                     | 单元     | 首份可读大纲和异步选择顺序                                                                                                                     |
+| [tests/syllabus/source-layout.browser.mjs](../../tests/syllabus/source-layout.browser.mjs)       | 浏览器   | 真实官方日期课表及窄屏阅读                                                                                                                     |
+| [tests/syllabus/history.integration.test.mjs](../../tests/syllabus/history.integration.test.mjs) | 集成     | 科目／校区／教师精确匹配、最近参考、别名、未发布及未来班次排除；`SYLLABUS_DATABASE_TEST=1`，读取环境数据库并建立／删除随机临时模式，不请求上游 |
+| [tests/syllabus/storage.integration.test.mjs](../../tests/syllabus/storage.integration.test.mjs) | 集成     | 索引版本、归档、断点和数据库回退                                                                                                               |
+| [tests/syllabus/teacher-data.test.mjs](../../tests/syllabus/teacher-data.test.mjs)               | 单元     | 教师精确评分、来源和颜色                                                                                                                       |
+| [tests/syllabus/time.test.mjs](../../tests/syllabus/time.test.mjs)                               | 单元     | 浏览器时区中的官方更新时间                                                                                                                     |
+| [tests/syllabus/transport.test.mjs](../../tests/syllabus/transport.test.mjs)                     | 单元     | 官方大纲直连、兼容和缓存更新                                                                                                                   |
 
 ### tests
 

@@ -25,3 +25,5 @@ SEARCH_EVAL_TERM=1264 node --expose-gc --env-file=.env.local scripts/search/eval
 ```sh
 node scripts/catalog/benchmark-search.mjs
 ```
+
+默认哥伦布校区即使未写入 URL，也会计入筛选数并显示选中标签。取消校区标签会切换全部校区；清除筛选同时移除校区限制，重置筛选恢复默认哥伦布校区。搜索文本、学期、排序以及详情／分享参数不计入筛选数。

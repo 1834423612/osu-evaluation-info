@@ -167,3 +167,5 @@ node scripts/catalog/benchmark-search.mjs
 ```
 
 The tool accepts localhost only, caps clients at 200, and writes its report under `.cache/`.
+
+The effective Columbus campus default is included in the filter count and active chips even when omitted from the URL. Removing the campus chip selects all campuses. Clear filters removes campus scope as well; Reset restores the Columbus default. Query text, term, sorting and detail/share parameters do not count as facets.

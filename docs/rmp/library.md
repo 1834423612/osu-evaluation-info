@@ -66,3 +66,5 @@ node tests/rmp/period-layout.browser.mjs
 ```
 
 Browser scripts accept `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE`, `RMP_TEST_BASE_URL` and `RMP_TEST_OUTPUT`. They cover bilingual responsive views, browser back, real Mansfield leads, long identity controls and wheel/touch handoff.
+
+The library grid uses compact metrics and a bookmark action beside the identity. List mode uses aligned identity, score and review columns on desktop; phones retain a distinct dense row with compact score columns and review metadata rather than reverting to cards. Long identities wrap within their column, and department text remains available in profile details.

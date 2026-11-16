@@ -131,3 +131,9 @@ node --test tests/syllabus/translation.test.mjs tests/syllabus/cjk-font.test.mjs
 The build script makes no network requests and writes only `public/fonts/noto-sans-sc-regular.woff2`. These tests use local assets and injected translation, without provider requests or application-data writes.
 
 Verification on 2026-11-15: a published Autumn 2026 BUSFIN syllabus completed both translation modes through the Google route. Standard downloads produced a five-page bilingual PDF and a four-page replacement PDF; all pages were rendered for inspection. Both used Letter pages, retained selectable Chinese text and source links, and displayed the complete Chinese title. Native Save as remains covered by unit tests rather than a completed native-dialog browser test.
+
+## Historical references and optional translation
+
+When no current section has a readable syllabus, `resource=references` offers up to twelve readable archived syllabi for the exact course and campus from earlier terms. Published catalog generations establish section identity; matching official instructor email addresses take precedence, then the latest term. Equal names alone do not establish a teacher match. A focused current class restricts the teacher comparison. Missing archives remain empty; another course, campus or future term is never substituted. Reading a reference stays in the current panel and labels the historical term. It does not change the selected search term.
+
+Full-document translation controls start collapsed and retain their progress/output while collapsed. Each assessment, materials and schedule quick-reference tab also has an independent bilingual translation action using the shared provider preference and bounded paragraph translator. Original links and tables remain available; restoring the structured original is explicit. These quick-reference translations do not change the main reader or PDF output.
