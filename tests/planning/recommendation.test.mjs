@@ -6,7 +6,10 @@ import {
   applyRecommendationBundle,
   ratingRequest,
 } from "../../src/lib/planning/recommendation.ts";
-import { publicSamples } from "../../src/lib/planning/public-samples.ts";
+import {
+  publicSamples,
+  sampleReferenceReader,
+} from "../../src/lib/planning/public-samples.ts";
 import { readFile } from "node:fs/promises";
 const options = {
   programId: "p",
@@ -254,4 +257,14 @@ test("recommendation placement reuses imported planned courses", () => {
   assert.equal(next.semesters.flatMap((s) => s.courses).length, 4);
   assert.deepEqual(next.semesters, plan.semesters);
   assert.equal(next.schedule.placements.length, result.bundle.length);
+});
+
+test("conditional exclusions do not become sample course suggestions", () => {
+  const references = sampleReferenceReader([
+    { code: "PHILOS", title: "Philosophy" },
+  ]);
+  assert.deepEqual(references("[GE-Theme if not PHILOS 2338] — [4] hours"), []);
+  assert.deepEqual(references("PHILOS 2338 — 4 hours"), [
+    { subject: "PHILOS", number: "2338" },
+  ]);
 });

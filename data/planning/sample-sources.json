@@ -22,7 +22,9 @@
       "adapter": "cse-grid",
       "structure": "Sample Schedule accordion. Autumn/Spring table with four colspan=2 Year N rows, paired course rows and reported totals. Keep CSE 32X1/390X/591X as placeholders. Conditional GE credits cannot be added to each alternative.",
       "expectedSamples": 1,
-      "geSystem": "GEN"
+      "geSystem": "GEN",
+      "comparison": "The linked Word version lists STAT 3470 as 4 credits and Year 2 Autumn as 15 hours. The HTML schedule used here lists 3 credits and 14 hours. Preserve these as separate source claims. Course cards query the catalog for planning credits.",
+      "downloadStructure": "Word document with separate Year/season headings followed by Course/Hours tables. Eight sample tables follow the requirements section."
     },
     {
       "id": "cse-bs",
@@ -33,7 +35,9 @@
       "adapter": "cse-grid",
       "structure": "Sample Schedule accordion. Autumn/Spring columns, merged Year N heading, paired course rows, Total of N credits. Eight terms. Preserve choices and incomplete course codes.",
       "expectedSamples": 1,
-      "geSystem": "GEN"
+      "geSystem": "GEN",
+      "comparison": "The linked Word version lists STAT 3470 as 4 credits and Year 2 Autumn as 18 hours. The HTML schedule used here lists 3 credits and 17 hours. Preserve these as separate source claims. Course cards query the catalog for planning credits.",
+      "downloadStructure": "Word document with separate Year/season headings followed by Course/Hours tables. Eight sample tables follow the requirements section."
     },
     {
       "id": "molecular-genetics",

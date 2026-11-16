@@ -1,11 +1,1127 @@
 [
   {
     "schemaVersion": 1,
-    "id": "molgen-v2-1-9c374d1d9792a4fa",
+    "id": "cis-ba-c07bfa42c331b8eecfbc1ce6-v1-inspected-v2",
+    "source": {
+      "url": "https://cse.osu.edu/ba-cis-program-information",
+      "sha256": "c07bfa42c331b8eecfbc1ce67de9a0a717ac0bfe2869eb80c08d0deb72dc4f24",
+      "fetchedAt": "2026-11-16T21:17:54.200583+00:00",
+      "validatedAt": null,
+      "mediaType": "text/html"
+    },
+    "documentKind": "sample-plan",
+    "program": "Computer and Information Science · BA",
+    "specialization": null,
+    "campus": null,
+    "geSystem": "GEN",
+    "version": "c07bfa42c331b8ee-cse-v1-inspected-v2",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "publicationStatus": "unknown",
+    "planScope": "single-program",
+    "academicYear": null,
+    "evidence": [
+      "Eight semester assignments from the Sample Schedule / Sample Graduation Plan section.",
+      "Conditional GE entries, course choices and incomplete course codes retain their source wording.",
+      "Sample Graduation Plan accordion. Eight tables captioned Year N Autumn/Spring and reported hours. Course and Hours columns. Preserve electives, alternatives, bracketed conditions and CSE 390x placeholders."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "ASC 1100 — 1 hours",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          },
+          {
+            "evidence": "Math 1151 — 5 hours",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "CSE 1223 — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Writing — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Diversity — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Launch Seminar — 1 hours",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2221 (need C- or better) — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Math 1152 — 5 hours",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Foreign Language 1 — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "GE-History — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 14,
+          "max": 14
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2231 — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "CSE 2321 — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Stat 2450 — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Foreign Language 2 — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2421 — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Related Field Core — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Science — 5 hours",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Foreign Language 3 — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 14,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "CSE 390x — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "CSE 2501 or PHILOS 2338 — 1 or 4 hours",
+            "credits": null
+          },
+          {
+            "evidence": "[GE-Theme if not PHILOS 2338] — [4] hours",
+            "credits": null
+          },
+          {
+            "evidence": "Related Field Core — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-SBS — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "Related Field Core — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Related Field Core — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Math/Science — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Lit/VPA — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Theme — 4 hours",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 13,
+          "max": 13
+        },
+        "entries": [
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Program Elective — 3 hours",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Reflection — 1 hours",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  },
+  {
+    "schemaVersion": 1,
+    "id": "cis-bs-67d34047390df9d61ced3c97-v1-inspected-v2",
+    "source": {
+      "url": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cis-program-information",
+      "sha256": "67d34047390df9d61ced3c97e38b001aef9fde02fa4162d98cd3f94acf7b8347",
+      "fetchedAt": "2026-11-16T21:17:58.625202+00:00",
+      "validatedAt": null,
+      "mediaType": "text/html"
+    },
+    "documentKind": "sample-plan",
+    "program": "Computer and Information Science · BS",
+    "specialization": null,
+    "campus": null,
+    "geSystem": "GEN",
+    "version": "67d34047390df9d6-cse-v1-inspected-v2",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "publicationStatus": "unknown",
+    "planScope": "single-program",
+    "academicYear": null,
+    "evidence": [
+      "Eight semester assignments from the Sample Schedule / Sample Graduation Plan section.",
+      "Conditional GE entries, course choices and incomplete course codes retain their source wording.",
+      "Sample Schedule accordion. Autumn/Spring table with four colspan=2 Year N rows, paired course rows and reported totals. Keep CSE 32X1/390X/591X as placeholders. Conditional GE credits cannot be added to each alternative.",
+      "The linked Word version lists STAT 3470 as 4 credits and Year 2 Autumn as 15 hours. The HTML schedule used here lists 3 credits and 14 hours. Preserve these as separate source claims. Course cards query the catalog for planning credits."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "ArtsSci 1100 - 1 credit",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          },
+          {
+            "evidence": "Math 1151 - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Physics 1250 - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "CSE 1223 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE Launch Seminar - 1 credit",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 17,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2221 (need C- or better) - 4 credits",
+            "credits": null
+          },
+          {
+            "evidence": "Math 1152 - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "GE-Writing - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Science - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 14,
+          "max": 14
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2231 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "CSE 2321 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Stat 3470 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Foreign Language 1 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 17,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2331 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 2421 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Math 3345 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Foreign Language 2 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "GE-LVPA - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 17,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2431 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 390X - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "ECE 2060 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Foreign Language 3 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "GE-History - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 16,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "CSE 32X1 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 34X1 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 35X1 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Social Science - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 2501 or Philos 2338 - 1 or 4 credits",
+            "credits": null
+          },
+          {
+            "evidence": "[GE-Theme if not Philos 2338 - 4 credits]",
+            "credits": null
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "CSE 3341 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE -Diversity - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "CSE 591X - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 1 credit",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          },
+          {
+            "evidence": "GE-Theme - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  },
+  {
+    "schemaVersion": 1,
+    "id": "cse-bs-559d6c3e5b4ce8c57e5762ad-v1-inspected-v2",
+    "source": {
+      "url": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cse-program-information",
+      "sha256": "559d6c3e5b4ce8c57e5762adb1d9ac8dea2d92d60f031f8212f8dd636e9e0c19",
+      "fetchedAt": "2026-11-16T21:18:02.708842+00:00",
+      "validatedAt": null,
+      "mediaType": "text/html"
+    },
+    "documentKind": "sample-plan",
+    "program": "Computer Science and Engineering · BS",
+    "specialization": null,
+    "campus": null,
+    "geSystem": "GEN",
+    "version": "559d6c3e5b4ce8c5-cse-v1-inspected-v2",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "publicationStatus": "unknown",
+    "planScope": "single-program",
+    "academicYear": null,
+    "evidence": [
+      "Eight semester assignments from the Sample Schedule / Sample Graduation Plan section.",
+      "Conditional GE entries, course choices and incomplete course codes retain their source wording.",
+      "Sample Schedule accordion. Autumn/Spring columns, merged Year N heading, paired course rows, Total of N credits. Eight terms. Preserve choices and incomplete course codes.",
+      "The linked Word version lists STAT 3470 as 4 credits and Year 2 Autumn as 18 hours. The HTML schedule used here lists 3 credits and 17 hours. Preserve these as separate source claims. Course cards query the catalog for planning credits."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "Engr 1100 - 1 credit",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          },
+          {
+            "evidence": "Engr 1181 - 2 credits",
+            "credits": {
+              "min": 2,
+              "max": 2
+            }
+          },
+          {
+            "evidence": "Math 1151 - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "Physics 1250 - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "CSE 1223 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2221 (need C- or better) - 4 credits",
+            "credits": null
+          },
+          {
+            "evidence": "Engr 1182 - 2 credits",
+            "credits": {
+              "min": 2,
+              "max": 2
+            }
+          },
+          {
+            "evidence": "Math 1172 - 5 credits",
+            "credits": {
+              "min": 5,
+              "max": 5
+            }
+          },
+          {
+            "evidence": "GE-Writing - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE Launch Seminar - 1 credit",
+            "credits": {
+              "min": 1,
+              "max": 1
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 17,
+          "max": 17
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2231 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "CSE 2321 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Stat 3470 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Math/Science Elective - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "GE-Social/Behavioral - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2331 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 2421 - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "ECE 2060 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Math 3345 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Diversity - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "CSE 2431 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 390X - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "ECE 2360 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Math 2568 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-History - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 17,
+          "max": 18
+        },
+        "entries": [
+          {
+            "evidence": "CSE 32X1 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 34X1 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 35X1 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "CSE 2501 or PHILOS 2338 - 1 or 4 credits",
+            "credits": null
+          },
+          {
+            "evidence": "[GE-Theme if not PHILOS 2338] - 4 credits",
+            "credits": null
+          },
+          {
+            "evidence": "Math/Science Elective - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 15,
+          "max": 15
+        },
+        "entries": [
+          {
+            "evidence": "CSE 3341 - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "GE-Lit/VPA - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 16,
+          "max": 16
+        },
+        "entries": [
+          {
+            "evidence": "CSE 591X - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 3 credits",
+            "credits": {
+              "min": 3,
+              "max": 3
+            }
+          },
+          {
+            "evidence": "Technical Elective - 2 credits",
+            "credits": {
+              "min": 2,
+              "max": 2
+            }
+          },
+          {
+            "evidence": "GE-Theme - 4 credits",
+            "credits": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  },
+  {
+    "schemaVersion": 1,
+    "id": "molgen-v2-1-9c374d1d9792a4fa-inspected-v2",
     "source": {
       "url": "https://molgen.osu.edu/sample-curriculum",
       "sha256": "9c374d1d9792a4fab3d37266ab906c54cb315458701f82c7f2b1f93c4379bb2c",
-      "fetchedAt": "2026-11-16T05:57:52.534757+00:00",
+      "fetchedAt": "2026-11-16T21:13:10.856683+00:00",
       "validatedAt": null,
       "mediaType": "text/html"
     },
@@ -13,11 +1129,14 @@
     "program": "Molecular Genetics",
     "specialization": null,
     "campus": null,
-    "geSystem": null,
-    "version": "9c374d1d9792a4fa-example-1-v2",
+    "geSystem": "GEN",
+    "version": "9c374d1d9792a4fa-example-1-v2-inspected-v2",
     "applicableFrom": null,
     "applicableUntil": null,
-    "evidence": ["Example 1 (MolGen 4606 in Autumn of Year 2)"],
+    "evidence": [
+      "Example 1 (MolGen 4606 in Autumn of Year 2)",
+      "Two Example headings, each with eight Year N Autumn/Spring headings and list items. Semester Total and year/degree totals are distinct. Example 1 and 2 differ in timing of MOLGEN 4606. BIO is used as a Biology abbreviation."
+    ],
     "semesters": [
       {
         "label": "Year 1: Autumn",
@@ -371,11 +1490,11 @@
   },
   {
     "schemaVersion": 1,
-    "id": "molgen-v2-2-9c374d1d9792a4fa",
+    "id": "molgen-v2-2-9c374d1d9792a4fa-inspected-v2",
     "source": {
       "url": "https://molgen.osu.edu/sample-curriculum",
       "sha256": "9c374d1d9792a4fab3d37266ab906c54cb315458701f82c7f2b1f93c4379bb2c",
-      "fetchedAt": "2026-11-16T05:57:52.534757+00:00",
+      "fetchedAt": "2026-11-16T21:13:10.856683+00:00",
       "validatedAt": null,
       "mediaType": "text/html"
     },
@@ -383,11 +1502,14 @@
     "program": "Molecular Genetics",
     "specialization": null,
     "campus": null,
-    "geSystem": null,
-    "version": "9c374d1d9792a4fa-example-2-v2",
+    "geSystem": "GEN",
+    "version": "9c374d1d9792a4fa-example-2-v2-inspected-v2",
     "applicableFrom": null,
     "applicableUntil": null,
-    "evidence": ["Example 2 (MolGen 4606 in Spring of Year 2)"],
+    "evidence": [
+      "Example 2 (MolGen 4606 in Spring of Year 2)",
+      "Two Example headings, each with eight Year N Autumn/Spring headings and list items. Semester Total and year/degree totals are distinct. Example 1 and 2 differ in timing of MOLGEN 4606. BIO is used as a Biology abbreviation."
+    ],
     "semesters": [
       {
         "label": "Year 1: Autumn",
@@ -741,2931 +1863,20 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-v2-19b707e0b48f10d91a9f9182",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2021-02/Math%20Theoretical%20Track%20Requirements%20and%20Sample%20Schedule.pdf",
-      "sha256": "19b707e0b48f10d91a9f91823dec02576b07eb9e635376ff62152704f19c47da",
-      "fetchedAt": "2026-11-16T06:04:34.667677+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Math Theoretical Track Requirements and Sample Schedule.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "19b707e0b48f10d9-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Math Theoretical Track Requirements and Sample Schedule.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 13.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 3345 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 1295 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 12.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4530 or Stat 4201 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 4547 or 4580 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2255 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 13.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 4548 or 4581 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 9.0,
-          "max": 9.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4547 or 4580 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 6.0,
-          "max": 6.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4548 or 4581 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-76ae0167af343722b791c4e9",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2024-07/Actuarial%20Science%20Requirements%20and%20Sample%20Schedule%207.18.24.pdf",
-      "sha256": "76ae0167af343722b791c4e91f6d03bd31a28f0342bf79555d91099af5c53f15",
-      "fetchedAt": "2026-11-16T06:12:01.506437+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Actuarial Science Requirements and Sample Schedule 7.18.24.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "76ae0167af343722-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Actuarial Science Requirements and Sample Schedule 7.18.24.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "CSE 1222, 1223, 1224 or 2111 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Econ 2001 or 2002 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "AcctMIS 2000 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Econ 2001 or 2002 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 7.0,
-          "max": 7.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 3618 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 9.0,
-          "max": 10.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Stat 4201 or Math 4530 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Comm 2367, 2110 or 2131 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 7.0,
-          "max": 7.0
-        },
-        "entries": [
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "BusFin 3120 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 9.0,
-          "max": 9.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 3588 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Actuarial Elective 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "English 3304 or 3305 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 3.0,
-          "max": 3.0
-        },
-        "entries": [
-          {
-            "evidence": "Actuarial Elective 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 3.0,
-          "max": 3.0
-        },
-        "entries": [
-          {
-            "evidence": "Actuarial Elective 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-dff3b4fa8dfb03709ac0492b",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/undergrad_current-majors_requirements_honors2.pdf",
-      "sha256": "dff3b4fa8dfb03709ac0492b39ab0ed1ac8288705c43f0aab2bab46a835a28d6",
-      "fetchedAt": "2026-11-16T06:12:12.457403+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "undergrad_current-majors_requirements_honors2.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "dff3b4fa8dfb0370-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "undergrad_current-majors_requirements_honors2.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4181H (AU only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1110.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4182H (SP only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5529H (even AU only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "OR Math 5576H (odd AU only)",
-            "credits": null
-          },
-          {
-            "evidence": "Math 5520H (AU only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "GE Language 1101 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5530H (odd SP only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "OR Math 5540H (even SP only )",
-            "credits": null
-          },
-          {
-            "evidence": "GE Language 1102 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5576H (odd AU only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "OR Math 5529H (even AU only)",
-            "credits": null
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5540H (even SP only 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "OR Math 5530H (odd SP only)",
-            "credits": null
-          },
-          {
-            "evidence": "GE Language 1103 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5590H (AU only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5591 (SP only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Math 5522H (SP only) 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-487f6ca94786eff170ee8cfc",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2021-02/Math%20Applied%20Track%20Chemistry%20Requirements%20and%20Sample%20Schedule.pdf",
-      "sha256": "487f6ca94786eff170ee8cfce22720fbd5239fcd4e664f87eab457a625ae35b1",
-      "fetchedAt": "2026-11-16T06:12:16.519932+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Math Applied Track Chemistry Requirements and Sample Schedule.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "487f6ca94786eff1-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Math Applied Track Chemistry Requirements and Sample Schedule.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Chem 1210 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "CSE 1222 or 1223 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Chem 1220 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Physics 1250 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Biology 1113 or 1114 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 1295 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 3345 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2255 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Physics 1251 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 14.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4530 or Stat 4201 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Chemistry 2210 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Math 4557 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 13.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Chemistry 4300 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 12.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 9.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-2ae3318b35be95370e310685",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2021-02/Math%20Applied%20Track%20Physics%20Requirements%20and%20Sample%20Schedule.pdf",
-      "sha256": "2ae3318b35be95370e310685d47f77ac22fc2623643eca0b11e2e6d4f037d36e",
-      "fetchedAt": "2026-11-16T06:12:17.538510+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Math Applied Track Physics Requirements and Sample Schedule.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "2ae3318b35be9537-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Math Applied Track Physics Requirements and Sample Schedule.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Chem 1210 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "CSE 1222 or 1223 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Physics 1250 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Physics 1251 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 1295 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 3345 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2255 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Biology 1113 or 1114 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 13.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4530 or Stat 4201 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Physics 2300 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 4557 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Physics 2301 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 12.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 9.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-3b877f4472090aa914e6a8ce",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2024-09/Math%20Biology%20Track%20Requirements%20and%20Sample%20Schedule%2010.5.23.pdf",
-      "sha256": "3b877f4472090aa914e6a8ce743d0cd15bd36646d73281d8242faa3ddc487b1d",
-      "fetchedAt": "2026-11-16T06:12:20.542481+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Math Biology Track Requirements and Sample Schedule 10.5.23.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "3b877f4472090aa9-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Math Biology Track Requirements and Sample Schedule 10.5.23.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Chem 1210 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Biology 1113 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Biology 1114 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 13.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 3345 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2255 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 1295 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 10.0,
-          "max": 12.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4530 or Stat 4201 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Biol 3401 or Math/MolGen 5660 4-5",
-            "credits": {
-              "min": 4.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 10.0,
-          "max": 12.0
-        },
-        "entries": [
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 3350 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 9.0,
-          "max": 12.0
-        },
-        "entries": [
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 9.0,
-          "max": 11.0
-        },
-        "entries": [
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-1080822792235520bf8a4a14",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2021-12/Math%20Education%20Track%20Requirements%20and%20Sample%20Schedule.pdf",
-      "sha256": "1080822792235520bf8a4a1464198d97ea57645a0ed67cb378a141376a3f2bc4",
-      "fetchedAt": "2026-11-16T06:12:22.507995+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Math Education Track Requirements and Sample Schedule.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "1080822792235520-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Math Education Track Requirements and Sample Schedule.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "CSE 1222,1223,1224 or 222 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "Math 1295 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 12.0,
-          "max": 12.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 3345 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 12.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4530 or Stat 4201 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 4547 or 4580 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 13.0,
-          "max": 13.0
-        },
-        "entries": [
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 4548 or 4581 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4504 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 9.0,
-          "max": 9.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4547 or 4580 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4507 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 10.0,
-          "max": 10.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 4548 or 4581 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4578 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "math-pdf-v2-dee1208d4499066ffa419882",
-    "source": {
-      "url": "https://math.osu.edu/sites/default/files/2023-12/Math%20and%20Actuarial%20Science%20Double%20Major%20Requirements%20and%20Sample%20Schedule%20%2012.04.23.pdf",
-      "sha256": "dee1208d4499066ffa419882fb24f8159a2c919be87a8525357688532c2a5e16",
-      "fetchedAt": "2026-11-16T06:12:26.507686+00:00",
-      "validatedAt": null,
-      "mediaType": "application/pdf"
-    },
-    "documentKind": "sample-plan",
-    "program": "Math and Actuarial Science Double Major Requirements and Sample Schedule  12.04.23.pdf",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "dee1208d4499066f-math-columns-v2",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "Math and Actuarial Science Double Major Requirements and Sample Schedule  12.04.23.pdf",
-      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1151 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "ARTSSCI 1100.01 1",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "Econ 2001 or 2002 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 1152 5",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "English 1110 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Econ 2001 or 2002 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "CSE 1222, 1223, 1224 or 2111 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 17.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2153 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Math 3618 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "AcctMIS 2000 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Comm 2367 or 2110 or 2131 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE; Math 1295 3, 1",
-            "credits": null
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 2568 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 2225 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 3345 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4530 or Stat 4201 3-4",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 16.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5630 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4547 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "BusFin 3120 or 3220 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Stat 4202 4",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5631 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4548 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 3588 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "English 3304 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5633 or Econ 5410 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 4580 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "Math 5634 or Econ 5420 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Math 5637",
-            "credits": null
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE 3",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "grid-0dac53b24b7fb01b64619de8-0",
-    "source": {
-      "url": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
-      "sha256": "0dac53b24b7fb01b64619de871f25ac246ecef86040d916b6e06a7d42cddbba7",
-      "fetchedAt": "2026-11-16T06:13:32.702703+00:00",
-      "validatedAt": null,
-      "mediaType": "text/html"
-    },
-    "documentKind": "sample-plan",
-    "program": "B.S. Climate, Water & Environment Subprogram Sample Four-Year Curriculum",
-    "specialization": null,
-    "campus": null,
-    "geSystem": null,
-    "version": "0dac53b24b7fb01b-grid-v1",
-    "applicableFrom": null,
-    "applicableUntil": null,
-    "publicationStatus": "unknown",
-    "planScope": "unknown",
-    "academicYear": null,
-    "evidence": [
-      "B.S. Climate, Water & Environment Subprogram Sample Four-Year Curriculum",
-      "Explicit Year/Autumn/Spring table; alternatives and footnotes remain source evidence."
-    ],
-    "semesters": [
-      {
-        "label": "Year 1: Autumn",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "ASC 1100.XX - College Survey Seminar (1 cr)",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "Earth Science Intro Course + Lab (4 cr)",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "MATH 1151 - Calculus I (5 cr)",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "World Language - Level 1 (4 cr)",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 1: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "GenEd 1201 - Launch Seminar (1 cr)",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "CHEM 1210 - General Chemistry I (5 cr)",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "MATH 1152 - Calculus II (5 cr)",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "World Language - Level 2 (4 cr)",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Autumn",
-        "credits": {
-          "min": 16.0,
-          "max": 17.0
-        },
-        "entries": [
-          {
-            "evidence": "PHYSICS 1250 - Mechanics, Thermal Physics, Waves (5 cr)",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "EARTHSC 2000 - Preparation for Thesis and Careers (1 cr)",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "World Language - Level 3 (4 cr)",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Science of Sustainability Course (3-4 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 2: Spring",
-        "credits": {
-          "min": 14.0,
-          "max": 15.0
-        },
-        "entries": [
-          {
-            "evidence": "One Additional Supporting Science (4-5 cr):",
-            "credits": {
-              "min": 4.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "• CHEM 1210 - General Chemistry II (5 cr)",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "• BIOLOGY 1113 or 1114 - Introductory Biology (4 cr)",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "• PHYSICS 1251 - E&M, Optics, Modern Physics (5 cr)",
-            "credits": {
-              "min": 5.0,
-              "max": 5.0
-            }
-          },
-          {
-            "evidence": "EARTHSC 2245 - Introductory Data Analysis (4 cr)",
-            "credits": {
-              "min": 4.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "EARTHSC 4450 - Water, Ice & Energy in the Earth System (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Autumn",
-        "credits": {
-          "min": 15.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Climate Course #1 (3 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Water Course #1 (3-4 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Certificate/Minor Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 3: Spring",
-        "credits": {
-          "min": 15.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "Climate Course #2 (3 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Environment Course #1 (3-4 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "Water Course #2 (3 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Certificate/Minor Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Autumn",
-        "credits": {
-          "min": 14.0,
-          "max": 16.0
-        },
-        "entries": [
-          {
-            "evidence": "EARTHSC 4998 - Undergraduate Research (2-3 cr)",
-            "credits": {
-              "min": 2.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Certificate/Minor Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Environment Course #2 (3 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Elective (3-4 cr):",
-            "credits": {
-              "min": 3.0,
-              "max": 4.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      },
-      {
-        "label": "Year 4: Spring",
-        "credits": {
-          "min": 14.0,
-          "max": 14.0
-        },
-        "entries": [
-          {
-            "evidence": "EARTHSC 4999.01 - UG Research for Thesis (1 cr)",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "GenEd 4001 - Reflection Seminar (1 cr)",
-            "credits": {
-              "min": 1.0,
-              "max": 1.0
-            }
-          },
-          {
-            "evidence": "Certificate/Minor Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Elective (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "Elective (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          },
-          {
-            "evidence": "GE Course (3 cr)",
-            "credits": {
-              "min": 3.0,
-              "max": 3.0
-            }
-          }
-        ]
-      }
-    ],
-    "reviewStatus": "pending",
-    "reviewedAt": null,
-    "reviewer": null
-  },
-  {
-    "schemaVersion": 1,
-    "id": "grid-7dd8a2c5a2d67d81176f61e8-0",
+    "id": "grid-7dd8a2c5a2d67d81176f61e8-0-inspected-v2",
     "source": {
       "url": "https://earthsciences.osu.edu/b.s.-geophysics-subprogram-sample-four-year-curriculum",
       "sha256": "7dd8a2c5a2d67d81176f61e855d5388e6607e1f52cf2bc4c8e07926ea35d239d",
-      "fetchedAt": "2026-11-16T06:13:35.448864+00:00",
+      "fetchedAt": "2026-11-16T21:13:14.940148+00:00",
       "validatedAt": null,
       "mediaType": "text/html"
     },
     "documentKind": "sample-plan",
-    "program": "B.S. Geophysics Subprogram Sample Four-Year Curriculum",
+    "program": "Earth Sciences · Geophysics · BS",
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "7dd8a2c5a2d67d81-grid-v1",
+    "version": "7dd8a2c5a2d67d81-grid-v1-inspected-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -3673,7 +1884,8 @@
     "academicYear": null,
     "evidence": [
       "B.S. Geophysics Subprogram Sample Four-Year Curriculum",
-      "Explicit Year/Autumn/Spring table; alternatives and footnotes remain source evidence."
+      "Explicit Year/Autumn/Spring table; alternatives and footnotes remain source evidence.",
+      "Year/Autumn Semester/Spring Semester table, four years, multi-line course cells and reported totals. Some reported totals differ from the sum of displayed entries. Retain both as source evidence."
     ],
     "semesters": [
       {
@@ -4000,6 +2212,634 @@
           },
           {
             "evidence": "Elective (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  },
+  {
+    "schemaVersion": 1,
+    "id": "grid-0dac53b24b7fb01b64619de8-0-inspected-v2",
+    "source": {
+      "url": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
+      "sha256": "0dac53b24b7fb01b64619de871f25ac246ecef86040d916b6e06a7d42cddbba7",
+      "fetchedAt": "2026-11-16T21:13:18.871885+00:00",
+      "validatedAt": null,
+      "mediaType": "text/html"
+    },
+    "documentKind": "sample-plan",
+    "program": "Earth Sciences · Climate, Water and Environment · BS",
+    "specialization": null,
+    "campus": null,
+    "geSystem": null,
+    "version": "0dac53b24b7fb01b-grid-v1-inspected-v2",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "publicationStatus": "unknown",
+    "planScope": "unknown",
+    "academicYear": null,
+    "evidence": [
+      "B.S. Climate, Water & Environment Subprogram Sample Four-Year Curriculum",
+      "Explicit Year/Autumn/Spring table; alternatives and footnotes remain source evidence.",
+      "Year/Autumn Semester/Spring Semester table, four rows of multi-line courses. Elective/GE entries remain placeholders. Source does not establish a unique BDP Applied Version."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 14.0,
+          "max": 14.0
+        },
+        "entries": [
+          {
+            "evidence": "ASC 1100.XX - College Survey Seminar (1 cr)",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "Earth Science Intro Course + Lab (4 cr)",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "MATH 1151 - Calculus I (5 cr)",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "World Language - Level 1 (4 cr)",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 15.0,
+          "max": 15.0
+        },
+        "entries": [
+          {
+            "evidence": "GenEd 1201 - Launch Seminar (1 cr)",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "CHEM 1210 - General Chemistry I (5 cr)",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "MATH 1152 - Calculus II (5 cr)",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "World Language - Level 2 (4 cr)",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 16.0,
+          "max": 17.0
+        },
+        "entries": [
+          {
+            "evidence": "PHYSICS 1250 - Mechanics, Thermal Physics, Waves (5 cr)",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "EARTHSC 2000 - Preparation for Thesis and Careers (1 cr)",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "World Language - Level 3 (4 cr)",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Science of Sustainability Course (3-4 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 14.0,
+          "max": 15.0
+        },
+        "entries": [
+          {
+            "evidence": "One Additional Supporting Science (4-5 cr): • CHEM 1210 - General Chemistry II (5 cr) • BIOLOGY 1113 or 1114 - Introductory Biology (4 cr) • PHYSICS 1251 - E&M, Optics, Modern Physics (5 cr)",
+            "credits": {
+              "min": 4.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "EARTHSC 2245 - Introductory Data Analysis (4 cr)",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "EARTHSC 4450 - Water, Ice & Energy in the Earth System (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 15.0,
+          "max": 16.0
+        },
+        "entries": [
+          {
+            "evidence": "Climate Course #1 (3 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Water Course #1 (3-4 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Certificate/Minor Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 15.0,
+          "max": 16.0
+        },
+        "entries": [
+          {
+            "evidence": "Climate Course #2 (3 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Environment Course #1 (3-4 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Water Course #2 (3 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Certificate/Minor Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 14.0,
+          "max": 16.0
+        },
+        "entries": [
+          {
+            "evidence": "EARTHSC 4998 - Undergraduate Research (2-3 cr)",
+            "credits": {
+              "min": 2.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Certificate/Minor Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Environment Course #2 (3 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Elective (3-4 cr):",
+            "credits": {
+              "min": 3.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 14.0,
+          "max": 14.0
+        },
+        "entries": [
+          {
+            "evidence": "EARTHSC 4999.01 - UG Research for Thesis (1 cr)",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "GenEd 4001 - Reflection Seminar (1 cr)",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "Certificate/Minor Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Elective (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Elective (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE Course (3 cr)",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  },
+  {
+    "schemaVersion": 1,
+    "id": "math-pdf-v2-76ae0167af343722b791c4e9-inspected-v2",
+    "source": {
+      "url": "https://math.osu.edu/sites/default/files/2024-07/Actuarial%20Science%20Requirements%20and%20Sample%20Schedule%207.18.24.pdf",
+      "sha256": "76ae0167af343722b791c4e91f6d03bd31a28f0342bf79555d91099af5c53f15",
+      "fetchedAt": "2026-11-16T21:13:20.868410+00:00",
+      "validatedAt": null,
+      "mediaType": "application/pdf"
+    },
+    "documentKind": "sample-plan",
+    "program": "Actuarial Science",
+    "specialization": null,
+    "campus": null,
+    "geSystem": null,
+    "version": "76ae0167af343722-math-columns-v2-inspected-v2",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "publicationStatus": "unknown",
+    "planScope": "unknown",
+    "academicYear": null,
+    "evidence": [
+      "Actuarial Science",
+      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted.",
+      "PDF page 2, Autumn/Spring columns, four centered Year headings, adjacent credit cells and four paired totals. Footer revised 2/11/2025 despite the 2024 URL. Later years omit general electives. Web-page totals differ from PDF totals, so use this PDF consistently."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 15.0,
+          "max": 15.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 1151 5",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "CSE 1222, 1223, 1224 or 2111 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Econ 2001 or 2002 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "ARTSSCI 1100.01 1",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "GE 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 17.0,
+          "max": 17.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 1152 5",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "AcctMIS 2000 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Econ 2001 or 2002 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "English 1110 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 7.0,
+          "max": 7.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 2153 4",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Math 3618 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 9.0,
+          "max": 10.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 2568 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Stat 4201 or Math 4530 3-4",
+            "credits": {
+              "min": 3.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Comm 2367, 2110 or 2131 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 7.0,
+          "max": 7.0
+        },
+        "entries": [
+          {
+            "evidence": "Stat 4202 4",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "BusFin 3120 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 9.0,
+          "max": 9.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 3588 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Actuarial Elective 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "English 3304 or 3305 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 3.0,
+          "max": 3.0
+        },
+        "entries": [
+          {
+            "evidence": "Actuarial Elective 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 3.0,
+          "max": 3.0
+        },
+        "entries": [
+          {
+            "evidence": "Actuarial Elective 3",
             "credits": {
               "min": 3.0,
               "max": 3.0

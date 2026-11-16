@@ -1,0 +1,1581 @@
+{
+  "schemaVersion": 1,
+  "coverage": "partial",
+  "generatedAt": "2026-11-16T21:18:02.708842+00:00",
+  "index": {
+    "url": "https://cse.osu.edu/ba-cis-program-information",
+    "sha256": "c07bfa42c331b8eecfbc1ce67de9a0a717ac0bfe2869eb80c08d0deb72dc4f24",
+    "fetchedAt": "2026-11-16T21:17:54.200583+00:00"
+  },
+  "programs": [
+    {
+      "id": "41ced12661785076",
+      "name": "Computer and Information Science · BA",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://cse.osu.edu/ba-cis-program-information",
+      "documentIds": ["442c8c0c68f51bf071978fd6"],
+      "coverage": "references"
+    },
+    {
+      "id": "ee79bba1d6de7c36",
+      "name": "Computer and Information Science · BS",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cis-program-information",
+      "documentIds": ["eda265dba60ebc20c491ad7d"],
+      "coverage": "references"
+    },
+    {
+      "id": "a133d9c2fbfeeae0",
+      "name": "Computer Science and Engineering · BS",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cse-program-information",
+      "documentIds": ["48ec46c05db4a58fab8eede0"],
+      "coverage": "references"
+    },
+    {
+      "id": "4ed7e210ccf51b92",
+      "name": "Molecular Genetics",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://molgen.osu.edu/sample-curriculum",
+      "documentIds": ["7ee5aaa83241038706c9374d"],
+      "coverage": "references"
+    },
+    {
+      "id": "30b45450a4501df8",
+      "name": "Earth Sciences · Geophysics · BS",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://earthsciences.osu.edu/b.s.-geophysics-subprogram-sample-four-year-curriculum",
+      "documentIds": ["6fc8da4530ef17166c0d6275"],
+      "coverage": "references"
+    },
+    {
+      "id": "8e46ae9cceb3be63",
+      "name": "Earth Sciences · Climate, Water and Environment · BS",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
+      "documentIds": ["0be30405bd5cf7e030d05d6f"],
+      "coverage": "references"
+    },
+    {
+      "id": "161c8275a6fb4570",
+      "name": "Actuarial Science",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://math.osu.edu/undergrad/current-majors/actsci/requirements",
+      "documentIds": ["ac3a89d321725151bd7b5b20"],
+      "coverage": "references"
+    }
+  ],
+  "documents": [
+    {
+      "id": "442c8c0c68f51bf071978fd6",
+      "url": "https://cse.osu.edu/ba-cis-program-information",
+      "resolvedUrl": "https://cse.osu.edu/ba-cis-program-information",
+      "sha256": "c07bfa42c331b8eecfbc1ce67de9a0a717ac0bfe2869eb80c08d0deb72dc4f24",
+      "fetchedAt": "2026-11-16T21:17:54.200583+00:00",
+      "mediaType": "text/html",
+      "programIds": ["41ced12661785076"],
+      "reviewStatus": "pending",
+      "title": "BA CIS Program Information",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": ["GEN", "GEL"],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ACCAD",
+          "number": "5001"
+        },
+        {
+          "subject": "ACCAD",
+          "number": "5002"
+        },
+        {
+          "subject": "ACCAD",
+          "number": "5141"
+        },
+        {
+          "subject": "ACCTMIS",
+          "number": "2000"
+        },
+        {
+          "subject": "ACCTMIS",
+          "number": "2200"
+        },
+        {
+          "subject": "AEDECON",
+          "number": "2001"
+        },
+        {
+          "subject": "AEDECON",
+          "number": "2005"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "2202"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "3027"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "3211"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "3304"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "3452"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "3597.02"
+        },
+        {
+          "subject": "ART",
+          "number": "2100"
+        },
+        {
+          "subject": "ART",
+          "number": "2200"
+        },
+        {
+          "subject": "ART",
+          "number": "2300"
+        },
+        {
+          "subject": "ART",
+          "number": "2500"
+        },
+        {
+          "subject": "ART",
+          "number": "2502"
+        },
+        {
+          "subject": "ART",
+          "number": "2503"
+        },
+        {
+          "subject": "ART",
+          "number": "2514"
+        },
+        {
+          "subject": "ART",
+          "number": "2524"
+        },
+        {
+          "subject": "ART",
+          "number": "2555"
+        },
+        {
+          "subject": "ART",
+          "number": "3000"
+        },
+        {
+          "subject": "ART",
+          "number": "3001"
+        },
+        {
+          "subject": "ART",
+          "number": "3002"
+        },
+        {
+          "subject": "ART",
+          "number": "3003"
+        },
+        {
+          "subject": "ART",
+          "number": "3014"
+        },
+        {
+          "subject": "ART",
+          "number": "3024"
+        },
+        {
+          "subject": "ART",
+          "number": "3101"
+        },
+        {
+          "subject": "ART",
+          "number": "4101"
+        },
+        {
+          "subject": "BUSFIN",
+          "number": "3120"
+        },
+        {
+          "subject": "BUSFIN",
+          "number": "3220"
+        },
+        {
+          "subject": "BUSML",
+          "number": "3150"
+        },
+        {
+          "subject": "BUSML",
+          "number": "3250"
+        },
+        {
+          "subject": "BUSOBA",
+          "number": "3130"
+        },
+        {
+          "subject": "BUSOBA",
+          "number": "3230"
+        },
+        {
+          "subject": "BUSOBA",
+          "number": "4242"
+        },
+        {
+          "subject": "COMM",
+          "number": "2511"
+        },
+        {
+          "subject": "COMM",
+          "number": "2540"
+        },
+        {
+          "subject": "COMM",
+          "number": "3331"
+        },
+        {
+          "subject": "COMM",
+          "number": "3440"
+        },
+        {
+          "subject": "COMM",
+          "number": "3466"
+        },
+        {
+          "subject": "COMM",
+          "number": "3513"
+        },
+        {
+          "subject": "COMM",
+          "number": "3545"
+        },
+        {
+          "subject": "COMM",
+          "number": "3554"
+        },
+        {
+          "subject": "COMM",
+          "number": "3558"
+        },
+        {
+          "subject": "COMM",
+          "number": "4554"
+        },
+        {
+          "subject": "COMM",
+          "number": "4555"
+        },
+        {
+          "subject": "CSE",
+          "number": "1110"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "2221"
+        },
+        {
+          "subject": "CSE",
+          "number": "2231"
+        },
+        {
+          "subject": "CSE",
+          "number": "2321"
+        },
+        {
+          "subject": "CSE",
+          "number": "2421"
+        },
+        {
+          "subject": "CSE",
+          "number": "2501"
+        },
+        {
+          "subject": "CSE",
+          "number": "3901"
+        },
+        {
+          "subject": "CSE",
+          "number": "4193"
+        },
+        {
+          "subject": "CSE",
+          "number": "4998"
+        },
+        {
+          "subject": "CSE",
+          "number": "4999"
+        },
+        {
+          "subject": "DESIGN",
+          "number": "3104"
+        },
+        {
+          "subject": "DESIGN",
+          "number": "3105"
+        },
+        {
+          "subject": "DESIGN",
+          "number": "3305"
+        },
+        {
+          "subject": "DESIGN",
+          "number": "3505"
+        },
+        {
+          "subject": "DESIGN",
+          "number": "4104"
+        },
+        {
+          "subject": "DESIGN",
+          "number": "4154"
+        },
+        {
+          "subject": "ECE",
+          "number": "2560"
+        },
+        {
+          "subject": "ECON",
+          "number": "2001.01"
+        },
+        {
+          "subject": "ECON",
+          "number": "2001.02"
+        },
+        {
+          "subject": "ECON",
+          "number": "2002.01"
+        },
+        {
+          "subject": "ECON",
+          "number": "2002.02"
+        },
+        {
+          "subject": "ECON",
+          "number": "3400"
+        },
+        {
+          "subject": "ECON",
+          "number": "3820"
+        },
+        {
+          "subject": "ECON",
+          "number": "4001.01"
+        },
+        {
+          "subject": "ECON",
+          "number": "4001.02"
+        },
+        {
+          "subject": "ECON",
+          "number": "4002.01"
+        },
+        {
+          "subject": "ECON",
+          "number": "4002.02"
+        },
+        {
+          "subject": "ECON",
+          "number": "4300"
+        },
+        {
+          "subject": "ECON",
+          "number": "4310"
+        },
+        {
+          "subject": "ECON",
+          "number": "4400"
+        },
+        {
+          "subject": "ECON",
+          "number": "4800"
+        },
+        {
+          "subject": "ECON",
+          "number": "4830"
+        },
+        {
+          "subject": "ECON",
+          "number": "4831"
+        },
+        {
+          "subject": "ECON",
+          "number": "5410"
+        },
+        {
+          "subject": "ECON",
+          "number": "5850"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "2269"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "3011.01"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "4569"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3702"
+        },
+        {
+          "subject": "INTSTDS",
+          "number": "3400"
+        },
+        {
+          "subject": "LING",
+          "number": "2000"
+        },
+        {
+          "subject": "LING",
+          "number": "2000H"
+        },
+        {
+          "subject": "LING",
+          "number": "2051"
+        },
+        {
+          "subject": "LING",
+          "number": "2051H"
+        },
+        {
+          "subject": "LING",
+          "number": "3701"
+        },
+        {
+          "subject": "LING",
+          "number": "3701H"
+        },
+        {
+          "subject": "LING",
+          "number": "3801"
+        },
+        {
+          "subject": "LING",
+          "number": "3802"
+        },
+        {
+          "subject": "LING",
+          "number": "3803"
+        },
+        {
+          "subject": "LING",
+          "number": "4400"
+        },
+        {
+          "subject": "MATH",
+          "number": "1075"
+        },
+        {
+          "subject": "MATH",
+          "number": "1116"
+        },
+        {
+          "subject": "MATH",
+          "number": "1130"
+        },
+        {
+          "subject": "MATH",
+          "number": "1131"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2254"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "2338"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "2455"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "3371"
+        },
+        {
+          "subject": "PUBAFRS",
+          "number": "4310"
+        },
+        {
+          "subject": "PUBAFRS",
+          "number": "7120"
+        },
+        {
+          "subject": "SPHHRNG",
+          "number": "2051"
+        },
+        {
+          "subject": "STAT",
+          "number": "1430"
+        },
+        {
+          "subject": "STAT",
+          "number": "2450"
+        },
+        {
+          "subject": "STAT",
+          "number": "3202"
+        },
+        {
+          "subject": "STAT",
+          "number": "3470"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "eda265dba60ebc20c491ad7d",
+      "url": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cis-program-information",
+      "resolvedUrl": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cis-program-information",
+      "sha256": "67d34047390df9d61ced3c97e38b001aef9fde02fa4162d98cd3f94acf7b8347",
+      "fetchedAt": "2026-11-16T21:17:58.625202+00:00",
+      "mediaType": "text/html",
+      "programIds": ["ee79bba1d6de7c36"],
+      "reviewStatus": "pending",
+      "title": "BS CIS Program Information",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": ["GEN"],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ARTSSCI",
+          "number": "1100"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "CSE",
+          "number": "2111"
+        },
+        {
+          "subject": "CSE",
+          "number": "2122"
+        },
+        {
+          "subject": "CSE",
+          "number": "2123"
+        },
+        {
+          "subject": "CSE",
+          "number": "2221"
+        },
+        {
+          "subject": "CSE",
+          "number": "2231"
+        },
+        {
+          "subject": "CSE",
+          "number": "2321"
+        },
+        {
+          "subject": "CSE",
+          "number": "2331"
+        },
+        {
+          "subject": "CSE",
+          "number": "2421"
+        },
+        {
+          "subject": "CSE",
+          "number": "2431"
+        },
+        {
+          "subject": "CSE",
+          "number": "2451"
+        },
+        {
+          "subject": "CSE",
+          "number": "2501"
+        },
+        {
+          "subject": "CSE",
+          "number": "3231"
+        },
+        {
+          "subject": "CSE",
+          "number": "3241"
+        },
+        {
+          "subject": "CSE",
+          "number": "3341"
+        },
+        {
+          "subject": "CSE",
+          "number": "3421"
+        },
+        {
+          "subject": "CSE",
+          "number": "3430"
+        },
+        {
+          "subject": "CSE",
+          "number": "3461"
+        },
+        {
+          "subject": "CSE",
+          "number": "3521"
+        },
+        {
+          "subject": "CSE",
+          "number": "3541"
+        },
+        {
+          "subject": "CSE",
+          "number": "3901"
+        },
+        {
+          "subject": "CSE",
+          "number": "3902"
+        },
+        {
+          "subject": "CSE",
+          "number": "3903"
+        },
+        {
+          "subject": "CSE",
+          "number": "4193"
+        },
+        {
+          "subject": "CSE",
+          "number": "4251"
+        },
+        {
+          "subject": "CSE",
+          "number": "4252"
+        },
+        {
+          "subject": "CSE",
+          "number": "4253"
+        },
+        {
+          "subject": "CSE",
+          "number": "4256"
+        },
+        {
+          "subject": "CSE",
+          "number": "4998"
+        },
+        {
+          "subject": "CSE",
+          "number": "4999"
+        },
+        {
+          "subject": "CSE",
+          "number": "5331"
+        },
+        {
+          "subject": "CSE",
+          "number": "5911"
+        },
+        {
+          "subject": "CSE",
+          "number": "5912"
+        },
+        {
+          "subject": "CSE",
+          "number": "5913"
+        },
+        {
+          "subject": "CSE",
+          "number": "5914"
+        },
+        {
+          "subject": "CSE",
+          "number": "5915"
+        },
+        {
+          "subject": "ECE",
+          "number": "2000"
+        },
+        {
+          "subject": "ECE",
+          "number": "2020"
+        },
+        {
+          "subject": "ECE",
+          "number": "2060"
+        },
+        {
+          "subject": "ECE",
+          "number": "2560"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1281"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATH",
+          "number": "2366"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "1338"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "2338"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "STAT",
+          "number": "3201"
+        },
+        {
+          "subject": "STAT",
+          "number": "3470"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "48ec46c05db4a58fab8eede0",
+      "url": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cse-program-information",
+      "resolvedUrl": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cse-program-information",
+      "sha256": "559d6c3e5b4ce8c57e5762adb1d9ac8dea2d92d60f031f8212f8dd636e9e0c19",
+      "fetchedAt": "2026-11-16T21:18:02.708842+00:00",
+      "mediaType": "text/html",
+      "programIds": ["a133d9c2fbfeeae0"],
+      "reviewStatus": "pending",
+      "title": "BS CSE Program Information",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": ["GEN", "GEL"],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ANTHROP",
+          "number": "2200"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1101"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1114"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1110"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "CSE",
+          "number": "2111"
+        },
+        {
+          "subject": "CSE",
+          "number": "2122"
+        },
+        {
+          "subject": "CSE",
+          "number": "2123"
+        },
+        {
+          "subject": "CSE",
+          "number": "2221"
+        },
+        {
+          "subject": "CSE",
+          "number": "2231"
+        },
+        {
+          "subject": "CSE",
+          "number": "2321"
+        },
+        {
+          "subject": "CSE",
+          "number": "2331"
+        },
+        {
+          "subject": "CSE",
+          "number": "2421"
+        },
+        {
+          "subject": "CSE",
+          "number": "2431"
+        },
+        {
+          "subject": "CSE",
+          "number": "2451"
+        },
+        {
+          "subject": "CSE",
+          "number": "2501"
+        },
+        {
+          "subject": "CSE",
+          "number": "3231"
+        },
+        {
+          "subject": "CSE",
+          "number": "3241"
+        },
+        {
+          "subject": "CSE",
+          "number": "3341"
+        },
+        {
+          "subject": "CSE",
+          "number": "3421"
+        },
+        {
+          "subject": "CSE",
+          "number": "3430"
+        },
+        {
+          "subject": "CSE",
+          "number": "3461"
+        },
+        {
+          "subject": "CSE",
+          "number": "3521"
+        },
+        {
+          "subject": "CSE",
+          "number": "3541"
+        },
+        {
+          "subject": "CSE",
+          "number": "3901"
+        },
+        {
+          "subject": "CSE",
+          "number": "3902"
+        },
+        {
+          "subject": "CSE",
+          "number": "3903"
+        },
+        {
+          "subject": "CSE",
+          "number": "4193"
+        },
+        {
+          "subject": "CSE",
+          "number": "4251"
+        },
+        {
+          "subject": "CSE",
+          "number": "4252"
+        },
+        {
+          "subject": "CSE",
+          "number": "4253"
+        },
+        {
+          "subject": "CSE",
+          "number": "4256"
+        },
+        {
+          "subject": "CSE",
+          "number": "4998"
+        },
+        {
+          "subject": "CSE",
+          "number": "4999"
+        },
+        {
+          "subject": "CSE",
+          "number": "5331"
+        },
+        {
+          "subject": "CSE",
+          "number": "5911"
+        },
+        {
+          "subject": "CSE",
+          "number": "5912"
+        },
+        {
+          "subject": "CSE",
+          "number": "5913"
+        },
+        {
+          "subject": "CSE",
+          "number": "5914"
+        },
+        {
+          "subject": "CSE",
+          "number": "5915"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "1121"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "1122"
+        },
+        {
+          "subject": "ECE",
+          "number": "2000"
+        },
+        {
+          "subject": "ECE",
+          "number": "2020"
+        },
+        {
+          "subject": "ECE",
+          "number": "2060"
+        },
+        {
+          "subject": "ECE",
+          "number": "2360"
+        },
+        {
+          "subject": "ECE",
+          "number": "2560"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182.01"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1281"
+        },
+        {
+          "subject": "ENR",
+          "number": "2100"
+        },
+        {
+          "subject": "ENR",
+          "number": "3000"
+        },
+        {
+          "subject": "ENR",
+          "number": "3001"
+        },
+        {
+          "subject": "FDSCTE",
+          "number": "2200"
+        },
+        {
+          "subject": "HCS",
+          "number": "2201"
+        },
+        {
+          "subject": "HCS",
+          "number": "2202"
+        },
+        {
+          "subject": "MATH",
+          "number": "1075"
+        },
+        {
+          "subject": "MATH",
+          "number": "1120"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATH",
+          "number": "2255"
+        },
+        {
+          "subject": "MATH",
+          "number": "2366"
+        },
+        {
+          "subject": "MATH",
+          "number": "2415"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "1338"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "2338"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        },
+        {
+          "subject": "STAT",
+          "number": "3201"
+        },
+        {
+          "subject": "STAT",
+          "number": "3470"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "5301"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "7ee5aaa83241038706c9374d",
+      "url": "https://molgen.osu.edu/sample-curriculum",
+      "resolvedUrl": "https://molgen.osu.edu/sample-curriculum",
+      "sha256": "9c374d1d9792a4fab3d37266ab906c54cb315458701f82c7f2b1f93c4379bb2c",
+      "fetchedAt": "2026-11-16T21:13:10.856683+00:00",
+      "mediaType": "text/html",
+      "programIds": ["4ed7e210ccf51b92"],
+      "reviewStatus": "pending",
+      "title": "Sample Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": ["GEN"],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ARTSSCI",
+          "number": "1100.07"
+        },
+        {
+          "subject": "BIOCHEM",
+          "number": "4511"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2520"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2540"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2550"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "4606"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "5601"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "5602"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "5607"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "5608"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "5645"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1200"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1201"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "6fc8da4530ef17166c0d6275",
+      "url": "https://earthsciences.osu.edu/b.s.-geophysics-subprogram-sample-four-year-curriculum",
+      "resolvedUrl": "https://earthsciences.osu.edu/b.s.-geophysics-subprogram-sample-four-year-curriculum",
+      "sha256": "7dd8a2c5a2d67d81176f61e855d5388e6607e1f52cf2bc4c8e07926ea35d239d",
+      "fetchedAt": "2026-11-16T21:13:14.940148+00:00",
+      "mediaType": "text/html",
+      "programIds": ["30b45450a4501df8"],
+      "reviewStatus": "pending",
+      "title": "B.S. Geophysics Subprogram Sample Four-Year Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2000"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2245"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4530"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4560"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4999.01"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4999.02"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2300"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "0be30405bd5cf7e030d05d6f",
+      "url": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
+      "resolvedUrl": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
+      "sha256": "0dac53b24b7fb01b64619de871f25ac246ecef86040d916b6e06a7d42cddbba7",
+      "fetchedAt": "2026-11-16T21:13:18.871885+00:00",
+      "mediaType": "text/html",
+      "programIds": ["8e46ae9cceb3be63"],
+      "reviewStatus": "pending",
+      "title": "B.S. Climate, Water & Environment Subprogram Sample Four-Year Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2000"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2245"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4450"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4998"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4999.01"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "ac3a89d321725151bd7b5b20",
+      "url": "https://math.osu.edu/sites/default/files/2024-07/Actuarial%20Science%20Requirements%20and%20Sample%20Schedule%207.18.24.pdf",
+      "resolvedUrl": "https://math.osu.edu/sites/default/files/2024-07/Actuarial%20Science%20Requirements%20and%20Sample%20Schedule%207.18.24.pdf",
+      "sha256": "76ae0167af343722b791c4e91f6d03bd31a28f0342bf79555d91099af5c53f15",
+      "fetchedAt": "2026-11-16T21:13:20.868410+00:00",
+      "mediaType": "application/pdf",
+      "programIds": ["161c8275a6fb4570"],
+      "reviewStatus": "pending",
+      "title": "Actuarial Science",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ACCTMIS",
+          "number": "2000"
+        },
+        {
+          "subject": "ARTSSCI",
+          "number": "1100.01"
+        },
+        {
+          "subject": "BUSFIN",
+          "number": "3120"
+        },
+        {
+          "subject": "COMM",
+          "number": "2110"
+        },
+        {
+          "subject": "COMM",
+          "number": "2131"
+        },
+        {
+          "subject": "COMM",
+          "number": "2367"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "CSE",
+          "number": "2111"
+        },
+        {
+          "subject": "ECON",
+          "number": "2001"
+        },
+        {
+          "subject": "ECON",
+          "number": "2002"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "1110"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "3304"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3588"
+        },
+        {
+          "subject": "MATH",
+          "number": "3618"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "MATH",
+          "number": "5630"
+        },
+        {
+          "subject": "MATH",
+          "number": "5631"
+        },
+        {
+          "subject": "MATH",
+          "number": "5632"
+        },
+        {
+          "subject": "MATH",
+          "number": "5633"
+        },
+        {
+          "subject": "MATH",
+          "number": "5634"
+        },
+        {
+          "subject": "MATH",
+          "number": "5637"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "4202"
+        }
+      ],
+      "pageCount": 2,
+      "extractionStatus": "references"
+    }
+  ],
+  "pending": [],
+  "counts": {
+    "inspectedPrograms": 7,
+    "semesterSamples": 8
+  }
+}
