@@ -44,3 +44,37 @@ test("directory queries are bounded and omit detailed course lists", () => {
     0,
   );
 });
+
+test("college and requirement-term filters retain association boundaries", () => {
+  const program = directory.programs.find((p) => p.documentIds.length);
+  const result = queryDirectory(
+    directory,
+    new URLSearchParams({ college: program.college }),
+  );
+  assert.ok(result.total > 0);
+  assert.ok(
+    result.documents.every((d) =>
+      d.programIds.some((id) =>
+        directory.programs.some(
+          (p) => p.id === id && p.college === program.college,
+        ),
+      ),
+    ),
+  );
+  assert.throws(() =>
+    queryDirectory(directory, new URLSearchParams("version=2026")),
+  );
+  if (result.versions.length) {
+    const version = result.versions[0];
+    assert.ok(
+      queryDirectory(
+        directory,
+        new URLSearchParams({ version }),
+      ).documents.every(
+        (d) =>
+          d.effectiveTerms.includes(version) ||
+          d.appliedVersions.includes(version),
+      ),
+    );
+  }
+});

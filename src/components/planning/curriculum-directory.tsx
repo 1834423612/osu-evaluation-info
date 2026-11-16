@@ -36,6 +36,7 @@ export function CurriculumDirectory({
   const [program, setProgram] = useState("");
   const [year, setYear] = useState("");
   const [ge, setGe] = useState("");
+  const [version, setVersion] = useState("");
   const [kind, setKind] = useState("");
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(true);
@@ -58,6 +59,7 @@ export function CurriculumDirectory({
         program,
         year,
         ge,
+        version,
         kind,
         page: String(page),
       });
@@ -80,7 +82,7 @@ export function CurriculumDirectory({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, college, program, year, ge, kind, page, retry]);
+  }, [query, college, program, year, ge, version, kind, page, retry]);
   useEffect(() => {
     if (!selected) return;
     const controller = new AbortController();
@@ -212,6 +214,21 @@ export function CurriculumDirectory({
             <option value="">{t("All / unknown", "全部 / 未知")}</option>
             {data?.years.map((y) => (
               <option key={y}>{y}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("Published requirement term", "已公布的要求学期")}
+          <select
+            value={version}
+            onChange={(e) => {
+              setVersion(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">{t("All / unknown", "全部 / 未知")}</option>
+            {data?.versions.map((v) => (
+              <option key={v}>{v}</option>
             ))}
           </select>
         </label>
