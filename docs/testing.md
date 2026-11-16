@@ -516,3 +516,11 @@ Browser regression: open a new collection, search in both languages, filter cate
 - `tests/planning/test_public_layouts.py`: Official subject aliases, strict eight-semester grids/PDF columns, centered year labels, alternatives and unknown credits. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
 
 - `tests/planning/directory.test.mjs`: College/program coverage, bounded paging, explicit requirement-term facets and public metadata minimization. Synthetic/public inputs only; no external network, database or writes. `node --test tests/planning/directory.test.mjs`.
+
+- `tests/planning/import-profile.test.mjs` checks minimal report selection, explicit Official/Planned mode and program headers. Run `node --test tests/planning/import-profile.test.mjs`. Synthetic input, no network or writes.
+
+- `tests/planning/course-catalog.test.mjs` checks identifier allowlists, shared reads, variable credits and inherited prerequisite prefixes. Run `node --test tests/planning/course-catalog.test.mjs`. Mock transport, no network or writes.
+
+- `tests/planning/workspace.test.mjs` checks duplicate-safe placement, protected records across sources and semester defaults. Run `node --test tests/planning/workspace.test.mjs`. Synthetic input, no network or writes.
+
+- `tests/test_planning_samples.py` checks inspected CSE table layouts and grouped Earth Sciences choices. Run `python3 -m unittest discover -s tests -p test_planning_samples.py`. Offline, no services or writes.

@@ -509,3 +509,11 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 - `tests/planning/test_public_layouts.py`: 官方前缀别名、严格八学期网格/PDF 列、居中年级、替代和未知学分。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
 
 - `tests/planning/directory.test.mjs`: 学院/专业覆盖、有界分页、明确要求学期分面及公开元数据最小化。仅合成/公开输入，无外部网络、数据库或写入。 `node --test tests/planning/directory.test.mjs`.
+
+- `tests/planning/import-profile.test.mjs` 验证最小报告组合、明确的 Official/Planned 视图及专业标题。运行 `node --test tests/planning/import-profile.test.mjs`，仅合成输入，无网络或写入。
+
+- `tests/planning/course-catalog.test.mjs` 验证公开标识白名单、重复查询合并、浮动学分和先修前缀继承。运行 `node --test tests/planning/course-catalog.test.mjs`，模拟传输，无网络或写入。
+
+- `tests/planning/workspace.test.mjs` 验证课程位置复用、跨来源修读保护和学期默认值。运行 `node --test tests/planning/workspace.test.mjs`，仅合成输入，无网络或写入。
+
+- `tests/test_planning_samples.py` 验证已检查的 CSE 表格与 Earth Sciences 选择组。运行 `python3 -m unittest discover -s tests -p test_planning_samples.py`，离线执行，无服务或写入。
