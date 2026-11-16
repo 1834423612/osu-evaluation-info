@@ -67,12 +67,16 @@
   gap: 6px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 28px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .tabs button {
   border: 0;
   border-radius: 8px 8px 0 0;
   padding: 14px 20px;
   background: transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .tabs button[aria-selected="true"] {
   background: var(--accent-soft);
@@ -248,7 +252,7 @@
 }
 .course {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.7fr 1.2fr 1.2fr auto;
+  grid-template-columns: 1fr 1fr 0.7fr 1.1fr 1.3fr 1.1fr auto;
   gap: 8px;
   padding: 14px;
   border-top: 1px solid var(--line);
@@ -362,6 +366,18 @@
   height: 18px;
   accent-color: var(--primary);
 }
+.sourceEditor {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  margin-top: 24px;
+  scroll-margin-top: 90px;
+}
+.sourceEditor > summary {
+  font-weight: 650;
+  font-size: 14px;
+  cursor: pointer;
+}
 .page[data-theme="dark"] {
   --canvas: #16171b;
   --surface: #202126;
@@ -430,6 +446,13 @@
 }
 
 @media (max-width: 540px) {
+  .course {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rowActions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
   .page :global(.app-header) {
     height: auto;
   }
