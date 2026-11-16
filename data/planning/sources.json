@@ -3,6 +3,96 @@
   "coverage": "partial",
   "sources": [
     {
+      "titleZh": "全部专业、学位与校区",
+      "reviewStatus": "pending",
+      "id": "program-index",
+      "status": "discovered",
+      "url": "https://undergrad.osu.edu/majors-and-academics/majors",
+      "title": "All majors, degrees and campuses",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "文理学院专业",
+      "reviewStatus": "pending",
+      "id": "asc",
+      "status": "discovered",
+      "url": "https://artsandsciences.osu.edu/academics/programs/majors",
+      "title": "Arts and Sciences majors",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "商学院专业方向",
+      "reviewStatus": "pending",
+      "id": "fisher",
+      "status": "discovered",
+      "url": "https://fisher.osu.edu/undergraduate/academics/specializations",
+      "title": "Business specializations",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "环境与自然资源",
+      "reviewStatus": "pending",
+      "id": "senr",
+      "status": "discovered",
+      "url": "https://senr.osu.edu/undergraduate",
+      "title": "Environment and Natural Resources",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "食品农业与环境科学培养指南",
+      "reviewStatus": "pending",
+      "id": "cfaes",
+      "status": "discovered",
+      "url": "https://students.cfaes.ohio-state.edu/academics/undergraduate/curriculum-guides",
+      "title": "CFAES curriculum guides",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "护理课程及学期样表",
+      "reviewStatus": "pending",
+      "id": "nursing",
+      "status": "discovered",
+      "url": "https://nursing.osu.edu/degrees-programs/bachelor-science-nursing",
+      "title": "Nursing curriculum and sample schedules",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "药学培养方案",
+      "reviewStatus": "pending",
+      "id": "pharmacy",
+      "status": "discovered",
+      "url": "https://pharmacy.osu.edu/education/undergraduate",
+      "title": "Pharmaceutical Sciences curriculum",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "公共事务本科项目",
+      "reviewStatus": "pending",
+      "id": "glenn",
+      "status": "discovered",
+      "url": "https://glenn.osu.edu/undergraduate",
+      "title": "Public Affairs undergraduate programs",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "社会工作本科课程",
+      "reviewStatus": "pending",
+      "id": "social-work",
+      "status": "discovered",
+      "url": "https://csw.osu.edu/undergraduate/",
+      "title": "Social Work undergraduate curriculum",
+      "validatedAt": "2026-11-16"
+    },
+    {
+      "titleZh": "牙科卫生",
+      "reviewStatus": "pending",
+      "id": "dentistry",
+      "status": "discovered",
+      "url": "https://dentistry.osu.edu/dental-hygiene",
+      "title": "Dental Hygiene",
+      "validatedAt": "2026-11-16"
+    },
+    {
       "id": "university-index",
       "title": "University majors index",
       "titleZh": "全校专业索引",

@@ -1,15 +1,22 @@
 import { z } from "zod";
-const publicUrl = z
+export const publicUrl = z
   .string()
   .url()
   .refine((value) => {
     const u = new URL(value);
     return (
       u.protocol === "https:" &&
-      (u.hostname === "osu.edu" || u.hostname.endsWith(".osu.edu")) &&
+      ["osu.edu", "ohio-state.edu"].some(
+        (d) => u.hostname === d || u.hostname.endsWith("." + d),
+      ) &&
       !u.username &&
       !u.password &&
-      !u.search &&
+      (!u.search ||
+        (u.pathname.endsWith(".pdf") &&
+          [...u.searchParams].length === 1 &&
+          /^[A-Za-z0-9_.-]{1,160}$/.test(
+            u.searchParams.get("VersionId") ?? "",
+          ))) &&
       (!u.port || u.port === "443")
     );
   });
