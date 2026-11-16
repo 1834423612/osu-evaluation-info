@@ -389,6 +389,7 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本                                                                                                             | 类型       | 用途                                                                                       |
 | ---------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
 | [tests/user-data/collections.test.mjs](../../tests/user-data/collections.test.mjs)                               | 单元       | 私人分组校验、保留分组结构、批次体积限制与重命名冲突                                       |
+| [tests/user-data/compact-tabs.browser.mjs](../../tests/user-data/compact-tabs.browser.mjs) | 浏览器 | 1440／768／390／320 像素下简略列表分类标签位于结果上方；使用本地合成数据并阻止外部请求 |
 | [tests/user-data/collections.browser.mjs](../../tests/user-data/collections.browser.mjs)                         | 浏览器     | 1440／768／390／320 像素下的新建、整理、改名、删除撤销、分组导出和私人恢复                 |
 | [tests/user-data/rmp-favorites.test.mjs](../../tests/user-data/rmp-favorites.test.mjs)                           | 单元       | RMP 来源身份、评分保留及公开交换格式校验                                                   |
 | [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs)                     | 浏览器     | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回                                 |
@@ -404,6 +405,7 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 ```sh
 node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs
 node tests/user-data/collections.browser.mjs
+node tests/user-data/compact-tabs.browser.mjs
 node tests/user-data/rmp-favorites.browser.mjs
 USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.test.mjs
 ```
