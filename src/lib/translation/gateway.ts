@@ -152,6 +152,7 @@ export function createTranslationGateway(
       const started = now();
       let settled = false;
       let finalized = false;
+      let leaseReleased = false;
       const report = (outcome: TranslationObservation["outcome"]) =>
         observe({
           provider: node.id,
@@ -162,7 +163,7 @@ export function createTranslationGateway(
         });
       const onSettled = () => {
         settled = true;
-        if (finalized)
+        if (finalized && !leaseReleased)
           void stateStore.release(node.id, attemptId).catch(() => undefined);
       };
       try {
@@ -187,6 +188,8 @@ export function createTranslationGateway(
           },
           true,
         );
+        // A confirmed settled finish already persisted the lease release.
+        leaseReleased = accepted;
         if (!accepted) {
           retryAfterMs = 1000;
           continue;
@@ -204,7 +207,8 @@ export function createTranslationGateway(
           error instanceof TranslationProviderError
             ? error.retryAfterMs
             : undefined;
-        await stateStore.finish(
+        const settledAtFinish = settled;
+        const accepted = await stateStore.finish(
           node.id,
           attemptId,
           {
@@ -217,8 +221,9 @@ export function createTranslationGateway(
                 : undefined,
             retryAfterMs: delay,
           },
-          settled,
+          settledAtFinish,
         );
+        leaseReleased = accepted && settledAtFinish;
         retryAfterMs = Math.min(
           retryAfterMs,
           Math.max(decision.policy.cooldownMs, delay ?? 0),
@@ -226,7 +231,7 @@ export function createTranslationGateway(
         report(timeout ? "timeout" : "failure");
       } finally {
         finalized = true;
-        if (settled)
+        if (settled && !leaseReleased)
           await stateStore.release(node.id, attemptId).catch(() => undefined);
       }
     }
