@@ -28,7 +28,11 @@ export function RequirementMap({
   const [selected, setSelected] = useState("");
   const [remaining, setRemaining] = useState(false);
   const program =
-    plan.programs.find((p) => p.id === selected) ?? plan.programs[0];
+    plan.programs.find((p) => p.id === selected) ??
+    plan.programs.find((p) =>
+      plan.requirements.some((r) => r.programId === p.id),
+    ) ??
+    plan.programs[0];
   const stateLabels = {
     satisfied: t("Completed numeric check", "已完成数值条件"),
     planned: t("Planned coverage", "计划覆盖"),
