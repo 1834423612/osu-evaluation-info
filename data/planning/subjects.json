@@ -1,0 +1,976 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://content.osu.edu/v2/classes/search",
+  "observedTerm": "1272",
+  "fetchedAt": "2026-11-16T07:18:45.461Z",
+  "subjects": [
+    {
+      "code": "ACADAFF",
+      "title": "Academic Affairs"
+    },
+    {
+      "code": "ACCTMIS",
+      "title": "Accounting and Management Info"
+    },
+    {
+      "code": "ACCAD",
+      "title": "Adv Computing Cntr Arts & Design"
+    },
+    {
+      "code": "AEROENG",
+      "title": "Aerospace Engineering"
+    },
+    {
+      "code": "AFAMAST",
+      "title": "African American & African Std"
+    },
+    {
+      "code": "AEDECON",
+      "title": "Agricul Envrmntl & Devlop Econ"
+    },
+    {
+      "code": "ACEL",
+      "title": "Agricultural Comm, Ed & Ldrshp"
+    },
+    {
+      "code": "AGRCOMM",
+      "title": "Agricultural Communication"
+    },
+    {
+      "code": "AGSYSMT",
+      "title": "Agricultural Systems Mgmt"
+    },
+    {
+      "code": "ASE",
+      "title": "Agriscience Education"
+    },
+    {
+      "code": "AIRSCI",
+      "title": "Air Force Aerospace Studies"
+    },
+    {
+      "code": "AMINSTS",
+      "title": "American Indian Studies"
+    },
+    {
+      "code": "ASL",
+      "title": "American Sign Language"
+    },
+    {
+      "code": "ANATOMY",
+      "title": "Anatomy"
+    },
+    {
+      "code": "ANIMSCI",
+      "title": "Animal Sciences"
+    },
+    {
+      "code": "ANTHROP",
+      "title": "Anthropology"
+    },
+    {
+      "code": "ARABIC",
+      "title": "Arabic"
+    },
+    {
+      "code": "ARCH",
+      "title": "Architecture"
+    },
+    {
+      "code": "ART",
+      "title": "Art"
+    },
+    {
+      "code": "ARTEDUC",
+      "title": "Art Education"
+    },
+    {
+      "code": "ARTSSCI",
+      "title": "Arts and Sciences"
+    },
+    {
+      "code": "ASAMSTS",
+      "title": "Asian American Studies"
+    },
+    {
+      "code": "ASTRON",
+      "title": "Astronomy"
+    },
+    {
+      "code": "ATHTRNG",
+      "title": "Athletic Training"
+    },
+    {
+      "code": "ATMOSSC",
+      "title": "Atmospheric Sciences"
+    },
+    {
+      "code": "AVIATN",
+      "title": "Aviation"
+    },
+    {
+      "code": "BIOCHEM",
+      "title": "Biochemistry"
+    },
+    {
+      "code": "BIOETHC",
+      "title": "Bioethics"
+    },
+    {
+      "code": "BIOPHRM",
+      "title": "Biological Chem & Pharmacology"
+    },
+    {
+      "code": "BIOLOGY",
+      "title": "Biology"
+    },
+    {
+      "code": "BIOMEDE",
+      "title": "Biomedical Engineering"
+    },
+    {
+      "code": "BMI",
+      "title": "Biomedical Informatics"
+    },
+    {
+      "code": "BIOMSCI",
+      "title": "Biomedical Science"
+    },
+    {
+      "code": "BSGP",
+      "title": "Biomedical Sciences Grad Prog"
+    },
+    {
+      "code": "BIOPHYS",
+      "title": "Biophysics"
+    },
+    {
+      "code": "BCS",
+      "title": "Bosnian/Croatian/Serbian"
+    },
+    {
+      "code": "BUSOBA",
+      "title": "Bus Admin: Operat & Bus Analyt"
+    },
+    {
+      "code": "BUSFIN",
+      "title": "Business Admin : Finance"
+    },
+    {
+      "code": "BUSMHR",
+      "title": "Business Admin : Mgmt & HR"
+    },
+    {
+      "code": "BUSML",
+      "title": "Business Admin:Marketing & Log"
+    },
+    {
+      "code": "BUSADM",
+      "title": "Business Administration"
+    },
+    {
+      "code": "CBG",
+      "title": "Cancer Biology and Genetics"
+    },
+    {
+      "code": "CLLC",
+      "title": "Center for Lang, Lit & Culture"
+    },
+    {
+      "code": "CHEMPHY",
+      "title": "Chemical Physics"
+    },
+    {
+      "code": "CBE",
+      "title": "Chemical and Biomolecular Eng"
+    },
+    {
+      "code": "CHEM",
+      "title": "Chemistry"
+    },
+    {
+      "code": "CHINESE",
+      "title": "Chinese"
+    },
+    {
+      "code": "CRPLAN",
+      "title": "City and Regional Planning"
+    },
+    {
+      "code": "CIVICLL",
+      "title": "Civics, Law, and Leadership"
+    },
+    {
+      "code": "CIVILEN",
+      "title": "Civil Engineering"
+    },
+    {
+      "code": "CLAS",
+      "title": "Classics"
+    },
+    {
+      "code": "MCR",
+      "title": "Clinical Research"
+    },
+    {
+      "code": "COMM",
+      "title": "Communication"
+    },
+    {
+      "code": "COMLDR",
+      "title": "Community Leadership"
+    },
+    {
+      "code": "COMPSTD",
+      "title": "Comparative Studies"
+    },
+    {
+      "code": "CSE",
+      "title": "Computer Science & Engineering"
+    },
+    {
+      "code": "COMPEDU",
+      "title": "Computing Education"
+    },
+    {
+      "code": "CONSYSM",
+      "title": "Construction Systems Mgmt"
+    },
+    {
+      "code": "CSCFFS",
+      "title": "Consumer Sci: Con & Fam Fin Serv"
+    },
+    {
+      "code": "CSFRST",
+      "title": "Consumer Sci: Fashion & Retail"
+    },
+    {
+      "code": "CSHSPMG",
+      "title": "Consumer Sci: Hospitality Mgt"
+    },
+    {
+      "code": "CONSCI",
+      "title": "Consumer Sciences"
+    },
+    {
+      "code": "CSTW",
+      "title": "Ctr for Study & Teaching Writing"
+    },
+    {
+      "code": "CYBRSEC",
+      "title": "Cyber Security and Digital Trust"
+    },
+    {
+      "code": "CZECH",
+      "title": "Czech"
+    },
+    {
+      "code": "DANCE",
+      "title": "Dance"
+    },
+    {
+      "code": "DENTHYG",
+      "title": "Dental Hygiene"
+    },
+    {
+      "code": "DENT",
+      "title": "Dentistry"
+    },
+    {
+      "code": "DESIGN",
+      "title": "Design"
+    },
+    {
+      "code": "DSABLST",
+      "title": "Disability Studies"
+    },
+    {
+      "code": "DNE",
+      "title": "Doctor of Nursing Education"
+    },
+    {
+      "code": "EARTHSC",
+      "title": "Earth Sciences"
+    },
+    {
+      "code": "EALL",
+      "title": "East Asian Languages and Lit"
+    },
+    {
+      "code": "ECON",
+      "title": "Economics"
+    },
+    {
+      "code": "ESCE",
+      "title": "Educ Sts: Counselor Education"
+    },
+    {
+      "code": "ESCFE",
+      "title": "Educ Sts: Cultural Foundations"
+    },
+    {
+      "code": "ESEPSY",
+      "title": "Educ Sts: Education Psychology"
+    },
+    {
+      "code": "ESEADM",
+      "title": "Educ Sts: Educational Admin"
+    },
+    {
+      "code": "ESEPOL",
+      "title": "Educ Sts: Educational Policy"
+    },
+    {
+      "code": "ESHESA",
+      "title": "Educ Sts: Higher Ed & Stdt Aff"
+    },
+    {
+      "code": "ESLTECH",
+      "title": "Educ Sts: Learning Technologie"
+    },
+    {
+      "code": "ESPHE",
+      "title": "Educ Sts: Philo & Hist of Educ"
+    },
+    {
+      "code": "ESQUAL",
+      "title": "Educ Sts: Qualitative Research"
+    },
+    {
+      "code": "ESQREM",
+      "title": "Educ Sts: Qunt Rsch Eval & Msrmt"
+    },
+    {
+      "code": "ESSPSY",
+      "title": "Educ Sts: School Psychology"
+    },
+    {
+      "code": "ESSPED",
+      "title": "Educ Sts: Special Education"
+    },
+    {
+      "code": "ESWDE",
+      "title": "Educ Sts: Wkfrc Dvlpt & Educ"
+    },
+    {
+      "code": "EHE",
+      "title": "Education and Human Ecology"
+    },
+    {
+      "code": "EDUTL",
+      "title": "Education:Teaching & Learning"
+    },
+    {
+      "code": "EDUCST",
+      "title": "Educational Studies"
+    },
+    {
+      "code": "ECE",
+      "title": "Electrical and Computer Eng"
+    },
+    {
+      "code": "ENGR",
+      "title": "Engineering"
+    },
+    {
+      "code": "ENGREDU",
+      "title": "Engineering Education"
+    },
+    {
+      "code": "ENGLISH",
+      "title": "English"
+    },
+    {
+      "code": "ENTMLGY",
+      "title": "Entomology"
+    },
+    {
+      "code": "ENR",
+      "title": "Environment & Natural Resource"
+    },
+    {
+      "code": "ENVENG",
+      "title": "Environmental Engineering"
+    },
+    {
+      "code": "ENVSCI",
+      "title": "Environmental Science"
+    },
+    {
+      "code": "ETHNSTD",
+      "title": "Ethnic Studies"
+    },
+    {
+      "code": "EEOB",
+      "title": "Evol, Ecology & Organismal Bio"
+    },
+    {
+      "code": "EXP",
+      "title": "Exploration"
+    },
+    {
+      "code": "FILMSTD",
+      "title": "Film Studies"
+    },
+    {
+      "code": "FDSCTE",
+      "title": "Food Science & Technology"
+    },
+    {
+      "code": "FABENG",
+      "title": "Food, Agricul & Bio Engineer"
+    },
+    {
+      "code": "FAES",
+      "title": "Food, Agricul, & Enviro Sci"
+    },
+    {
+      "code": "FRENCH",
+      "title": "French"
+    },
+    {
+      "code": "FRIT",
+      "title": "French and Italian"
+    },
+    {
+      "code": "GENED",
+      "title": "General Education"
+    },
+    {
+      "code": "GEOSCIM",
+      "title": "Geodetic Sciences MPS"
+    },
+    {
+      "code": "GEOG",
+      "title": "Geography"
+    },
+    {
+      "code": "GERMAN",
+      "title": "German"
+    },
+    {
+      "code": "GRADSCH",
+      "title": "Graduate School"
+    },
+    {
+      "code": "GREEK",
+      "title": "Greek"
+    },
+    {
+      "code": "HCINNOV",
+      "title": "Health Care Innovation"
+    },
+    {
+      "code": "HIMS",
+      "title": "Health Info Mgt & Systems"
+    },
+    {
+      "code": "HTHRHSC",
+      "title": "Health and Rehabilitation Sci"
+    },
+    {
+      "code": "HW",
+      "title": "Health and Wellness"
+    },
+    {
+      "code": "HEBREW",
+      "title": "Hebrew"
+    },
+    {
+      "code": "HINDI",
+      "title": "Hindi"
+    },
+    {
+      "code": "HISTORY",
+      "title": "History"
+    },
+    {
+      "code": "HISTART",
+      "title": "History of Art"
+    },
+    {
+      "code": "HONORS",
+      "title": "Honors, University"
+    },
+    {
+      "code": "HCS",
+      "title": "Horticulture and Crop Science"
+    },
+    {
+      "code": "HDFS",
+      "title": "Human Dev and Family Science"
+    },
+    {
+      "code": "HUMNNTR",
+      "title": "Human Nutrition"
+    },
+    {
+      "code": "ISE",
+      "title": "Industrial and Sys Engineering"
+    },
+    {
+      "code": "INTMED",
+      "title": "Internal Medicine"
+    },
+    {
+      "code": "INTSTDS",
+      "title": "International Studies"
+    },
+    {
+      "code": "ISLAM",
+      "title": "Islamic Studies"
+    },
+    {
+      "code": "ITALIAN",
+      "title": "Italian"
+    },
+    {
+      "code": "JAPANSE",
+      "title": "Japanese"
+    },
+    {
+      "code": "JEWSHST",
+      "title": "Jewish Studies"
+    },
+    {
+      "code": "KINESIO",
+      "title": "Kinesiology"
+    },
+    {
+      "code": "KNHES",
+      "title": "Kinesiology: Health & Exercs Sci"
+    },
+    {
+      "code": "KNPE",
+      "title": "Kinesiology:Physical Education"
+    },
+    {
+      "code": "KNSFHP",
+      "title": "Kinesiology:Sprt, Ftns & Hlth Pr"
+    },
+    {
+      "code": "KNSISM",
+      "title": "Kinesiology:Spt Indsty Spt Mgt"
+    },
+    {
+      "code": "KNOW",
+      "title": "Knowlton"
+    },
+    {
+      "code": "KOREAN",
+      "title": "Korean"
+    },
+    {
+      "code": "LARCH",
+      "title": "Landscape Architecture"
+    },
+    {
+      "code": "LATIN",
+      "title": "Latin"
+    },
+    {
+      "code": "LAW",
+      "title": "Law"
+    },
+    {
+      "code": "LING",
+      "title": "Linguistics"
+    },
+    {
+      "code": "MBA",
+      "title": "Master of Business Admin"
+    },
+    {
+      "code": "MDN",
+      "title": "Master of Dietetics & Nutritio"
+    },
+    {
+      "code": "MATSCEN",
+      "title": "Materials Science and Engineer"
+    },
+    {
+      "code": "MATH",
+      "title": "Mathematics"
+    },
+    {
+      "code": "MEATSCI",
+      "title": "Meat Science"
+    },
+    {
+      "code": "MECHENG",
+      "title": "Mechanical Engineering"
+    },
+    {
+      "code": "MEDDIET",
+      "title": "Medical Dietetics"
+    },
+    {
+      "code": "MEDLBS",
+      "title": "Medical Laboratory Science"
+    },
+    {
+      "code": "MEDCOLL",
+      "title": "Medicine, College of"
+    },
+    {
+      "code": "MEDREN",
+      "title": "Medieval & Renaissance Studies"
+    },
+    {
+      "code": "MEDMCIM",
+      "title": "Microbial Infection & Immunity"
+    },
+    {
+      "code": "MICRBIO",
+      "title": "Microbiology"
+    },
+    {
+      "code": "MILSCI",
+      "title": "Military Science"
+    },
+    {
+      "code": "MDRNGRK",
+      "title": "Modern Greek"
+    },
+    {
+      "code": "MCDBIO",
+      "title": "Molec, Cellular, Dvlpmtl Bio"
+    },
+    {
+      "code": "MOLGEN",
+      "title": "Molecular Genetics"
+    },
+    {
+      "code": "MMT",
+      "title": "Molecular Medicine and Therapeutics"
+    },
+    {
+      "code": "MVNGIMG",
+      "title": "Moving Image Production"
+    },
+    {
+      "code": "MUSIC",
+      "title": "Music"
+    },
+    {
+      "code": "NAVALSC",
+      "title": "Naval Science"
+    },
+    {
+      "code": "NELC",
+      "title": "Near Eastrn Lang and Cultures"
+    },
+    {
+      "code": "NEURSGY",
+      "title": "Neurological Surgery"
+    },
+    {
+      "code": "NEURO",
+      "title": "Neurology"
+    },
+    {
+      "code": "NEUROSC",
+      "title": "Neuroscience Department"
+    },
+    {
+      "code": "NEUROGS",
+      "title": "Neuroscience Graduate Studies"
+    },
+    {
+      "code": "NRO",
+      "title": "Neuroscience Undergraduate Major"
+    },
+    {
+      "code": "NUCLREN",
+      "title": "Nuclear Engineering"
+    },
+    {
+      "code": "NURSING",
+      "title": "Nursing"
+    },
+    {
+      "code": "NRSADVN",
+      "title": "Nursing Advancement"
+    },
+    {
+      "code": "NRSPRCT",
+      "title": "Nursing Practice"
+    },
+    {
+      "code": "OCCTHER",
+      "title": "Occupational Therapy"
+    },
+    {
+      "code": "OSBP",
+      "title": "Ohio State Biochemistry Prg"
+    },
+    {
+      "code": "OPTOM",
+      "title": "Optometry"
+    },
+    {
+      "code": "OTOLARN",
+      "title": "Otolaryngology"
+    },
+    {
+      "code": "PATHOL",
+      "title": "Pathology"
+    },
+    {
+      "code": "PEDS",
+      "title": "Pediatrics"
+    },
+    {
+      "code": "PERSIAN",
+      "title": "Persian"
+    },
+    {
+      "code": "PHR",
+      "title": "Pharmacy"
+    },
+    {
+      "code": "PHILOS",
+      "title": "Philosophy"
+    },
+    {
+      "code": "PHYSMED",
+      "title": "Physical Med & Rehabilitation"
+    },
+    {
+      "code": "PHYSTHR",
+      "title": "Physical Therapy"
+    },
+    {
+      "code": "PHYSICS",
+      "title": "Physics"
+    },
+    {
+      "code": "PHYSIO",
+      "title": "Physiology and Cell Biology"
+    },
+    {
+      "code": "PLNTPTH",
+      "title": "Plant Pathology"
+    },
+    {
+      "code": "POLISH",
+      "title": "Polish"
+    },
+    {
+      "code": "POLITSC",
+      "title": "Political Science"
+    },
+    {
+      "code": "PORTGSE",
+      "title": "Portuguese"
+    },
+    {
+      "code": "PSYBHLH",
+      "title": "Psychiatry and Behavioral Heal"
+    },
+    {
+      "code": "PSYCH",
+      "title": "Psychology"
+    },
+    {
+      "code": "PUBHBIO",
+      "title": "Pub Hlth: Biostatistics"
+    },
+    {
+      "code": "PUBHEHS",
+      "title": "Pub Hlth: Envirmtl Hlth Scis"
+    },
+    {
+      "code": "PUBHEPI",
+      "title": "Pub Hlth: Epidemiology"
+    },
+    {
+      "code": "PUBHHBP",
+      "title": "Pub Hlth: Hlth Bhvr & Hlth Prom"
+    },
+    {
+      "code": "PUBHHMP",
+      "title": "Pub Hlth: Hlth Srvcs Mgt & Plcy"
+    },
+    {
+      "code": "PUBAFRS",
+      "title": "Public Affairs, John Glenn Sch"
+    },
+    {
+      "code": "PUBHLTH",
+      "title": "Public Health"
+    },
+    {
+      "code": "QUECHUA",
+      "title": "Quechua"
+    },
+    {
+      "code": "RADONC",
+      "title": "Radiation Oncology"
+    },
+    {
+      "code": "RADSCI",
+      "title": "Radiologic Sciences & Therapy"
+    },
+    {
+      "code": "RADIOLG",
+      "title": "Radiology"
+    },
+    {
+      "code": "RELSTDS",
+      "title": "Religious Studies"
+    },
+    {
+      "code": "RESPTHR",
+      "title": "Respiratory Therapy"
+    },
+    {
+      "code": "ROMLING",
+      "title": "Romance Linguistics"
+    },
+    {
+      "code": "ROMANIA",
+      "title": "Romanian"
+    },
+    {
+      "code": "RURLSOC",
+      "title": "Rural Sociology"
+    },
+    {
+      "code": "RUSSIAN",
+      "title": "Russian"
+    },
+    {
+      "code": "SCANDVN",
+      "title": "Scandinavian"
+    },
+    {
+      "code": "SLAVIC",
+      "title": "Slavic Languages & Literatures"
+    },
+    {
+      "code": "SOCWORK",
+      "title": "Social Work"
+    },
+    {
+      "code": "SOCIOL",
+      "title": "Sociology"
+    },
+    {
+      "code": "SOMALI",
+      "title": "Somali"
+    },
+    {
+      "code": "SASIA",
+      "title": "South Asia Studies"
+    },
+    {
+      "code": "SPANISH",
+      "title": "Spanish"
+    },
+    {
+      "code": "SPHHRNG",
+      "title": "Speech and Hearing Science"
+    },
+    {
+      "code": "STAT",
+      "title": "Statistics"
+    },
+    {
+      "code": "SURGERY",
+      "title": "Surgery"
+    },
+    {
+      "code": "SWAHILI",
+      "title": "Swahili"
+    },
+    {
+      "code": "SWEDISH",
+      "title": "Swedish"
+    },
+    {
+      "code": "TLCTE",
+      "title": "Teaching and Learning Critical and Transformative"
+    },
+    {
+      "code": "TLED",
+      "title": "Teaching and Learning Education"
+    },
+    {
+      "code": "TLISTEM",
+      "title": "Teaching and Learning Inclusive STEAM"
+    },
+    {
+      "code": "TLIELP",
+      "title": "Teaching and Learning Intercultural English Language"
+    },
+    {
+      "code": "TLLLL",
+      "title": "Teaching and Learning Literacies, Literature and Learning"
+    },
+    {
+      "code": "TLTED",
+      "title": "Teaching and Learning Teacher Education"
+    },
+    {
+      "code": "THEATRE",
+      "title": "Theatre"
+    },
+    {
+      "code": "GRADTDA",
+      "title": "Translational Data Analytics"
+    },
+    {
+      "code": "TURKISH",
+      "title": "Turkish"
+    },
+    {
+      "code": "UKRAIN",
+      "title": "Ukrainian"
+    },
+    {
+      "code": "URDU",
+      "title": "Urdu"
+    },
+    {
+      "code": "UROLOGY",
+      "title": "Urology"
+    },
+    {
+      "code": "UZBEK",
+      "title": "Uzbek"
+    },
+    {
+      "code": "VETBIOS",
+      "title": "Veterinary Biosciences"
+    },
+    {
+      "code": "VETCLIN",
+      "title": "Veterinary Clinical Sciences"
+    },
+    {
+      "code": "VMCOLL",
+      "title": "Veterinary Medicine"
+    },
+    {
+      "code": "VETPREV",
+      "title": "Veterinary Preventive Medicine"
+    },
+    {
+      "code": "VISSCI",
+      "title": "Vision Science"
+    },
+    {
+      "code": "WELDENG",
+      "title": "Welding Engineering"
+    },
+    {
+      "code": "WGSST",
+      "title": "Women's, Gender & Sexuality Sts"
+    },
+    {
+      "code": "YIDDISH",
+      "title": "Yiddish"
+    }
+  ]
+}

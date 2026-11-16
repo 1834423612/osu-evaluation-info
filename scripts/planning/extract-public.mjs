@@ -40,6 +40,8 @@ for (const record of Object.values(state.sources)) {
           ...planningLines((await p.getTextContent()).items, page).map((r) => ({
             kind: "text",
             text: r.text,
+            cells: r.cells,
+            width: p.getViewport({ scale: 1 }).width,
             page,
           })),
         );

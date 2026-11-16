@@ -23,6 +23,9 @@ EXCLUDE = re.compile(r'/(?:user|login|logout|wp-admin|wp-json|news|events?|calen
 
 
 def official_url(value):
+    value = value.strip()
+    if any(ord(c) < 32 for c in value):
+        raise ValueError("Control characters are not accepted")
     u = urlsplit(value)
     host = (u.hostname or '').lower()
     if (u.scheme != 'https' or not any(host == d or host.endswith('.' + d) for d in DOMAINS)
@@ -171,6 +174,10 @@ def run(args):
     for record in list(state['sources'].values()):
         if record.get('sha256') and (out / record['sha256']).is_file():
             enqueue(record, (out / record['sha256']).read_bytes())
+    if args.refresh:
+        # Bounded scheduled runs must eventually revisit every known source.
+        # Oldest checks precede recent ones; new discoveries are checked first.
+        queue.sort(key=lambda url: state['sources'].get(url, {}).get('checkedAt', ''))
     fetcher = PublicFetcher(args.delay)
     attempted = 0
     for url in queue:
