@@ -683,6 +683,28 @@ export function PlanningWorkspace() {
                           </select>
                         </label>
                         <label>
+                          {t("Record type", "记录类型")}
+                          <select
+                            value={course.evidenceRole ?? "unknown"}
+                            onChange={(e) =>
+                              updateCourse(si, ci, {
+                                evidenceRole: e.target
+                                  .value as PlanCourse["evidenceRole"],
+                              })
+                            }
+                          >
+                            <option value="unknown">
+                              {t("Check source", "待核对")}
+                            </option>
+                            <option value="observation">
+                              {t("Personal course", "个人课程")}
+                            </option>
+                            <option value="option">
+                              {t("Requirement option", "要求选项")}
+                            </option>
+                          </select>
+                        </label>
+                        <label>
                           {t("Source status", "来源状态")}
                           <select
                             value={course.status}

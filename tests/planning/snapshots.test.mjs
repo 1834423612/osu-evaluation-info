@@ -63,6 +63,8 @@ test("degree requirements do not become satisfied through duplicated or unknown 
   plan.allocations = plan.allocations.map((a) => ({ ...a, confirmed: true }));
   assert.equal(requirementProgress(plan, requirement.id).state, "unresolved");
   plan.semesters[0].courses[0].credits = 3;
+  plan.semesters[0].courses[0].evidenceRole = "observation";
+  plan.semesters[0].courses[0].status = "completed";
   assert.equal(requirementProgress(plan, requirement.id).knownCredits, 3);
   assert.equal(
     requirementProgress(plan, plan.requirements[0].id).state,

@@ -1,9 +1,9 @@
-import { parsePlanLines, type PdfLine } from "./parser";
+import { detectPlanLayout, parsePlanLines, type PdfLine } from "./parser";
 import type { Plan } from "./model";
 import { planningLines } from "./pdf-lines";
 export async function extractPlan(
   file: File,
-  source: Plan["source"],
+  source: Plan["source"] | "auto",
   signal?: AbortSignal,
   origin: Plan["pdfOrigin"] = "export",
 ) {
@@ -39,7 +39,22 @@ export async function extractPlan(
       page.cleanup();
       if (lines.length > 30000) throw Error("content");
     }
-    return parsePlanLines(lines, source, origin);
+    const detected =
+      source === "auto" ? detectPlanLayout(lines, file.name) : source;
+    if (!detected) throw Error("layout");
+    const result = parsePlanLines(lines, detected, origin);
+    const mode = /(?:^|[_ -])planned(?:[_ -]|$)/i.test(file.name)
+      ? "planned"
+      : /(?:^|[_ -])official(?:[_ -]|$)/i.test(file.name)
+        ? "official"
+        : null;
+    if (mode && result.plan.auditMode === "unknown") {
+      result.plan.auditMode = mode;
+      result.plan.documents.forEach((d) => {
+        d.auditMode = mode;
+      });
+    }
+    return result;
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener("abort", cancel);

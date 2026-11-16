@@ -9,6 +9,26 @@ export type ParseResult = {
   plan: Plan;
   warnings: Array<"review" | "limited" | "empty" | "status" | "projects">;
 };
+/** Filenames are a transient layout hint only; they are never returned or saved. */
+export function detectPlanLayout(
+  lines: PdfLine[],
+  filename = "",
+): Plan["source"] | null {
+  if (/student[_ -]?plan/i.test(filename)) return "student-plan";
+  if (/expanded/i.test(filename)) return "expanded-audit";
+  if (/compact/i.test(filename)) return "compact-audit";
+  if (/standard/i.test(filename)) return "standard-audit";
+  const header = lines
+    .slice(0, 150)
+    .map((l) => l.text)
+    .join("\n");
+  if (/Course or Activity/i.test(header)) return "student-plan";
+  if (/Applied Version/i.test(header) && /Fulfill (?:all|any) of/i.test(header))
+    return "expanded-audit";
+  if (/AUDIT REPORT/i.test(header) && /[–—-]{2}/.test(header))
+    return "standard-audit";
+  return null;
+}
 /** Conservative candidate extraction, not a degree audit or graduation calculation. */
 export function parsePlanLines(
   lines: PdfLine[],
@@ -28,6 +48,8 @@ export function parsePlanLines(
     catalogs = new Set<string>();
   const modes = new Set<string>();
   let creditColumn: number | null = null;
+  const conflictingCredits = new WeakSet<PlanCourse>();
+  const conflictingStatuses = new WeakSet<PlanCourse>();
   for (const { text: raw, page, cells } of lines) {
     const line = raw.normalize("NFKC").trim().replace(/\s+/g, " ");
     // Ignore known identity/footer lines before any matching. Raw strings are never returned.
@@ -94,7 +116,10 @@ export function parsePlanLines(
     if (!matches.length && !/\bplaceholder\b/i.test(line)) continue;
     // Multiple course alternatives/columns cannot establish status or credits reliably.
     const credit =
-      matches.length <= 1 && source === "student-plan"
+      matches.length <= 1 &&
+      !/\b(?:minimum|at least|up to|maximum|per course|total|require[ds]?)\b/i.test(
+        line,
+      )
         ? line.match(
             /(?:^|[\s(])(\d{1,2}(?:\.\d+)?)\s*(?:h(?:ours?)?|credits?)\b/i,
           )
@@ -114,9 +139,9 @@ export function parsePlanLines(
 
     const status: PlanCourse["status"] = /\bplanned\b/i.test(line)
       ? "planned"
-      : /\bin.progress\b/i.test(line)
+      : /\bin.progress\b|currently taking/i.test(line)
         ? "in-progress"
-        : /\bcompleted\b/i.test(line)
+        : /\bcompleted\b|\btaken in\b|\btransferred\b/i.test(line)
           ? "completed"
           : "unknown";
     const candidates = matches.length
@@ -126,6 +151,13 @@ export function parsePlanLines(
       const course: PlanCourse = {
         ...candidate,
         kind: /\bplaceholder\b/i.test(line) ? "placeholder" : "course",
+        evidenceRole:
+          source === "student-plan" ||
+          /\bthrough\b|\b(?:currently taking|taken in|transferred|in.progress|completed|planned)\b/i.test(
+            line,
+          )
+            ? "observation"
+            : "option",
         credits:
           matches.length <= 1 && tableCredits !== null
             ? tableCredits
@@ -135,18 +167,41 @@ export function parsePlanLines(
         status,
         page,
       };
-      if (
-        !semester.courses.some(
-          (c) =>
-            c.subject === course.subject &&
-            c.number === course.number &&
-            c.kind === course.kind &&
-            course.subject !== null,
-        )
-      ) {
+      const existing = semester.courses.find(
+        (c) =>
+          c.subject === course.subject &&
+          c.number === course.number &&
+          c.kind === course.kind &&
+          course.subject !== null,
+      );
+      if (!existing) {
         if (semester.courses.length >= 100)
           throw Error("Too many candidates; split the PDF");
         semester.courses.push(course);
+      } else if (
+        course.evidenceRole === "observation" &&
+        existing.evidenceRole !== "observation"
+      ) {
+        Object.assign(existing, course);
+      } else if (course.evidenceRole === existing.evidenceRole) {
+        if (
+          existing.credits !== null &&
+          course.credits !== null &&
+          existing.credits !== course.credits
+        ) {
+          conflictingCredits.add(existing);
+          existing.credits = null;
+        } else if (!conflictingCredits.has(existing))
+          existing.credits ??= course.credits;
+        if (existing.status === "unknown" && !conflictingStatuses.has(existing))
+          existing.status = course.status;
+        else if (
+          course.status !== "unknown" &&
+          course.status !== existing.status
+        ) {
+          conflictingStatuses.add(existing);
+          existing.status = "unknown";
+        }
       }
     }
   }

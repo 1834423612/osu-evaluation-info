@@ -104,9 +104,11 @@ export function SourceReview({ plan, locale, update }: Props) {
                   progress.state,
                   progress.state === "satisfied"
                     ? "满足数值条件"
-                    : progress.state === "insufficient"
-                      ? "数值不足"
-                      : "待核对",
+                    : progress.state === "planned"
+                      ? "计划覆盖"
+                      : progress.state === "insufficient"
+                        ? "数值不足"
+                        : "待核对",
                 )}
               </span>
             </div>

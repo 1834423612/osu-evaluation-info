@@ -92,7 +92,7 @@ export function requirementProgress(
   requirementId: string,
   visited = new Set<string>(),
 ): {
-  state: "satisfied" | "insufficient" | "unresolved";
+  state: "satisfied" | "planned" | "insufficient" | "unresolved";
   knownCredits: number;
   distinctCourses: number;
 } {
@@ -119,39 +119,84 @@ export function requirementProgress(
       .filter((a) => a.confirmed && a.requirementId === requirementId)
       .map((a) => a.courseId),
   );
-  const facts = new Map<string, Set<number | null>>();
+  const facts = new Map<
+    string,
+    { credits: Set<number | null>; statuses: Set<string> }
+  >();
+  const invalidObservation = plan.semesters
+    .flatMap((s) => s.courses)
+    .some(
+      (c) =>
+        c.id &&
+        confirmed.has(c.id) &&
+        (c.evidenceRole !== "observation" ||
+          c.kind === "placeholder" ||
+          !c.subject ||
+          !c.number),
+    );
   for (const course of plan.semesters.flatMap((s) => s.courses)) {
     if (
       !course.id ||
       !confirmed.has(course.id) ||
       course.kind === "placeholder" ||
+      course.evidenceRole !== "observation" ||
       !course.subject ||
       !course.number
     )
       continue;
     const key = course.subject + " " + course.number;
-    const values = facts.get(key) ?? new Set();
-    values.add(course.credits);
+    const values = facts.get(key) ?? {
+      credits: new Set<number | null>(),
+      statuses: new Set<string>(),
+    };
+    values.credits.add(course.credits);
+    values.statuses.add(course.status);
     facts.set(key, values);
   }
   let knownCredits = 0,
-    unknown = false;
+    completedCredits = 0,
+    completedCourses = 0,
+    unknown = invalidObservation,
+    unknownStatus = false;
   for (const values of facts.values()) {
-    if (values.size !== 1 || values.has(null)) unknown = true;
-    else knownCredits += [...values][0]!;
+    const complete =
+      values.statuses.size === 1 && values.statuses.has("completed");
+    if (complete) completedCourses++;
+    if (values.statuses.size !== 1 || values.statuses.has("unknown"))
+      unknownStatus = true;
+    if (values.credits.size !== 1 || values.credits.has(null)) unknown = true;
+    else {
+      knownCredits += [...values.credits][0]!;
+      if (complete) completedCredits += [...values.credits][0]!;
+    }
   }
   const children = plan.requirements.filter(
     (r) => r.parentId === requirementId,
   );
-  let state: "satisfied" | "insufficient" | "unresolved" = "unresolved";
+  let state: "satisfied" | "planned" | "insufficient" | "unresolved" =
+    "unresolved";
   if (node.kind === "credits" && node.minimumCredits !== null)
-    state = unknown
-      ? "unresolved"
-      : knownCredits >= node.minimumCredits
+    state =
+      completedCredits >= node.minimumCredits
         ? "satisfied"
-        : "insufficient";
+        : knownCredits >= node.minimumCredits
+          ? unknownStatus
+            ? "unresolved"
+            : "planned"
+          : unknown
+            ? "unresolved"
+            : "insufficient";
   if (node.kind === "courses" && node.minimumCourses !== null)
-    state = facts.size >= node.minimumCourses ? "satisfied" : "insufficient";
+    state =
+      completedCourses >= node.minimumCourses
+        ? "satisfied"
+        : facts.size >= node.minimumCourses
+          ? unknownStatus
+            ? "unresolved"
+            : "planned"
+          : invalidObservation
+            ? "unresolved"
+            : "insufficient";
   if ((node.kind === "all" || node.kind === "any") && children.length) {
     const states = children.map(
       (c) => requirementProgress(plan, c.id, visited).state,
@@ -162,12 +207,16 @@ export function requirementProgress(
           ? "satisfied"
           : states.includes("unresolved")
             ? "unresolved"
-            : "insufficient"
+            : states.includes("insufficient")
+              ? "insufficient"
+              : "planned"
         : states.includes("satisfied")
           ? "satisfied"
           : states.includes("unresolved")
             ? "unresolved"
-            : "insufficient";
+            : states.includes("planned")
+              ? "planned"
+              : "insufficient";
   }
   return { state, knownCredits, distinctCourses: facts.size };
 }

@@ -41,6 +41,24 @@ const requirementSchema = z
     programId: reference,
     parentId: reference.nullable(),
     hierarchyReviewed: z.boolean().optional(),
+    category: z
+      .enum([
+        "general",
+        "launch",
+        "writing",
+        "math",
+        "arts",
+        "history",
+        "science",
+        "social",
+        "diversity",
+        "citizenship",
+        "reflection",
+        "core",
+        "electives",
+        "survey",
+      ])
+      .optional(),
     kind: z.enum(["all", "any", "credits", "courses", "unknown"]),
     minimumCredits: z.number().min(0).max(999).nullable(),
     minimumCourses: z.number().int().min(0).max(100).nullable(),
@@ -70,6 +88,7 @@ export const courseSchema = z
       .regex(/^\d{4}(?:\.\d{1,2})?[A-Z]?$/)
       .nullable(),
     kind: z.enum(["course", "placeholder"]),
+    evidenceRole: z.enum(["observation", "option", "unknown"]).optional(),
     credits,
     status: z.enum(["planned", "completed", "in-progress", "unknown"]),
     page: z.number().int().min(1).max(200).nullable(),
