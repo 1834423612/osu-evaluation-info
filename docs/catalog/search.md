@@ -13,7 +13,8 @@ term, campus and instructor identities; approximate retrieval never changes rati
 index, field boosts, prefixes and BM25-family scoring. Its
 [7.2.0 source](https://github.com/lucaong/minisearch/blob/v7.2.0/src/MiniSearch.ts)
 is the installed implementation. The current corpus fits process memory, so this
-adds no external search service, credentials or database migrations.
+adds no external search service or credentials. Persistent prepared indexes use
+catalog migration 6.
 
 [Typesense](https://typesense.org/docs/30.2/api/search.html) documents bounded typo
 expansion, split/join repair, numeric tolerance and progressive token relaxation.
@@ -72,8 +73,8 @@ source and sync timestamp are shown. Search never proxies official live reads.
 Publication pointers refresh after 30 seconds. Builds coalesce and serialize,
 with at most 8 queued builds and 2 retained indexes per Node process. A corpus is
 bounded to 50,000 course/campus documents. Failed builds leave existing generations
-untouched. Cold loads include database transfer and index construction; they are
-not represented by the warm in-memory query timing.
+untouched. Cold loads restore a prepared index when available; legacy or invalid artifacts
+fall back to a full build. Neither path is represented by warm query timing.
 
 Search cursors use `s:` and pin the generation, term, normalized query, filters,
 page size, sort and algorithm version. Changing any of those requires restarting.
@@ -169,3 +170,40 @@ node scripts/catalog/benchmark-search.mjs
 The tool accepts localhost only, caps clients at 200, and writes its report under `.cache/`.
 
 The effective Columbus campus default is included in the filter count and active chips even when omitted from the URL. Removing the campus chip selects all campuses. Clear filters removes campus scope as well; Reset restores the Columbus default. Query text, term, sorting and detail/share parameters do not count as facets.
+
+## Preparing indexes during synchronization
+
+Apply the additive catalog migration explicitly, then prepare the current published
+terms once before rolling out the runtime:
+
+```sh
+pnpm catalog:migrate
+pnpm search:prepare
+```
+
+Both commands require the operator's configured `DATABASE_URL`. Migration runs DDL;
+preparation reads public catalog snapshots and writes only derived
+`osu_catalog.search_artifacts`. Neither command sends text to translation providers.
+Do not use production credentials for tests.
+
+Scheduled catalog synchronization now builds every staged term's complete index
+before publication. A failed build leaves the prior publication visible. Migration
+6 is required before the updated sync can run; scheduled jobs never apply DDL.
+After existing RMP and change-history maintenance, the workflow repairs/backfills
+published artifacts and retains two prepared generations per term and format.
+Archived source snapshots are never pruned. Cursors pinned to older generations
+remain correct but may need a full build.
+
+Artifacts contain compressed normalized metadata, section filter facts, ranking
+vocabulary and the MiniSearch index. They are keyed by run, term and format version,
+bounded to 192 MiB uncompressed, and verified by SHA-256 before restoration.
+Damaged artifacts fall back safely and are rebuilt by preparation. Bump
+`SEARCH_ARTIFACT_VERSION` whenever the analyzer, normalization, index inputs or
+MiniSearch serialization changes, then rerun preparation before runtime rollout.
+
+A new server process still fetches and decompresses the prepared artifact and
+hydrates visible sections from the database. This removes full-source transfer,
+normalization and tokenization from the usual first request; it does not guarantee
+instant results or prewarm every serverless instance. Existing live exact-code
+routing and official-service latency are unchanged. Validate cold and warm
+end-to-end timings against an isolated representative database before deployment.

@@ -85,3 +85,13 @@ pnpm translation:manage sync-config ollama
 node --test --test-isolation=none tests/translation/*.test.mjs
 TRANSLATION_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test --test-isolation=none tests/translation/provider-state.integration.test.mjs tests/translation/translation-usage.integration.test.mjs
 ```
+
+## 完成阶段延迟
+
+推理已结束且共享状态存储确认 `finish` 已释放租约时，响应不再等待第二次释放事务。
+完成状态写入失败或未确认时仍执行清理；超时但尚未真正结束的推理仍保留容量到实际完成。
+这只移除了冗余 PostgreSQL 事务，不会消除提供商推理时间或新进程首次初始化。
+
+提供商顺序、回退条件、超时和数据外发范围不变，不启用提前并行 Google 请求。
+NAS 翻译缓存仍在进程内，不是持久化预翻译目录。课程搜索索引预构建不会翻译
+或存储任意用户输入文本。

@@ -357,3 +357,16 @@ They verify shared admission, recovery after a crashed worker, generation fencin
 policy persistence, browser isolation and ordering, and legacy-data preservation.
 An authenticated NAS probe additionally requires valid Access credentials and
 the exact model name registered in your running Ollama installation.
+
+## Completion latency
+
+When inference has settled and the shared state store confirms that `finish`
+released its lease, the response no longer waits for a second release transaction.
+A failed or unconfirmed finish still attempts cleanup; timed-out inference retains
+capacity until actual settlement. This avoids a redundant PostgreSQL transaction,
+not the provider's inference time or first-process initialization.
+
+Provider order, fallback conditions, timeouts and disclosure scope are unchanged.
+No speculative parallel Google request is enabled. The NAS translation cache is
+still process-local, not a persistent pretranslated catalog. Catalog search-index
+preparation does not translate or retain arbitrary user text.

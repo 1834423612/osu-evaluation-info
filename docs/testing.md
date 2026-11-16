@@ -434,3 +434,26 @@ These unit checks run with `pnpm test` without external requests. The account in
 | [tests/user-data/account-domain.integration.test.mjs](../tests/user-data/account-domain.integration.test.mjs) | Integration | Complete verified account flow in a disposable explicit schema; mocked email                                                          |
 
 `USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs tests/diagnostics/reports.integration.test.mjs` runs the related database suite. It writes only its disposable schemas. Production application APIs and real SMTP delivery are not used.
+
+## Prepared search regression tests
+
+`tests/search/prepared-corpus.test.mjs` uses synthetic public course fixtures and
+mock database responses to verify engine equivalence, compressed artifact integrity,
+generation matching, schema-free request reads, preparation reuse and publication
+ordering. It makes no network calls and writes no database.
+`tests/catalog/sync-cli.integration.test.mjs` includes migration 6 and staged index
+preparation when explicitly enabled with `CATALOG_DATABASE_TEST=1`; it writes only
+its disposable catalog schema. A skipped integration run is not validation of
+production PostgreSQL performance.
+
+```sh
+node --test tests/search/prepared-corpus.test.mjs
+```
+
+`tests/translation/translation-release.test.mjs` covers confirmed completion,
+rejected or failed finish, timeout settlement, and cleanup races with in-memory
+provider/store mocks. Its six cases make no external calls or database writes.
+
+```sh
+node --test tests/translation/translation-release.test.mjs
+```
