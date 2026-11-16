@@ -43,6 +43,8 @@ import { pruneAllocations } from "@/lib/planning/snapshots";
 import { browserUuid } from "@/lib/uuid";
 import { ImportGuard } from "@/lib/planning/import-guard";
 import { importPlanningFiles } from "@/lib/planning/batch-import";
+import { applyRecommendationBundle } from "@/lib/planning/recommendation";
+const NextTerm = dynamic(() => import("./next-term").then((m) => m.NextTerm));
 
 export function PlanningWorkspace() {
   const { locale } = usePreferences();
@@ -53,9 +55,9 @@ export function PlanningWorkspace() {
   const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [tab, setTab] = useState<"private" | "board" | "map" | "official">(
-    "private",
-  );
+  const [tab, setTab] = useState<
+    "private" | "board" | "map" | "official" | "next"
+  >("private");
   const [dark, setDark] = useState(false);
   const [visibleSource, setVisibleSource] = useState("");
   const [importProgress, setImportProgress] = useState("");
@@ -341,6 +343,7 @@ export function PlanningWorkspace() {
               { id: "private", en: "Import & review", zh: "导入与核对" },
               { id: "board", en: "Semester board", zh: "学期看板" },
               { id: "map", en: "Requirement map", zh: "学业要求图" },
+              { id: "next", en: "Next semester", zh: "下学期推荐" },
               { id: "official", en: "Official curricula", zh: "官方培养方案" },
             ] as const
           ).map((item) => (
@@ -364,6 +367,24 @@ export function PlanningWorkspace() {
         >
           {tab === "official" ? (
             <CurriculumDirectory locale={locale} addCourse={addCourse} />
+          ) : tab === "next" ? (
+            <NextTerm
+              plan={plan}
+              locale={locale}
+              onReview={openReview}
+              apply={(items, term) => {
+                update((p) =>
+                  applyRecommendationBundle(p, items, term, browserUuid),
+                );
+                setTab("board");
+                setMessage(
+                  t(
+                    "Draft courses added. Review credits, prerequisites and sessions before saving.",
+                    "已加入课程草稿。保存前请核对学分、先修和 sessions。",
+                  ),
+                );
+              }}
+            />
           ) : tab === "board" ? (
             <SemesterBoard
               plan={plan}

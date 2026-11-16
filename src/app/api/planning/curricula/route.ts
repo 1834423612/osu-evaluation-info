@@ -1,5 +1,8 @@
 import data from "../../../../../data/planning/directory.json";
 import curricula from "../../../../../data/planning/curricula.json";
+import subjects from "../../../../../data/planning/subjects.json";
+import { publicSamples } from "@/lib/planning/public-samples";
+import { curriculumSchema } from "@/lib/planning/curriculum";
 import { directorySchema, queryDirectory } from "@/lib/planning/directory";
 const directory = directorySchema.parse(data);
 export function GET(request: Request) {
@@ -8,6 +11,16 @@ export function GET(request: Request) {
   const headers = {
     "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
   };
+  if (input.get("samples") === "1")
+    return Response.json(
+      {
+        samples: publicSamples(
+          curricula.map((c) => curriculumSchema.parse(c)),
+          subjects.subjects,
+        ),
+      },
+      { headers },
+    );
   if (id) {
     const document = directory.documents.find((d) => d.id === id);
     return document
