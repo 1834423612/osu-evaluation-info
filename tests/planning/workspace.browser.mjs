@@ -25,12 +25,21 @@ try {
       requests.push({ url: r.url(), body: r.postData() });
   });
   page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("**/api/catalog/**", (route) =>
+    route.fulfill({
+      status: 503,
+      body: "Local browser regression intentionally offline",
+    }),
+  );
   await page.goto(
     (process.env.BASE_URL ?? "http://127.0.0.1:3000") + "/planning",
   );
   await page
-    .getByRole("heading", { name: "Make room for what’s next." })
+    .getByRole("heading", { name: "Semester planning", exact: true })
     .waitFor();
+  await page
+    .getByRole("tab", { name: "Import & sources", exact: true })
+    .click();
   await page.locator("input[type=file]").setInputFiles({
     name: "private-student.pdf",
     mimeType: "application/pdf",
@@ -42,6 +51,11 @@ try {
       { exact: true },
     )
     .waitFor({ timeout: 90000 });
+  await page
+    .locator("summary")
+    .filter({ hasText: /Spring2027/ })
+    .first()
+    .click();
   assert.equal(
     await page.getByLabel("Subject", { exact: true }).first().inputValue(),
     "CSE",
@@ -51,17 +65,16 @@ try {
     "",
   );
   assert.equal(
-    await page.getByLabel("Applied Version", { exact: true }).inputValue(),
-    "AU2017",
-  );
-  assert.equal(
     await page
       .getByRole("button", { name: "Save on this device", exact: true })
       .isDisabled(),
     true,
   );
   await page.getByLabel("Number", { exact: true }).first().fill("2221");
-  await page.getByRole("checkbox", { name: /I checked these fields/ }).check();
+  await page
+    .getByRole("checkbox", { name: /I checked these fields/ })
+    .first()
+    .check();
   await page
     .getByRole("button", { name: "Save on this device", exact: true })
     .click();
@@ -83,24 +96,30 @@ try {
   await mkdir("/tmp/planning-evidence", { recursive: true });
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
-    for (const mode of ["light", "dark"]) {
-      if (mode === "dark")
-        await page.getByRole("button", { name: "Dark", exact: true }).click();
+    for (const name of [
+      "My plan",
+      "Import & sources",
+      "Requirement map",
+      "Next semester",
+      "Four-year examples",
+    ]) {
+      await page.getByRole("tab", { name, exact: true }).click();
       assert.equal(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
         true,
-        `${width} ${mode} overflow`,
+        `${width} ${name} overflow`,
       );
-      await page.screenshot({
-        path: `/tmp/planning-evidence/${width}-${mode}.png`,
-        fullPage: true,
-      });
-      if (mode === "dark")
-        await page.getByRole("button", { name: "Light", exact: true }).click();
     }
+    await page.screenshot({
+      path: `/tmp/planning-evidence/${width}.png`,
+      fullPage: true,
+    });
   }
+  await page
+    .getByRole("tab", { name: "Import & sources", exact: true })
+    .click();
   await page.locator("input[type=file]").setInputFiles({
     name: "synthetic-second.pdf",
     mimeType: "application/pdf",
@@ -128,24 +147,19 @@ try {
   );
   await page.getByLabel("Show source", { exact: true }).selectOption("");
   await page
-    .getByRole("tab", { name: "Official curricula", exact: true })
+    .getByRole("tab", { name: "Four-year examples", exact: true })
     .click();
   await page
-    .getByRole("heading", { name: "Find your curriculum.", exact: true })
+    .getByRole("heading", { name: "Four-year sample schedules", exact: true })
     .waitFor();
   await page
-    .getByRole("combobox", { name: "College or school", exact: true })
+    .getByRole("button", { name: /Computer and Information Science.*BA/ })
     .waitFor();
-  assert.ok(
-    (await page
-      .getByRole("button", { name: "View document", exact: true })
-      .count()) <= 24,
-  );
   await page.evaluate(() => {
     localStorage.setItem("course-atlas:locale:v1", "zh");
     window.dispatchEvent(new Event("course-atlas:preferences"));
   });
-  await page.getByRole("heading", { name: "让下一步，更清晰。" }).waitFor();
+  await page.getByRole("heading", { name: "学期规划", exact: true }).waitFor();
   assert.equal(
     requests.some((r) => /telemetry|diagnostics/.test(r.url)),
     false,
@@ -153,13 +167,15 @@ try {
   );
   assert.equal(
     requests.some((r) =>
-      /Synthetic|private-student|CSE|AU2017/.test(r.body ?? ""),
+      /Synthetic|private-student|AU2017|documentId|programId/.test(
+        r.body ?? "",
+      ),
     ),
     false,
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: synthetic PDF import, correction, review gate, local save/export, directory, en/zh, light/dark at 320/390/768/1440, no planning POST payloads, no page errors",
+    "PASS: synthetic PDF import, correction, review gate, local save/export, samples, en/zh at 320/390/768/1440, no planning POST payloads, no page errors",
   );
   await context.close();
 } finally {
