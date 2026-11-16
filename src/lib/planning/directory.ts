@@ -79,7 +79,12 @@ export type DocumentSummary = Omit<PublicDocument, "courseReferences"> & {
 export type DirectoryResponse = Omit<
   CurriculumDirectory,
   "documents" | "pending"
-> & { documents: DocumentSummary[]; total: number; page: number };
+> & {
+  documents: DocumentSummary[];
+  total: number;
+  page: number;
+  years: string[];
+};
 export function queryDirectory(
   directory: CurriculumDirectory,
   input: URLSearchParams,
@@ -89,6 +94,7 @@ export function queryDirectory(
   const year = input.get("year") ?? "";
   const ge = input.get("ge") ?? "";
   const kind = input.get("kind") ?? "";
+  const college = input.get("college") ?? "";
   const page = Number(input.get("page") ?? "1");
   if (
     q.length > 100 ||
@@ -116,6 +122,10 @@ export function queryDirectory(
           .toLowerCase()
           .includes(q)) &&
       (!program || d.programIds.includes(program)) &&
+      (!college ||
+        d.programIds.some((id) =>
+          directory.programs.some((p) => p.id === id && p.college === college),
+        )) &&
       (!year || d.academicYears.includes(year)) &&
       (!ge || d.geSystems.includes(ge as "GEN" | "GEL")) &&
       (!kind || d.documentKind === kind),
@@ -130,6 +140,9 @@ export function queryDirectory(
         courseCount: courseReferences.length,
       })),
     total: docs.length,
+    years: [...new Set(directory.documents.flatMap((d) => d.academicYears))]
+      .sort()
+      .reverse(),
     page,
   };
 }
