@@ -11,6 +11,12 @@ from sync import PublicFetcher, discover, official_url
 
 
 class InventoryTests(unittest.TestCase):
+    def test_explicit_legacy_title_overrides_references_to_new_ge(self):
+        self.assertEqual(inventory.ge_systems('BA Chemistry Legacy GE Sample', 'GEN reference elsewhere'), ['GEL'])
+        self.assertEqual(inventory.ge_systems('ba_music_gen_1.pdf', 'Legacy General Education reference'), ['GEN'])
+        self.assertEqual(inventory.ge_systems('Curriculum', 'GEN and GEL'), ['GEN','GEL'])
+        self.assertEqual(inventory.ge_systems('General curriculum', 'General requirements'), [])
+
     def test_college_index_preserves_rows_and_ignores_surrounding_navigation(self):
         html = '<nav><h2>Ignored</h2></nav><h1>Majors by college</h1><h2>Engineering</h2><p>Learn more about the College.<br>Computer Science and Engineering<br>Mechanical Engineering</p><h2>Arts and Sciences</h2><h3>Arts</h3><div>Music</div><h2>Undecided/Exploring</h2><p>Not a major</p>'
         rows = inventory.program_inventory(html.encode())

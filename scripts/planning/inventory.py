@@ -84,6 +84,15 @@ def program_inventory(data):
     return list({r['id']: r for r in result}.values())
 
 
+def ge_systems(title, text):
+    patterns = [
+        ('GEN', r'(?:^|[\W_])GEN(?:$|[\W_])|\bNew[\s_-]+(?:GE|General Education)\b|\bGeneral Education[\s_-]+New\b'),
+        ('GEL', r'(?:^|[\W_])GEL(?:$|[\W_])|\bLegacy[\s_-]+(?:GE|General Education)\b|\bGeneral Education[\s_-]+Legacy\b'),
+    ]
+    explicit = [code for code, pattern in patterns if re.search(pattern, title, re.I)]
+    return explicit or [code for code, pattern in patterns if re.search(pattern, text, re.I)]
+
+
 def document_metadata(record, blocks, label=''):
     title = next((b['text'] for b in blocks if b['kind'] == 'h1'), label)
     title = title[:240] or unquote(urlsplit(record['url']).path.rsplit('/', 1)[-1])[:240]
@@ -99,7 +108,7 @@ def document_metadata(record, blocks, label=''):
             else 'requirements' if re.search(r'requirement|curriculum sheet', title, re.I) and codes else 'source')
     return {'title': title, 'documentKind': kind, 'academicYears': academic_years,
             'effectiveTerms': terms, 'appliedVersions': applied,
-            'geSystems': [v for v, pattern in [('GEN', r'\bGEN\b|General Education.{0,5}New'), ('GEL', r'\bGEL\b|General Education.{0,5}Legacy')] if re.search(pattern, text, re.I)],
+            'geSystems': ge_systems(title, text),
             'publicationStatus': 'draft' if re.search(r'\bdraft\b', title, re.I) else 'unknown',
             'courseReferences': [{'subject': s, 'number': n} for s, n in codes[:1000]],
             'pageCount': record.get('pageCount'), 'extractionStatus': 'references' if codes else 'unstructured'}
