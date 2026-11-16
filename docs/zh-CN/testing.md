@@ -452,3 +452,12 @@ node --test tests/search/prepared-corpus.test.mjs
 ```sh
 node --test tests/translation/translation-release.test.mjs
 ```
+
+`tests/search/prepared-corpus.integration.test.mjs` 可通过 `PGLITE_MODULE`
+加载已经安装的 PGlite 模块，仅创建内存表，验证迁移 6、压缩 bytea 恢复、
+损坏修复与保护已发布版本的保留策略。它不使用 `DATABASE_URL`、凭据、
+网络数据库或外部服务。原生 PostgreSQL 连接与多会话并发行为仍需单独验证。
+
+```sh
+PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/prepared-corpus.integration.test.mjs
+```

@@ -457,3 +457,14 @@ provider/store mocks. Its six cases make no external calls or database writes.
 ```sh
 node --test tests/translation/translation-release.test.mjs
 ```
+
+`tests/search/prepared-corpus.integration.test.mjs` optionally loads an already
+installed PGlite module through `PGLITE_MODULE`. It creates only in-memory tables
+and validates migration 6, compressed bytea restoration, corruption repair and
+retention that protects published generations. It does not use `DATABASE_URL`,
+credentials, a network database, or external services. Native PostgreSQL
+connectivity and concurrent-session behavior still require separate validation.
+
+```sh
+PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/prepared-corpus.integration.test.mjs
+```
