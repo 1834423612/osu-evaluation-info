@@ -135,7 +135,7 @@ export function CurriculumDirectory({
             [data.programs.length, t("program index entries", "专业索引条目")],
             [
               new Set(data.programs.map((p) => p.college)).size,
-              t("colleges & schools", "学院及学部"),
+              t("index groups", "索引分组"),
             ],
             [
               data.counts.downloadedVersions,
@@ -355,6 +355,8 @@ export function CurriculumDirectory({
                 <span>
                   {d.courseCount} {t("course references", "个课程参考")} ·{" "}
                   {t("Pending review", "待复核")}
+                  {d.extractionStatus === "unsupported" &&
+                    " · " + t("Text unavailable", "文本未提取")}
                 </span>
                 <button onClick={() => openDocument(d.id)}>
                   {t("View", "查看")}
@@ -446,6 +448,19 @@ export function CurriculumDirectory({
                 <dt>SHA-256</dt>
                 <dd>{detail.document.sha256}</dd>
               </dl>
+              {detail.document.extractionStatus === "unsupported" && (
+                <p className={styles.notice}>
+                  {detail.document.extractionIssue === "page-limit"
+                    ? t(
+                        "This document exceeds the text extraction page limit. Consult the official original.",
+                        "此文件超出文本解析页数上限，请查阅官方原文。",
+                      )
+                    : t(
+                        "Text extraction is unavailable for this document. Consult the official original.",
+                        "此文件暂未提取文本，请查阅官方原文。",
+                      )}
+                </p>
+              )}
               {detail.curricula.map((c) => (
                 <section className={styles.sample} key={c.id}>
                   <h3>
