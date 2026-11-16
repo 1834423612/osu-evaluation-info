@@ -6,6 +6,7 @@ import {
   LIST_CATALOG_TERMS_SQL,
 } from "@/lib/catalog/snapshot-policy";
 import type { CatalogSearch } from "@/lib/catalog/types";
+import { loadPreparedCorpus } from "./prepared-corpus";
 import { createIndexCache } from "./index-cache";
 import {
   hydrateSearchPage,
@@ -95,7 +96,9 @@ export async function searchPublishedCatalog(input: CatalogSearch) {
           );
           if (!visible.rowCount)
             throw new Error("Search generation retired before loading");
-          const corpus = await loadCatalogCorpus(connection, selected);
+          const corpus =
+            (await loadPreparedCorpus(connection, selected)) ??
+            (await loadCatalogCorpus(connection, selected));
           await connection.query("COMMIT");
           return corpus;
         } catch (error) {

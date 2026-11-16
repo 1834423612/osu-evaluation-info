@@ -40,7 +40,8 @@
     "account:migrate": "node scripts/user-data/auth-migrate.mjs",
     "user-data:migrate": "node scripts/user-data/migrate.mjs",
     "user-data:maintain": "node scripts/user-data/maintain.mjs",
-    "user-data:backup": "node scripts/user-data/backup.mjs"
+    "user-data:backup": "node scripts/user-data/backup.mjs",
+    "search:prepare": "node scripts/search/prepare.mjs"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.23",

@@ -20,6 +20,7 @@ import { discoverPlan, samePlan } from "./plan.mjs";
 import { selectRun } from "./checkpoints.mjs";
 import { preparePage } from "./rows.mjs";
 import { writePage } from "./writer.mjs";
+import { prepareSearchGeneration } from "../search/prepare.mjs";
 import { publishCatalogSnapshot } from "./snapshots.mjs";
 
 async function main() {
@@ -179,6 +180,20 @@ async function main() {
             )
           ).rows[0].n,
         );
+        // Keep the old publication visible until every term has a complete index.
+        // A failed preparation cannot expose a new generation to visitors.
+        const searchTerms = terms.map((term) => ({
+          code: term.strm,
+          label: term.descr,
+        }));
+        for (const term of termCodes) {
+          await prepareSearchGeneration(client, {
+            run: runId,
+            term,
+            terms: searchTerms,
+            snapshotAt: new Date().toISOString(),
+          });
+        }
         await publishCatalogSnapshot(
           client,
           runId,

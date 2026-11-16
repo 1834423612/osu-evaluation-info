@@ -63,6 +63,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: node scripts/catalog/backfill_changes.mjs --max-batches 12 --max-seconds 120
 
+      - name: Repair and retain published search indexes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm search:prepare
+
       - name: Summarize catalog failure
         if: failure()
         shell: bash
