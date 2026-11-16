@@ -27,7 +27,9 @@ export function publicSamples(
     .map((c) => ({
       id: c.id,
       program: c.program,
-      label: c.evidence.find((e) => /^Example [0-9]/.test(e)) ?? c.program,
+      label: c.evidence.some((e) => /^Example [0-9]/.test(e))
+        ? c.program + " · " + c.evidence.find((e) => /^Example [0-9]/.test(e))
+        : c.program,
       url: c.source.url,
       reviewStatus: c.reviewStatus,
       courses: c.semesters.flatMap((semester, semesterIndex) =>

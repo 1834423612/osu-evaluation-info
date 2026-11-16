@@ -187,6 +187,7 @@ test("public samples expose course evidence without assigning a bundle's credits
   );
   const samples = publicSamples(curricula, subjects.subjects);
   assert.ok(samples.length >= 4);
+  assert.notEqual(samples[0].label, samples[1].label);
   assert.ok(samples.some((s) => s.courses.some((c) => c.subject === "MATH")));
   const sample = {
     ...curricula[0],

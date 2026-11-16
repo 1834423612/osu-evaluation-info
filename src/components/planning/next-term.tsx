@@ -168,7 +168,12 @@ export function NextTerm({
             {plan.programs.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.code ?? t("Unlabelled program", "未命名项目")} ·{" "}
-                {p.appliedVersion ?? "?"} · {p.declaration}
+                {p.appliedVersion ?? "?"} ·{" "}
+                {p.declaration === "declared"
+                  ? t("declared", "已申报")
+                  : p.declaration === "undeclared"
+                    ? t("undeclared", "未申报")
+                    : t("unknown", "未知")}
               </option>
             ))}
           </select>
