@@ -12,11 +12,11 @@ metadata={'title':'Synthetic sample plan','documentKind':'sample-plan','geSystem
 class PublicLayoutTests(unittest.TestCase):
     def test_math_pdf_merged_year_labels_and_credit_columns(self):
         def row(*cells):
-            return {'text':' '.join(t for x,t in cells),'cells':[{'x':x,'text':t,'width':36} for x,t in cells]}
+            return {'text':' '.join(t for x,t in cells),'cells':[{'x':x,'text':t,'width':6 if t.isdigit() else 36} for x,t in cells]}
         blocks=[row((20,'Sample Schedule')),row((212,'Autumn'),(416,'Spring'))]
         for year in range(1,5):
-            blocks += [row((100,'MATH 1151'),(318,'5'),(350,'CSE 1223'),(540,'3')),
-                       row((20,'Year '+str(year)),(100,'GE'),(318,'3'),(350,'Elective'),(540,'-')),
+            blocks += [row((100,'MATH 1151'),(318,'5'),(327,'CSE 1223'),(540,'3')),
+                       row((20,'Year '+str(year)),(100,'GE'),(318,'3'),(327,'Elective'),(540,'-')),
                        row((318,'8'),(540,'3'))]
         result=structure_math_schedule({'blocks':blocks},record,metadata)
         self.assertEqual(len(result[0]['semesters']),8)

@@ -107,7 +107,7 @@ def structure_pdf(evidence, record, metadata):
 
 def structure_math_schedule(evidence, record, metadata):
     """Verified Mathematics layout with four year labels and paired totals."""
-    started, boundary, label_seen = False, None, False
+    started, boundary, label_seen, calibrated = False, None, False, False
     collected, semesters, year = [[], []], [], 1
     for block in evidence.get('blocks', []):
         line, cells = block['text'], block.get('cells', [])
@@ -123,6 +123,16 @@ def structure_math_schedule(evidence, record, metadata):
             continue
         if boundary is None:
             continue
+        if not calibrated:
+            anchors = sorted((c for c in cells if course_codes(c['text'])), key=lambda c:c['x'])
+            if len(anchors) == 2 and anchors[1]['x'] - anchors[0]['x'] > 100:
+                left_numbers = [c for c in cells if anchors[0]['x'] < c['x'] < anchors[1]['x'] and numeric(c['text']) is not None]
+                right_numbers = [c for c in cells if c['x'] > anchors[1]['x'] and numeric(c['text']) is not None]
+                if left_numbers and right_numbers:
+                    end = max(c['x'] + c.get('width', 0) for c in left_numbers)
+                    if end < anchors[1]['x']:
+                        boundary = (end + anchors[1]['x']) / 2
+                        calibrated = True
         for cell in cells:
             if re.fullmatch(r'Year [1-4]', cell['text'].strip()):
                 if year_number(cell['text']) != year:
@@ -150,12 +160,12 @@ def structure_math_schedule(evidence, record, metadata):
             for side in (0, 1):
                 if course_codes(text[side]) or re.match(r'^(?:GE|Actuarial Elective|Elective)\b', text[side], re.I):
                     collected[side].append(segments[side])
-    if len(semesters) != 8:
+    if len(semesters) != 8 or not calibrated:
         return []
-    return [{'schemaVersion': 1, 'id': 'math-pdf-' + record['sha256'][:24],
+    return [{'schemaVersion': 1, 'id': 'math-pdf-v2-' + record['sha256'][:24],
         'source': {'url': record['url'], 'sha256': record['sha256'], 'fetchedAt': record['fetchedAt'], 'validatedAt': None, 'mediaType': 'application/pdf'},
         'documentKind': 'sample-plan', 'program': metadata['title'][:150], 'specialization': None, 'campus': None, 'geSystem': None,
-        'version': record['sha256'][:16] + '-math-columns-v1', 'applicableFrom': None, 'applicableUntil': None,
+        'version': record['sha256'][:16] + '-math-columns-v2', 'applicableFrom': None, 'applicableUntil': None,
         'publicationStatus': metadata['publicationStatus'], 'planScope': 'unknown', 'academicYear': None,
         'evidence': [metadata['title'], 'Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted.'],
         'semesters': semesters, 'reviewStatus': 'pending', 'reviewedAt': None, 'reviewer': None}]
