@@ -63,7 +63,10 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     return existing ?? p;
   };
   for (const { text: raw, page, cells } of lines) {
-    const line = raw.trim().replace(/\s+/g, " ");
+    const line = raw
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/^\d{1,2}\s+(?=[A-Za-z])/, "");
     if (/@|student\s*(?:name|id)|advisor|https?:/i.test(line)) continue;
     const heading = line.match(
       /^Program\s*:\s*([A-Z][A-Z0-9-]{0,39})(?:\s*\((declared|undeclared)\))?$/,
@@ -75,7 +78,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       continue;
     }
     const academicCode = line.match(
-      /\b([A-Z][A-Z0-9]{1,24}-(?:BA|BS|PRE))\s*(?:\((?:not )?declared\))?$/,
+      /\b([A-Z][A-Z0-9]{1,24}-(?:BA|BS|PRE|MN|CT))\s*(?:\((?:not )?declared\)|Only available in Planned View)?$/,
     )?.[1];
     const knownCode =
       academicCode ??
@@ -86,8 +89,11 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
           : /^(?:New |Legacy )?General Education\b/i.test(line)
             ? "GE"
             : null);
-    if (knownCode && program?.code !== knownCode) {
-      program = makeProgram(knownCode);
+    if (knownCode) {
+      if (program?.code !== knownCode) program = makeProgram(knownCode);
+      if (/\(not declared\)|Only available in Planned View/i.test(line))
+        program!.declaration = "undeclared";
+      else if (/\(declared\)/i.test(line)) program!.declaration = "declared";
       continue;
     }
     const version = line.match(

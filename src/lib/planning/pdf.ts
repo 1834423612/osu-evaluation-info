@@ -6,6 +6,7 @@ export async function extractPlan(
   source: Plan["source"] | "auto",
   signal?: AbortSignal,
   origin: Plan["pdfOrigin"] = "export",
+  auditMode: Plan["auditMode"] = "unknown",
 ) {
   if (file.size > 20 * 1024 * 1024) throw Error("size");
   const data = new Uint8Array(await file.arrayBuffer());
@@ -44,12 +45,18 @@ export async function extractPlan(
         source === "auto" ? detectPlanLayout(lines, file.name) : source;
       if (!detected) throw Error("layout");
       const result = parsePlanLines(lines, detected, origin);
-      const mode = /(?:^|[_ -])planned(?:[_ -]|$)/i.test(file.name)
-        ? "planned"
-        : /(?:^|[_ -])official(?:[_ -]|$)/i.test(file.name)
-          ? "official"
-          : null;
-      if (mode && result.plan.auditMode === "unknown") {
+      const mode =
+        auditMode !== "unknown"
+          ? auditMode
+          : /(?:^|[_ -])planned(?:[_ -]|$)/i.test(file.name)
+            ? "planned"
+            : /(?:^|[_ -])official(?:[_ -]|$)/i.test(file.name)
+              ? "official"
+              : null;
+      if (
+        mode &&
+        (auditMode !== "unknown" || result.plan.auditMode === "unknown")
+      ) {
         result.plan.auditMode = mode;
         result.plan.documents.forEach((d) => {
           d.auditMode = mode;
