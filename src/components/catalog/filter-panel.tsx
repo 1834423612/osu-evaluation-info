@@ -20,6 +20,7 @@ import {
 import type { CatalogFacet } from "@/lib/catalog/types";
 import { campusOptions, facetLabels, text, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { activeCatalogFilters } from "@/lib/catalog/active-filters";
 import { ReferenceInfo } from "@/components/reference/reference-info";
 
 const PRIMARY = [
@@ -176,7 +177,14 @@ function FilterFacet({
               data-analytics-label={facet.slug}
               data-analytics-value={item.value}
               onClick={() =>
-                onChange(facet.slug, selected === item.value ? "" : item.value)
+                onChange(
+                  facet.slug,
+                  selected === item.value
+                    ? facet.slug === "campus"
+                      ? "all"
+                      : ""
+                    : item.value,
+                )
               }
             >
               <span>{item.label}</span>
@@ -267,6 +275,9 @@ export function FilterPanel({
         <span>
           <SlidersHorizontal aria-hidden="true" />
           {text(locale, "All filters", "全部筛选")}
+          {activeCatalogFilters(params).length
+            ? ` (${activeCatalogFilters(params).length})`
+            : ""}
         </span>
         <Button
           type="button"

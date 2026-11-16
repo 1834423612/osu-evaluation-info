@@ -33,6 +33,7 @@ import { BrandMascot } from "@/components/brand/brand-mascot";
 import { SceneMascot } from "@/components/brand/scene-mascot";
 import { brand } from "@/lib/brand";
 import brandStyles from "@/components/brand/brand-identity.module.css";
+import { activeCatalogFilters } from "@/lib/catalog/active-filters";
 import { FilterPanel } from "./filter-panel";
 import { SearchContext } from "./search-context";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
@@ -201,10 +202,11 @@ export function CourseExplorer() {
     }
     window.history.pushState(null, "", `/?${params}`);
   }
-  function resetFilters() {
+  function resetFilters(campus = "col") {
     const params = new URLSearchParams();
     if (searchParams.get("q")) params.set("q", searchParams.get("q")!);
     if (searchParams.get("term")) params.set("term", searchParams.get("term")!);
+    if (campus === "all") params.set("campus", "all");
     window.history.pushState(null, "", `/?${params}`);
   }
   function chooseSearch(query: string, clearSubject = false) {
@@ -409,23 +411,7 @@ export function CourseExplorer() {
     [result, query, pageIndex, pageCursors, loading],
   );
 
-  const activeFilters = [...searchParams.entries()].filter(
-    ([key]) =>
-      ![
-        "q",
-        "term",
-        "sort",
-        "cursor",
-        PAGE_HISTORY_PARAM,
-        "course",
-        "detailTab",
-        "ratingSource",
-        "focusSection",
-        "relatedFrom",
-        "via",
-        "searchMode",
-      ].includes(key),
-  );
+  const activeFilters = activeCatalogFilters(searchParams);
   const filters = (
     <FilterPanel
       facets={
@@ -438,7 +424,7 @@ export function CourseExplorer() {
       params={new URLSearchParams(query)}
       locale={locale}
       onChange={updateParam}
-      onReset={resetFilters}
+      onReset={() => resetFilters()}
     />
   );
   const selectedTerm = searchParams.get("term") ?? result?.terms[0]?.code ?? "";
@@ -664,11 +650,19 @@ export function CourseExplorer() {
             {activeFilters.length ? (
               <div className="active-filters">
                 {activeFilters.map(([key, value]) => (
-                  <button key={key} onClick={() => updateParam(key, "")}>
+                  <button
+                    key={key}
+                    onClick={() =>
+                      updateParam(key, key === "campus" ? "all" : "")
+                    }
+                  >
                     {key === "campus" && value === "all"
                       ? text(locale, "All campuses", "所有校区")
                       : key === "campus"
-                        ? localizedCampus(value, locale)
+                        ? localizedCampus(value, locale) +
+                          (!searchParams.get("campus")
+                            ? text(locale, " · default", " · 默认")
+                            : "")
                         : (result?.filters
                             .find((facet) => facet.slug === key)
                             ?.items.find((item) => item.value === value)
@@ -676,7 +670,10 @@ export function CourseExplorer() {
                     <X size={12} />
                   </button>
                 ))}
-                <button onClick={resetFilters} className="clear-filters">
+                <button
+                  onClick={() => resetFilters("all")}
+                  className="clear-filters"
+                >
                   {text(locale, "Clear filters", "清除筛选")}
                 </button>
               </div>
@@ -812,7 +809,7 @@ export function CourseExplorer() {
                       : "当前学期与筛选下未找到匹配开课信息，可尝试上方建议、其他学期或放宽筛选。",
                   )}
                 </p>
-                <Button variant="outline" onClick={resetFilters}>
+                <Button variant="outline" onClick={() => resetFilters()}>
                   {text(locale, "Reset filters", "重置筛选")}
                 </Button>
               </div>
