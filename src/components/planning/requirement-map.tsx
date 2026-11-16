@@ -128,9 +128,34 @@ export function RequirementMap({
               <div className={styles.nodeBody}>
                 <div className={styles.facts}>
                   <span>
-                    {progress.knownCredits} {t("known credits", "已知学分")} ·{" "}
-                    {progress.distinctCourses}{" "}
-                    {t("distinct courses", "门不同课程")}
+                    {r.kind === "all" || r.kind === "any" ? (
+                      <>
+                        {
+                          rules.filter(
+                            (child) =>
+                              child.parentId === r.id &&
+                              ["satisfied", "planned"].includes(
+                                requirementProgress(plan, child.id).state,
+                              ),
+                          ).length
+                        }{" "}
+                        /{" "}
+                        {
+                          rules.filter((child) => child.parentId === r.id)
+                            .length
+                        }{" "}
+                        {t(
+                          "child checks with completed or planned coverage",
+                          "个子条件已有完成或计划覆盖",
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {progress.knownCredits} {t("known credits", "已知学分")}{" "}
+                        · {progress.distinctCourses}{" "}
+                        {t("distinct courses", "门不同课程")}
+                      </>
+                    )}
                   </span>
                   <span>
                     {allocations.filter((a) => a.confirmed).length}/
