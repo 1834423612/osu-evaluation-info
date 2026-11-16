@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import type { Plan } from "@/lib/planning/model";
 import {
   removeRequirement,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/planning/snapshots";
 import { text, type Locale } from "@/lib/i18n";
 import { browserUuid } from "@/lib/uuid";
+import { programTemplate } from "@/lib/planning/template";
 import styles from "./planning.module.css";
 type Props = {
   plan: Plan;
@@ -15,6 +17,36 @@ type Props = {
 };
 export function SourceReview({ plan, locale, update }: Props) {
   const t = (en: string, zh: string) => text(locale, en, zh);
+  const [templateOptIn, setTemplateOptIn] = useState("");
+  const [templateMessage, setTemplateMessage] = useState("");
+  function exportTemplate(programId: string) {
+    try {
+      const template = programTemplate(plan, programId);
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(template, null, 2)], {
+          type: "application/json",
+        }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "program-requirements.json";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTemplateMessage(
+        t(
+          "Requirement template exported for review.",
+          "已导出要求模板，供单独复核。",
+        ),
+      );
+    } catch {
+      setTemplateMessage(
+        t(
+          "Review this program’s code, Applied Version, every rule and the workspace before exporting.",
+          "请先核对项目代码、Applied Version、每项规则，并确认工作区审核。",
+        ),
+      );
+    }
+  }
   const courses = plan.semesters.flatMap((s) => s.courses).filter((c) => c.id);
   function addProgram(documentId: string) {
     update((p) => ({
@@ -464,11 +496,41 @@ export function SourceReview({ plan, locale, update }: Props) {
                   <button onClick={() => addRequirement(p, null)}>
                     {t("Add requirement", "添加要求")}
                   </button>
+                  <div className={styles.templateExport}>
+                    <label className={styles.allocation}>
+                      <input
+                        type="checkbox"
+                        checked={templateOptIn === p.id}
+                        onChange={(e) =>
+                          setTemplateOptIn(e.target.checked ? p.id : "")
+                        }
+                      />
+                      {t(
+                        "Export only this program’s requirement rules for a seed-library review",
+                        "仅导出此项目的要求规则，供种子样本库单独复核",
+                      )}
+                    </label>
+                    <p>
+                      {t(
+                        "Personal course records, semesters and allocations are excluded. This downloads a file; nothing is submitted.",
+                        "不含个人课程记录、学期或课程分配。此操作仅下载文件，不提交数据。",
+                      )}
+                    </p>
+                    <button
+                      disabled={templateOptIn !== p.id}
+                      onClick={() => exportTemplate(p.id)}
+                    >
+                      {t("Export requirement template", "导出要求模板")}
+                    </button>
+                  </div>
                 </div>
               ))}
           </div>
         </details>
       ))}
+      <p role="status" aria-live="polite">
+        {templateMessage}
+      </p>
     </section>
   );
 }
