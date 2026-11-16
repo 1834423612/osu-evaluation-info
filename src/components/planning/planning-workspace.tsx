@@ -30,15 +30,16 @@ import sources from "../../../data/planning/sources.json";
 import curricula from "../../../data/planning/curricula.json";
 import styles from "./planning.module.css";
 import { SourceReview } from "./source-review";
-import { mergeSnapshots, pruneAllocations } from "@/lib/planning/snapshots";
+import { pruneAllocations } from "@/lib/planning/snapshots";
 import { browserUuid } from "@/lib/uuid";
 import { ImportGuard } from "@/lib/planning/import-guard";
+import { importPlanningFiles } from "@/lib/planning/batch-import";
 
 export function PlanningWorkspace() {
   const { locale } = usePreferences();
   const t = (en: string, zh: string) => text(locale, en, zh);
   const [plan, setPlan] = useState<Plan>(emptyPlan);
-  const [source, setSource] = useState<Plan["source"]>("student-plan");
+  const [source, setSource] = useState<Plan["source"] | "auto">("auto");
   const [origin, setOrigin] = useState<Plan["pdfOrigin"]>("export");
   const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
   const [busy, setBusy] = useState(false);
@@ -46,6 +47,7 @@ export function PlanningWorkspace() {
   const [tab, setTab] = useState<"private" | "official">("private");
   const [dark, setDark] = useState(false);
   const [visibleSource, setVisibleSource] = useState("");
+  const [importProgress, setImportProgress] = useState("");
   const importGuard = useRef(new ImportGuard());
   useEffect(() => {
     const guard = importGuard.current;
@@ -80,8 +82,8 @@ export function PlanningWorkspace() {
           : s,
       ),
     }));
-  async function importPdf(file?: File) {
-    if (!file) return;
+  async function importPdf(files: File[]) {
+    if (!files.length) return;
     if (
       importMode === "replace" &&
       plan.semesters.length &&
@@ -97,36 +99,47 @@ export function PlanningWorkspace() {
     setMessage("");
     const token = importGuard.current.start();
     try {
-      const result = await extractPlan(file, source, token.signal, origin);
+      const result = await importPlanningFiles(files, {
+        existing: plan,
+        replace: importMode === "replace",
+        signal: token.signal,
+        extract: async (file) =>
+          (await extractPlan(file as File, source, token.signal, origin)).plan,
+        progress: (done, total) => {
+          if (importGuard.current.current(token.generation))
+            setImportProgress(`${done} / ${total}`);
+        },
+      });
       if (!importGuard.current.current(token.generation)) return;
-      setPlan(
-        importMode === "merge" &&
-          (plan.documents.length || plan.semesters.length)
-          ? mergeSnapshots(plan, result.plan)
-          : result.plan,
-      );
+      setPlan(result.plan);
       setMessage(
-        result.warnings.includes("empty")
+        result.imported === 0
           ? t(
               "No supported rows found. Add courses manually or try a Student Plan export.",
               "未识别到支持的课程行。请手动添加或使用 Student Plan 导出。",
             )
-          : t(
-              "Candidates extracted. Check every row against your PDF before saving.",
-              "已提取候选课程。保存前请逐行对照原 PDF。",
-            ),
+          : files.length === 1 && !result.failed && !result.empty
+            ? t(
+                "Candidates extracted. Check every row against your PDF before saving.",
+                "已提取候选课程。保存前请逐行对照原 PDF。",
+              )
+            : t(
+                `${result.imported} files imported · ${result.failed} could not be read · ${result.empty} had no supported rows. Review each source before saving.`,
+                `已导入 ${result.imported} 个文件 · ${result.failed} 个读取失败 · ${result.empty} 个无可识别内容。保存前请分别核对来源。`,
+              ),
       );
     } catch {
       if (!importGuard.current.current(token.generation)) return;
       setMessage(
         t(
-          "Could not read this PDF. Use a text PDF under 20 MB and 100 pages; encrypted or scanned files are unsupported.",
-          "无法读取此 PDF。请使用不超过 20 MB、100 页的文本 PDF；暂不支持加密或扫描文件。",
+          "Could not import. Select up to 12 files and 60 MB total. Each PDF must be a text PDF under 20 MB and 100 pages; JSON must be under 4 MB.",
+          "无法导入。每次最多 12 个文件、合计 60 MB；文本 PDF 每份不超过 20 MB、100 页，JSON 不超过 4 MB。",
         ),
       );
     } finally {
       if (importGuard.current.current(token.generation)) {
         setBusy(false);
+        setImportProgress("");
         if (fileInput.current) fileInput.current.value = "";
       }
     }
@@ -323,8 +336,13 @@ export function PlanningWorkspace() {
                 <select
                   value={source}
                   disabled={busy}
-                  onChange={(e) => setSource(e.target.value as Plan["source"])}
+                  onChange={(e) =>
+                    setSource(e.target.value as Plan["source"] | "auto")
+                  }
                 >
+                  <option value="auto">
+                    {t("Detect each file", "逐个识别版式")}
+                  </option>
                   <option value="student-plan">Student Plan</option>
                   <option value="standard-audit">Standard Audit</option>
                   <option value="expanded-audit">Expanded Audit (Beta)</option>
@@ -347,7 +365,8 @@ export function PlanningWorkspace() {
                   </option>
                 </select>
               </label>
-              {(source !== "student-plan" || origin === "browser-print") && (
+              {((source !== "student-plan" && source !== "auto") ||
+                origin === "browser-print") && (
                 <p className={styles.notice}>
                   {t(
                     "Limited support: audit columns and browser print layouts may lose order. Candidates remain unassigned; requirements and remaining credits are not combined.",
@@ -376,16 +395,24 @@ export function PlanningWorkspace() {
                 <FileUp size={30} />
                 <strong>
                   {busy
-                    ? t("Reading locally…", "正在本地读取…")
-                    : t("Choose a PDF", "选择 PDF")}
+                    ? `${t("Reading locally…", "正在本地读取…")} ${importProgress}`
+                    : t("Choose PDFs or a plan backup", "选择 PDF 或规划备份")}
                 </strong>
-                <span>PDF · 20 MB · 100 {t("pages max", "页以内")}</span>
+                <span>
+                  {t(
+                    "Up to 12 files · PDF or JSON",
+                    "最多 12 个文件 · PDF 或 JSON",
+                  )}
+                </span>
                 <input
                   ref={fileInput}
                   type="file"
-                  accept="application/pdf,.pdf"
+                  accept="application/pdf,application/json,.pdf,.json"
+                  multiple
                   disabled={busy}
-                  onChange={(e) => void importPdf(e.target.files?.[0])}
+                  onChange={(e) =>
+                    void importPdf(Array.from(e.target.files ?? []))
+                  }
                 />
               </label>
               {busy && (
