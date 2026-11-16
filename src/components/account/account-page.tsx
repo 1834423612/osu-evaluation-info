@@ -26,7 +26,7 @@ import { InstitutionalProfile } from "./institutional-profile";
 import { AuthEntry } from "./auth-entry";
 import styles from "@/components/ui/workspace.module.css";
 import layout from "./account.module.css";
-type Status = { enabled: boolean; email: boolean; passkey: boolean };
+import { accountView, type AccountStatus } from "@/lib/auth/status";
 type Passkey = {
   id: string;
   name?: string | null;
@@ -81,7 +81,8 @@ export function AccountPage() {
 function AccountWorkspace() {
   const { locale } = usePreferences(),
     { data: session, isPending, refetch } = authClient.useSession();
-  const [status, setStatus] = useState<Status | null>(null),
+  const [status, setStatus] = useState<AccountStatus | null>(null),
+    [statusRevision, setStatusRevision] = useState(0),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [keys, setKeys] = useState<Passkey[]>([]),
@@ -106,15 +107,24 @@ function AccountWorkspace() {
       : text(locale, "Date unavailable", "时间不可用");
   useEffect(() => {
     const c = new AbortController();
-    fetch("/api/account/status", { signal: c.signal })
-      .then((r) => r.json())
+    fetch("/api/account/status", { signal: c.signal, cache: "no-store" })
+      .then((r) => {
+        if (!r.ok) throw Error();
+        return r.json();
+      })
       .then(setStatus)
       .catch(() => {
         if (!c.signal.aborted)
-          setStatus({ enabled: false, email: false, passkey: false });
+          setStatus({
+            enabled: false,
+            email: false,
+            passkey: false,
+            profile: false,
+          });
       });
     return () => c.abort();
-  }, []);
+  }, [statusRevision]);
+  const view = accountView(!!session, isPending, status);
   async function refreshDevices() {
     const [k, d, m] = await Promise.all([
       authClient.passkey.listUserPasskeys(),
@@ -185,11 +195,11 @@ function AccountWorkspace() {
             {notice}
           </p>
         ) : null}
-        {!status || isPending ? (
+        {view === "loading" ? (
           <div className={styles.empty} role="status">
             {text(locale, "Loading your space…", "正在打开你的空间…")}
           </div>
-        ) : !status.enabled ? (
+        ) : view === "unavailable" ? (
           <section className={styles.panel}>
             <h1>{text(locale, "Your account", "我的账号")}</h1>
             <p className={styles.muted}>
@@ -208,11 +218,31 @@ function AccountWorkspace() {
         ) : !session ? (
           <AuthEntry
             locale={locale}
-            emailEnabled={status.email}
+            emailEnabled={status?.email ?? false}
             onSignedIn={refetch}
           />
         ) : (
           <>
+            {status && !status.enabled ? (
+              <section className={styles.panel} role="status">
+                <p>
+                  {text(
+                    locale,
+                    "Some account features are unavailable. Your signed-in profile and local favorites are still accessible.",
+                    "部分账号功能暂不可用。你仍可查看登录资料和使用本地收藏。",
+                  )}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStatus(null);
+                    setStatusRevision((value) => value + 1);
+                  }}
+                >
+                  {text(locale, "Retry account services", "重试账号服务")}
+                </Button>
+              </section>
+            ) : null}
             <div className={layout.profile}>
               <div className={layout.avatar} aria-hidden="true">
                 {(session.user.name || "W").slice(0, 1).toUpperCase()}
@@ -316,7 +346,26 @@ function AccountWorkspace() {
                     </Button>
                   </DraftForm>
                 </section>
-                <InstitutionalProfile locale={locale} />
+                {status?.profile ? (
+                  <InstitutionalProfile locale={locale} />
+                ) : (
+                  <section className={styles.panel}>
+                    <h2>
+                      {text(
+                        locale,
+                        "School email & public profile",
+                        "学校邮箱与公开资料",
+                      )}
+                    </h2>
+                    <p className={styles.muted}>
+                      {text(
+                        locale,
+                        "These settings are temporarily unavailable.",
+                        "这些设置暂不可用。",
+                      )}
+                    </p>
+                  </section>
+                )}
                 <div id="sync" className={layout.section}>
                   <SyncPanel accountId={session.user.id} locale={locale} />
                 </div>

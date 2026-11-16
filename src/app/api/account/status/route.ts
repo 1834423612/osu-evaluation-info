@@ -4,28 +4,27 @@ import {
   authTablePrefix,
   authSchema,
 } from "@/lib/auth/config";
+import { getAuthPool } from "@/lib/auth/database";
 import { userDataTable } from "@/lib/user-data/namespace";
-import { queryDatabase } from "@/lib/db";
 import { userJson } from "@/lib/user-data/http";
+import { accountStatus } from "@/lib/auth/status";
 export const runtime = "nodejs";
 export async function GET() {
-  let ready = false;
+  let tables: boolean[] = [];
   if (authConfigured())
     try {
-      const result = await queryDatabase<{ ready: boolean }>(
-        "SELECT to_regclass($1) IS NOT NULL AND to_regclass($2) IS NOT NULL AND to_regclass($3) IS NOT NULL AND to_regclass($4) IS NOT NULL AS ready",
+      const result = await getAuthPool().query<{ present: boolean }>(
+        "SELECT to_regclass(name) IS NOT NULL AS present FROM unnest($1::text[]) WITH ORDINALITY AS names(name, position) ORDER BY position",
         [
-          authSchema() + "." + authTablePrefix() + "user",
-          userDataTable("policy_acceptance"),
-          userDataTable("institutional_email"),
-          userDataTable("public_profile"),
+          [
+            authSchema() + "." + authTablePrefix() + "user",
+            userDataTable("policy_acceptance"),
+            userDataTable("institutional_email"),
+            userDataTable("public_profile"),
+          ],
         ],
       );
-      ready = result.rows[0].ready;
+      tables = result.rows.map((row) => row.present);
     } catch {}
-  return userJson({
-    enabled: ready,
-    email: ready && mailConfigured(),
-    passkey: ready,
-  });
+  return userJson(accountStatus(tables, mailConfigured()));
 }
