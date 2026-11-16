@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { academicTitle } from "./academic-text.ts";
+const title = z.string().max(400).transform(academicTitle).optional();
 
-// Deliberately no names, IDs, filenames, raw text, arbitrary notes or URLs.
+// Academic labels only; no identity fields, filenames, raw documents, notes or URLs.
 const term = z
   .string()
   .regex(/^(?:Autumn|Spring|Summer) ?20\d{2}$/)
@@ -28,6 +30,7 @@ const programSchema = z
       .string()
       .regex(/^[A-Z][A-Z0-9-]{0,39}$/)
       .nullable(),
+    title,
     declaration: z.enum(["declared", "undeclared", "unknown"]),
     appliedVersion,
     catalogTerm: term,
@@ -41,6 +44,10 @@ const requirementSchema = z
     programId: reference,
     parentId: reference.nullable(),
     hierarchyReviewed: z.boolean().optional(),
+    title,
+    reportedStatus: z
+      .enum(["completed", "in-progress", "planned", "remaining"])
+      .optional(),
     category: z
       .enum([
         "general",
@@ -87,6 +94,13 @@ export const courseSchema = z
       .string()
       .regex(/^\d{4}(?:\.\d{1,2})?[A-Z]?$/)
       .nullable(),
+    title,
+    term: term.optional(),
+    section: z
+      .string()
+      .regex(/^[A-Z0-9]{1,8}$/)
+      .optional(),
+    session: z.enum(["1", "2"]).optional(),
     kind: z.enum(["course", "placeholder"]),
     evidenceRole: z.enum(["observation", "option", "unknown"]).optional(),
     credits,
@@ -265,7 +279,6 @@ export function emptyPlan(): Plan {
 }
 export function serializePlan(input: unknown): string {
   const plan = planSchema.parse(input);
-  if (!plan.reviewed) throw Error("Review required");
   return JSON.stringify(plan, null, 2);
 }
 export const PLAN_STORAGE_KEY = "course-atlas:private-planning:v1";

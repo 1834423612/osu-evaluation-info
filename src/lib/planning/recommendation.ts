@@ -163,11 +163,11 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   const candidates = [...pool.values()]
     .filter((c) => {
       const facts = observations.get(c.key) ?? [];
-      // Conflicting snapshots stay visible. A consistent completed/in-progress
-      // observation suppresses duplicate recommendations without claiming credit.
+      // Positive attendance evidence excludes a course even when a plan export
+      // labels the same registration as planned. Unknown never overrides completion.
       return (
         !facts.length ||
-        !facts.every(
+        !facts.some(
           (f) => f.status === "completed" || f.status === "in-progress",
         )
       );

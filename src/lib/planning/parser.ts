@@ -1,9 +1,17 @@
 import { emptyPlan, planSchema, type Plan, type PlanCourse } from "./model.ts";
+import { academicTitle } from "./academic-text.ts";
+import { reportRows } from "./pdf-rows.ts";
 import { addProvenance } from "./provenance.ts";
 export type PdfLine = {
   text: string;
   page: number;
-  cells?: Array<{ x: number; text: string; width?: number }>;
+  cells?: Array<{
+    x: number;
+    text: string;
+    width?: number;
+    font?: string;
+    height?: number;
+  }>;
 };
 export type ParseResult = {
   plan: Plan;
@@ -35,6 +43,10 @@ export function parsePlanLines(
   source: Plan["source"],
   origin: Plan["pdfOrigin"] = "export",
 ): ParseResult {
+  lines = reportRows(
+    lines,
+    source === "standard-audit" || source === "compact-audit",
+  );
   const plan = emptyPlan();
   plan.source = source;
   plan.pdfOrigin = origin;
@@ -108,8 +120,10 @@ export function parsePlanLines(
       continue;
     }
     // Audits repeat courses in requirement nodes. Keep candidates unassigned; never sum them.
+    const throughIndex = line.search(/\bthrough\s+(?=[A-Z][A-Z&]+\s+\d{4})/);
+    const courseText = throughIndex >= 0 ? line.slice(throughIndex) : line;
     const matches = [
-      ...line.matchAll(
+      ...courseText.matchAll(
         /\b([A-Z][A-Z&]{1,11})\s+(\d{4}(?:\.\d{1,2})?[A-Z]?)\b/g,
       ),
     ].filter((m) => !["AU", "SP", "SU"].includes(m[1]));
@@ -137,23 +151,66 @@ export function parsePlanLines(
         ? Number(creditCell.text.trim())
         : null;
 
-    const status: PlanCourse["status"] = /\bplanned\b/i.test(line)
-      ? "planned"
-      : /\bin.progress\b|currently taking/i.test(line)
-        ? "in-progress"
-        : /\bcompleted\b|\btaken in\b|\btransferred\b/i.test(line)
-          ? "completed"
-          : "unknown";
+    const rowTerm = line.match(
+      /\b(Autumn|Spring|Summer)\s*['’]?(\d{2}|20\d{2})\b/i,
+    );
+    const observedTerm = rowTerm
+      ? rowTerm[1][0].toUpperCase() +
+        rowTerm[1].slice(1).toLowerCase() +
+        (rowTerm[2].length === 2 ? "20" : "") +
+        rowTerm[2]
+      : undefined;
+    const earned =
+      ["transfer", "exam"].includes(semester.creditOrigin ?? "") ||
+      (/\b(?:KA|KB|KC|KD|EM)\b/.test(line) && !!observedTerm);
+    const status: PlanCourse["status"] = earned
+      ? "completed"
+      : /\bplanned\b/i.test(line) ||
+          (source === "student-plan" && /\bplaceholder\b/i.test(line))
+        ? "planned"
+        : /\bin.progress\b|currently taking|\bregistered\b/i.test(line)
+          ? "in-progress"
+          : /\bcompleted\b|\btaken in\b|\btransferred\b/i.test(line)
+            ? "completed"
+            : "unknown";
     const candidates = matches.length
       ? matches.map((m) => ({ subject: m[1], number: m[2] }))
       : [{ subject: null, number: null }];
     for (const candidate of candidates) {
+      const codeText = candidate.subject
+        ? `${candidate.subject} ${candidate.number}`
+        : "";
+      const titleStart = codeText
+        ? courseText.indexOf(codeText) + codeText.length
+        : 0;
+      const titleText = courseText
+        .slice(titleStart)
+        .replace(/^\s*Placeholder:\s*/i, "")
+        .split(
+          /\s+\(?\d+(?:\.\d+)?\s*(?:hours?|credits?)\b|\s+(?:CURRENTLY TAKING|TAKEN IN|TRANSFERRED|PLANNED FOR)\b|\(through|\(Courses:/i,
+        )[0]
+        .replace(/\s+\([A-Z0-9]{4}\).*$/, "")
+        .replace(
+          /\s+[-–]?\s*(?:\d+(?:\.\d+)?|[-–])\s+(?:Planned|Placeholder|KA|EM)\s*$/i,
+          "",
+        )
+        .replace(/\s*[-–]?\s*(?:Planned|Placeholder)\s*$/i, "")
+        .trim();
       const course: PlanCourse = {
         ...candidate,
+        title: academicTitle(titleText),
+        term: observedTerm,
+        section:
+          source === "student-plan"
+            ? line.match(/\(([A-Z0-9]{4})\)/)?.[1]
+            : undefined,
+        session: line.match(/Session\s*([12])\b/i)?.[1] as
+          "1" | "2" | undefined,
         kind: /\bplaceholder\b/i.test(line) ? "placeholder" : "course",
         evidenceRole:
           source === "student-plan" ||
-          /\bthrough\b|\b(?:currently taking|taken in|transferred|in.progress|completed|planned)\b/i.test(
+          earned ||
+          /\bthrough\b|\b(?:currently taking|taken in|transferred|in.progress|completed|planned|registered)\b/i.test(
             line,
           )
             ? "observation"
@@ -212,9 +269,8 @@ export function parsePlanLines(
   return {
     plan: planSchema.parse(addProvenance(plan, lines)),
     warnings: [
-      "review",
-      "status",
-      ...(source !== "student-plan" ? (["limited", "projects"] as const) : []),
+      ...(source !== "student-plan" ? (["limited"] as const) : []),
+
       ...(plan.semesters.length ? [] : (["empty"] as const)),
     ],
   };

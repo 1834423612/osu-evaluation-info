@@ -1,3 +1,4 @@
+import { academicTitle } from "./academic-text.ts";
 import type { Plan } from "./model.ts";
 import type { PdfLine } from "./parser.ts";
 function categoryFor(
@@ -62,6 +63,13 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     requirement = undefined;
     return existing ?? p;
   };
+  const headingFonts = new Set(
+    lines
+      .flatMap((l) => l.cells ?? [])
+      .filter((c) => /[A-Z0-9]+-(?:BA|BS|PRE|MN|CT)\b/.test(c.text) && c.font)
+      .map((c) => c.font),
+  );
+  let previousAcademicLine = "";
   for (const { text: raw, page, cells } of lines) {
     const line = raw
       .trim()
@@ -82,15 +90,22 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     )?.[1];
     const knownCode =
       academicCode ??
-      (/^Computer (?:and|&) Information Science\b/i.test(line)
+      (/^Computer (?:and|&) Information Science\s*-\s*(?:BA|BS)\s*-?$/i.test(
+        line,
+      )
         ? "CIS"
-        : /^Information Systems\b/i.test(line)
+        : /^Information Systems(?:\s*-\s*BSBUSADM\s*-?)?$/i.test(line)
           ? "IS"
           : /^(?:New |Legacy )?General Education\b/i.test(line)
             ? "GE"
             : null);
     if (knownCode) {
       if (program?.code !== knownCode) program = makeProgram(knownCode);
+      program!.title = academicTitle(
+        line
+          .replace(/Only available in Planned View|\(not declared\)/gi, "")
+          .trim(),
+      );
       if (/\(not declared\)|Only available in Planned View/i.test(line))
         program!.declaration = "undeclared";
       else if (/\(declared\)/i.test(line)) program!.declaration = "declared";
@@ -117,6 +132,61 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       program.remainingCredits = Number(remaining[1]);
       continue;
     }
+    if (plan.source === "expanded-audit" && headingFonts.size && program) {
+      const headingCells = (cells ?? []).filter(
+        (c) =>
+          c.font &&
+          headingFonts.has(c.font) &&
+          /[A-Za-z]/.test(c.text) &&
+          !/^(?:Applied Version|Catalog Term|PGPA|Undergraduate|Last computed)/i.test(
+            c.text,
+          ),
+      );
+      if (headingCells.length && !/Only available in Planned View/.test(line)) {
+        const x = headingCells[0].x;
+        const title = academicTitle(headingCells.map((c) => c.text).join(" "));
+        if (title && /^[A-Z]/.test(title)) {
+          while (stack.length && stack.at(-1)!.x >= x - 2) stack.pop();
+          requirement = {
+            id: `requirement-${plan.requirements.length + 1}`,
+            documentId,
+            programId: program.id,
+            parentId: stack.at(-1)?.id ?? null,
+            hierarchyReviewed: true,
+            title,
+            category: categoryFor(title),
+            kind: "unknown",
+            minimumCredits: null,
+            minimumCourses: null,
+            alternatives: [],
+            page,
+          };
+          plan.requirements.push(requirement);
+          stack.push({ id: requirement.id, x });
+        }
+        continue;
+      }
+      if (/^(?:Fulfill (?:all|any)|Take at least)/i.test(line)) {
+        if (requirement) {
+          const credits = line.match(/at least (\d+(?:\.\d+)?) hours?/i);
+          const courses = line.match(/at least (\d+) courses?/i);
+          requirement.kind = credits
+            ? "credits"
+            : courses
+              ? "courses"
+              : /Fulfill all/i.test(line)
+                ? "all"
+                : "any";
+          requirement.minimumCredits = credits
+            ? Number(credits[1])
+            : requirement.minimumCredits;
+          requirement.minimumCourses = courses
+            ? Number(courses[1])
+            : requirement.minimumCourses;
+        }
+        continue;
+      }
+    }
     const marker = line.match(/^Requirement\s+(\d+(?:\.\d+)*)\s*:\s*(.*)$/i);
     if (marker) {
       program ??= makeProgram(null);
@@ -130,6 +200,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         documentId,
         programId: program.id,
         parentId: numbered.get(parentNumber) ?? null,
+        title: academicTitle(marker[2]),
         category: categoryFor(line),
         kind: credit
           ? "credits"
@@ -154,7 +225,9 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     const dashes = line.match(/^([–—-]{2,})\s*(.+)/);
     if (
       standard &&
-      (dashes || /\(Courses:\s*\(/i.test(line)) &&
+      (dashes ||
+        /\(Courses:\s*\(/i.test(line) ||
+        /^(?:[A-Z][A-Z&]+ \d{4}|.+\(through )/.test(line)) &&
       !/^Courses:/i.test(line)
     ) {
       program ??= makeProgram(null);
@@ -173,7 +246,22 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         documentId,
         programId: program.id,
         parentId: stack.at(-1)?.id ?? null,
-        hierarchyReviewed: false,
+        hierarchyReviewed: true,
+        title: academicTitle(
+          line
+            .replace(/^[–—-]+\s*/, "")
+            .split(/\s*\((?:through|Courses:|\d+(?:\.\d+)?\s*hours?)/i)[0]
+            .replace(/\s+(?:Autumn|Spring|Summer)\s*['’]?\d{2,4}.*$/, ""),
+        ),
+        reportedStatus: /\b\d+ remaining\b|\bremaining$/.test(line)
+          ? "remaining"
+          : /\bplanned\b|through placeholder/i.test(line)
+            ? "planned"
+            : /\bin progress\b/i.test(line)
+              ? "in-progress"
+              : /\b\d+ taken\b|\b(?:KA|EM)$/.test(line)
+                ? "completed"
+                : undefined,
         category: categoryFor(line),
         kind: credit ? "credits" : codes.length === 1 ? "courses" : "unknown",
         minimumCredits: credit ? Number(credit[1]) : null,
@@ -184,10 +272,22 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       plan.requirements.push(requirement);
       stack.push({ id: requirement.id, x: depth });
     }
+    if (
+      plan.source === "expanded-audit" &&
+      !/^(?:Take |Fulfill |Course with|Courses:|Courses Progress|Applied Version|Catalog Term)|\bHOURS\b|\bCURRENTLY TAKING\b|\bTAKEN IN\b|\bTRANSFERRED\b|\bPLANNED FOR\b|\bhidden unless taken\b|^\d+\s*$/.test(
+        line,
+      ) &&
+      !/\bthrough|\bconstraint|\bdouble.count|^The |^This |^You |^Each /i.test(
+        line,
+      )
+    ) {
+      previousAcademicLine = line;
+    }
     // Free-form prose is never stored. Only explicit numeric clauses and logical
     // group markers become candidates, and every inferred hierarchy needs review.
     if (
       plan.source === "expanded-audit" &&
+      !headingFonts.size &&
       !/\b(?:not|except|unless)\b/i.test(line)
     ) {
       const credit = line.match(
@@ -207,6 +307,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
           programId: program.id,
           parentId: stack.at(-1)?.id ?? null,
           hierarchyReviewed: false,
+          title: academicTitle(previousAcademicLine),
           category: categoryFor(line),
           kind: credit
             ? "credits"
@@ -225,7 +326,12 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         continue;
       }
     }
-    if (requirement) {
+    if (
+      requirement &&
+      !/transferred from|transfer note|SOURCE_|hidden unless taken|^Course with an attribute|^Excluded/i.test(
+        line,
+      )
+    ) {
       for (const m of line.matchAll(
         /\b([A-Z][A-Z&]{1,11})\s+(\d{4}(?:\.\d{1,2})?[A-Z]?)\b/g,
       )) {
@@ -249,7 +355,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
           plan.allocations.push({
             courseId: course.id,
             requirementId: requirement.id,
-            confirmed: false,
+            confirmed: course.evidenceRole === "observation",
           });
       }
     }

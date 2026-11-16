@@ -8,7 +8,7 @@ import {
   courseSearchHref,
 } from "../../src/lib/planning/model.ts";
 
-test("exports whitelist fields and requires review", () => {
+test("exports whitelist fields without a manual review gate", () => {
   const plan = {
     ...emptyPlan(),
     name: "Private Student",
@@ -16,7 +16,7 @@ test("exports whitelist fields and requires review", () => {
     rawText: "secret",
     filename: "secret.pdf",
   };
-  assert.throws(() => serializePlan(plan), /Review/);
+  assert.doesNotThrow(() => serializePlan(plan));
   const output = serializePlan({ ...plan, reviewed: true });
   assert.doesNotMatch(output, /Private|secret|email|filename|rawText/);
 });

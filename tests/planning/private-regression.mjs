@@ -3,11 +3,17 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parsePlanLines } from "../../src/lib/planning/parser.ts";
 import {
+  academicRoster,
+  compareAcademicRoster,
   academicResponses,
   academicEvidence,
   compareAcademicEvidence,
 } from "./private-har.mjs";
 import { planningLines } from "../../src/lib/planning/pdf-lines.ts";
+import { mergeSnapshots } from "../../src/lib/planning/snapshots.ts";
+import { boardCourses } from "../../src/lib/planning/workspace.ts";
+const representatives = new Map();
+let responseRoster = [];
 const directory = process.env.PLANNING_PRIVATE_PDF_DIR;
 if (!directory)
   throw Error(
@@ -34,6 +40,7 @@ if (process.env.PLANNING_PRIVATE_HAR_COMPARE === "1") {
         ...academicResponses(JSON.parse(await readFile(file, "utf8"))),
       );
     harEvidence = academicEvidence(responses);
+    responseRoster = academicRoster(responses);
   } catch {
     console.log(JSON.stringify({ localHarReadFailure: true }));
     process.exit(1);
@@ -88,6 +95,8 @@ for (const file of files) {
       lines.push(...pageLines);
     }
     const { plan } = parsePlanLines(lines, type);
+    const key = type + (/planned/i.test(file) ? "-planned" : "");
+    if (!representatives.has(key)) representatives.set(key, plan);
     if (harEvidence && type === "student-plan")
       comparisons.push(compareAcademicEvidence(plan, harEvidence));
     group.programRecords += plan.programs.length;
@@ -115,8 +124,29 @@ for (const file of files) {
     await task?.destroy();
   }
 }
+let rosterComparison;
+if (responseRoster.length) {
+  const selection = [
+    representatives.get("student-plan"),
+    representatives.get("expanded-audit"),
+    representatives.get("standard-audit-planned"),
+  ].filter(Boolean);
+  if (selection.length)
+    rosterComparison = compareAcademicRoster(
+      boardCourses(selection.reduce((a, b) => mergeSnapshots(a, b))),
+      responseRoster,
+    );
+  if (
+    rosterComparison &&
+    (rosterComparison.missing ||
+      rosterComparison.matchingStatus !== rosterComparison.comparable ||
+      rosterComparison.matchingCredits !== rosterComparison.comparable)
+  )
+    process.exitCode = 1;
+}
 console.log(
   JSON.stringify({
+    rosterComparison,
     groups,
     ...(harEvidence ? { responseOnlyComparisons: comparisons } : {}),
   }),

@@ -44,7 +44,7 @@ export function boardCourses(plan: Plan) {
           ? "credit"
           : ((course.id
               ? scheduledTerm(plan, course.id, semester.term)
-              : semester.term
+              : (semester.term ?? course.term ?? null)
             )?.replace(/ /g, "") ?? "unassigned"),
       })),
   );
@@ -69,15 +69,44 @@ export function boardCourses(plan: Plan) {
       )
       .map((r) => `${r.course.subject} ${r.course.number}`),
   );
+  const resolved = new Map<string, PlanCourse["status"]>();
+  const rank = { unknown: 0, planned: 1, "in-progress": 2, completed: 3 };
+  for (const row of rows) {
+    const key = `${row.course.subject} ${row.course.number}`;
+    const status = row.term === "credit" ? "completed" : row.course.status;
+    if (
+      row.course.subject &&
+      rank[status] > rank[resolved.get(key) ?? "unknown"]
+    )
+      resolved.set(key, status);
+  }
+  const seen = new Set<string>();
   return rows
     .filter(
       (r) =>
         r.source?.source === "student-plan" ||
         r.source?.source === "manual" ||
-        !placedCodes.has(`${r.course.subject} ${r.course.number}`),
+        (!placedCodes.has(`${r.course.subject} ${r.course.number}`) &&
+          r.course.kind === "course" &&
+          (r.term !== "unassigned" || !placedCodes.size)),
     )
+    .filter((r) => {
+      const key =
+        r.course.kind === "placeholder"
+          ? `${r.course.title}|${r.term}`
+          : `${r.course.subject} ${r.course.number}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .map((row) => ({
       ...row,
+      course: {
+        ...row.course,
+        status:
+          resolved.get(`${row.course.subject} ${row.course.number}`) ??
+          row.course.status,
+      },
       protectedRecord: protectedCodes.has(
         `${row.course.subject} ${row.course.number}`,
       ),
