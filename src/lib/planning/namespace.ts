@@ -11,6 +11,7 @@ export function planningTable(
     | "source_document"
     | "curriculum_version"
     | "source_asset"
+    | "source_extraction"
     | "directory_snapshot"
     | "template_seed",
 ) {

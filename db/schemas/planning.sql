@@ -47,6 +47,13 @@ CREATE TABLE IF NOT EXISTS osu_planning.directory_snapshot (
   index_url text NOT NULL,
   directory jsonb NOT NULL CHECK (jsonb_typeof(directory) = 'object')
 );
+CREATE TABLE IF NOT EXISTS osu_planning.source_extraction (
+  id text PRIMARY KEY CHECK (id ~ '^[a-f0-9]{64}$'),
+  source_id text NOT NULL REFERENCES osu_planning.source_document(id),
+  parser_version text NOT NULL CHECK (parser_version ~ '^[a-z0-9-]{1,80}$'),
+  extracted_at timestamptz NOT NULL,
+  evidence jsonb NOT NULL CHECK (jsonb_typeof(evidence) = 'object')
+);
 CREATE TABLE IF NOT EXISTS osu_planning.template_seed (
   id text PRIMARY KEY CHECK (id ~ '^[a-f0-9]{64}$'),
   program_code text NOT NULL CHECK (program_code ~ '^[A-Z][A-Z0-9-]{1,39}$'),

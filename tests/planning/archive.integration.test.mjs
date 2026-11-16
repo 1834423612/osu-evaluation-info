@@ -66,6 +66,25 @@ test("archive stores original bytes immutably, rolls back bad hashes, and restor
     await archiveDirectory(db, directory, async () => ({ content }));
     await archiveDirectory(db, directory, async () => ({ content }));
     await db.query("COMMIT");
+    for (const version of ["parser-v1", "parser-v2", "parser-v2"]) {
+      await archiveDirectory(db, directory, async () => ({
+        content,
+        extraction: {
+          parserVersion: version,
+          extractedAt: time,
+          pageCount: 1,
+          blocks: [{ text: "CSE 2999", page: 1 }],
+        },
+      }));
+    }
+    assert.equal(
+      (
+        await db.query(
+          "SELECT count(*)::int n FROM " + planningTable("source_extraction"),
+        )
+      ).rows[0].n,
+      2,
+    );
     const candidates = JSON.parse(
       await readFile(
         new URL("../../data/planning/curricula.json", import.meta.url),

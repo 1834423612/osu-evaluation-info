@@ -52,6 +52,8 @@ for (const record of Object.values(state.sources)) {
         join(cache, "extracted", source.sha256 + ".json"),
         JSON.stringify({
           sha256: source.sha256,
+          parserVersion: "pdfjs-geometry-v2",
+          extractedAt: new Date().toISOString(),
           pageCount: pdf.numPages,
           blocks,
         }) + "\n",

@@ -44,6 +44,30 @@ export async function archiveDirectory(db, input, readAsset) {
         JSON.stringify(document),
       ],
     );
+    if (asset.extraction) {
+      const parserVersion =
+        asset.extraction.parserVersion ?? "legacy-unversioned";
+      if (!/^[a-z0-9-]{1,80}$/.test(parserVersion))
+        throw Error("Invalid extraction version");
+      const evidence = {
+        pageCount: asset.extraction.pageCount,
+        blocks: asset.extraction.blocks,
+      };
+      const serialized = JSON.stringify(evidence);
+      const id = sha(sourceId + "\n" + parserVersion + "\n" + serialized);
+      await db.query(
+        "INSERT INTO " +
+          planningTable("source_extraction") +
+          " (id,source_id,parser_version,extracted_at,evidence) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING",
+        [
+          id,
+          sourceId,
+          parserVersion,
+          asset.extraction.extractedAt ?? document.fetchedAt,
+          serialized,
+        ],
+      );
+    }
   }
   const serialized = JSON.stringify(directory);
   const id = sha(serialized);
@@ -219,6 +243,7 @@ async function run() {
       for (const table of [
         "source_document",
         "source_asset",
+        "source_extraction",
         "curriculum_version",
         "directory_snapshot",
         "template_seed",
