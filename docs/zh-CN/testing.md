@@ -432,3 +432,23 @@ USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.t
 | [tests/user-data/account-domain.integration.test.mjs](../../tests/user-data/account-domain.integration.test.mjs) | 集成 | 显式一次性模式内的完整邮箱验证账号流程，模拟邮件             |
 
 使用 `USER_DATA_INTEGRATION=1 node --test tests/user-data/*.integration.test.mjs tests/diagnostics/reports.integration.test.mjs` 执行相关数据库测试。只写入一次性测试模式，不调用生产应用接口或真实 SMTP。
+
+## 预构建搜索回归测试
+
+`tests/search/prepared-corpus.test.mjs` 使用合成公开课程样本和模拟数据库响应，
+检查引擎等价性、压缩索引完整性、版本匹配、请求侧无 DDL、预构建复用与发布顺序。
+它不联网，也不写数据库。`tests/catalog/sync-cli.integration.test.mjs` 在明确开启
+`CATALOG_DATABASE_TEST=1` 时包含迁移 6 和暂存索引构建，仅写入隔离的临时目录 schema。
+跳过集成测试不代表生产 PostgreSQL 性能通过验证。
+
+```sh
+node --test tests/search/prepared-corpus.test.mjs
+```
+
+`tests/translation/translation-release.test.mjs` 使用内存提供商与状态存储模拟，
+覆盖已确认完成、完成状态被拒绝或写入失败、超时后结束及清理竞态。
+六个案例都不调用外部服务，也不写数据库。
+
+```sh
+node --test tests/translation/translation-release.test.mjs
+```
