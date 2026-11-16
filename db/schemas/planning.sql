@@ -29,6 +29,32 @@ CREATE TABLE IF NOT EXISTS osu_planning.curriculum_version (
   UNIQUE(source_id, program, version)
 );
 -- Immutable versions; no TTL or automatic deletion. Private plans never enter this schema.
+-- Both hostnames are official university domains; credential-bearing URLs are
+-- rejected by the import validator before SQL is reached.
+ALTER TABLE osu_planning.source_document DROP CONSTRAINT IF EXISTS source_document_source_url_check;
+ALTER TABLE osu_planning.source_document ADD CONSTRAINT source_document_source_url_check
+  CHECK (source_url ~ '^https://([a-z0-9-]+\.)*(osu\.edu|ohio-state\.edu)/');
+CREATE TABLE IF NOT EXISTS osu_planning.source_asset (
+  source_id text PRIMARY KEY REFERENCES osu_planning.source_document(id),
+  content bytea NOT NULL CHECK (octet_length(content) <= 8388608),
+  extraction jsonb,
+  metadata jsonb NOT NULL,
+  CHECK (jsonb_typeof(metadata) = 'object')
+);
+CREATE TABLE IF NOT EXISTS osu_planning.directory_snapshot (
+  id text PRIMARY KEY CHECK (id ~ '^[a-f0-9]{64}$'),
+  captured_at timestamptz NOT NULL,
+  index_url text NOT NULL,
+  directory jsonb NOT NULL CHECK (jsonb_typeof(directory) = 'object')
+);
+CREATE TABLE IF NOT EXISTS osu_planning.template_seed (
+  id text PRIMARY KEY CHECK (id ~ '^[a-f0-9]{64}$'),
+  program_code text NOT NULL CHECK (program_code ~ '^[A-Z][A-Z0-9-]{1,39}$'),
+  applied_version text NOT NULL CHECK (applied_version ~ '^(AU|SP|SU)20[0-9]{2}$'),
+  template jsonb NOT NULL,
+  review_status text NOT NULL DEFAULT 'pending' CHECK (review_status IN ('pending','approved','rejected')),
+  imported_at timestamptz NOT NULL DEFAULT now()
+);
 ALTER TABLE osu_planning.curriculum_version
   ADD COLUMN IF NOT EXISTS publication_status text NOT NULL DEFAULT 'unknown' CHECK (publication_status IN ('draft','published','unknown') AND NOT (publication_status='draft' AND document_kind='requirements' AND review_status='approved')),
   ADD COLUMN IF NOT EXISTS plan_scope text NOT NULL DEFAULT 'unknown' CHECK (plan_scope IN ('single-program','multi-program','unknown')),

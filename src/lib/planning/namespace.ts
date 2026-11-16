@@ -6,6 +6,13 @@ export function planningSchema(env: NodeJS.ProcessEnv = process.env) {
     throw Error("Invalid planning schema");
   return value;
 }
-export function planningTable(table: "source_document" | "curriculum_version") {
+export function planningTable(
+  table:
+    | "source_document"
+    | "curriculum_version"
+    | "source_asset"
+    | "directory_snapshot"
+    | "template_seed",
+) {
   return `"${planningSchema()}"."${table}"`;
 }
