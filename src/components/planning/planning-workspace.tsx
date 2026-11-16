@@ -44,6 +44,7 @@ import { browserUuid } from "@/lib/uuid";
 import { ImportGuard } from "@/lib/planning/import-guard";
 import { importPlanningFiles } from "@/lib/planning/batch-import";
 import { applyRecommendationBundle } from "@/lib/planning/recommendation";
+import { useDraftGuard } from "@/components/forms/draft-guard";
 const NextTerm = dynamic(() => import("./next-term").then((m) => m.NextTerm));
 
 export function PlanningWorkspace() {
@@ -62,6 +63,14 @@ export function PlanningWorkspace() {
   const [visibleSource, setVisibleSource] = useState("");
   const [importProgress, setImportProgress] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [savedFingerprint, setSavedFingerprint] = useState(() =>
+    JSON.stringify(emptyPlan()),
+  );
+  useDraftGuard(
+    busy ||
+      (plan.semesters.length + plan.programs.length > 0 &&
+        JSON.stringify(plan) !== savedFingerprint),
+  );
   const importGuard = useRef(new ImportGuard());
   useEffect(() => {
     const guard = importGuard.current;
@@ -258,6 +267,7 @@ export function PlanningWorkspace() {
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else savePlan(localStorage, plan);
+      setSavedFingerprint(JSON.stringify(plan));
       setMessage(
         exporting
           ? t("Structured plan exported.", "已导出结构化规划。")
@@ -534,6 +544,7 @@ export function PlanningWorkspace() {
                           return;
                         cancelImport();
                         setPlan(saved);
+                        setSavedFingerprint(JSON.stringify(saved));
                         setMessage(
                           t("Saved plan loaded.", "已载入保存的规划。"),
                         );
@@ -1014,6 +1025,7 @@ export function PlanningWorkspace() {
                             localStorage.removeItem(PLAN_STORAGE_KEY);
                             cancelImport();
                             setPlan(emptyPlan());
+                            setSavedFingerprint(JSON.stringify(emptyPlan()));
                             setMessage(
                               t("Local plan deleted.", "已删除本地规划。"),
                             );
