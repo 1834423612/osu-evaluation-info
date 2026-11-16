@@ -391,6 +391,7 @@ Collection and backup browser checks use the Node/Playwright environment above. 
 | Script                                                                                                        | Type         | Purpose                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | [tests/user-data/collections.test.mjs](../tests/user-data/collections.test.mjs)                               | Unit         | Private collection validation, preserved organization, bounded batches and rename conflicts                                     |
+| [tests/user-data/compact-tabs.browser.mjs](../tests/user-data/compact-tabs.browser.mjs) | Browser | Compact category tabs stay above results at 1440/768/390/320 pixels; synthetic local data, external requests blocked |
 | [tests/user-data/collections.browser.mjs](../tests/user-data/collections.browser.mjs)                         | Browser      | Create, organize, rename, delete/undo, scoped export and private restore at 1440/768/390/320 pixels                             |
 | [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs)                           | Unit         | RMP source identities, preserved ratings and public exchange validation                                                         |
 | [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs)                     | Browser      | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles                                      |
@@ -406,6 +407,7 @@ The live email check requires configured SMTP and an interactive terminal. Set `
 ```sh
 node --test tests/user-data/collections.test.mjs tests/user-data/rmp-favorites.test.mjs tests/user-data/backup.test.mjs
 node tests/user-data/collections.browser.mjs
+node tests/user-data/compact-tabs.browser.mjs
 node tests/user-data/rmp-favorites.browser.mjs
 USER_DATA_INTEGRATION=1 node --test tests/user-data/auth-migration.integration.test.mjs
 ```
