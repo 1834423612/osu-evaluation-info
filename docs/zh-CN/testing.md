@@ -461,3 +461,7 @@ node --test tests/translation/translation-release.test.mjs
 ```sh
 PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/prepared-corpus.integration.test.mjs
 ```
+
+## 账号就绪状态回归
+
+运行 `node --test tests/user-data/account-status.test.mjs`（也包含在 `pnpm test` 中）。内存测试覆盖扩展表缺失、就绪请求等待或失败、完整配置以及游客入口的安全关闭行为。不连接数据库、不修改账号，也不调用外部服务。有效会话在扩展功能不可用时仍显示账号工作区；学校邮箱设置须等相关表就绪后才能使用。这是界面降级处理，不能替代用户数据迁移。

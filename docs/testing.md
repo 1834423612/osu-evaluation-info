@@ -468,3 +468,7 @@ connectivity and concurrent-session behavior still require separate validation.
 ```sh
 PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/prepared-corpus.integration.test.mjs
 ```
+
+## Account readiness regression
+
+Run `node --test tests/user-data/account-status.test.mjs` (also included in `pnpm test`). The in-memory tests cover missing extension tables, pending or failed readiness requests, complete setup, and fail-closed guest entry. They do not connect to a database, change accounts, or call external services. A valid session keeps the account workspace visible when extensions are unavailable; school-email settings remain unavailable until their tables exist. This is degraded UI handling, not a substitute for applying the user-data migrations.
