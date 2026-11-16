@@ -389,7 +389,7 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本                                                                                                             | 类型       | 用途                                                                                       |
 | ---------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
 | [tests/user-data/collections.test.mjs](../../tests/user-data/collections.test.mjs)                               | 单元       | 私人分组校验、保留分组结构、批次体积限制与重命名冲突                                       |
-| [tests/user-data/compact-tabs.browser.mjs](../../tests/user-data/compact-tabs.browser.mjs) | 浏览器 | 1440／768／390／320 像素下简略列表分类标签位于结果上方；使用本地合成数据并阻止外部请求 |
+| [tests/user-data/compact-tabs.browser.mjs](../../tests/user-data/compact-tabs.browser.mjs)                       | 浏览器     | 1440／768／390／320 像素下简略列表分类标签位于结果上方；使用本地合成数据并阻止外部请求     |
 | [tests/user-data/collections.browser.mjs](../../tests/user-data/collections.browser.mjs)                         | 浏览器     | 1440／768／390／320 像素下的新建、整理、改名、删除撤销、分组导出和私人恢复                 |
 | [tests/user-data/rmp-favorites.test.mjs](../../tests/user-data/rmp-favorites.test.mjs)                           | 单元       | RMP 来源身份、评分保留及公开交换格式校验                                                   |
 | [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs)                     | 浏览器     | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回                                 |
@@ -467,6 +467,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 ## 账号就绪状态回归
 
 运行 `node --test tests/user-data/account-status.test.mjs`（也包含在 `pnpm test` 中）。内存测试覆盖扩展表缺失、就绪请求等待或失败、完整配置以及游客入口的安全关闭行为。不连接数据库、不修改账号，也不调用外部服务。有效会话在扩展功能不可用时仍显示账号工作区；学校邮箱设置须等相关表就绪后才能使用。这是界面降级处理，不能替代用户数据迁移。
+
 ## 分组图标选择器
 
 `node --test tests/user-data/collection-icons.test.mjs` 检查全部内置图标标识与收藏分组结构的兼容性、中英文离线搜索和类别、Lucide SVG 必需的描边属性，以及搜索框回车和选中提示。需要 Node.js 24+ 及已安装的依赖，不写入数据、不调用外部服务。这些断言不能替代浏览器验收。
@@ -490,3 +491,21 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 - `tests/planning/private-regression.mjs`: 明确选择运行的本地私人 PDF 回归。设置 `PLANNING_PRIVATE_PDF_DIR` 指向本地附件目录，然后运行 `node tests/planning/private-regression.mjs`。默认仅读取 PDF；显式设置 `PLANNING_PRIVATE_HAR_COMPARE=1` 可启用仅响应正文的离线 HAR 对照。不写原文，仅输出类型级计数、失败数量和一致性汇总。不得在公共 CI 提供附件或上传输出以外的数据。
 
 - `tests/planning/private-har.test.mjs`：合成 XSSI/base64 响应解码、学术字段最小化、学分与年份一致性汇总，以及重复课程歧义排除测试。不使用真实附件 fixture。
+
+- `tests/planning/audit-evidence.test.mjs`: 区分 audit 选项与课程记录，验证明确学分、版式提示和未核对层级。 `node --test tests/planning/audit-evidence.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/batch-import.test.mjs`: 多文件追加/替换原子性、受限 JSON 恢复及取消。 `node --test tests/planning/batch-import.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/schedule.test.mjs`: 独立排课覆盖、锁定学分组和去重学期汇总。 `node --test tests/planning/schedule.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/template.test.mjs`: 仅要求规则的种子白名单、明确审核、引用重映射和循环拒绝。 `node --test tests/planning/template.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/archive.integration.test.mjs`: 真实 PGlite 原文件归档、哈希验证、不可变 ID、版本冲突拒绝、回滚和恢复。 `node --test tests/planning/archive.integration.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/recommendation.test.mjs`: 负担/前缀上限、已完成排除、评分收缩/请求白名单、待审核样表和保留来源的建议应用。 `node --test tests/planning/recommendation.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/test_inventory.py`: 官方学院索引、标题/版本元数据和发现边界。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
+
+- `tests/planning/test_public_layouts.py`: 官方前缀别名、严格八学期网格/PDF 列、居中年级、替代和未知学分。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
+
+- `tests/planning/directory.test.mjs`: 学院/专业覆盖、有界分页、明确要求学期分面及公开元数据最小化。仅合成/公开输入，无外部网络、数据库或写入。 `node --test tests/planning/directory.test.mjs`.

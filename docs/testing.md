@@ -391,7 +391,7 @@ Collection and backup browser checks use the Node/Playwright environment above. 
 | Script                                                                                                        | Type         | Purpose                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | [tests/user-data/collections.test.mjs](../tests/user-data/collections.test.mjs)                               | Unit         | Private collection validation, preserved organization, bounded batches and rename conflicts                                     |
-| [tests/user-data/compact-tabs.browser.mjs](../tests/user-data/compact-tabs.browser.mjs) | Browser | Compact category tabs stay above results at 1440/768/390/320 pixels; synthetic local data, external requests blocked |
+| [tests/user-data/compact-tabs.browser.mjs](../tests/user-data/compact-tabs.browser.mjs)                       | Browser      | Compact category tabs stay above results at 1440/768/390/320 pixels; synthetic local data, external requests blocked            |
 | [tests/user-data/collections.browser.mjs](../tests/user-data/collections.browser.mjs)                         | Browser      | Create, organize, rename, delete/undo, scoped export and private restore at 1440/768/390/320 pixels                             |
 | [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs)                           | Unit         | RMP source identities, preserved ratings and public exchange validation                                                         |
 | [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs)                     | Browser      | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles                                      |
@@ -474,6 +474,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 ## Account readiness regression
 
 Run `node --test tests/user-data/account-status.test.mjs` (also included in `pnpm test`). The in-memory tests cover missing extension tables, pending or failed readiness requests, complete setup, and fail-closed guest entry. They do not connect to a database, change accounts, or call external services. A valid session keeps the account workspace visible when extensions are unavailable; school-email settings remain unavailable until their tables exist. This is degraded UI handling, not a substitute for applying the user-data migrations.
+
 ## Collection icon picker
 
 `node --test tests/user-data/collection-icons.test.mjs` checks all bundled icon identities against the saved-collection schema, Chinese/English local search and categories, required Lucide SVG stroke attributes, and the search Enter/selection cues. It needs Node.js 24+ and installed dependencies, writes no data, and calls no external service. These assertions do not replace browser verification.
@@ -497,3 +498,21 @@ Browser regression: open a new collection, search in both languages, filter cate
 - `tests/planning/private-regression.mjs`: Opt-in local private PDF regression. Set `PLANNING_PRIVATE_PDF_DIR` to the local attachment directory, then run `node tests/planning/private-regression.mjs`. By default reads PDFs only; explicitly set `PLANNING_PRIVATE_HAR_COMPARE=1` for response-only offline HAR comparison. Writes no extracted text and emits only type-level counts/failure totals and agreement aggregates. Do not supply private attachments to public CI or upload source data.
 
 - `tests/planning/private-har.test.mjs`: Synthetic XSSI/base64 response decoding, academic-field minimization, aggregate credit/year agreement and exclusion of ambiguous repeated courses. No real attachment fixtures.
+
+- `tests/planning/audit-evidence.test.mjs`: Distinguishes audit options from observations, explicit audit credits, layout hints and unreviewed hierarchy. `node --test tests/planning/audit-evidence.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/batch-import.test.mjs`: Atomic multi-file append/replace, bounded JSON restore and cancellation. `node --test tests/planning/batch-import.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/schedule.test.mjs`: Separate placement overrides, locked credit groups and duplicate-safe semester totals. `node --test tests/planning/schedule.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/template.test.mjs`: Requirements-only seed whitelist, explicit review gate, remapped references and cycle rejection. `node --test tests/planning/template.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/archive.integration.test.mjs`: Real PGlite raw-byte archive, hash verification, immutable IDs, version collision rejection, rollback and backup restoration. `node --test tests/planning/archive.integration.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/recommendation.test.mjs`: Workload/prefix caps, completed-course exclusion, rating shrinkage/request allowlist, pending public samples and source-preserving draft application. `node --test tests/planning/recommendation.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/test_inventory.py`: Official college index, title/version metadata and source-discovery boundaries. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
+
+- `tests/planning/test_public_layouts.py`: Official subject aliases, strict eight-semester grids/PDF columns, centered year labels, alternatives and unknown credits. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
+
+- `tests/planning/directory.test.mjs`: College/program coverage, bounded paging, explicit requirement-term facets and public metadata minimization. Synthetic/public inputs only; no external network, database or writes. `node --test tests/planning/directory.test.mjs`.
