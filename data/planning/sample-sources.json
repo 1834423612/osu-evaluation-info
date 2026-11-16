@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "inspectedAt": "2026-11-16",
+  "sources": [
+    {
+      "id": "cis-ba",
+      "program": "Computer and Information Science · BA",
+      "college": "Arts and Sciences",
+      "url": "https://cse.osu.edu/ba-cis-program-information",
+      "downloadUrl": "https://cse.osu.edu/media/document/2025-08-22/bacis_ge_curriculum_sheet_with_sample_schedule-july2025accessible.docx",
+      "adapter": "cse-caption",
+      "structure": "Sample Graduation Plan accordion. Eight tables captioned Year N Autumn/Spring and reported hours. Course and Hours columns. Preserve electives, alternatives, bracketed conditions and CSE 390x placeholders.",
+      "expectedSamples": 1,
+      "geSystem": "GEN"
+    },
+    {
+      "id": "cis-bs",
+      "program": "Computer and Information Science · BS",
+      "college": "Arts and Sciences",
+      "url": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cis-program-information",
+      "downloadUrl": "https://cse.osu.edu/media/document/2025-08-22/bscis_curriculum_sheet_with_sample_schedule_july2025accessibleread-only.docx",
+      "adapter": "cse-grid",
+      "structure": "Sample Schedule accordion. Autumn/Spring table with four colspan=2 Year N rows, paired course rows and reported totals. Keep CSE 32X1/390X/591X as placeholders. Conditional GE credits cannot be added to each alternative.",
+      "expectedSamples": 1,
+      "geSystem": "GEN"
+    },
+    {
+      "id": "cse-bs",
+      "program": "Computer Science and Engineering · BS",
+      "college": "Engineering",
+      "url": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cse-program-information",
+      "downloadUrl": "https://cse.osu.edu/media/document/2025-08-27/cse_curriculum_sheet_with_sample_schedule_july2025accessibleread-only_0.docx",
+      "adapter": "cse-grid",
+      "structure": "Sample Schedule accordion. Autumn/Spring columns, merged Year N heading, paired course rows, Total of N credits. Eight terms. Preserve choices and incomplete course codes.",
+      "expectedSamples": 1,
+      "geSystem": "GEN"
+    },
+    {
+      "id": "molecular-genetics",
+      "program": "Molecular Genetics",
+      "college": "Arts and Sciences",
+      "url": "https://molgen.osu.edu/sample-curriculum",
+      "adapter": "molgen-list",
+      "structure": "Two Example headings, each with eight Year N Autumn/Spring headings and list items. Semester Total and year/degree totals are distinct. Example 1 and 2 differ in timing of MOLGEN 4606. BIO is used as a Biology abbreviation.",
+      "expectedSamples": 2,
+      "geSystem": "GEN"
+    },
+    {
+      "id": "earth-geophysics",
+      "program": "Earth Sciences · Geophysics · BS",
+      "college": "Arts and Sciences",
+      "url": "https://earthsciences.osu.edu/b.s.-geophysics-subprogram-sample-four-year-curriculum",
+      "adapter": "earth-grid",
+      "structure": "Year/Autumn Semester/Spring Semester table, four years, multi-line course cells and reported totals. Some reported totals differ from the sum of displayed entries. Retain both as source evidence.",
+      "expectedSamples": 1,
+      "geSystem": null
+    },
+    {
+      "id": "earth-climate",
+      "program": "Earth Sciences · Climate, Water and Environment · BS",
+      "college": "Arts and Sciences",
+      "url": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
+      "adapter": "earth-grid",
+      "structure": "Year/Autumn Semester/Spring Semester table, four rows of multi-line courses. Elective/GE entries remain placeholders. Source does not establish a unique BDP Applied Version.",
+      "expectedSamples": 1,
+      "geSystem": null
+    },
+    {
+      "id": "actuarial-science",
+      "program": "Actuarial Science",
+      "college": "Arts and Sciences",
+      "landingUrl": "https://math.osu.edu/undergrad/current-majors/actsci/requirements",
+      "url": "https://math.osu.edu/sites/default/files/2024-07/Actuarial%20Science%20Requirements%20and%20Sample%20Schedule%207.18.24.pdf",
+      "adapter": "math-pdf",
+      "structure": "PDF page 2, Autumn/Spring columns, four centered Year headings, adjacent credit cells and four paired totals. Footer revised 2/11/2025 despite the 2024 URL. Later years omit general electives. Web-page totals differ from PDF totals, so use this PDF consistently.",
+      "expectedSamples": 1,
+      "geSystem": null
+    }
+  ],
+  "excluded": [
+    {
+      "program": "Information Systems",
+      "url": "https://fisher.osu.edu/undergraduate/academics/specializations/information-systems",
+      "reason": "Required/elective courses and prerequisites are present. This page does not assign them to eight semesters. Keep it as a source reference, outside the sample schedule gallery."
+    },
+    {
+      "program": "Information Systems",
+      "url": "https://files.fisher.osu.edu/undergraduate/public/2025-09/Curriculum%20Sheet_BSBA_InfoSystems_0.pdf?VersionId=vQL8umptes4BqAasCD_Lmyr6tyHVK_hx",
+      "reason": "Curriculum and prerequisite structure. A stated minimum of four semesters is a sequencing constraint, with no eight-semester assignment."
+    }
+  ]
+}
