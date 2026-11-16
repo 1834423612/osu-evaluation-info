@@ -179,3 +179,8 @@ docs/rmp-data-comparison-*.json
 
 # Official curriculum crawl cache (never private BDP exports)
 .planning-cache/
+# Degree-planner exports and browser archives are private research inputs.
+*.har
+*degree-planner*.zip
+*audit*.pdf
+*Student_plan*.pdf
