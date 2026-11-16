@@ -500,7 +500,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/template.test.mjs`: 仅要求规则的种子白名单、明确审核、引用重映射和循环拒绝。 `node --test tests/planning/template.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
 
-- `tests/planning/archive.integration.test.mjs`: 真实 PGlite 原文件归档、哈希验证、不可变 ID、版本冲突拒绝、回滚和恢复。 `node --test tests/planning/archive.integration.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+- `tests/planning/archive.integration.test.mjs`: 真实 PGlite 原文件归档、哈希验证、不可变解析版本、Unicode 兼容、版本冲突拒绝、回滚和恢复。 `node --test tests/planning/archive.integration.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
 
 - `tests/planning/recommendation.test.mjs`: 负担/前缀上限、已完成排除、评分收缩/请求白名单、待审核样表和保留来源的建议应用。 `node --test tests/planning/recommendation.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
 

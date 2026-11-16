@@ -54,13 +54,13 @@ Planning suppresses first-party analytics/replay content and disposes of previou
 
 ## Public coverage and adapters
 
-The [official majors-by-college index](https://undergrad.osu.edu/majors-and-academics/majors-by-college) supplies 151 discovery rows across 14 colleges. These are not a complete universe of degree variants, campuses or historical versions.
+The [official majors-by-college index](https://undergrad.osu.edu/majors-and-academics/majors-by-college) supplies 151 discovery rows across 14 undergraduate index groups. These are not a complete universe of degree variants, campuses or historical versions.
 
-Checkpoint, 2026-11-16: **2,061 downloaded source versions; 858 with course references; 120/151 index rows associated with references; 199 blocked/failed URLs; 674 unvisited links; 11 eight-semester candidates; zero human-approved plans.** Coverage remains partial. A reference/match is not a complete extracted curriculum.
+Checkpoint, 2026-11-16: **3,920 downloaded source versions; 1,494 with course references; 134/151 index rows associated with references; 449 blocked/failed URLs; 0 unvisited links; 12 eight-semester candidates; zero human-approved plans.** Coverage remains partial. A reference/match is not a complete extracted curriculum.
 
 Filters include college/program, document kind, academic year, explicit requirement term and GE system. Details show official URL, hash, dates, version evidence, references and supported semester previews. Unknown applicability remains unknown. Responses are paged; detailed course lists load on demand.
 
-The archive retains original public HTML/PDF bytes and hashes. Course references use 242 official subjects/names observed from the anonymous catalog. Strict adapters handle explicit eight-semester HTML captions/grids and supported PDF columns. Mathematics supports centered year labels and paired totals. Alternatives retain public source evidence. Unsupported layouts, three-year combined programs, ambiguous credits and footnotes are not forced into eight semesters. Extraction is not approval.
+The archive retains original public HTML/PDF bytes and hashes. Course references use 242 official subjects/names observed from the anonymous catalog. Strict adapters handle explicit eight-semester HTML captions/grids and supported PDF columns. Mathematics supports centered year labels and paired totals. Alternatives retain public source evidence. Unsupported layouts, three-year combined programs, ambiguous credits and footnotes are not forced into eight semesters. Extraction is not approval. Budget-exceeding files retain their original bytes and explicit extraction status without blocking other sources.
 
 ## Operations and database
 
@@ -93,13 +93,14 @@ Only public HTTPS osu.edu and ohio-state.edu URLs are allowed. Credentials, iden
 
 Namespaces are osu_planning_dev in development and osu_planning in production; PLANNING_SCHEMA permits isolated names under that domain. All table access uses the dedicated helper.
 
-| Table              | Retained data                                                   |
-| ------------------ | --------------------------------------------------------------- |
-| source_document    | Immutable public URL/hash/fetch identity                        |
-| source_asset       | Hash-verified raw public bytes, extraction, classified metadata |
-| directory_snapshot | Dated discovery/coverage snapshots                              |
-| curriculum_version | Distinct program/sample versions, applicability/review metadata |
-| template_seed      | Strict requirements-only templates pending operator review      |
+| Table              | Retained data                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| source_document    | Immutable public URL/hash/fetch identity                                           |
+| source_asset       | Hash-verified raw public bytes, extraction, classified metadata                    |
+| source_extraction  | Immutable parser revisions, coordinate text and extraction dates for a public file |
+| directory_snapshot | Dated discovery/coverage snapshots                                                 |
+| curriculum_version | Distinct program/sample versions, applicability/review metadata                    |
+| template_seed      | Strict requirements-only templates pending operator review                         |
 
 For PostgreSQL omit --local and supply only dedicated PLANNING_DATABASE_URL; never infer it from course/account configuration. Initialize before importing. Transactions roll back failures; identical IDs are immutable no-ops; a different ID colliding on source/program/version fails. Changed evidence/review needs a new ID and version. Approval requires reviewer/date/source-validation date. Draft requirements cannot become authoritative approvals. Retention keeps all versions without automatic deletion.
 
@@ -120,4 +121,14 @@ Standard produced 372 rule/238 allocation candidates; Expanded 78/162. These are
 
 All supplied pages had text layers. No OCR fallback is installed; local page rasterization, bounded worker/WASM assets, accuracy and mobile-memory evaluation remain prerequisites for one.
 
-The 2026-11-16 automated run passed 575 Node tests (546 passed, 29 skipped), 99 main Python tests (two skipped) and 13 planning Python tests. Isolated PGlite verification covers original bytes, idempotence, unique versions, rollback and backup restore. Browser acceptance is recorded after final UI checks; the standalone browser script is a reproducible scenario, not evidence it ran.
+The 2026-11-16 automated run passed 575 Node tests (546 passed, 29 skipped), 99 main Python tests (two skipped) and 14 planning Python tests. Isolated PGlite verification covers original bytes, idempotence, unique versions, rollback and backup restore. Browser acceptance is recorded after final UI checks; the standalone browser script is a reproducible scenario, not evidence it ran.
+
+### Browser acceptance — 2026-11-16
+
+An isolated loopback production build preserved synthetic PDF/JSON sources and restored the saved workspace after reload. A moved course retained its original semester. The recommender combined CSE 2111 with the selected sample semester's CHEM 1220 into an 8-credit draft under a separate manual source. The downloaded version-2 JSON was inspected with three sources, five course rows and separate placement overrides. Missing evaluation configuration displayed unknown ratings. The observed evaluation POST contained only course codes, campus and empty instructor arrays, without program, term or personal source fields.
+
+All five views were checked at 320/390/768/1440 widths, plus Chinese dark mode at 390, without document-level horizontal overflow. Requirement navigation defaulted to a program with rules and distinguished planned/completed coverage. The source dialog, official links, keyboard tab navigation, native desktop drag/drop and mobile course move menus were exercised. This connected-browser acceptance does not imply the standalone Playwright script ran, or establish audit semantic accuracy, prerequisites or meeting-conflict solving.
+
+Public PDF text containing PostgreSQL jsonb-incompatible NUL/lone UTF-16 values uses U+FFFD with an explicit text-storage policy; original bytes/hashes remain unchanged. Public extraction caches are reused by content hash/parser revision, and unsupported documents retain reasons. Actual archive/restore counts are reported by the directory and database status.
+
+The final real backup restored into an isolated database with 3,920 original sources, 641 extraction revisions, 19 curriculum versions including retained older candidates, and two directory snapshots. The current UI exposes 12 pending sample previews. Ten sampled restored source hashes matched.
