@@ -35,6 +35,20 @@ const BOOST = {
   instructors: 2,
 };
 
+const INDEX_OPTIONS = {
+  fields: FIELDS,
+  tokenize,
+  processTerm,
+  searchOptions: { boost: BOOST, weights: { fuzzy: 0.45, prefix: 0.65 } },
+};
+export type SearchEngineSnapshot = {
+  documents: SearchDocument[];
+  index: ReturnType<MiniSearch<SearchDocument>["toJSON"]>;
+  fieldTerms: [string, [string, string[]][]][];
+  phrases: [string, { title: string; description: string }][];
+  exactTitles: string[];
+  vocabulary: [string, number][];
+};
 const MAX_SPELLING_VARIANTS = 16;
 /** Full-corpus BM25+ retrieval followed by explicit coverage/typo/identity ranking. */
 export class CourseSearchEngine {
@@ -45,7 +59,7 @@ export class CourseSearchEngine {
   private fieldTerms = new Map<string, Map<string, Set<string>>>();
   private phrases = new Map<string, { title: string; description: string }>();
   private exactTitles = new Set<string>();
-  constructor(documents: SearchDocument[]) {
+  constructor(documents: SearchDocument[], prepared?: SearchEngineSnapshot) {
     if (documents.length > 50000)
       throw new Error(
         "Catalog search corpus exceeds its configured memory bound",
@@ -53,16 +67,27 @@ export class CourseSearchEngine {
     this.documents = new Map(
       documents.map((doc) => [
         doc.id,
-        { ...doc, description: prose(doc.description) },
+        prepared ? doc : { ...doc, description: prose(doc.description) },
       ]),
     );
     this.subjects = new SubjectResolver(documents);
-    this.index = new MiniSearch({
-      fields: FIELDS,
-      tokenize,
-      processTerm,
-      searchOptions: { boost: BOOST, weights: { fuzzy: 0.45, prefix: 0.65 } },
-    });
+    if (prepared) {
+      this.index = MiniSearch.loadJS(prepared.index, INDEX_OPTIONS);
+      if (this.index.documentCount !== this.documents.size)
+        throw new Error("Prepared search document count mismatch");
+      this.fieldTerms = new Map(
+        prepared.fieldTerms.map(([id, fields]) => [
+          id,
+          new Map(fields.map(([field, words]) => [field, new Set(words)])),
+        ]),
+      );
+      this.phrases = new Map(prepared.phrases);
+      this.exactTitles = new Set(prepared.exactTitles);
+      for (const [word, count] of prepared.vocabulary)
+        this.vocabulary.set(word, count);
+      return;
+    }
+    this.index = new MiniSearch(INDEX_OPTIONS);
     for (const doc of this.documents.values()) {
       const fields = new Map(
         FIELDS.map((field) => [
@@ -82,6 +107,23 @@ export class CourseSearchEngine {
         this.vocabulary.set(word, (this.vocabulary.get(word) ?? 0) + 1);
     }
     this.index.addAll([...this.documents.values()]);
+  }
+  /** Public catalog data only; the format version is owned by the artifact codec. */
+  snapshot(): SearchEngineSnapshot {
+    return {
+      documents: [...this.documents.values()],
+      index: this.index.toJSON(),
+      fieldTerms: [...this.fieldTerms].map(([id, fields]) => [
+        id,
+        [...fields].map(([field, words]) => [field, [...words]]),
+      ]),
+      phrases: [...this.phrases],
+      exactTitles: [...this.exactTitles],
+      vocabulary: [...this.vocabulary],
+    };
+  }
+  static restore(snapshot: SearchEngineSnapshot) {
+    return new CourseSearchEngine(snapshot.documents, snapshot);
   }
   private groups(query: string): Group[] {
     const displays = new Map(

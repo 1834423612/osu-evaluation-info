@@ -4,7 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 export const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 export const CATALOG_LOCK = 674120201;
-export const CATALOG_SCHEMA_VERSION = 5;
+export const CATALOG_SCHEMA_VERSION = 6;
 
 export function loadCatalogEnvironment() {
   for (const name of [".env.local", ".env"]) {
