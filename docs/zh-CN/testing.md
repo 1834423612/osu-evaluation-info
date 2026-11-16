@@ -461,3 +461,11 @@ node --test tests/translation/translation-release.test.mjs
 ```sh
 PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/prepared-corpus.integration.test.mjs
 ```
+
+## 分组图标选择器
+
+`node --test tests/user-data/collection-icons.test.mjs` 检查全部内置图标标识与收藏分组结构的兼容性、中英文离线搜索和类别、Lucide SVG 必需的描边属性，以及搜索框回车和选中提示。需要 Node.js 24+ 及已安装的依赖，不写入数据、不调用外部服务。这些断言不能替代浏览器验收。
+
+选择器内置 99 个本地图标，分为八类。搜索不会向图标服务发送关键词，现有图标标识保持有效。中性图标卡使用统一的前景与背景颜色变量；选中时增加强调色边框和勾选标记，不仅依赖颜色区分。
+
+浏览器回归：新建分组，分别用中英文搜索、切换类别、检查无结果提示，并确认搜索框回车不会保存。选择图标，保存合成测试分组，刷新后重新打开，确认图标保留。仅改变筛选条件不应触发未保存警告，改变图标则应触发。检查 320、390、768、1440px 下的描边和焦点轮廓。使用不含生产凭据的独立本地站点；保存分组会写入该站点的浏览器存储。

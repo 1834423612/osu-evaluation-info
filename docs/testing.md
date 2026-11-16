@@ -468,3 +468,11 @@ connectivity and concurrent-session behavior still require separate validation.
 ```sh
 PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/prepared-corpus.integration.test.mjs
 ```
+
+## Collection icon picker
+
+`node --test tests/user-data/collection-icons.test.mjs` checks all bundled icon identities against the saved-collection schema, Chinese/English local search and categories, required Lucide SVG stroke attributes, and the search Enter/selection cues. It needs Node.js 24+ and installed dependencies, writes no data, and calls no external service. These assertions do not replace browser verification.
+
+The picker bundles 99 local icons in eight categories. Search does not send queries to an icon provider. Existing icon identifiers remain valid. Neutral tiles use the shared foreground/surface tokens; selection adds an accent border and check mark rather than relying only on color.
+
+Browser regression: open a new collection, search in both languages, filter categories, test a query with no results, and press Enter in search without saving. Select an icon, save a synthetic group, refresh and reopen it; the selected icon must persist. Changing only filters must not trigger the unsaved-draft warning, while changing the icon must. Check icon strokes and focus rings at 320, 390, 768 and 1440px. Use an isolated local origin without production credentials; saving a group writes to that origin's browser storage.
