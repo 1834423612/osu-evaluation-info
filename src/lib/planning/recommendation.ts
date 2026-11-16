@@ -1,5 +1,6 @@
 import { planSchema, type Plan } from "./model.ts";
 import { requirementProgress } from "./snapshots.ts";
+import { boardCourses } from "./workspace.ts";
 import { termOrder } from "./schedule.ts";
 
 export type SampleCourse = {
@@ -207,15 +208,58 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
     covered: Set<string>;
     score: number;
   };
-  let beam: State[] = [
-    { items: [], credits: 0, quant: 0, covered: new Set(), score: 0 },
-  ];
   const quantitative = new Set(
     options.quantitativeSubjects.map((s) => s.toUpperCase()),
   );
+  const existing = new Map<
+    string,
+    { values: Set<number | null>; quantitative: boolean }
+  >();
+  for (const [index, row] of boardCourses(plan).entries()) {
+    if (row.term !== options.targetTerm) continue;
+    const code =
+      row.course.subject && row.course.number
+        ? `${row.course.subject} ${row.course.number}`
+        : `placeholder-${index}`;
+    const catalog = options.catalogCredits?.[code];
+    const value = catalog
+      ? catalog.min === catalog.max
+        ? catalog.min
+        : null
+      : row.course.credits;
+    const entry = existing.get(code) ?? {
+      values: new Set<number | null>(),
+      quantitative: quantitative.has(row.course.subject ?? ""),
+    };
+    entry.values.add(value);
+    existing.set(code, entry);
+  }
+  let existingCredits = 0,
+    unresolvedExisting = 0,
+    existingQuantitative = 0;
+  for (const entry of existing.values()) {
+    if (entry.values.size === 1 && !entry.values.has(null))
+      existingCredits += [...entry.values][0]!;
+    else unresolvedExisting++;
+    if (entry.quantitative) existingQuantitative++;
+  }
+  const covered = new Set(
+    candidates.filter((c) => existing.has(c.key)).flatMap((c) => c.ruleIds),
+  );
+  let beam: State[] = [
+    {
+      items: [],
+      credits: existingCredits,
+      quant: existingQuantitative,
+      covered,
+      score: 0,
+    },
+  ];
   for (const candidate of candidates
     .filter(
       (c) =>
+        !unresolvedExisting &&
+        !existing.has(c.key) &&
         c.credits !== null &&
         c.credits > 0 &&
         !c.conflict &&
@@ -269,6 +313,8 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
     bundle: bundle.items,
     credits: bundle.credits,
     quantitative: bundle.quant,
+    existingCredits,
+    unresolvedExisting,
   };
 }
 

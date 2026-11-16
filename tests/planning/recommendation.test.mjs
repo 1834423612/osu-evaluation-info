@@ -268,3 +268,26 @@ test("conditional exclusions do not become sample course suggestions", () => {
     { subject: "PHILOS", number: "2338" },
   ]);
 });
+
+test("recommendation caps include courses already placed in the target semester", () => {
+  const plan = fixture();
+  plan.schedule.placements = [{ courseId: "m", term: options.targetTerm }];
+  const tight = recommendCourses(plan, options);
+  assert.equal(tight.existingCredits, 5);
+  assert.equal(tight.credits, 5);
+  assert.equal(tight.bundle.length, 0);
+  const room = recommendCourses(plan, {
+    ...options,
+    maxCredits: 8,
+    maxQuantitative: 2,
+  });
+  assert.equal(room.credits, 8);
+  assert.deepEqual(
+    room.bundle.map((c) => c.key),
+    ["CSE 1223"],
+  );
+  plan.schedule.placements.push({ courseId: "u", term: options.targetTerm });
+  const unknown = recommendCourses(plan, { ...options, maxCredits: 18 });
+  assert.equal(unknown.unresolvedExisting, 1);
+  assert.equal(unknown.bundle.length, 0);
+});
