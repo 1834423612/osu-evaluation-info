@@ -7,6 +7,7 @@ import {
 } from "./consumers.ts";
 import type { TranslationObservation } from "./gateway.ts";
 import {
+  AUTO_TRANSLATION_STAGE_MS,
   TRANSLATION_QUEUE_WAIT_MS,
   TRANSLATION_DEADLINE_MS,
   parseTranslationBatch,
@@ -25,6 +26,7 @@ export function createRemoteTranslationClient(
   fetcher: typeof fetch = fetch,
   delayMs = 25,
   onGoogleAttempt?: (event: TranslationObservation) => void,
+  automaticHeadStartMs = AUTO_TRANSLATION_STAGE_MS,
 ) {
   const googleFallback = createBrowserGoogleFallback(
     fetcher,
@@ -151,6 +153,16 @@ export function createRemoteTranslationClient(
     item: TranslationItem,
     callbacks: RequestCallbacks,
   ): Promise<Success> {
+    const onStarted = callbacks.onStarted;
+    let notified = false;
+    callbacks = {
+      ...callbacks,
+      onStarted: () => {
+        if (notified) return;
+        notified = true;
+        onStarted?.();
+      },
+    };
     if (nasRunning > 0 || manualPending > 0) {
       try {
         return await google(item, callbacks);
@@ -162,28 +174,56 @@ export function createRemoteTranslationClient(
     }
     let retryAfterMs = 5000;
     let plan: unknown;
-    try {
-      const result = await nas(item, false, callbacks);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const primary = nas(item, false, callbacks).then((result) => {
       if ("status" in result) return result;
       retryAfterMs = result.retryAfterMs;
       plan = result.plan;
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") throw error;
-      if (error instanceof TranslationUnavailableError)
-        retryAfterMs = error.retryAfterMs;
-    }
+      throw new TranslationUnavailableError(retryAfterMs);
+    });
+    // Fast cached NAS responses keep priority. A cold API/model must not hold
+    // the first visitor behind its full timeout before browser fallback starts.
+    // Keep the NAS lane reserved until its actual request settles.
+    const fallback = new Promise<Success>((resolve, reject) => {
+      let started = false;
+      const start = () => {
+        if (started) return;
+        started = true;
+        clearTimeout(timer);
+        void google(item, callbacks, plan).then(resolve, reject);
+      };
+      timer = setTimeout(start, Math.max(0, automaticHeadStartMs));
+      void primary.then(resolve, (error) => {
+        if (error instanceof Error && error.name === "AbortError") {
+          clearTimeout(timer);
+          reject(error);
+          return;
+        }
+        if (error instanceof TranslationUnavailableError)
+          retryAfterMs = error.retryAfterMs;
+        start();
+      });
+    });
     try {
-      return await google(item, callbacks, plan);
+      return await Promise.any([primary, fallback]);
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") throw error;
+      const errors = error instanceof AggregateError ? error.errors : [error];
+      const aborted = errors.find(
+        (entry) => entry instanceof Error && entry.name === "AbortError",
+      );
+      if (aborted) throw aborted;
       throw new TranslationUnavailableError(
         Math.min(
           retryAfterMs,
-          error instanceof TranslationUnavailableError
-            ? error.retryAfterMs
-            : 5000,
+          ...errors.map((entry) =>
+            entry instanceof TranslationUnavailableError
+              ? entry.retryAfterMs
+              : 5000,
+          ),
         ),
       );
+    } finally {
+      clearTimeout(timer);
     }
   }
 
