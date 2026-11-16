@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSyllabusDocuments } from "@/hooks/use-syllabus-documents";
 import { selectReadableSyllabus } from "@/lib/syllabus/selection";
 import { useSyllabusScroll } from "@/hooks/use-syllabus-scroll";
-import { EmptyResult } from "@/components/brand/empty-result";
+import { HistoricalSyllabi } from "./historical-syllabi";
 import { ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CatalogCourse } from "@/lib/catalog/types";
@@ -117,6 +117,25 @@ export default function SyllabusPanel({
         </p>
       ) : (
         <>
+          {!chosen && !checking ? (
+            <HistoricalSyllabi
+              key={[
+                subject,
+                catalogNumber,
+                termCode,
+                course.campusCode,
+                focusClassNumber,
+              ].join(":")}
+              query={{
+                subject,
+                catalogNumber,
+                termCode,
+                campusCode: course.campusCode,
+                classNumber: focusClassNumber ?? undefined,
+              }}
+              locale={locale}
+            />
+          ) : null}
           <SyllabusSectionPicker
             course={course}
             documentState={documentState}
@@ -132,15 +151,7 @@ export default function SyllabusPanel({
               <LoaderCircle size={16} className="spin" />
               {text(locale, "Checking published syllabi…", "正在核验可用大纲…")}
             </p>
-          ) : (
-            <EmptyResult layout="stack" size={64}>
-              {text(
-                locale,
-                "No matching published syllabus was found for this term and these class sections. It may be unpublished or not indexed yet.",
-                "未找到与本学期、当前班次匹配的已发布大纲，可能尚未发布或收录。",
-              )}
-            </EmptyResult>
-          )}
+          ) : null}
         </>
       )}
       {course.sectionsPartial ? (

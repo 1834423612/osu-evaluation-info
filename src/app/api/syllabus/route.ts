@@ -1,4 +1,10 @@
-import { SyllabusError, validCode, validQuery } from "@/lib/syllabus/normalize";
+import { syllabusHistoricalReferences } from "@/lib/syllabus/history";
+import {
+  SyllabusError,
+  validCode,
+  validQuery,
+  validReferenceQuery,
+} from "@/lib/syllabus/normalize";
 import {
   syllabusDocument,
   syllabusEntries,
@@ -18,6 +24,16 @@ export async function GET(request: Request) {
       const code = params.get("code") ?? "";
       if (!validCode(code)) throw new SyllabusError("invalid");
       result = await syllabusDocument(code, request.signal);
+    } else if (params.get("resource") === "references") {
+      const query = {
+        subject: params.get("subject") ?? "",
+        catalogNumber: params.get("catalog") ?? "",
+        termCode: params.get("term") ?? "",
+        campusCode: params.get("campus") ?? "",
+        classNumber: params.get("class") ?? undefined,
+      };
+      if (!validReferenceQuery(query)) throw new SyllabusError("invalid");
+      result = await syllabusHistoricalReferences(query);
     } else if (params.get("resource") === "entries") {
       const query = {
         subject: params.get("subject") ?? "",

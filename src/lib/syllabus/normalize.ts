@@ -2,6 +2,7 @@ import type {
   SyllabusDocument,
   SyllabusEntry,
   SyllabusQuery,
+  SyllabusReferenceQuery,
   SyllabusTerm,
 } from "./types.ts";
 
@@ -231,4 +232,12 @@ export function officialSyllabusUrl(code?: string) {
   return code && validCode(code)
     ? `${SYLLABUS_ORIGIN}/en-US/doc/${code}`
     : `${SYLLABUS_ORIGIN}/en-US/syllabus-library`;
+}
+
+export function validReferenceQuery(query: SyllabusReferenceQuery) {
+  return (
+    validQuery(query) &&
+    /^(COL|LMA|MNS|MRN|NWK|WST)$/i.test(query.campusCode) &&
+    (!query.classNumber || /^\d{1,8}$/.test(query.classNumber))
+  );
 }

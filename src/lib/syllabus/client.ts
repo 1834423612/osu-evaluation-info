@@ -5,6 +5,7 @@ import {
   SyllabusError,
   validCode,
   validQuery,
+  validReferenceQuery,
 } from "./normalize.ts";
 import {
   discoverSyllabusTerms,
@@ -15,6 +16,8 @@ import type {
   SyllabusDocument,
   SyllabusEntry,
   SyllabusQuery,
+  SyllabusReference,
+  SyllabusReferenceQuery,
   SyllabusResult,
   SyllabusTerm,
 } from "./types.ts";
@@ -185,7 +188,24 @@ export function createSyllabusClient(fetcher: typeof fetch = fetch) {
       { signal },
     );
   }
-  return { terms, entries, document };
+  function references(query: SyllabusReferenceQuery, signal?: AbortSignal) {
+    if (!validReferenceQuery(query))
+      return Promise.reject(new SyllabusError("invalid"));
+    const params = new URLSearchParams({
+      resource: "references",
+      subject: query.subject,
+      catalog: query.catalogNumber,
+      term: query.termCode,
+      campus: query.campusCode,
+    });
+    if (query.classNumber) params.set("class", query.classNumber);
+    return pool.read(
+      `references:${params}`,
+      (jobSignal) => relay<SyllabusReference[]>(params, jobSignal),
+      { signal },
+    ) as Promise<SyllabusResult<SyllabusReference[]>>;
+  }
+  return { terms, entries, document, references };
 }
 
 export const syllabusClient = createSyllabusClient();

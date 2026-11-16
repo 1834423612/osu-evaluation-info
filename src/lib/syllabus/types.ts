@@ -53,3 +53,13 @@ export type SyllabusQuery = {
   catalogNumber: string;
   termCode: string;
 };
+
+export type SyllabusReferenceQuery = SyllabusQuery & {
+  campusCode: string;
+  classNumber?: string;
+};
+export type SyllabusReference = {
+  entry: SyllabusEntry;
+  instructors: string[];
+  sameInstructor: boolean;
+};

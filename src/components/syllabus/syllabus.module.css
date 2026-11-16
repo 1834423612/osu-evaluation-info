@@ -98,3 +98,61 @@
   color: var(--primary);
   font-size: 12px;
 }
+
+.historical {
+  min-width: 0;
+  padding: 16px;
+  margin-top: 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.referenceHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--primary);
+}
+.referenceHeading span {
+  font-size: 10px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+}
+.referenceControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.referenceControls > [role="combobox"] {
+  flex: 1;
+  min-width: min(100%, 220px);
+}
+.referenceDocument {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  min-width: 0;
+}
+.referenceTerm {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--primary);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .historical {
+    padding: 12px;
+  }
+  .referenceDocument {
+    margin-inline: -12px;
+  }
+  .referenceTerm {
+    padding-inline: 12px;
+  }
+}
