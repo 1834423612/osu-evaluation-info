@@ -25,7 +25,23 @@ export function placeCourse(
     s.courses.some((c) => c.id === courseId),
   );
   const course = semester?.courses.find((c) => c.id === courseId);
+  const protectedRecord =
+    course?.subject &&
+    course.number &&
+    plan.semesters.some((entry) =>
+      entry.courses.some(
+        (record) =>
+          record.evidenceRole !== "option" &&
+          record.subject === course.subject &&
+          record.number === course.number &&
+          (record.status === "completed" ||
+            record.status === "in-progress" ||
+            entry.creditOrigin === "transfer" ||
+            entry.creditOrigin === "exam"),
+      ),
+    );
   if (
+    protectedRecord ||
     !course ||
     course.evidenceRole === "option" ||
     course.status === "completed" ||

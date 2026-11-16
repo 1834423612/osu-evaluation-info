@@ -31,3 +31,36 @@ test("semester defaults follow the current season across year boundaries", () =>
   assert.equal(currentSemester(new Date(2026, 5, 1)), "Summer2026");
   assert.equal(nextSemester(new Date(2026, 10, 1)), "Spring2027");
 });
+
+test("Student Plan placement cannot hide protected audit observations", () => {
+  let count = 0;
+  const id = () => "row-" + ++count;
+  const code = { subject: "CSE", number: "2221" };
+  const plan = addPlanningCourse(emptyPlan(), code, "Spring2027", id);
+  plan.documents.push({
+    id: "audit",
+    source: "expanded-audit",
+    auditMode: "official",
+    pdfOrigin: "export",
+    catalogTerm: null,
+  });
+  plan.semesters.push({
+    documentId: "audit",
+    term: null,
+    reportedCredits: null,
+    courses: [
+      {
+        ...plan.semesters[0].courses[0],
+        id: "audit-row",
+        documentId: "audit",
+        status: "in-progress",
+      },
+    ],
+  });
+  assert.equal(boardCourses(plan).length, 1);
+  assert.equal(boardCourses(plan)[0].protectedRecord, true);
+  assert.throws(() =>
+    placeCourse(plan, plan.semesters[0].courses[0].id, "Autumn2027"),
+  );
+  assert.throws(() => addPlanningCourse(plan, code, "Autumn2027", id));
+});

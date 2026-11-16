@@ -58,12 +58,30 @@ export function boardCourses(plan: Plan) {
       .filter((r) => r.course.subject && r.course.number)
       .map((r) => `${r.course.subject} ${r.course.number}`),
   );
-  return rows.filter(
-    (r) =>
-      r.source?.source === "student-plan" ||
-      r.source?.source === "manual" ||
-      !placedCodes.has(`${r.course.subject} ${r.course.number}`),
+  const protectedCodes = new Set(
+    rows
+      .filter((r) => r.course.subject && r.course.number)
+      .filter(
+        (r) =>
+          r.course.status === "completed" ||
+          r.course.status === "in-progress" ||
+          r.term === "credit",
+      )
+      .map((r) => `${r.course.subject} ${r.course.number}`),
   );
+  return rows
+    .filter(
+      (r) =>
+        r.source?.source === "student-plan" ||
+        r.source?.source === "manual" ||
+        !placedCodes.has(`${r.course.subject} ${r.course.number}`),
+    )
+    .map((row) => ({
+      ...row,
+      protectedRecord: protectedCodes.has(
+        `${row.course.subject} ${row.course.number}`,
+      ),
+    }));
 }
 
 export type BoardCourse = ReturnType<typeof boardCourses>[number];
@@ -82,6 +100,7 @@ export function addPlanningCourse(
   );
   if (existing) {
     if (
+      existing.protectedRecord ||
       existing.course.status === "completed" ||
       existing.course.status === "in-progress" ||
       existing.term === "credit"
