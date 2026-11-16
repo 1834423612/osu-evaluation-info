@@ -1,6 +1,6 @@
 "use client";
 import { CollectionIcon } from "./collection-icon";
-import { collectionIcons } from "@/lib/saved/collection-icons";
+import { CollectionIconPicker } from "./collection-icon-picker";
 import { collectionTagGroups } from "@/lib/saved/tag-presets";
 import { browserUuid } from "@/lib/uuid";
 import { useState } from "react";
@@ -46,7 +46,6 @@ export function CollectionOrganizer({
     [base, setBase] = useState<SavedCollection | null>(null),
     [tags, setTags] = useState(""),
     [customTag, setCustomTag] = useState(""),
-    [iconQuery, setIconQuery] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [confirmDelete, setConfirmDelete] = useState(false),
@@ -65,7 +64,6 @@ export function CollectionOrganizer({
   function begin(value?: SavedCollection) {
     setBase(value ?? null);
     setCustomTag("");
-    setIconQuery("");
     setDraft(
       value
         ? structuredClone(value)
@@ -400,46 +398,12 @@ export function CollectionOrganizer({
                 )}
               </a>
             </div>
-            <section className={styles.iconPicker}>
-              <h3>{text(locale, "Collection icon", "分组图标")}</h3>
-              <input
-                className={shared.input}
-                type="search"
-                value={iconQuery}
-                onChange={(e) => setIconQuery(e.target.value)}
-                placeholder={text(
-                  locale,
-                  "Find icons (book, star, lab…)",
-                  "搜索图标（book、star、lab…）",
-                )}
-                aria-label={text(
-                  locale,
-                  "Find collection icon",
-                  "查找分组图标",
-                )}
-              />
-              <div
-                role="group"
-                aria-label={text(locale, "Choose icon", "选择图标")}
-              >
-                {collectionIcons
-                  .filter((icon) =>
-                    icon.label.toLowerCase().includes(iconQuery.toLowerCase()),
-                  )
-                  .map((icon) => (
-                    <button
-                      type="button"
-                      key={icon.id}
-                      title={icon.label}
-                      aria-label={icon.label}
-                      aria-pressed={(draft.icon ?? "lucide:folder") === icon.id}
-                      onClick={() => setDraft({ ...draft, icon: icon.id })}
-                    >
-                      <CollectionIcon icon={icon.id} size={19} />
-                    </button>
-                  ))}
-              </div>
-            </section>
+            <CollectionIconPicker
+              locale={locale}
+              value={draft.icon}
+              disabled={busy}
+              onChange={(icon) => setDraft({ ...draft, icon })}
+            />
             {notice ? (
               <p role="status" className={shared.notice}>
                 {notice}
