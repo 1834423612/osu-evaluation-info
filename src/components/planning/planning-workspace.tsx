@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import {
   CalendarDays,
   FileUp,
-  ShieldCheck,
   ArrowUpRight,
   Plus,
   Trash2,
@@ -36,8 +35,8 @@ const SemesterBoard = dynamic(() =>
 const RequirementMap = dynamic(() =>
   import("./requirement-map").then((m) => m.RequirementMap),
 );
-const CurriculumDirectory = dynamic(() =>
-  import("./curriculum-directory").then((m) => m.CurriculumDirectory),
+const SampleGallery = dynamic(() =>
+  import("./sample-gallery").then((m) => m.SampleGallery),
 );
 import { pruneAllocations } from "@/lib/planning/snapshots";
 import { browserUuid } from "@/lib/uuid";
@@ -46,6 +45,9 @@ import { importPlanningFiles } from "@/lib/planning/batch-import";
 import { applyRecommendationBundle } from "@/lib/planning/recommendation";
 import { useDraftGuard } from "@/components/forms/draft-guard";
 import { ImportGuide } from "./import-guide";
+import { CatalogTermSelect } from "./catalog-term";
+import { PlanningCatalogProvider } from "./course-catalog";
+import { addPlanningCourse, nextSemester } from "@/lib/planning/workspace";
 import {
   importProfile,
   type ImportProfile,
@@ -64,14 +66,33 @@ export function PlanningWorkspace() {
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<
     "private" | "board" | "map" | "official" | "next"
-  >("private");
-  const [dark, setDark] = useState(false);
+  >("board");
+  const [catalogCampus, setCatalogCampus] = useState("COL");
+  const [catalogTerm, setCatalogTerm] = useState("");
   const [visibleSource, setVisibleSource] = useState("");
   const [importProgress, setImportProgress] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [savedFingerprint, setSavedFingerprint] = useState(() =>
     JSON.stringify(emptyPlan()),
   );
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      try {
+        const saved = loadPlan(localStorage);
+        if (saved) {
+          setPlan(saved);
+          setSavedFingerprint(JSON.stringify(saved));
+        }
+      } catch {
+        // The import view retains the explicit restore and retry controls.
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   useDraftGuard(
     busy ||
       (plan.semesters.length + plan.programs.length > 0 &&
@@ -200,80 +221,21 @@ export function PlanningWorkspace() {
     fileInput.current?.click();
   }
   function addCourse(code: { subject: string; number: string }) {
-    const manualIds = new Set(
-      plan.documents.filter((d) => d.source === "manual").map((d) => d.id),
-    );
-    if (
-      plan.semesters.some(
-        (s) =>
-          manualIds.has(s.documentId ?? "") &&
-          s.courses.some(
-            (c) => c.subject === code.subject && c.number === code.number,
-          ),
-      )
-    ) {
+    try {
+      const next = addPlanningCourse(plan, code, nextSemester(), browserUuid);
+      update(() => next);
       setTab("board");
       setMessage(
+        t("Course added to your next semester.", "课程已加入下一学期。"),
+      );
+    } catch {
+      setMessage(
         t(
-          "This course is already in your manual plan.",
-          "手动规划中已有这门课程。",
+          "This course already has completed or in-progress records. Check the source before adding it again.",
+          "这门课程已有完成或进行中记录，再次添加前请核对来源。",
         ),
       );
-      return;
     }
-    update((p) => {
-      const document = p.documents.find((d) => d.source === "manual") ?? {
-        id: browserUuid(),
-        source: "manual" as const,
-        pdfOrigin: "export" as const,
-        auditMode: "unknown" as const,
-        catalogTerm: null,
-      };
-      const group = p.semesters.findIndex(
-        (s) =>
-          s.documentId === document.id &&
-          s.term === null &&
-          s.courses.length < 100,
-      );
-      const course: PlanCourse = {
-        id: browserUuid(),
-        documentId: document.id,
-        subject: code.subject,
-        number: code.number,
-        kind: "course",
-        evidenceRole: "observation",
-        credits: null,
-        status: "planned",
-        page: null,
-      };
-      return {
-        ...p,
-        documents: p.documents.some((d) => d.id === document.id)
-          ? p.documents
-          : [...p.documents, document],
-        semesters:
-          group >= 0
-            ? p.semesters.map((s, i) =>
-                i === group ? { ...s, courses: [...s.courses, course] } : s,
-              )
-            : [
-                ...p.semesters,
-                {
-                  documentId: document.id,
-                  term: null,
-                  reportedCredits: null,
-                  courses: [course],
-                },
-              ],
-      };
-    });
-    setTab("board");
-    setMessage(
-      t(
-        "Course added to your plan. Choose a semester and check its credits.",
-        "课程已加入规划，请选择学期并核对学分。",
-      ),
-    );
   }
   function persist(exporting: boolean) {
     try {
@@ -308,815 +270,897 @@ export function PlanningWorkspace() {
     : "";
   const count = plan.semesters.reduce((n, s) => n + s.courses.length, 0);
   return (
-    <div
-      className={`${styles.page} rr-block`}
-      data-theme={dark ? "dark" : "light"}
-    >
-      <AppHeader active="planning" />
-      <main className={styles.main}>
-        <div className={styles.eyebrow}>
-          <CalendarDays size={16} />
-          {t("YOUR NEXT CHAPTER", "规划下一程")}
-          <button onClick={() => setDark(!dark)}>
-            {dark ? t("Light", "浅色") : t("Dark", "深色")}
-          </button>
-        </div>
-        <div className={styles.hero}>
-          <div>
-            <h1>{t("Make room for what’s next.", "让下一步，更清晰。")}</h1>
-            <p>
-              {t(
-                "Bring your degree plan. Review your courses. Build a semester that works for you.",
-                "导入学业规划，核对课程，安排适合自己的学期。",
-              )}
-            </p>
+    <PlanningCatalogProvider campus={catalogCampus} term={catalogTerm}>
+      <div className={`${styles.page} rr-block`}>
+        <AppHeader active="planning" />
+        <main className={styles.main}>
+          <div className={styles.hero}>
+            <div>
+              <h1>{t("Semester planning", "学期规划")}</h1>
+              <p>
+                {t(
+                  "Your courses, degree requirements and next steps in one workspace.",
+                  "在同一个工作区安排课程、查看学业要求与后续计划。",
+                )}
+              </p>
+            </div>
+            <div className={styles.globalActions}>
+              <span>
+                {!count
+                  ? t("Local workspace", "本地工作区")
+                  : JSON.stringify(plan) === savedFingerprint
+                    ? t("Saved locally", "本地已保存")
+                    : t("Unsaved draft", "尚未保存")}
+              </span>
+              <button
+                disabled={busy || !plan.reviewed}
+                onClick={() => persist(true)}
+              >
+                <Download size={16} />
+                {t("Backup", "备份")}
+              </button>
+              <button
+                disabled={busy || !plan.reviewed}
+                className={styles.primary}
+                onClick={() => persist(false)}
+              >
+                <Save size={16} />
+                {t("Save on device", "保存到设备")}
+              </button>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={plan.reviewed}
+                  disabled={busy || !count}
+                  onChange={(e) =>
+                    setPlan((p) => ({ ...p, reviewed: e.target.checked }))
+                  }
+                />
+                {t(
+                  "I checked these fields against my source and removed unwanted information.",
+                  "我已对照来源核对字段，并删除不需要的信息。",
+                )}
+              </label>
+            </div>
           </div>
-          <div className={styles.privateBadge}>
-            <ShieldCheck size={23} />
+          <div className={styles.catalogBar}>
+            <label>
+              {t("Catalog campus", "课程目录校区")}
+              <select
+                value={catalogCampus}
+                onChange={(e) => setCatalogCampus(e.target.value)}
+              >
+                {[
+                  ["COL", "Columbus"],
+                  ["MNS", "Mansfield"],
+                  ["LMA", "Lima"],
+                  ["MRN", "Marion"],
+                  ["NWK", "Newark"],
+                  ["WST", "Wooster"],
+                ].map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("Catalog term", "课程目录学期")}
+              <CatalogTermSelect
+                value={catalogTerm}
+                onChange={setCatalogTerm}
+                locale={locale}
+              />
+            </label>
             <span>
-              {t("Private by default", "默认私密")}
-              <small>
-                {t("PDF stays on your device", "PDF 留在你的设备上")}
-              </small>
+              {t(
+                "Course names, credits and prerequisites load from the course catalog.",
+                "课程名称、学分与先修条件自动从课程目录获取。",
+              )}
             </span>
           </div>
-        </div>
-        <div
-          className={styles.tabs}
-          role="tablist"
-          aria-label={t("Planning workspace", "规划工作区")}
-          onKeyDown={(e) => {
-            const buttons = Array.from(
-              e.currentTarget.querySelectorAll<HTMLButtonElement>("button"),
-            );
-            const index = buttons.indexOf(
-              document.activeElement as HTMLButtonElement,
-            );
-            const next =
-              e.key === "ArrowRight"
-                ? (index + 1) % buttons.length
-                : e.key === "ArrowLeft"
-                  ? (index + buttons.length - 1) % buttons.length
-                  : e.key === "Home"
-                    ? 0
-                    : e.key === "End"
-                      ? buttons.length - 1
-                      : -1;
-            if (next >= 0) {
-              e.preventDefault();
-              buttons[next].focus();
-              buttons[next].click();
-            }
-          }}
-        >
-          {(
-            [
-              { id: "private", en: "Import & review", zh: "导入与核对" },
-              { id: "board", en: "Semester board", zh: "学期看板" },
-              { id: "map", en: "Requirement map", zh: "学业要求图" },
-              { id: "next", en: "Next semester", zh: "下学期推荐" },
-              { id: "official", en: "Official curricula", zh: "官方培养方案" },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.id}
-              id={"planning-tab-" + item.id}
-              role="tab"
-              aria-selected={tab === item.id}
-              tabIndex={tab === item.id ? 0 : -1}
-              aria-controls="planning-content"
-              onClick={() => setTab(item.id)}
-            >
-              {t(item.en, item.zh)}
-            </button>
-          ))}
-        </div>
-        <div
-          role="tabpanel"
-          id="planning-content"
-          aria-labelledby={"planning-tab-" + tab}
-        >
-          {tab === "official" ? (
-            <CurriculumDirectory locale={locale} addCourse={addCourse} />
-          ) : tab === "next" ? (
-            <NextTerm
-              plan={plan}
-              locale={locale}
-              onReview={openReview}
-              apply={(items, term) => {
-                update((p) =>
-                  applyRecommendationBundle(p, items, term, browserUuid),
-                );
-                setTab("board");
-                setMessage(
-                  t(
-                    "Draft courses added. Review credits, prerequisites and sessions before saving.",
-                    "已加入课程草稿。保存前请核对学分、先修和 sessions。",
-                  ),
-                );
-              }}
-            />
-          ) : tab === "board" ? (
-            <SemesterBoard
-              plan={plan}
-              locale={locale}
-              update={update}
-              onReview={openReview}
-            />
-          ) : tab === "map" ? (
-            <RequirementMap
-              plan={plan}
-              locale={locale}
-              addCourse={addCourse}
-              onReview={openReview}
-            />
-          ) : (
-            <>
-              <ImportGuide plan={plan} locale={locale} choose={chooseReport} />
-              <div className={styles.workspace}>
-                <aside className={styles.panel}>
-                  <div className={styles.sectionHeading}>
-                    <span className={styles.step}>1</span>
-                    <h2>{t("Bring your plan", "导入规划")}</h2>
-                  </div>
-                  <p>
-                    {t(
-                      "Choose the report view before importing. Each file keeps its own program and version context.",
-                      "导入前选择报告视图。每份文件独立保留专业与版本信息。",
-                    )}
-                  </p>
-                  <label className={styles.field}>
-                    {t("Report view", "报告视图")}
-                    <select
-                      value={reportMode}
-                      disabled={busy}
-                      onChange={(e) =>
-                        setReportMode(e.target.value as Plan["auditMode"])
-                      }
-                    >
-                      <option value="unknown">
-                        {t(
-                          "Detect each file / mixed batch",
-                          "逐份识别／混合批次",
-                        )}
-                      </option>
-                      <option value="official">Official</option>
-                      <option value="planned">Planned</option>
-                    </select>
-                  </label>
-                  <label className={styles.field}>
-                    {t("PDF layout", "PDF 版式")}
-                    <select
-                      value={source}
-                      disabled={busy}
-                      onChange={(e) =>
-                        setSource(e.target.value as Plan["source"] | "auto")
-                      }
-                    >
-                      <option value="auto">
-                        {t("Detect each file", "逐个识别版式")}
-                      </option>
-                      <option value="student-plan">Student Plan</option>
-                      <option value="standard-audit">Standard Audit</option>
-                      <option value="expanded-audit">
-                        Expanded Audit (Beta)
-                      </option>
-                      <option value="compact-audit">Compact Audit</option>
-                    </select>
-                  </label>
-                  <label className={styles.field}>
-                    {t("Created with", "生成方式")}
-                    <select
-                      value={origin}
-                      onChange={(e) =>
-                        setOrigin(e.target.value as Plan["pdfOrigin"])
-                      }
-                    >
-                      <option value="export">
-                        {t("BDP PDF export", "BDP PDF 导出")}
-                      </option>
-                      <option value="browser-print">
-                        {t("Browser print to PDF", "浏览器打印 PDF")}
-                      </option>
-                    </select>
-                  </label>
-                  {((source !== "student-plan" && source !== "auto") ||
-                    origin === "browser-print") && (
-                    <p className={styles.notice}>
+          <div
+            className={styles.tabs}
+            role="tablist"
+            aria-label={t("Planning workspace", "规划工作区")}
+            onKeyDown={(e) => {
+              const buttons = Array.from(
+                e.currentTarget.querySelectorAll<HTMLButtonElement>("button"),
+              );
+              const index = buttons.indexOf(
+                document.activeElement as HTMLButtonElement,
+              );
+              const next =
+                e.key === "ArrowRight"
+                  ? (index + 1) % buttons.length
+                  : e.key === "ArrowLeft"
+                    ? (index + buttons.length - 1) % buttons.length
+                    : e.key === "Home"
+                      ? 0
+                      : e.key === "End"
+                        ? buttons.length - 1
+                        : -1;
+              if (next >= 0) {
+                e.preventDefault();
+                buttons[next].focus();
+                buttons[next].click();
+              }
+            }}
+          >
+            {(
+              [
+                { id: "board", en: "My plan", zh: "我的规划" },
+                { id: "private", en: "Import & sources", zh: "导入与来源" },
+                { id: "map", en: "Requirement map", zh: "学业要求图" },
+                { id: "next", en: "Next semester", zh: "下学期推荐" },
+                {
+                  id: "official",
+                  en: "Four-year examples",
+                  zh: "四年示例课表",
+                },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                id={"planning-tab-" + item.id}
+                role="tab"
+                aria-selected={tab === item.id}
+                tabIndex={tab === item.id ? 0 : -1}
+                aria-controls="planning-content"
+                onClick={() => setTab(item.id)}
+              >
+                {t(item.en, item.zh)}
+              </button>
+            ))}
+          </div>
+          <div
+            role="tabpanel"
+            id="planning-content"
+            aria-labelledby={"planning-tab-" + tab}
+          >
+            {tab === "official" ? (
+              <SampleGallery locale={locale} addCourse={addCourse} />
+            ) : tab === "next" ? (
+              <NextTerm
+                plan={plan}
+                locale={locale}
+                onReview={openReview}
+                apply={(items, term) => {
+                  update((p) =>
+                    applyRecommendationBundle(p, items, term, browserUuid),
+                  );
+                  setTab("board");
+                  setMessage(
+                    t(
+                      "Draft courses added. Review credits, prerequisites and sessions before saving.",
+                      "已加入课程草稿。保存前请核对学分、先修和 sessions。",
+                    ),
+                  );
+                }}
+              />
+            ) : tab === "board" ? (
+              <SemesterBoard
+                plan={plan}
+                locale={locale}
+                update={update}
+                onReview={openReview}
+              />
+            ) : tab === "map" ? (
+              <RequirementMap
+                plan={plan}
+                locale={locale}
+                addCourse={addCourse}
+                onReview={openReview}
+              />
+            ) : (
+              <>
+                <ImportGuide
+                  plan={plan}
+                  locale={locale}
+                  choose={chooseReport}
+                />
+                <div className={styles.workspace}>
+                  <aside className={styles.panel}>
+                    <div className={styles.sectionHeading}>
+                      <h2>{t("Bring your plan", "导入规划")}</h2>
+                    </div>
+                    <p>
                       {t(
-                        "Limited support: audit columns and browser print layouts may lose order. Candidates remain unassigned; requirements and remaining credits are not combined.",
-                        "有限支持：审核文件分栏和浏览器打印可能打乱顺序。候选课程保持未分配，不合并需求或剩余学分。",
+                        "Choose the report view before importing. Each file keeps its own program and version context.",
+                        "导入前选择报告视图。每份文件独立保留专业与版本信息。",
                       )}
                     </p>
-                  )}
-                  <label className={styles.field}>
-                    {t("Import action", "导入方式")}
-                    <select
-                      value={importMode}
-                      disabled={busy}
-                      onChange={(e) =>
-                        setImportMode(e.target.value as "merge" | "replace")
-                      }
-                    >
-                      <option value="merge">
-                        {t(
-                          "Add source to this workspace",
-                          "追加来源到当前工作区",
-                        )}
-                      </option>
-                      <option value="replace">
-                        {t("Replace current draft", "替换当前草稿")}
-                      </option>
-                    </select>
-                  </label>
-                  <label className={styles.drop}>
-                    <FileUp size={30} />
-                    <strong>
-                      {busy
-                        ? `${t("Reading locally…", "正在本地读取…")} ${importProgress}`
-                        : t(
-                            "Choose PDFs or a plan backup",
-                            "选择 PDF 或规划备份",
-                          )}
-                    </strong>
-                    <span>
-                      {t(
-                        "Up to 12 files · PDF or JSON",
-                        "最多 12 个文件 · PDF 或 JSON",
-                      )}
-                    </span>
-                    <input
-                      ref={fileInput}
-                      type="file"
-                      accept="application/pdf,application/json,.pdf,.json"
-                      multiple
-                      disabled={busy}
-                      onChange={(e) =>
-                        void importPdf(Array.from(e.target.files ?? []))
-                      }
-                    />
-                  </label>
-                  {busy && (
-                    <button onClick={cancelImport}>
-                      {t("Cancel", "取消")}
-                    </button>
-                  )}
-                  <div className={styles.divider} />
-                  <h3>
-                    {t("Only what you choose to keep", "仅保留你确认的内容")}
-                  </h3>
-                  <p>
-                    {t(
-                      "Names, IDs, contacts, filenames and raw text are excluded from saved data. Course combinations can still identify you. Saving is local; exported JSON remains private information.",
-                      "保存数据排除姓名、学号、联系方式、文件名和原文。课程组合仍可能识别个人。本地保存不上传；导出的 JSON 仍是私人信息。",
-                    )}
-                  </p>
-                  <button
-                    onClick={() => {
-                      try {
-                        const saved = loadPlan(localStorage);
-                        if (saved) {
-                          if (
-                            plan.semesters.length &&
-                            !confirm(
-                              t(
-                                "Replace this draft with the saved plan?",
-                                "用已保存规划替换当前草稿？",
-                              ),
-                            )
-                          )
-                            return;
-                          cancelImport();
-                          setPlan(saved);
-                          setSavedFingerprint(JSON.stringify(saved));
-                          setMessage(
-                            t("Saved plan loaded.", "已载入保存的规划。"),
-                          );
-                        } else
-                          setMessage(
-                            t(
-                              "No saved plan on this browser.",
-                              "当前浏览器没有保存的规划。",
-                            ),
-                          );
-                      } catch {
-                        setMessage(
-                          t(
-                            "Saved data could not be read.",
-                            "无法读取保存的数据。",
-                          ),
-                        );
-                      }
-                    }}
-                  >
-                    {t("Load saved plan", "载入已保存规划")}
-                  </button>
-                </aside>
-                <section className={styles.panel}>
-                  <div className={styles.sectionHeading}>
-                    <span className={styles.step}>2</span>
-                    <h2>
-                      {t("Review & shape your semesters", "核对并安排学期")}
-                    </h2>
-                    <span className={styles.chip}>
-                      {count} {t("rows", "项")}
-                    </span>
-                  </div>
-                  <p className={styles.notice}>
-                    {t(
-                      "Check against the original. “Planned” does not mean unregistered. Blank credits are unknown, not zero. Repeated audit courses are candidates, not a credit total.",
-                      "请对照原文件。“Planned” 不代表未注册。空白学分表示未知，不是零。重复审核课程仅作为候选，不计算总学分。",
-                    )}
-                  </p>
-                  {plan.documents.length === 0 && (
-                    <div className={styles.meta}>
-                      <label className={styles.field}>
-                        {t(
-                          "Applied Version (SIS requirement term)",
-                          "Applied Version（SIS 要求学期）",
-                        )}
-                        <input
-                          placeholder="AU2017"
-                          value={plan.appliedVersion ?? ""}
-                          onChange={(e) =>
-                            update((p) => ({
-                              ...p,
-                              appliedVersion: e.target.value || null,
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className={styles.field}>
-                        {t("Catalog Term", "Catalog Term（目录学期）")}
-                        <input
-                          placeholder="Autumn2026"
-                          value={plan.catalogTerm ?? ""}
-                          onChange={(e) =>
-                            update((p) => ({
-                              ...p,
-                              catalogTerm: e.target.value || null,
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className={styles.field}>
-                        {t("Audit mode", "审核模式")}
-                        <select
-                          value={plan.auditMode}
-                          onChange={(e) =>
-                            update((p) => ({
-                              ...p,
-                              auditMode: e.target.value as Plan["auditMode"],
-                            }))
-                          }
-                        >
-                          <option value="unknown">
-                            {t("Unknown", "未知")}
-                          </option>
-                          <option value="official">Official</option>
-                          <option value="planned">Planned</option>
-                        </select>
-                      </label>
-                    </div>
-                  )}
-                  {!plan.semesters.length && (
-                    <div className={styles.empty}>
-                      <CalendarDays size={38} />
-                      <h3>
-                        {t("Your semesters start here", "从这里开始安排学期")}
-                      </h3>
-                      <p>
-                        {t(
-                          "Import a PDF or add your first semester.",
-                          "导入 PDF，或添加第一个学期。",
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {plan.documents.length > 1 && (
                     <label className={styles.field}>
-                      {t("Show source", "显示来源")}
+                      {t("Report view", "报告视图")}
                       <select
-                        value={selectedSource}
-                        onChange={(e) => setVisibleSource(e.target.value)}
+                        value={reportMode}
+                        disabled={busy}
+                        onChange={(e) =>
+                          setReportMode(e.target.value as Plan["auditMode"])
+                        }
                       >
-                        <option value="">{t("All sources", "全部来源")}</option>
-                        {plan.documents.map((d, i) => (
-                          <option key={d.id} value={d.id}>
-                            {t("Source", "来源")} {i + 1} · {d.source}
-                          </option>
-                        ))}
+                        <option value="unknown">
+                          {t(
+                            "Detect each file / mixed batch",
+                            "逐份识别／混合批次",
+                          )}
+                        </option>
+                        <option value="official">Official</option>
+                        <option value="planned">Planned</option>
                       </select>
                     </label>
-                  )}
-                  {plan.semesters.map((semester, si) =>
-                    selectedSource &&
-                    semester.documentId !== selectedSource ? null : (
-                      <article className={styles.semester} key={si}>
-                        <div className={styles.semesterHeading}>
-                          <small>
-                            {semester.documentId
-                              ? `${t("Source", "来源")} ${plan.documents.findIndex((d) => d.id === semester.documentId) + 1}`
-                              : t("Manual", "手动")}{" "}
-                            · {semester.creditOrigin ?? "unknown"}
-                          </small>
-                          <label className={styles.field}>
-                            {t("Credit origin", "学分来源")}
-                            <select
-                              value={semester.creditOrigin ?? "unknown"}
-                              onChange={(e) => {
-                                const value = e.target.value as NonNullable<
-                                  typeof semester.creditOrigin
-                                >;
-                                update((p) => ({
-                                  ...p,
-                                  semesters: p.semesters.map((x, i) =>
-                                    i === si
-                                      ? {
-                                          ...x,
-                                          creditOrigin: value,
-                                          term: ["transfer", "exam"].includes(
-                                            value,
-                                          )
-                                            ? null
-                                            : x.term,
-                                        }
-                                      : x,
-                                  ),
-                                }));
-                              }}
-                            >
-                              {[
-                                "institutional",
-                                "transfer",
-                                "exam",
-                                "unknown",
-                              ].map((value, i) => (
-                                <option value={value} key={value}>
-                                  {locale === "zh"
-                                    ? [
-                                        "校内课程",
-                                        "转学分",
-                                        "考试学分",
-                                        "未知",
-                                      ][i]
-                                    : value}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label className={styles.field}>
-                            {t(
-                              "Semester · blank means unassigned",
-                              "学期 · 空白表示未分配",
+                    <label className={styles.field}>
+                      {t("PDF layout", "PDF 版式")}
+                      <select
+                        value={source}
+                        disabled={busy}
+                        onChange={(e) =>
+                          setSource(e.target.value as Plan["source"] | "auto")
+                        }
+                      >
+                        <option value="auto">
+                          {t("Detect each file", "逐个识别版式")}
+                        </option>
+                        <option value="student-plan">Student Plan</option>
+                        <option value="standard-audit">Standard Audit</option>
+                        <option value="expanded-audit">
+                          Expanded Audit (Beta)
+                        </option>
+                        <option value="compact-audit">Compact Audit</option>
+                      </select>
+                    </label>
+                    <label className={styles.field}>
+                      {t("Created with", "生成方式")}
+                      <select
+                        value={origin}
+                        onChange={(e) =>
+                          setOrigin(e.target.value as Plan["pdfOrigin"])
+                        }
+                      >
+                        <option value="export">
+                          {t("BDP PDF export", "BDP PDF 导出")}
+                        </option>
+                        <option value="browser-print">
+                          {t("Browser print to PDF", "浏览器打印 PDF")}
+                        </option>
+                      </select>
+                    </label>
+                    {((source !== "student-plan" && source !== "auto") ||
+                      origin === "browser-print") && (
+                      <p className={styles.notice}>
+                        {t(
+                          "Limited support: audit columns and browser print layouts may lose order. Candidates remain unassigned; requirements and remaining credits are not combined.",
+                          "有限支持：审核文件分栏和浏览器打印可能打乱顺序。候选课程保持未分配，不合并需求或剩余学分。",
+                        )}
+                      </p>
+                    )}
+                    <label className={styles.field}>
+                      {t("Import action", "导入方式")}
+                      <select
+                        value={importMode}
+                        disabled={busy}
+                        onChange={(e) =>
+                          setImportMode(e.target.value as "merge" | "replace")
+                        }
+                      >
+                        <option value="merge">
+                          {t(
+                            "Add source to this workspace",
+                            "追加来源到当前工作区",
+                          )}
+                        </option>
+                        <option value="replace">
+                          {t("Replace current draft", "替换当前草稿")}
+                        </option>
+                      </select>
+                    </label>
+                    <label className={styles.drop}>
+                      <FileUp size={30} />
+                      <strong>
+                        {busy
+                          ? `${t("Reading locally…", "正在本地读取…")} ${importProgress}`
+                          : t(
+                              "Choose PDFs or a plan backup",
+                              "选择 PDF 或规划备份",
                             )}
-                            <input
-                              aria-label={t("Semester", "学期")}
-                              disabled={
-                                semester.creditOrigin === "transfer" ||
-                                semester.creditOrigin === "exam"
-                              }
-                              placeholder="Autumn2026"
-                              value={semester.term ?? ""}
-                              onChange={(e) =>
-                                update((p) => ({
-                                  ...p,
-                                  semesters: p.semesters.map((s, i) =>
-                                    i === si
-                                      ? { ...s, term: e.target.value || null }
-                                      : s,
-                                  ),
-                                }))
-                              }
-                            />
-                          </label>
-                          <span>
-                            {t("Source total", "来源总学分")}:{" "}
-                            {semester.reportedCredits ?? "—"}
-                          </span>
-                          <button
-                            aria-label={t("Remove semester", "删除学期")}
-                            onClick={() =>
+                      </strong>
+                      <span>
+                        {t(
+                          "Up to 12 files · PDF or JSON",
+                          "最多 12 个文件 · PDF 或 JSON",
+                        )}
+                      </span>
+                      <input
+                        ref={fileInput}
+                        type="file"
+                        accept="application/pdf,application/json,.pdf,.json"
+                        multiple
+                        disabled={busy}
+                        onChange={(e) =>
+                          void importPdf(Array.from(e.target.files ?? []))
+                        }
+                      />
+                    </label>
+                    {busy && (
+                      <button onClick={cancelImport}>
+                        {t("Cancel", "取消")}
+                      </button>
+                    )}
+                    <div className={styles.divider} />
+                    <h3>
+                      {t("Only what you choose to keep", "仅保留你确认的内容")}
+                    </h3>
+                    <p>
+                      {t(
+                        "Names, IDs, contacts, filenames and raw text are excluded from saved data. Course combinations can still identify you. Saving is local; exported JSON remains private information.",
+                        "保存数据排除姓名、学号、联系方式、文件名和原文。课程组合仍可能识别个人。本地保存不上传；导出的 JSON 仍是私人信息。",
+                      )}
+                    </p>
+                    <button
+                      onClick={() => {
+                        try {
+                          const saved = loadPlan(localStorage);
+                          if (saved) {
+                            if (
+                              plan.semesters.length &&
+                              !confirm(
+                                t(
+                                  "Replace this draft with the saved plan?",
+                                  "用已保存规划替换当前草稿？",
+                                ),
+                              )
+                            )
+                              return;
+                            cancelImport();
+                            setPlan(saved);
+                            setSavedFingerprint(JSON.stringify(saved));
+                            setMessage(
+                              t("Saved plan loaded.", "已载入保存的规划。"),
+                            );
+                          } else
+                            setMessage(
+                              t(
+                                "No saved plan on this browser.",
+                                "当前浏览器没有保存的规划。",
+                              ),
+                            );
+                        } catch {
+                          setMessage(
+                            t(
+                              "Saved data could not be read.",
+                              "无法读取保存的数据。",
+                            ),
+                          );
+                        }
+                      }}
+                    >
+                      {t("Load saved plan", "载入已保存规划")}
+                    </button>
+                  </aside>
+                  <section className={styles.panel}>
+                    <div className={styles.sectionHeading}>
+                      <h2>
+                        {t("Review & shape your semesters", "核对并安排学期")}
+                      </h2>
+                      <span className={styles.chip}>
+                        {count} {t("rows", "项")}
+                      </span>
+                    </div>
+                    <p className={styles.notice}>
+                      {t(
+                        "Check against the original. “Planned” does not mean unregistered. Blank credits are unknown, not zero. Repeated audit courses are candidates, not a credit total.",
+                        "请对照原文件。“Planned” 不代表未注册。空白学分表示未知，不是零。重复审核课程仅作为候选，不计算总学分。",
+                      )}
+                    </p>
+                    {plan.documents.length === 0 && (
+                      <div className={styles.meta}>
+                        <label className={styles.field}>
+                          {t(
+                            "Applied Version (SIS requirement term)",
+                            "Applied Version（SIS 要求学期）",
+                          )}
+                          <input
+                            placeholder="AU2017"
+                            value={plan.appliedVersion ?? ""}
+                            onChange={(e) =>
                               update((p) => ({
                                 ...p,
-                                semesters: p.semesters.filter(
-                                  (_, i) => i !== si,
-                                ),
+                                appliedVersion: e.target.value || null,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className={styles.field}>
+                          {t("Catalog Term", "Catalog Term（目录学期）")}
+                          <input
+                            placeholder="Autumn2026"
+                            value={plan.catalogTerm ?? ""}
+                            onChange={(e) =>
+                              update((p) => ({
+                                ...p,
+                                catalogTerm: e.target.value || null,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className={styles.field}>
+                          {t("Audit mode", "审核模式")}
+                          <select
+                            value={plan.auditMode}
+                            onChange={(e) =>
+                              update((p) => ({
+                                ...p,
+                                auditMode: e.target.value as Plan["auditMode"],
                               }))
                             }
                           >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                        {semester.courses.map((course, ci) => (
-                          <div className={styles.course} key={ci}>
-                            <label>
-                              {t("Subject", "学科")}
-                              <input
-                                value={course.subject ?? ""}
-                                placeholder="CSE"
-                                onChange={(e) =>
-                                  updateCourse(si, ci, {
-                                    subject:
-                                      e.target.value.toUpperCase() || null,
-                                  })
-                                }
-                              />
-                            </label>
-                            <label>
-                              {t("Number", "课号")}
-                              <input
-                                value={course.number ?? ""}
-                                placeholder="2111"
-                                onChange={(e) =>
-                                  updateCourse(si, ci, {
-                                    number: e.target.value || null,
-                                  })
-                                }
-                              />
-                            </label>
-                            <label>
-                              {t("Credits", "学分")}
-                              <input
-                                type="number"
-                                min="0"
-                                max="99"
-                                step="0.5"
-                                value={course.credits ?? ""}
-                                placeholder="—"
-                                onChange={(e) =>
-                                  updateCourse(si, ci, {
-                                    credits:
-                                      e.target.value === ""
-                                        ? null
-                                        : Number(e.target.value),
-                                  })
-                                }
-                              />
-                            </label>
-                            <label>
-                              {t("Kind", "类型")}
+                            <option value="unknown">
+                              {t("Unknown", "未知")}
+                            </option>
+                            <option value="official">Official</option>
+                            <option value="planned">Planned</option>
+                          </select>
+                        </label>
+                      </div>
+                    )}
+                    {!plan.semesters.length && (
+                      <div className={styles.empty}>
+                        <CalendarDays size={38} />
+                        <h3>
+                          {t("Your semesters start here", "从这里开始安排学期")}
+                        </h3>
+                        <p>
+                          {t(
+                            "Import a PDF or add your first semester.",
+                            "导入 PDF，或添加第一个学期。",
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    {plan.documents.length > 1 && (
+                      <label className={styles.field}>
+                        {t("Show source", "显示来源")}
+                        <select
+                          value={selectedSource}
+                          onChange={(e) => setVisibleSource(e.target.value)}
+                        >
+                          <option value="">
+                            {t("All sources", "全部来源")}
+                          </option>
+                          {plan.documents.map((d, i) => (
+                            <option key={d.id} value={d.id}>
+                              {t("Source", "来源")} {i + 1} · {d.source}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {plan.semesters.map((semester, si) =>
+                      selectedSource &&
+                      semester.documentId !== selectedSource ? null : (
+                        <details className={styles.semester} key={si}>
+                          <summary>
+                            {semester.term ??
+                              t(
+                                "Unassigned source records",
+                                "未分配的来源记录",
+                              )}{" "}
+                            · {semester.courses.length} {t("rows", "项")} ·{" "}
+                            {t("Source", "来源")}{" "}
+                            {plan.documents.findIndex(
+                              (d) => d.id === semester.documentId,
+                            ) + 1}
+                          </summary>
+                          <div className={styles.semesterHeading}>
+                            <small>
+                              {semester.documentId
+                                ? `${t("Source", "来源")} ${plan.documents.findIndex((d) => d.id === semester.documentId) + 1}`
+                                : t("Manual", "手动")}{" "}
+                              · {semester.creditOrigin ?? "unknown"}
+                            </small>
+                            <label className={styles.field}>
+                              {t("Credit origin", "学分来源")}
                               <select
-                                value={course.kind}
-                                onChange={(e) =>
-                                  updateCourse(si, ci, {
-                                    kind: e.target.value as PlanCourse["kind"],
-                                  })
-                                }
+                                value={semester.creditOrigin ?? "unknown"}
+                                onChange={(e) => {
+                                  const value = e.target.value as NonNullable<
+                                    typeof semester.creditOrigin
+                                  >;
+                                  update((p) => ({
+                                    ...p,
+                                    semesters: p.semesters.map((x, i) =>
+                                      i === si
+                                        ? {
+                                            ...x,
+                                            creditOrigin: value,
+                                            term: ["transfer", "exam"].includes(
+                                              value,
+                                            )
+                                              ? null
+                                              : x.term,
+                                          }
+                                        : x,
+                                    ),
+                                  }));
+                                }}
                               >
-                                <option value="course">
-                                  {t("Course", "课程")}
-                                </option>
-                                <option value="placeholder">
-                                  {t("Placeholder", "占位项")}
-                                </option>
-                              </select>
-                            </label>
-                            <label>
-                              {t("Record type", "记录类型")}
-                              <select
-                                value={course.evidenceRole ?? "unknown"}
-                                onChange={(e) =>
-                                  updateCourse(si, ci, {
-                                    evidenceRole: e.target
-                                      .value as PlanCourse["evidenceRole"],
-                                  })
-                                }
-                              >
-                                <option value="unknown">
-                                  {t("Check source", "待核对")}
-                                </option>
-                                <option value="observation">
-                                  {t("Personal course", "个人课程")}
-                                </option>
-                                <option value="option">
-                                  {t("Requirement option", "要求选项")}
-                                </option>
-                              </select>
-                            </label>
-                            <label>
-                              {t("Source status", "来源状态")}
-                              <select
-                                value={course.status}
-                                onChange={(e) =>
-                                  updateCourse(si, ci, {
-                                    status: e.target
-                                      .value as PlanCourse["status"],
-                                  })
-                                }
-                              >
-                                {(
-                                  [
-                                    "unknown",
-                                    "planned",
-                                    "completed",
-                                    "in-progress",
-                                  ] as const
-                                ).map((s, i) => (
-                                  <option key={s} value={s}>
+                                {[
+                                  "institutional",
+                                  "transfer",
+                                  "exam",
+                                  "unknown",
+                                ].map((value, i) => (
+                                  <option value={value} key={value}>
                                     {locale === "zh"
-                                      ? ["未知", "计划", "已完成", "进行中"][i]
-                                      : s}
+                                      ? [
+                                          "校内课程",
+                                          "转学分",
+                                          "考试学分",
+                                          "未知",
+                                        ][i]
+                                      : value}
                                   </option>
                                 ))}
                               </select>
                             </label>
-                            <div className={styles.rowActions}>
-                              <small>
-                                {course.page
-                                  ? `${t("p.", "页")} ${course.page}`
-                                  : t("Manual", "手动")}
-                              </small>
-                              {(() => {
-                                try {
-                                  const href = courseSearchHref(course);
-                                  return href ? (
-                                    <a
-                                      href={href}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      aria-label={t(
-                                        "Find course and ratings",
-                                        "查找课程和评分",
-                                      )}
-                                    >
-                                      <ArrowUpRight size={17} />
-                                    </a>
-                                  ) : null;
-                                } catch {
-                                  return null;
+                            <label className={styles.field}>
+                              {t(
+                                "Semester · blank means unassigned",
+                                "学期 · 空白表示未分配",
+                              )}
+                              <input
+                                aria-label={t("Semester", "学期")}
+                                disabled={
+                                  semester.creditOrigin === "transfer" ||
+                                  semester.creditOrigin === "exam"
                                 }
-                              })()}
-                              <button
-                                aria-label={t("Remove course", "删除课程")}
-                                onClick={() =>
+                                placeholder="Autumn2026"
+                                value={semester.term ?? ""}
+                                onChange={(e) =>
                                   update((p) => ({
                                     ...p,
                                     semesters: p.semesters.map((s, i) =>
                                       i === si
-                                        ? {
-                                            ...s,
-                                            courses: s.courses.filter(
-                                              (_, j) => j !== ci,
-                                            ),
-                                          }
+                                        ? { ...s, term: e.target.value || null }
                                         : s,
                                     ),
                                   }))
                                 }
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                              />
+                            </label>
+                            <span>
+                              {t("Source total", "来源总学分")}:{" "}
+                              {semester.reportedCredits ?? "—"}
+                            </span>
+                            <button
+                              aria-label={t("Remove semester", "删除学期")}
+                              onClick={() =>
+                                update((p) => ({
+                                  ...p,
+                                  semesters: p.semesters.filter(
+                                    (_, i) => i !== si,
+                                  ),
+                                }))
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
-                        ))}
-                        <button
-                          className={styles.add}
-                          onClick={() =>
-                            update((p) => ({
-                              ...p,
-                              semesters: p.semesters.map((s, i) =>
-                                i === si
-                                  ? {
-                                      ...s,
-                                      courses: [
-                                        ...s.courses,
-                                        {
-                                          id: browserUuid(),
-                                          documentId: s.documentId,
-                                          kind: "course",
-                                          subject: null,
-                                          number: null,
-                                          credits: null,
-                                          status: "unknown",
-                                          page: null,
-                                        },
-                                      ],
-                                    }
-                                  : s,
-                              ),
-                            }))
-                          }
-                        >
-                          <Plus size={15} />
-                          {t("Add course or placeholder", "添加课程或占位项")}
-                        </button>
-                      </article>
-                    ),
-                  )}
-                  <button
-                    className={styles.add}
-                    onClick={() =>
-                      update((p) => ({
-                        ...p,
-                        semesters: [
-                          ...p.semesters,
-                          { term: null, reportedCredits: null, courses: [] },
-                        ],
-                      }))
-                    }
-                  >
-                    <Plus size={17} />
-                    {t("Add semester", "添加学期")}
-                  </button>
-                  <details
-                    id="planning-source-review"
-                    className={styles.sourceEditor}
-                    open={reviewOpen}
-                    onToggle={(e) => setReviewOpen(e.currentTarget.open)}
-                  >
-                    <summary>
-                      {t(
-                        "Sources, programs & requirements",
-                        "来源、项目与要求",
-                      )}
-                    </summary>
-                    {reviewOpen && (
-                      <SourceReview
-                        plan={plan}
-                        locale={locale}
-                        update={update}
-                      />
-                    )}
-                  </details>
-                  <div className={styles.review}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={plan.reviewed}
-                        onChange={(e) => {
-                          cancelImport();
-                          setPlan((p) => ({
-                            ...p,
-                            reviewed: e.target.checked,
-                          }));
-                        }}
-                      />
-                      {t(
-                        "I checked these fields against my source and removed unwanted information.",
-                        "我已对照来源核对这些字段，并删除不需要的信息。",
-                      )}
-                    </label>
-                    <div className={styles.actions}>
-                      <button
-                        disabled={!plan.reviewed || busy}
-                        className={styles.primary}
-                        onClick={() => persist(false)}
-                      >
-                        <Save size={16} />
-                        {t("Save on this device", "保存在此设备")}
-                      </button>
-                      <button
-                        disabled={!plan.reviewed || busy}
-                        onClick={() => persist(true)}
-                      >
-                        <Download size={16} />
-                        {t("Export JSON", "导出 JSON")}
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (
-                            confirm(
-                              t(
-                                "Delete the saved plan and current draft?",
-                                "删除已保存规划及当前草稿？",
-                              ),
-                            )
-                          ) {
-                            try {
-                              localStorage.removeItem(PLAN_STORAGE_KEY);
-                              cancelImport();
-                              setPlan(emptyPlan());
-                              setSavedFingerprint(JSON.stringify(emptyPlan()));
-                              setMessage(
-                                t("Local plan deleted.", "已删除本地规划。"),
-                              );
-                            } catch {
-                              setMessage(t("Deletion failed.", "删除失败。"));
+                          {semester.courses.map((course, ci) => (
+                            <div className={styles.course} key={ci}>
+                              <label>
+                                {t("Subject", "学科")}
+                                <input
+                                  value={course.subject ?? ""}
+                                  placeholder="CSE"
+                                  onChange={(e) =>
+                                    updateCourse(si, ci, {
+                                      subject:
+                                        e.target.value.toUpperCase() || null,
+                                    })
+                                  }
+                                />
+                              </label>
+                              <label>
+                                {t("Number", "课号")}
+                                <input
+                                  value={course.number ?? ""}
+                                  placeholder="2111"
+                                  onChange={(e) =>
+                                    updateCourse(si, ci, {
+                                      number: e.target.value || null,
+                                    })
+                                  }
+                                />
+                              </label>
+                              <label>
+                                {t("Credits", "学分")}
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="99"
+                                  step="0.5"
+                                  value={course.credits ?? ""}
+                                  placeholder="—"
+                                  onChange={(e) =>
+                                    updateCourse(si, ci, {
+                                      credits:
+                                        e.target.value === ""
+                                          ? null
+                                          : Number(e.target.value),
+                                    })
+                                  }
+                                />
+                              </label>
+                              <label>
+                                {t("Kind", "类型")}
+                                <select
+                                  value={course.kind}
+                                  onChange={(e) =>
+                                    updateCourse(si, ci, {
+                                      kind: e.target
+                                        .value as PlanCourse["kind"],
+                                    })
+                                  }
+                                >
+                                  <option value="course">
+                                    {t("Course", "课程")}
+                                  </option>
+                                  <option value="placeholder">
+                                    {t("Placeholder", "占位项")}
+                                  </option>
+                                </select>
+                              </label>
+                              <label>
+                                {t("Record type", "记录类型")}
+                                <select
+                                  value={course.evidenceRole ?? "unknown"}
+                                  onChange={(e) =>
+                                    updateCourse(si, ci, {
+                                      evidenceRole: e.target
+                                        .value as PlanCourse["evidenceRole"],
+                                    })
+                                  }
+                                >
+                                  <option value="unknown">
+                                    {t("Check source", "待核对")}
+                                  </option>
+                                  <option value="observation">
+                                    {t("Personal course", "个人课程")}
+                                  </option>
+                                  <option value="option">
+                                    {t("Requirement option", "要求选项")}
+                                  </option>
+                                </select>
+                              </label>
+                              <label>
+                                {t("Source status", "来源状态")}
+                                <select
+                                  value={course.status}
+                                  onChange={(e) =>
+                                    updateCourse(si, ci, {
+                                      status: e.target
+                                        .value as PlanCourse["status"],
+                                    })
+                                  }
+                                >
+                                  {(
+                                    [
+                                      "unknown",
+                                      "planned",
+                                      "completed",
+                                      "in-progress",
+                                    ] as const
+                                  ).map((s, i) => (
+                                    <option key={s} value={s}>
+                                      {locale === "zh"
+                                        ? ["未知", "计划", "已完成", "进行中"][
+                                            i
+                                          ]
+                                        : s}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <div className={styles.rowActions}>
+                                <small>
+                                  {course.page
+                                    ? `${t("p.", "页")} ${course.page}`
+                                    : t("Manual", "手动")}
+                                </small>
+                                {(() => {
+                                  try {
+                                    const href = courseSearchHref(course);
+                                    return href ? (
+                                      <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={t(
+                                          "Find course and ratings",
+                                          "查找课程和评分",
+                                        )}
+                                      >
+                                        <ArrowUpRight size={17} />
+                                      </a>
+                                    ) : null;
+                                  } catch {
+                                    return null;
+                                  }
+                                })()}
+                                <button
+                                  aria-label={t("Remove course", "删除课程")}
+                                  onClick={() =>
+                                    update((p) => ({
+                                      ...p,
+                                      semesters: p.semesters.map((s, i) =>
+                                        i === si
+                                          ? {
+                                              ...s,
+                                              courses: s.courses.filter(
+                                                (_, j) => j !== ci,
+                                              ),
+                                            }
+                                          : s,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            className={styles.add}
+                            onClick={() =>
+                              update((p) => ({
+                                ...p,
+                                semesters: p.semesters.map((s, i) =>
+                                  i === si
+                                    ? {
+                                        ...s,
+                                        courses: [
+                                          ...s.courses,
+                                          {
+                                            id: browserUuid(),
+                                            documentId: s.documentId,
+                                            kind: "course",
+                                            subject: null,
+                                            number: null,
+                                            credits: null,
+                                            status: "unknown",
+                                            page: null,
+                                          },
+                                        ],
+                                      }
+                                    : s,
+                                ),
+                              }))
                             }
-                          }
-                        }}
-                      >
-                        {t("Delete local plan", "删除本地规划")}
-                      </button>
+                          >
+                            <Plus size={15} />
+                            {t("Add course or placeholder", "添加课程或占位项")}
+                          </button>
+                        </details>
+                      ),
+                    )}
+                    <button
+                      className={styles.add}
+                      onClick={() =>
+                        update((p) => ({
+                          ...p,
+                          semesters: [
+                            ...p.semesters,
+                            { term: null, reportedCredits: null, courses: [] },
+                          ],
+                        }))
+                      }
+                    >
+                      <Plus size={17} />
+                      {t("Add semester", "添加学期")}
+                    </button>
+                    <details
+                      id="planning-source-review"
+                      className={styles.sourceEditor}
+                      open={reviewOpen}
+                      onToggle={(e) => setReviewOpen(e.currentTarget.open)}
+                    >
+                      <summary>
+                        {t(
+                          "Sources, programs & requirements",
+                          "来源、项目与要求",
+                        )}
+                      </summary>
+                      {reviewOpen && (
+                        <SourceReview
+                          plan={plan}
+                          locale={locale}
+                          update={update}
+                        />
+                      )}
+                    </details>
+                    <div className={styles.review}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={plan.reviewed}
+                          onChange={(e) => {
+                            cancelImport();
+                            setPlan((p) => ({
+                              ...p,
+                              reviewed: e.target.checked,
+                            }));
+                          }}
+                        />
+                        {t(
+                          "I checked these fields against my source and removed unwanted information.",
+                          "我已对照来源核对这些字段，并删除不需要的信息。",
+                        )}
+                      </label>
+                      <div className={styles.actions}>
+                        <button
+                          disabled={!plan.reviewed || busy}
+                          className={styles.primary}
+                          onClick={() => persist(false)}
+                        >
+                          <Save size={16} />
+                          {t("Save on this device", "保存在此设备")}
+                        </button>
+                        <button
+                          disabled={!plan.reviewed || busy}
+                          onClick={() => persist(true)}
+                        >
+                          <Download size={16} />
+                          {t("Export JSON", "导出 JSON")}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (
+                              confirm(
+                                t(
+                                  "Delete the saved plan and current draft?",
+                                  "删除已保存规划及当前草稿？",
+                                ),
+                              )
+                            ) {
+                              try {
+                                localStorage.removeItem(PLAN_STORAGE_KEY);
+                                cancelImport();
+                                setPlan(emptyPlan());
+                                setSavedFingerprint(
+                                  JSON.stringify(emptyPlan()),
+                                );
+                                setMessage(
+                                  t("Local plan deleted.", "已删除本地规划。"),
+                                );
+                              } catch {
+                                setMessage(t("Deletion failed.", "删除失败。"));
+                              }
+                            }
+                          }}
+                        >
+                          {t("Delete local plan", "删除本地规划")}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </section>
-              </div>
-            </>
-          )}
-        </div>
-        <p role="status" aria-live="polite" className={styles.status}>
-          {message}
-        </p>
-        <p className={styles.footnote}>
-          {t(
-            "Planning aid only. Confirm degree requirements and registration with your advisor. No public sharing is enabled.",
-            "仅作规划辅助。请与顾问确认学位要求和注册情况。当前不提供公开分享。",
-          )}
-        </p>
-      </main>
-      <AppFooter />
-    </div>
+                  </section>
+                </div>
+              </>
+            )}
+          </div>
+          <p role="status" aria-live="polite" className={styles.status}>
+            {message}
+          </p>
+          <p className={styles.footnote}>
+            {t(
+              "Planning aid only. Confirm degree requirements and registration with your advisor. No public sharing is enabled.",
+              "仅作规划辅助。请与顾问确认学位要求和注册情况。当前不提供公开分享。",
+            )}
+          </p>
+        </main>
+        <AppFooter />
+      </div>
+    </PlanningCatalogProvider>
   );
 }

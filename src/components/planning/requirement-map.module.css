@@ -9,9 +9,9 @@
   margin-bottom: 24px;
 }
 .heading h2 {
-  font-size: clamp(26px, 3vw, 34px);
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
   margin: 8px 0;
 }
 .heading p {
@@ -270,6 +270,74 @@
   color: var(--muted);
   line-height: 1.8;
   margin-top: 26px;
+}
+
+.root[data-compact="true"] .heading {
+  margin: 0 0 16px;
+}
+.root[data-compact="true"] .heading h2 {
+  font-size: 17px;
+}
+.root[data-compact="true"] .heading > svg {
+  display: none;
+}
+.root[data-compact="true"] .heading p {
+  font-size: 12px;
+}
+.root[data-compact="true"] .toolbar {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+}
+.root[data-compact="true"] .toolbar > label:first-child {
+  min-width: 0;
+  width: 100%;
+}
+.root[data-compact="true"] .toolbar select {
+  width: 100%;
+  font-size: 12px;
+}
+.root[data-compact="true"] .legend {
+  gap: 8px;
+  padding: 14px 0;
+}
+.root[data-compact="true"] .node > summary {
+  padding: 10px;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.root[data-compact="true"] .state {
+  width: 100%;
+  margin-left: 30px;
+  text-align: left;
+}
+.root[data-compact="true"] .icon {
+  width: 24px;
+  height: 24px;
+}
+.root[data-compact="true"] .nodeTitle {
+  max-width: calc(100% - 48px);
+}
+.root[data-compact="true"] .nodeBody {
+  padding: 0 10px 12px;
+}
+.root[data-compact="true"] .tree ol {
+  margin-left: 5px;
+  padding-left: 9px;
+}
+.root[data-compact="true"] .tree ol > li::before {
+  width: 9px;
+  left: -10px;
+}
+.root[data-compact="true"] .empty {
+  padding: 24px 12px;
+}
+.root[data-compact="true"] .empty h3 {
+  font-size: 15px;
+}
+.root[data-compact="true"] .note {
+  font-size: 11px;
 }
 @media (max-width: 640px) {
   .toolbar {

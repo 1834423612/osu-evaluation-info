@@ -18,11 +18,15 @@ export function RequirementMap({
   locale,
   addCourse,
   onReview,
+  inspectCourse,
+  compact = false,
 }: {
   plan: Plan;
   locale: Locale;
   addCourse: (c: { subject: string; number: string }) => void;
   onReview: () => void;
+  inspectCourse?: (c: { subject: string; number: string }) => void;
+  compact?: boolean;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const [selected, setSelected] = useState("");
@@ -173,18 +177,24 @@ export function RequirementMap({
                     <div className={styles.codes}>
                       {r.alternatives.map((c) => (
                         <div key={c.subject + c.number}>
-                          <a
-                            href={
-                              "/?" +
-                              new URLSearchParams({
-                                q: c.subject + " " + c.number,
-                              })
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <b>{c.subject}</b> {c.number}
-                          </a>
+                          {inspectCourse ? (
+                            <button onClick={() => inspectCourse(c)}>
+                              <b>{c.subject}</b> {c.number}
+                            </button>
+                          ) : (
+                            <a
+                              href={
+                                "/?" +
+                                new URLSearchParams({
+                                  q: c.subject + " " + c.number,
+                                })
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <b>{c.subject}</b> {c.number}
+                            </a>
+                          )}
                           <button
                             onClick={() => addCourse(c)}
                             aria-label={
@@ -216,13 +226,10 @@ export function RequirementMap({
       });
   }
   return (
-    <section className={styles.root}>
+    <section className={styles.root} data-compact={compact}>
       <div className={styles.heading}>
         <div>
-          <span className={styles.eyebrow}>
-            {t("SEE THE CONNECTIONS", "看清每一条连接")}
-          </span>
-          <h2>{t("Your requirement map.", "你的学业要求图。")}</h2>
+          <h2>{t("Degree requirements", "学业要求")}</h2>
           <p>
             {t(
               "Expand branches to explore course choices. Progress uses verified rules and confirmed personal-course allocations.",

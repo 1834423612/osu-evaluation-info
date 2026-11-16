@@ -15,20 +15,20 @@
   font-size: 20px;
   font-weight: 650;
 }
-.importGuide p,
+.importGuide p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 8px 0 16px;
+}
 .importGuide li {
   font-size: 13px;
   line-height: 1.7;
   color: var(--muted);
-}
-.importGuide p {
-  margin: 8px 0 16px;
+  margin: 10px 0;
 }
 .importGuide ol {
   padding-left: 20px;
-}
-.importGuide li {
-  margin: 10px 0;
 }
 .importGuide summary {
   font-size: 13px;
@@ -47,7 +47,9 @@
   padding: 18px;
   background: var(--subtle-surface);
 }
-.importChoices svg,
+.importChoices svg {
+  color: var(--accent-foreground);
+}
 .importChoices small {
   color: var(--accent-foreground);
 }
@@ -56,72 +58,112 @@
   line-height: 1.6;
   color: var(--muted);
 }
-@media (max-width: 760px) {
-  .importChoices {
-    grid-template-columns: 1fr;
-  }
-  .importGuide {
-    padding: 18px;
-  }
+.page :global(.app-header) {
+  background: var(--surface);
+  color: var(--ink);
 }
-.page :global(.app-header),
 .page :global(.site-footer) {
   background: var(--surface);
   color: var(--ink);
 }
 .main {
-  max-width: 1380px;
+  max-width: 1540px;
   margin: auto;
-  padding: 44px 32px 20px;
-}
-.eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-}
-.eyebrow button {
-  margin-left: auto;
+  padding: 30px 40px 20px;
 }
 .hero {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 32px;
-  padding: 24px 0 36px;
+  align-items: start;
+  gap: 24px;
+  padding: 0 0 24px;
 }
 .hero h1 {
-  font-size: clamp(32px, 4vw, 52px);
-  letter-spacing: -0.045em;
-  line-height: 1.12;
-  margin: 0 0 16px;
-  font-weight: 750;
+  font-size: clamp(28px, 3vw, 36px);
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  font-weight: 700;
 }
 .hero p {
   color: var(--muted);
-  max-width: 650px;
+  font-size: 13px;
   line-height: 1.7;
+  margin: 0;
 }
-.privateBadge {
+.globalActions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border: 1px solid var(--positive-border);
-  background: var(--positive-soft);
-  color: var(--positive);
-  border-radius: 12px;
-  padding: 16px 20px;
-  flex-shrink: 0;
-  font-weight: 650;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+  max-width: 440px;
 }
-.privateBadge small {
-  display: block;
-  margin-top: 4px;
-  font-weight: 400;
+.globalActions > span {
+  color: var(--muted);
+  font-size: 11px;
+  margin-right: 5px;
+}
+.globalActions > button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.globalActions label {
+  display: flex;
+  gap: 6px;
+  align-items: start;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  width: 100%;
+  justify-content: end;
+}
+.globalActions input {
+  accent-color: var(--primary);
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.main .primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.catalogBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  margin-bottom: 22px;
+}
+.catalogBar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
   font-size: 12px;
+}
+.main .catalogBar input {
+  width: 156px;
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+.main .catalogBar select {
+  width: 156px;
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+.catalogBar > span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
 }
 .tabs {
   scrollbar-color: var(--line) transparent;
@@ -207,7 +249,17 @@
   color: var(--muted);
   margin-bottom: 16px;
 }
-.main input:not([type="checkbox"]),
+.main input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 10px;
+  min-height: 42px;
+  font-size: 13px;
+}
 .main select {
   width: 100%;
   min-width: 0;
@@ -447,22 +499,21 @@
   border-radius: 10px;
   background: var(--subtle-surface);
 }
-.page[data-theme="dark"] {
-  --canvas: #16171b;
-  --surface: #202126;
-  --ink: #f3edf0;
-  --secondary-foreground: #e6dce1;
-  --accent: #ffb3c4;
-  --muted: #b9adb4;
-  --line: #3d383e;
-  --subtle-surface: #27262d;
-  --secondary: #333038;
-  --accent-soft: #38232b;
-  --accent-border: #714150;
-  --accent-foreground: #ffb3c4;
-  --positive-soft: #1d332a;
-  --positive: #9cd5b3;
-  --positive-border: #385847;
+
+.semester > summary {
+  padding: 15px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--subtle-surface);
+}
+@media (max-width: 760px) {
+  .importChoices {
+    grid-template-columns: 1fr;
+  }
+  .importGuide {
+    padding: 18px;
+  }
 }
 @media (max-width: 1100px) {
   .workspace {
@@ -513,7 +564,6 @@
     max-width: none;
   }
 }
-
 @media (max-width: 540px) {
   .course {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -538,5 +588,42 @@
     flex: 1 0 100%;
     min-height: 38px;
     justify-content: center;
+  }
+}
+@media (max-width: 850px) {
+  .hero {
+    flex-direction: column;
+    gap: 18px;
+  }
+  .globalActions {
+    justify-content: start;
+    max-width: none;
+  }
+  .globalActions label {
+    justify-content: start;
+  }
+  .catalogBar > span {
+    margin-left: 0;
+  }
+}
+@media (max-width: 600px) {
+  .main {
+    padding: 22px 16px;
+  }
+  .catalogBar {
+    gap: 12px;
+  }
+  .catalogBar label {
+    flex: 1;
+    flex-direction: column;
+    align-items: start;
+    min-width: 110px;
+  }
+  .main .catalogBar input,
+  .main .catalogBar select {
+    width: 100%;
+  }
+  .catalogBar > span {
+    flex-basis: 100%;
   }
 }
