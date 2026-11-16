@@ -11,6 +11,14 @@ import { directorySchema } from "../../src/lib/planning/directory.ts";
 import { templateSchema } from "../../src/lib/planning/template.ts";
 import { curriculumSchema } from "../../src/lib/planning/curriculum.ts";
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+// PostgreSQL jsonb rejects NUL and lone UTF-16 surrogates. Original public
+// bytes stay unchanged; text snapshots use a declared replacement policy.
+const archiveJson = (value) =>
+  JSON.stringify(value, (_key, field) =>
+    typeof field === "string"
+      ? field.toWellFormed().replaceAll("\0", "\ufffd")
+      : field,
+  );
 export async function archiveDirectory(db, input, readAsset) {
   const directory = directorySchema.parse(input);
   for (const document of directory.documents) {
@@ -40,8 +48,8 @@ export async function archiveDirectory(db, input, readAsset) {
       [
         sourceId,
         asset.content,
-        asset.extraction ? JSON.stringify(asset.extraction) : null,
-        JSON.stringify(document),
+        asset.extraction ? archiveJson(asset.extraction) : null,
+        archiveJson(document),
       ],
     );
     if (asset.extraction) {
@@ -50,10 +58,18 @@ export async function archiveDirectory(db, input, readAsset) {
       if (!/^[a-z0-9-]{1,80}$/.test(parserVersion))
         throw Error("Invalid extraction version");
       const evidence = {
+        textStorage: "unicode-replacement-v1",
         pageCount: asset.extraction.pageCount,
         blocks: asset.extraction.blocks,
+        status: asset.extraction.status ?? "extracted",
+        ...(asset.extraction.reason
+          ? {
+              reason: asset.extraction.reason,
+              reportedPageCount: asset.extraction.reportedPageCount,
+            }
+          : {}),
       };
-      const serialized = JSON.stringify(evidence);
+      const serialized = archiveJson(evidence);
       const id = sha(sourceId + "\n" + parserVersion + "\n" + serialized);
       await db.query(
         "INSERT INTO " +
@@ -69,7 +85,7 @@ export async function archiveDirectory(db, input, readAsset) {
       );
     }
   }
-  const serialized = JSON.stringify(directory);
+  const serialized = archiveJson(directory);
   const id = sha(serialized);
   await db.query(
     "INSERT INTO " +
@@ -104,8 +120,8 @@ export async function archiveCurricula(db, input) {
         c.version,
         c.applicableFrom,
         c.applicableUntil,
-        JSON.stringify(c.evidence),
-        JSON.stringify(c),
+        archiveJson(c.evidence),
+        archiveJson(c),
         c.reviewStatus,
         c.reviewedAt,
         c.reviewer,
@@ -258,11 +274,16 @@ async function run() {
     console.log(
       JSON.stringify({ ...result, schema: planningSchema(), committed: true }),
     );
-  } catch {
+  } catch (error) {
     try {
       await db.query("ROLLBACK");
     } catch {}
-    throw Error("Planning archive operation failed; changes rolled back");
+    const code = /^[A-Z0-9]{1,12}$/.test(error?.code ?? "")
+      ? error.code
+      : "validation";
+    throw Error(
+      "Planning archive operation failed (" + code + "); changes rolled back",
+    );
   } finally {
     if (pool) {
       db.release();

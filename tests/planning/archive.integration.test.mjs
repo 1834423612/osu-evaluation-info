@@ -73,7 +73,12 @@ test("archive stores original bytes immutably, rolls back bad hashes, and restor
           parserVersion: version,
           extractedAt: time,
           pageCount: 1,
-          blocks: [{ text: "CSE 2999", page: 1 }],
+          blocks: [
+            {
+              text: version === "parser-v2" ? "CSE 2999\0\ud800" : "CSE 2999",
+              page: 1,
+            },
+          ],
         },
       }));
     }
@@ -85,6 +90,15 @@ test("archive stores original bytes immutably, rolls back bad hashes, and restor
       ).rows[0].n,
       2,
     );
+    const encoding = (
+      await db.query(
+        "SELECT evidence FROM " +
+          planningTable("source_extraction") +
+          " WHERE parser_version='parser-v2'",
+      )
+    ).rows[0].evidence;
+    assert.equal(encoding.blocks[0].text, "CSE 2999\ufffd\ufffd");
+    assert.equal(encoding.textStorage, "unicode-replacement-v1");
     const candidates = JSON.parse(
       await readFile(
         new URL("../../data/planning/curricula.json", import.meta.url),
