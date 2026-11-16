@@ -124,15 +124,16 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 13px;
+  gap: 10px;
+  align-items: start;
 }
 .profileCard {
   position: relative;
   display: grid;
   min-width: 0;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 11px;
+  border-radius: 10px;
   background: var(--surface);
   transition:
     border-color 150ms,
@@ -147,7 +148,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin: 4px 0 8px;
+  margin: 2px 0 5px;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
@@ -451,17 +452,17 @@
 .cardIdentityText h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
-  line-height: 1.5;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 .monogram {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--accent-border);
   border-radius: 50%;
   background: var(--accent-soft);
@@ -478,10 +479,6 @@
   border-color: #d9d8e9;
   background: #f2f1f8;
   color: #686081;
-}
-.cardArrow {
-  flex: 0 0 auto;
-  color: var(--muted);
 }
 .cardBadges {
   display: flex;
@@ -500,9 +497,18 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin: 17px 0 0;
-  padding: 12px 0 0;
+  margin: 10px 0 0;
+  padding: 8px 0 0;
   border-top: 1px solid var(--line);
+}
+.cardMetrics > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 5px;
+}
+.metricShort {
+  display: none;
 }
 .cardMetrics dt {
   color: var(--muted);
@@ -510,9 +516,9 @@
   line-height: 1.5;
 }
 .cardMetrics dd {
-  margin: 4px 0 0;
+  margin: 0;
   color: var(--ink);
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
@@ -536,7 +542,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  margin-top: 13px;
+  margin-top: 8px;
   color: var(--muted);
   font-size: 10px;
 }
@@ -547,15 +553,42 @@
 }
 .grid[data-view="list"] {
   grid-template-columns: minmax(0, 1fr);
-  gap: 9px;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
 }
 .grid[data-view="list"] .profileCard {
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.85fr);
-  column-gap: 28px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, 1fr) 150px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.grid[data-view="list"] .profileCard:last-child {
+  border-bottom: 0;
+}
+.grid[data-view="list"] .monogram {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+.grid[data-view="list"] .cardDept {
+  -webkit-line-clamp: 1;
+}
+.grid[data-view="list"] .cardMetrics > div {
+  display: grid;
+  gap: 2px;
+}
+.grid[data-view="list"] .cardMetrics dd {
+  font-size: 16px;
 }
 .grid[data-view="list"] .cardIdentity {
   grid-column: 1;
-  grid-row: 1 / 3;
+  grid-row: 1;
 }
 .grid[data-view="list"] .cardMetrics {
   grid-column: 2;
@@ -565,9 +598,19 @@
   border: 0;
 }
 .grid[data-view="list"] .cardFoot {
-  grid-column: 2;
-  grid-row: 2;
-  margin-top: 9px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-right: 32px;
+  gap: 4px 8px;
+  grid-column: 3;
+  grid-row: 1;
+  margin: 0;
+}
+.grid[data-view="list"] .cardSave {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .profileIdentity {
   display: flex;
@@ -612,6 +655,7 @@
   outline-offset: 3px;
 }
 .cardSave {
+  flex-shrink: 0;
   position: relative;
   z-index: 1;
 }
@@ -663,7 +707,7 @@
     gap: 10px;
   }
   .profileCard {
-    padding: 15px;
+    padding: 12px;
   }
   .profileLayout {
     grid-template-columns: 1fr;
@@ -720,23 +764,68 @@
     gap: 12px;
   }
   .grid[data-view="list"] .profileCard {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 12px;
+    grid-template-columns: minmax(0, 1fr) 114px;
+    gap: 6px 10px;
+    padding: 9px 10px;
+  }
+  .grid[data-view="list"] .monogram {
+    display: none;
+  }
+  .grid[data-view="list"] .cardIdentityText h2 {
+    font-size: 12px;
+  }
+  .grid[data-view="list"] .cardBadges {
+    gap: 3px;
+  }
+  .grid[data-view="list"] .verified,
+  .grid[data-view="list"] .warning {
+    font-size: 9px;
+    padding: 2px 4px;
   }
   .grid[data-view="list"] .cardIdentity {
     grid-column: 1;
-    grid-row: auto;
+    grid-row: 1;
   }
   .grid[data-view="list"] .cardMetrics {
-    grid-column: 1;
-    grid-row: auto;
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
+    grid-column: 2;
+    grid-row: 1;
+    gap: 5px;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .grid[data-view="list"] .metricFull {
+    display: none;
+  }
+  .grid[data-view="list"] .metricShort {
+    display: inline;
+  }
+  .grid[data-view="list"] .cardMetrics dt {
+    white-space: nowrap;
+    font-size: 9px;
+  }
+  .grid[data-view="list"] .cardMetrics dd {
+    font-size: 14px;
+  }
+  .grid[data-view="list"] .cardMetrics small {
+    font-size: 8px;
   }
   .grid[data-view="list"] .cardFoot {
-    grid-column: 1;
-    grid-row: auto;
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 8px;
+    padding-right: 36px;
+    min-height: 16px;
+    font-size: 9px;
+  }
+  .grid[data-view="list"] .cardSave {
+    position: absolute;
+    right: 8px;
+    top: auto;
+    bottom: 6px;
+    transform: none;
   }
   .notice {
     font-size: 10px;

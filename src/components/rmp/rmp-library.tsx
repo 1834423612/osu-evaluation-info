@@ -7,7 +7,6 @@ import { browserStorage } from "@/lib/preferences/browser-storage";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  ArrowUpRight,
   LayoutGrid,
   List,
   MessageSquare,
@@ -267,7 +266,10 @@ export function RmpLibrary({
                       {profile.name}
                     </Link>
                   </h2>
-                  <p className={styles.cardDept}>
+                  <p
+                    className={styles.cardDept}
+                    title={profile.department || undefined}
+                  >
                     {profile.department ||
                       text(locale, "Department unspecified", "未注明院系")}
                   </p>
@@ -283,25 +285,48 @@ export function RmpLibrary({
                     ) : null}
                   </div>
                 </div>
-                <ArrowUpRight size={15} className={styles.cardArrow} />
+                <span className={styles.cardSave}>
+                  <RmpSaveButton profile={profile} compact />
+                </span>
               </div>
               <dl className={styles.cardMetrics}>
                 <div data-tone={ratingTone(profile.quality)}>
-                  <dt>{text(locale, "RMP quality", "RMP 评分")}</dt>
+                  <dt title={text(locale, "RMP quality", "RMP 评分")}>
+                    <span className={styles.metricFull}>
+                      {text(locale, "RMP quality", "RMP 评分")}
+                    </span>
+                    <span className={styles.metricShort}>
+                      {text(locale, "Rating", "评分")}
+                    </span>
+                  </dt>
                   <dd>
                     {rating(profile.quality)}
                     <small>/5</small>
                   </dd>
                 </div>
                 <div data-tone={ratingTone(profile.difficulty, true)}>
-                  <dt>{text(locale, "Difficulty", "难度")}</dt>
+                  <dt title={text(locale, "Difficulty", "难度")}>
+                    <span className={styles.metricFull}>
+                      {text(locale, "Difficulty", "难度")}
+                    </span>
+                    <span className={styles.metricShort}>
+                      {text(locale, "Diff.", "难度")}
+                    </span>
+                  </dt>
                   <dd>
                     {rating(profile.difficulty)}
                     <small>/5</small>
                   </dd>
                 </div>
                 <div>
-                  <dt>{text(locale, "Would take again", "愿意再选")}</dt>
+                  <dt title={text(locale, "Would take again", "愿意再选")}>
+                    <span className={styles.metricFull}>
+                      {text(locale, "Would take again", "愿意再选")}
+                    </span>
+                    <span className={styles.metricShort}>
+                      {text(locale, "Again", "再选")}
+                    </span>
+                  </dt>
                   <dd>{percentage(profile.wouldTakeAgain)}</dd>
                 </div>
               </dl>
@@ -312,9 +337,6 @@ export function RmpLibrary({
                   {text(locale, "reviews", "条评价")}
                 </span>
                 <span>RMP #{profile.id}</span>
-                <span className={styles.cardSave}>
-                  <RmpSaveButton profile={profile} />
-                </span>
               </div>
             </article>
           ))}

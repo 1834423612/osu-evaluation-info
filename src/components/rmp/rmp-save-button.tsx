@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
 import type { RmpBookmarkInput } from "@/lib/saved/rmp-profile";
-export function RmpSaveButton({ profile }: { profile: RmpBookmarkInput }) {
+export function RmpSaveButton({
+  profile,
+  compact = false,
+}: {
+  profile: RmpBookmarkInput;
+  compact?: boolean;
+}) {
   const { locale, savedInstructors, toggleRmpProfile } = usePreferences(),
     saved = savedInstructors.some(
       (x) => x.id === "rmp:" + profile.id && !!x.rmp,
@@ -12,7 +18,7 @@ export function RmpSaveButton({ profile }: { profile: RmpBookmarkInput }) {
   return (
     <Button
       variant="outline"
-      size="sm"
+      size={compact ? "icon-sm" : "sm"}
       aria-pressed={saved}
       aria-label={text(
         locale,
@@ -22,7 +28,11 @@ export function RmpSaveButton({ profile }: { profile: RmpBookmarkInput }) {
       onClick={() => void toggleRmpProfile(profile)}
     >
       <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
-      {saved ? text(locale, "Saved", "已收藏") : text(locale, "Save", "收藏")}
+      {compact
+        ? null
+        : saved
+          ? text(locale, "Saved", "已收藏")
+          : text(locale, "Save", "收藏")}
     </Button>
   );
 }
