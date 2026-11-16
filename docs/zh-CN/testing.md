@@ -474,3 +474,19 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 选择器内置 99 个本地图标，分为八类。搜索不会向图标服务发送关键词，现有图标标识保持有效。中性图标卡使用统一的前景与背景颜色变量；选中时增加强调色边框和勾选标记，不仅依赖颜色区分。
 
 浏览器回归：新建分组，分别用中英文搜索、切换类别、检查无结果提示，并确认搜索框回车不会保存。选择图标，保存合成测试分组，刷新后重新打开，确认图标保留。仅改变筛选条件不应触发未保存警告，改变图标则应触发。检查 320、390、768、1440px 下的描边和焦点轮廓。使用不含生产凭据的独立本地站点；保存分组会写入该站点的浏览器存储。
+
+## 学期规划
+
+- `tests/planning/model.test.mjs`: 白名单、审核门槛、存储失败和课程链接. `node --test tests/planning/model.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/parser.test.mjs`: 合成版式、未知学分、占位项、冲突版本及打印顺序. `node --test tests/planning/parser.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/curriculum.test.mjs`: 官方候选、独立域和导入验证. `node --test tests/planning/curriculum.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/test_sync.py`: 公开 URL 限制和未知布局。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线，无数据库或网络写入。
+- `tests/planning/workspace.browser.mjs`: 本地导入、纠错、保存/导出、双语及响应式隐私流程。 `node tests/planning/workspace.browser.mjs`. 需本地运行应用、Playwright 和 Chromium；可设 `BASE_URL`、`PLAYWRIGHT_MODULE`、`PLAYWRIGHT_CHROMIUM_EXECUTABLE`。仅向隔离浏览器存储写入合成数据，截图保存在临时目录；不访问官方来源或生产数据库。
+- `tests/planning/pdf.integration.test.mjs`: 使用内存生成的 PDF 验证 PDF.js 提取到白名单规划的完整链路；`node --test tests/planning/pdf.integration.test.mjs`. 无需浏览器、数据库或网络。
+- `tests/planning/synthetic-pdf.mjs`: 上述浏览器和 PDF 集成测试共享的合成 PDF 生成器，不单独执行，不写私人数据。
+- `tests/planning/import-guard.test.mjs`: 导入较晚完成与编辑、载入、删除、新导入之间的竞争. `node --test tests/planning/import-guard.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/snapshots.test.mjs`: 多来源标识、项目独立版本、要求层级及分配去重. `node --test tests/planning/snapshots.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/database.integration.test.mjs`: 在隔离内存 PGlite PostgreSQL 中执行真实规划 SQL，测试迁移、外键、审核约束和回滚. `node --test tests/planning/database.integration.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/private-regression.mjs`: 明确选择运行的本地私人 PDF 回归。设置 `PLANNING_PRIVATE_PDF_DIR` 指向本地附件目录，然后运行 `node tests/planning/private-regression.mjs`。默认仅读取 PDF；显式设置 `PLANNING_PRIVATE_HAR_COMPARE=1` 可启用仅响应正文的离线 HAR 对照。不写原文，仅输出类型级计数、失败数量和一致性汇总。不得在公共 CI 提供附件或上传输出以外的数据。
+
+- `tests/planning/private-har.test.mjs`：合成 XSSI/base64 响应解码、学术字段最小化、学分与年份一致性汇总，以及重复课程歧义排除测试。不使用真实附件 fixture。

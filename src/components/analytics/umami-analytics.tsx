@@ -35,7 +35,12 @@ const pendingEvents: PendingEvent[] = [];
 const reportedErrors = new WeakSet<object>();
 const subscribeClient = () => () => {};
 export function analyticsEnabled() {
-  if (typeof window === "undefined" || debugFlag("skipAnalytics")) return false;
+  if (
+    typeof window === "undefined" ||
+    /^\/planning(?:\/|$)/.test(location.pathname) ||
+    debugFlag("skipAnalytics")
+  )
+    return false;
   if (
     navigator.doNotTrack === "1" ||
     (navigator as Navigator & { globalPrivacyControl?: boolean })

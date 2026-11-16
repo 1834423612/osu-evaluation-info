@@ -176,3 +176,6 @@ db/*rmp*.db*
 data/local/rmp/
 docs/rmp-data-comparison-*.md
 docs/rmp-data-comparison-*.json
+
+# Official curriculum crawl cache (never private BDP exports)
+.planning-cache/

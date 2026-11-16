@@ -1,0 +1,450 @@
+.page {
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+}
+.page :global(.app-header),
+.page :global(.site-footer) {
+  background: var(--surface);
+  color: var(--ink);
+}
+.main {
+  max-width: 1380px;
+  margin: auto;
+  padding: 44px 32px 20px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.eyebrow button {
+  margin-left: auto;
+}
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 24px 0 36px;
+}
+.hero h1 {
+  font-size: clamp(32px, 4vw, 52px);
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  margin: 0 0 16px;
+  font-weight: 750;
+}
+.hero p {
+  color: var(--muted);
+  max-width: 650px;
+  line-height: 1.7;
+}
+.privateBadge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--positive-border);
+  background: var(--positive-soft);
+  color: var(--positive);
+  border-radius: 12px;
+  padding: 16px 20px;
+  flex-shrink: 0;
+  font-weight: 650;
+}
+.privateBadge small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+  font-size: 12px;
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 28px;
+}
+.tabs button {
+  border: 0;
+  border-radius: 8px 8px 0 0;
+  padding: 14px 20px;
+  background: transparent;
+}
+.tabs button[aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  box-shadow: inset 0 -3px var(--primary);
+  font-weight: 700;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.panel {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 0;
+}
+.panel p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+  margin: 12px 0 20px;
+}
+.panel h3 {
+  font-size: 15px;
+  font-weight: 650;
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.sectionHeading h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.step {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+.chip {
+  font-size: 11px;
+  background: var(--secondary);
+  color: var(--muted);
+  padding: 5px 9px;
+  border-radius: 20px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.main input:not([type="checkbox"]),
+.main select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 10px;
+  min-height: 42px;
+  font-size: 13px;
+}
+.main button {
+  cursor: pointer;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.main button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.main :is(button, input, select, a):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.main a {
+  color: var(--accent-foreground);
+}
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 26px 12px;
+  border: 1px dashed var(--accent-border);
+  background: var(--accent-soft);
+  border-radius: 12px;
+  color: var(--accent-foreground);
+  text-align: center;
+}
+.drop span {
+  font-size: 11px;
+}
+.drop input {
+  font-size: 11px !important;
+}
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 24px 0;
+}
+.notice {
+  background: var(--subtle-surface);
+  border-left: 3px solid var(--accent-border);
+  padding: 12px;
+  border-radius: 4px;
+}
+.meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 15px;
+  color: var(--muted);
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  margin: 18px 0;
+}
+.empty h3 {
+  margin: 16px 0 0;
+  color: var(--ink);
+}
+.semester {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+.semesterHeading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--subtle-surface);
+}
+.semesterHeading .field {
+  margin: 0;
+  max-width: 240px;
+}
+.semesterHeading span {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.course {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.7fr 1.2fr 1.2fr auto;
+  gap: 8px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+  align-items: end;
+}
+.course label {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.rowActions small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.rowActions a {
+  padding: 10px 0;
+}
+.add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px;
+}
+.review {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.review label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.review input {
+  margin-top: 4px;
+  accent-color: var(--primary);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.actions .primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.sources article {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--subtle-surface);
+}
+.sources h3 {
+  margin: 16px 0;
+}
+.sources a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+.status {
+  min-height: 26px;
+  margin: 16px 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+.footnote {
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+  padding: 12px;
+  line-height: 1.7;
+}
+.allocation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.allocation input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+.page[data-theme="dark"] {
+  --canvas: #16171b;
+  --surface: #202126;
+  --ink: #f3edf0;
+  --secondary-foreground: #e6dce1;
+  --accent: #ffb3c4;
+  --muted: #b9adb4;
+  --line: #3d383e;
+  --subtle-surface: #27262d;
+  --secondary: #333038;
+  --accent-soft: #38232b;
+  --accent-border: #714150;
+  --accent-foreground: #ffb3c4;
+  --positive-soft: #1d332a;
+  --positive: #9cd5b3;
+  --positive-border: #385847;
+}
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .course {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .meta {
+    grid-template-columns: 1fr;
+  }
+  .sources {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .main {
+    padding: 24px 16px;
+  }
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 24px;
+  }
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    padding: 18px;
+  }
+  .sources {
+    grid-template-columns: 1fr;
+  }
+  .privateBadge {
+    width: 100%;
+  }
+  .tabs button {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+  .semesterHeading {
+    flex-wrap: wrap;
+  }
+  .semesterHeading .field {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .page :global(.app-header) {
+    height: auto;
+  }
+  .page :global(.header-inner) {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-block: 8px;
+  }
+  .page :global(.header-actions) {
+    margin-left: auto;
+  }
+  .page :global(.main-nav) {
+    order: 1;
+    flex: 1 0 100%;
+    min-height: 38px;
+    justify-content: center;
+  }
+}

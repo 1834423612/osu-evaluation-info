@@ -53,3 +53,5 @@ pnpm syllabus:sync
 - `docs`：默认英文；`docs/zh-CN`：中文分类文档。
 
 [中文文档目录](docs/zh-CN/README.md) 列出各模块操作、历史审计和测试入口。搜索参数保存在 URL，收藏在设备本地；服务器完整目录与 SQL 导出不会整体发送给浏览器。
+
+- [学期规划](docs/zh-CN/planning/guide.md)：本地 PDF 核对及部分官方培养方案目录。

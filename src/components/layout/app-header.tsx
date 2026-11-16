@@ -28,6 +28,7 @@ export function AppHeader({
   active,
 }: {
   active?:
+    | "planning"
     | "explore"
     | "saved"
     | "methodology"

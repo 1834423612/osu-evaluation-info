@@ -60,6 +60,7 @@
     "minisearch": "^7.2.0",
     "next": "^16.1.0",
     "nodemailer": "^10.5.0",
+    "pdfjs-dist": "^6.5.438",
     "pdfmake": "^0.3.14",
     "pg": "^8.16.3",
     "radix-ui": "^1.6.7",
@@ -72,6 +73,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/html-to-pdfmake": "^2.4.5",

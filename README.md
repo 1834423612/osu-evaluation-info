@@ -93,3 +93,5 @@ Search and filters are stored in the URL. Heavy evaluation charts load on demand
 - [Translation node states, recovery, and management commands](docs/translation-operations.md)
 
 The verified November 3, 2026 import covered Summer 2026, Autumn 2026 and Spring 2027: 713 partitions, 70,454 official hits and 70,435 distinct term/class-number sections. The 19 duplicate official hits were preserved in audit counts and removed from section identity. These are import-time facts, not hardcoded UI counts.
+
+- [Schedule planning](docs/planning/guide.md): local PDF review and a partial official curriculum directory.

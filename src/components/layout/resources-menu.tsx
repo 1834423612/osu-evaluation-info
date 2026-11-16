@@ -23,6 +23,7 @@ import { text, type Locale } from "@/lib/i18n";
 import styles from "./resources-menu.module.css";
 
 type Page =
+  | "planning"
   | "explore"
   | "saved"
   | "methodology"
@@ -105,6 +106,17 @@ function NavigationMenu({
       ]
     : personal
       ? [
+          {
+            page: "planning",
+            href: "/planning",
+            Icon: BookOpen,
+            title: text(locale, "Schedule planning", "学期规划"),
+            detail: text(
+              locale,
+              "Private plans and official curricula",
+              "私有规划与官方培养方案",
+            ),
+          },
           {
             page: "account",
             href: "/account",
@@ -277,6 +289,16 @@ function NavigationMenu({
             <DropdownMenu.Item asChild key={item.page}>
               <Link
                 href={item.href}
+                onClick={
+                  item.page === "planning"
+                    ? (event) => {
+                        event.preventDefault();
+                        // A full navigation destroys any previously loaded session recorder.
+                        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                        window.location.assign("/planning");
+                      }
+                    : undefined
+                }
                 aria-current={item.page === page ? "page" : undefined}
                 data-nav-page={item.page}
               >

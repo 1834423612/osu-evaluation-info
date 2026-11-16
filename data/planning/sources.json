@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "coverage": "partial",
+  "sources": [
+    {
+      "id": "university-index",
+      "title": "University majors index",
+      "titleZh": "全校专业索引",
+      "url": "https://undergrad.osu.edu/majors-and-academics/majors-by-college",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "engineering",
+      "title": "Engineering curriculum sheets",
+      "titleZh": "工程学院培养方案",
+      "url": "https://www.advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "music",
+      "title": "Music",
+      "titleZh": "音乐",
+      "url": "https://music.osu.edu/current/ug-curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "public-health",
+      "title": "Public Health",
+      "titleZh": "公共卫生",
+      "url": "https://cph.osu.edu/students/undergraduate/curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "ehe",
+      "title": "Education and Human Ecology",
+      "titleZh": "教育与人类生态",
+      "url": "https://u.osu.edu/ehearg/",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "hrs",
+      "title": "Health and Rehabilitation Sciences",
+      "titleZh": "健康与康复科学",
+      "url": "https://u.osu.edu/hrssso/program-guides/hrs-undergraduate-programs/",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "molgen",
+      "title": "Molecular Genetics",
+      "titleZh": "分子遗传学",
+      "url": "https://molgen.osu.edu/sample-curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "cis",
+      "title": "Computer and Information Science, BA",
+      "titleZh": "计算机与信息科学 BA",
+      "url": "https://cse.osu.edu/ba-cis-program-information",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "french-history",
+      "title": "French and History double-major sample",
+      "titleZh": "法语与历史双专业样例",
+      "url": "https://frit.osu.edu/ug/majors/ffs-major/sample-plan",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending",
+      "publicationStatus": "unknown",
+      "planScope": "multi-program"
+    },
+    {
+      "id": "composition-draft",
+      "title": "Music Composition — draft",
+      "titleZh": "音乐作曲 — 草案",
+      "url": "https://music.osu.edu/current/ug-curriculum/composition-draft",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending",
+      "publicationStatus": "draft",
+      "planScope": "unknown"
+    },
+    {
+      "id": "math-theoretical",
+      "title": "Mathematics theoretical track and alternatives",
+      "titleZh": "数学理论方向及替代课程",
+      "url": "https://math.osu.edu/undergrad/current-majors/requirements/theoretical",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending",
+      "publicationStatus": "unknown",
+      "planScope": "unknown"
+    },
+    {
+      "id": "geology",
+      "title": "Geological Sciences sample curriculum",
+      "titleZh": "地质科学培养方案样例",
+      "url": "https://earthsciences.osu.edu/b.s.-geological-sciences-subprogram-sample-four-year-curriculum",
+      "validatedAt": "2026-11-15",
+      "status": "discovered",
+      "reviewStatus": "pending",
+      "publicationStatus": "unknown",
+      "planScope": "unknown"
+    }
+  ]
+}
