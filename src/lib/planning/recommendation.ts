@@ -45,6 +45,7 @@ export type RecommendationOptions = {
   quantitativeSubjects: string[];
   maxQuantitative: number;
   ratings?: Record<string, Rating>;
+  catalogCredits?: Record<string, { min: number; max: number }>;
 };
 
 /** Local, explainable ranking. Never interprets prerequisites, grades or eligibility. */
@@ -146,6 +147,18 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
       const [subject, number] = key.split(" ");
       get(subject, number);
     }
+  for (const candidate of pool.values()) {
+    const range = options.catalogCredits?.[candidate.key];
+    if (
+      range &&
+      Number.isFinite(range.min) &&
+      Number.isFinite(range.max) &&
+      range.min >= 0 &&
+      range.max <= 99 &&
+      range.min <= range.max
+    )
+      candidate.credits = range.min === range.max ? range.min : null;
+  }
   const candidates = [...pool.values()]
     .filter((c) => {
       const facts = observations.get(c.key) ?? [];
@@ -290,8 +303,6 @@ export function applyRecommendationBundle(
     auditMode: "unknown" as const,
     catalogTerm: null,
   };
-  if (!next.documents.some((d) => d.id === document.id))
-    next.documents.push(document);
   const courses = [];
   for (const c of items) {
     const existing = next.semesters
@@ -309,7 +320,9 @@ export function applyRecommendationBundle(
       )
     )
       continue;
-    const manual = existing.find((x) => x.documentId === document.id);
+    const manual =
+      existing.find((x) => x.documentId === document.id) ??
+      existing.find((x) => x.id);
     if (manual?.id) {
       next.schedule.placements = next.schedule.placements.filter(
         (p) => p.courseId !== manual.id,
@@ -328,7 +341,9 @@ export function applyRecommendationBundle(
         page: null,
       });
   }
-  if (courses.length)
+  if (courses.length) {
+    if (!next.documents.some((d) => d.id === document.id))
+      next.documents.push(document);
     next.semesters.push({
       documentId: document.id,
       term,
@@ -336,6 +351,7 @@ export function applyRecommendationBundle(
       creditOrigin: "unknown",
       courses,
     });
+  }
   next.schedule.terms = [...new Set([...next.schedule.terms, term])].sort(
     termOrder,
   );

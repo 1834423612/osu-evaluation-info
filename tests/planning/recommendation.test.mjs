@@ -223,3 +223,35 @@ test("future-only sample courses stay out of an earlier semester combination", (
   assert.ok(result.candidates.some((c) => c.key === "ARTSSCI 1100"));
   assert.ok(!result.bundle.some((c) => c.key === "ARTSSCI 1100"));
 });
+
+test("catalog credits drive estimates without rewriting imported academic facts", () => {
+  const plan = fixture();
+  const result = recommendCourses(plan, {
+    ...options,
+    catalogCredits: {
+      "CSE 1223": { min: 4, max: 4 },
+      "STAT 3201": { min: 1, max: 6 },
+    },
+  });
+  assert.equal(result.candidates.find((c) => c.key === "CSE 1223").credits, 4);
+  assert.equal(
+    result.candidates.find((c) => c.key === "STAT 3201").credits,
+    null,
+  );
+  assert.equal(plan.semesters[0].courses[1].credits, 3);
+});
+
+test("recommendation placement reuses imported planned courses", () => {
+  const plan = fixture();
+  let count = 0;
+  const result = recommendCourses(plan, options);
+  const next = applyRecommendationBundle(
+    plan,
+    result.bundle,
+    options.targetTerm,
+    () => "new-" + ++count,
+  );
+  assert.equal(next.semesters.flatMap((s) => s.courses).length, 4);
+  assert.deepEqual(next.semesters, plan.semesters);
+  assert.equal(next.schedule.placements.length, result.bundle.length);
+});

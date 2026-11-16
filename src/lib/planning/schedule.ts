@@ -29,6 +29,7 @@ export function placeCourse(
     !course ||
     course.evidenceRole === "option" ||
     course.status === "completed" ||
+    course.status === "in-progress" ||
     semester?.creditOrigin === "transfer" ||
     semester?.creditOrigin === "exam"
   )
