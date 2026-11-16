@@ -741,7 +741,7 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-19b707e0b48f10d91a9f9182",
+    "id": "math-pdf-v2-19b707e0b48f10d91a9f9182",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/2021-02/Math%20Theoretical%20Track%20Requirements%20and%20Sample%20Schedule.pdf",
       "sha256": "19b707e0b48f10d91a9f91823dec02576b07eb9e635376ff62152704f19c47da",
@@ -754,7 +754,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "19b707e0b48f10d9-math-columns-v1",
+    "version": "19b707e0b48f10d9-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -1054,7 +1054,264 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-dff3b4fa8dfb03709ac0492b",
+    "id": "math-pdf-v2-76ae0167af343722b791c4e9",
+    "source": {
+      "url": "https://math.osu.edu/sites/default/files/2024-07/Actuarial%20Science%20Requirements%20and%20Sample%20Schedule%207.18.24.pdf",
+      "sha256": "76ae0167af343722b791c4e91f6d03bd31a28f0342bf79555d91099af5c53f15",
+      "fetchedAt": "2026-11-16T06:12:01.506437+00:00",
+      "validatedAt": null,
+      "mediaType": "application/pdf"
+    },
+    "documentKind": "sample-plan",
+    "program": "Actuarial Science Requirements and Sample Schedule 7.18.24.pdf",
+    "specialization": null,
+    "campus": null,
+    "geSystem": null,
+    "version": "76ae0167af343722-math-columns-v2",
+    "applicableFrom": null,
+    "applicableUntil": null,
+    "publicationStatus": "unknown",
+    "planScope": "unknown",
+    "academicYear": null,
+    "evidence": [
+      "Actuarial Science Requirements and Sample Schedule 7.18.24.pdf",
+      "Year labels, two semester columns and four paired reported totals. Verify alternatives and footnotes; additional degree coursework may be omitted."
+    ],
+    "semesters": [
+      {
+        "label": "Year 1: Autumn",
+        "credits": {
+          "min": 15.0,
+          "max": 15.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 1151 5",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "CSE 1222, 1223, 1224 or 2111 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Econ 2001 or 2002 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "ARTSSCI 1100.01 1",
+            "credits": {
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          {
+            "evidence": "GE 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 1: Spring",
+        "credits": {
+          "min": 17.0,
+          "max": 17.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 1152 5",
+            "credits": {
+              "min": 5.0,
+              "max": 5.0
+            }
+          },
+          {
+            "evidence": "AcctMIS 2000 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Econ 2001 or 2002 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "English 1110 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "GE 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Autumn",
+        "credits": {
+          "min": 7.0,
+          "max": 7.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 2153 4",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Math 3618 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 2: Spring",
+        "credits": {
+          "min": 9.0,
+          "max": 10.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 2568 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Stat 4201 or Math 4530 3-4",
+            "credits": {
+              "min": 3.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "Comm 2367, 2110 or 2131 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Autumn",
+        "credits": {
+          "min": 7.0,
+          "max": 7.0
+        },
+        "entries": [
+          {
+            "evidence": "Stat 4202 4",
+            "credits": {
+              "min": 4.0,
+              "max": 4.0
+            }
+          },
+          {
+            "evidence": "BusFin 3120 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 3: Spring",
+        "credits": {
+          "min": 9.0,
+          "max": 9.0
+        },
+        "entries": [
+          {
+            "evidence": "Math 3588 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "Actuarial Elective 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          },
+          {
+            "evidence": "English 3304 or 3305 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Autumn",
+        "credits": {
+          "min": 3.0,
+          "max": 3.0
+        },
+        "entries": [
+          {
+            "evidence": "Actuarial Elective 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Year 4: Spring",
+        "credits": {
+          "min": 3.0,
+          "max": 3.0
+        },
+        "entries": [
+          {
+            "evidence": "Actuarial Elective 3",
+            "credits": {
+              "min": 3.0,
+              "max": 3.0
+            }
+          }
+        ]
+      }
+    ],
+    "reviewStatus": "pending",
+    "reviewedAt": null,
+    "reviewer": null
+  },
+  {
+    "schemaVersion": 1,
+    "id": "math-pdf-v2-dff3b4fa8dfb03709ac0492b",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/undergrad_current-majors_requirements_honors2.pdf",
       "sha256": "dff3b4fa8dfb03709ac0492b39ab0ed1ac8288705c43f0aab2bab46a835a28d6",
@@ -1067,7 +1324,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "dff3b4fa8dfb0370-math-columns-v1",
+    "version": "dff3b4fa8dfb0370-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -1404,7 +1661,7 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-487f6ca94786eff170ee8cfc",
+    "id": "math-pdf-v2-487f6ca94786eff170ee8cfc",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/2021-02/Math%20Applied%20Track%20Chemistry%20Requirements%20and%20Sample%20Schedule.pdf",
       "sha256": "487f6ca94786eff170ee8cfce22720fbd5239fcd4e664f87eab457a625ae35b1",
@@ -1417,7 +1674,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "487f6ca94786eff1-math-columns-v1",
+    "version": "487f6ca94786eff1-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -1717,7 +1974,7 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-2ae3318b35be95370e310685",
+    "id": "math-pdf-v2-2ae3318b35be95370e310685",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/2021-02/Math%20Applied%20Track%20Physics%20Requirements%20and%20Sample%20Schedule.pdf",
       "sha256": "2ae3318b35be95370e310685d47f77ac22fc2623643eca0b11e2e6d4f037d36e",
@@ -1730,7 +1987,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "2ae3318b35be9537-math-columns-v1",
+    "version": "2ae3318b35be9537-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -2030,7 +2287,7 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-3b877f4472090aa914e6a8ce",
+    "id": "math-pdf-v2-3b877f4472090aa914e6a8ce",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/2024-09/Math%20Biology%20Track%20Requirements%20and%20Sample%20Schedule%2010.5.23.pdf",
       "sha256": "3b877f4472090aa914e6a8ce743d0cd15bd36646d73281d8242faa3ddc487b1d",
@@ -2043,7 +2300,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "3b877f4472090aa9-math-columns-v1",
+    "version": "3b877f4472090aa9-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -2315,7 +2572,7 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-1080822792235520bf8a4a14",
+    "id": "math-pdf-v2-1080822792235520bf8a4a14",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/2021-12/Math%20Education%20Track%20Requirements%20and%20Sample%20Schedule.pdf",
       "sha256": "1080822792235520bf8a4a1464198d97ea57645a0ed67cb378a141376a3f2bc4",
@@ -2328,7 +2585,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "1080822792235520-math-columns-v1",
+    "version": "1080822792235520-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
@@ -2649,7 +2906,7 @@
   },
   {
     "schemaVersion": 1,
-    "id": "math-pdf-dee1208d4499066ffa419882",
+    "id": "math-pdf-v2-dee1208d4499066ffa419882",
     "source": {
       "url": "https://math.osu.edu/sites/default/files/2023-12/Math%20and%20Actuarial%20Science%20Double%20Major%20Requirements%20and%20Sample%20Schedule%20%2012.04.23.pdf",
       "sha256": "dee1208d4499066ffa419882fb24f8159a2c919be87a8525357688532c2a5e16",
@@ -2662,7 +2919,7 @@
     "specialization": null,
     "campus": null,
     "geSystem": null,
-    "version": "dee1208d4499066f-math-columns-v1",
+    "version": "dee1208d4499066f-math-columns-v2",
     "applicableFrom": null,
     "applicableUntil": null,
     "publicationStatus": "unknown",
