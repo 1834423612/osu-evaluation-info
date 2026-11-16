@@ -5,7 +5,6 @@ import { createBrowserUsageReporter } from "./browser-usage.ts";
 import { createTranslationScheduler } from "./scheduler.ts";
 import type { TranslationCallbacks } from "./consumers.ts";
 import {
-  AUTO_TRANSLATION_STAGE_MS,
   translationLanguagePair,
   TranslationUnavailableError,
   type TranslationModel,
@@ -60,8 +59,6 @@ export function requestTextTranslation(
                 source,
                 pair.sourceLanguage,
                 pair.targetLanguage,
-                undefined,
-                model === "auto" ? AUTO_TRANSLATION_STAGE_MS : undefined,
               );
               if (local) result = { translation: local, provider: "chrome" };
             } catch {
