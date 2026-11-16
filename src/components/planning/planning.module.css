@@ -141,8 +141,8 @@
   color: var(--muted);
   margin-bottom: 16px;
 }
-.page input:not([type="checkbox"]),
-.page select {
+.main input:not([type="checkbox"]),
+.main select {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--line);
@@ -153,7 +153,7 @@
   min-height: 42px;
   font-size: 13px;
 }
-.page button {
+.main button {
   cursor: pointer;
   min-height: 40px;
   border: 1px solid var(--line);
@@ -163,15 +163,15 @@
   padding: 8px 12px;
   font-size: 13px;
 }
-.page button:disabled {
+.main button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.page :is(button, input, select, a):focus-visible {
+.main :is(button, input, select, a):focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
 }
-.page a {
+.main a {
   color: var(--accent-foreground);
 }
 .drop {
@@ -366,6 +366,8 @@
   --canvas: #16171b;
   --surface: #202126;
   --ink: #f3edf0;
+  --secondary-foreground: #e6dce1;
+  --accent: #ffb3c4;
   --muted: #b9adb4;
   --line: #3d383e;
   --subtle-surface: #27262d;
@@ -424,5 +426,25 @@
   .semesterHeading .field {
     width: 100%;
     max-width: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .page :global(.app-header) {
+    height: auto;
+  }
+  .page :global(.header-inner) {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-block: 8px;
+  }
+  .page :global(.header-actions) {
+    margin-left: auto;
+  }
+  .page :global(.main-nav) {
+    order: 1;
+    flex: 1 0 100%;
+    min-height: 38px;
+    justify-content: center;
   }
 }

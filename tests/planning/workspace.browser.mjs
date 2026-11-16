@@ -81,7 +81,7 @@ try {
     "private-plan.json",
   );
   await mkdir("/tmp/planning-evidence", { recursive: true });
-  for (const width of [390, 768, 1440]) {
+  for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const mode of ["light", "dark"]) {
       if (mode === "dark")
@@ -153,7 +153,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: synthetic PDF import, correction, review gate, local save/export, directory, en/zh, light/dark at 390/768/1440, no planning POST payloads, no page errors",
+    "PASS: synthetic PDF import, correction, review gate, local save/export, directory, en/zh, light/dark at 320/390/768/1440, no planning POST payloads, no page errors",
   );
   await context.close();
 } finally {
