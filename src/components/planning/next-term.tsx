@@ -11,17 +11,25 @@ import {
 } from "@/lib/planning/recommendation";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./next-term.module.css";
+import { usePlanningCatalog } from "./course-catalog";
+import { nextSemester, currentSemester } from "@/lib/planning/workspace";
 
 export function NextTerm({
   plan,
   locale,
   apply,
   onReview,
+  initialTarget,
+  onTargetChange,
+  compact = false,
 }: {
   plan: Plan;
   locale: Locale;
   apply: (items: PlanningCandidate[], term: string) => void;
   onReview: () => void;
+  initialTarget?: string;
+  onTargetChange?: (term: string) => void;
+  compact?: boolean;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const [programId, setProgramId] = useState("");
@@ -32,9 +40,16 @@ export function NextTerm({
         plan.programs.find((p) =>
           plan.requirements.some((r) => r.programId === p.id),
         ));
-  const year = new Date().getUTCFullYear();
-  const [currentTerm, setCurrentTerm] = useState("Autumn" + year);
-  const [targetTerm, setTargetTerm] = useState("Spring" + (year + 1));
+  const [currentTerm, setCurrentTerm] = useState(currentSemester);
+  const [localTarget, setLocalTarget] = useState(nextSemester);
+  const targetTerm = initialTarget ?? localTarget;
+  const setTargetTerm = onTargetChange ?? setLocalTarget;
+  const catalog = usePlanningCatalog();
+  const catalogScope = catalog.campus + "|" + catalog.term;
+  const [catalogState, setCatalogState] = useState<{
+    scope: string;
+    credits: Record<string, { min: number; max: number }>;
+  }>({ scope: "", credits: {} });
   const [maxCredits, setMaxCredits] = useState(15);
   const [maxQuantitative, setMaxQuantitative] = useState(2);
   const [prefixes, setPrefixes] = useState("MATH STAT PHYSICS CHEM CSE");
@@ -79,8 +94,47 @@ export function NextTerm({
       sample: samples.find((s) => s.id === sampleId),
       sampleYear,
       ratings,
+      catalogCredits:
+        catalogState.scope === catalogScope ? catalogState.credits : {},
     });
   } catch {}
+  const candidateCodes =
+    result?.candidates
+      .slice(0, 60)
+      .map((c) => c.subject + " " + c.number)
+      .sort()
+      .join(",") ?? "";
+  useEffect(() => {
+    if (!candidateCodes) return;
+    const controller = new AbortController();
+    void Promise.allSettled(
+      candidateCodes.split(",").map(async (code) => {
+        const split = code.lastIndexOf(" ");
+        const detail = await catalog.reader.read(
+          {
+            subject: code.slice(0, split),
+            number: code.slice(split + 1),
+            campus: catalog.campus,
+            term: catalog.term,
+          },
+          controller.signal,
+        );
+        return [
+          code,
+          { min: detail.course.creditsMin, max: detail.course.creditsMax },
+        ] as const;
+      }),
+    ).then((results) => {
+      if (controller.signal.aborted) return;
+      setCatalogState({
+        scope: catalogScope,
+        credits: Object.fromEntries(
+          results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])),
+        ),
+      });
+    });
+    return () => controller.abort();
+  }, [candidateCodes, catalog, catalogScope]);
   async function lookupRatings() {
     if (!result) return;
     request.current?.abort();
@@ -139,13 +193,10 @@ export function NextTerm({
     }
   }
   return (
-    <section className={styles.root}>
+    <section className={styles.root} data-compact={compact}>
       <div className={styles.heading}>
         <div>
-          <span className={styles.eyebrow}>
-            {t("NEXT SEMESTER", "下一学期")}
-          </span>
-          <h2>{t("Build a balanced shortlist", "组合适合你的候选课")}</h2>
+          <h2>{t("Course recommendations", "课程推荐")}</h2>
           <p>
             {t(
               "Combine reviewed requirements, an optional official example, workload limits and course evaluations.",
@@ -306,10 +357,24 @@ export function NextTerm({
                 {result.credits} / {maxCredits} {t("credits", "学分")}
               </strong>
               <p>
+                {t(
+                  `Includes ${result.existingCredits} credits already in this semester.`,
+                  `已包含该学期现有 ${result.existingCredits} 学分。`,
+                )}
+              </p>
+              {result.unresolvedExisting > 0 && (
+                <p role="status">
+                  {t(
+                    "Resolve unknown or variable credits already in this semester to calculate a bounded combination.",
+                    "请先明确该学期已有的未知或浮动学分，以计算符合上限的组合。",
+                  )}
+                </p>
+              )}
+              <p>
                 {result.bundle.map((c) => c.key).join(" · ") ||
                   t(
-                    "Add course evidence or select an example to start.",
-                    "添加课程依据或选择样表后开始。",
+                    "No additional combination fits the current evidence and limits.",
+                    "当前依据与上限下没有可追加的组合。",
                   )}
               </p>
             </div>
@@ -331,7 +396,12 @@ export function NextTerm({
                   </span>
                 </div>
                 <strong>
-                  {c.credits ?? "?"} {t("credits", "学分")}
+                  {c.credits === null
+                    ? t(
+                        "Credits pending lookup or selection",
+                        "学分待查询或选择",
+                      )
+                    : `${c.credits} ${t("credits", "学分")}`}
                 </strong>
                 <ul>
                   {c.ruleIds.length > 0 && (
