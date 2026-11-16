@@ -18,6 +18,8 @@ import {
 } from "@/lib/syllabus/insights";
 import type { SyllabusDocument } from "@/lib/syllabus/types";
 import { text, type Locale } from "@/lib/i18n";
+import { useTranslationPreferences } from "@/components/translation/translate-text";
+import { HighlightTranslation } from "./highlight-translation";
 import styles from "./syllabus-highlights.module.css";
 
 export function SyllabusHighlights({
@@ -29,6 +31,7 @@ export function SyllabusHighlights({
   locale: Locale;
   onNavigate?: (id: string) => void;
 }) {
+  const { model } = useTranslationPreferences();
   const highlights = useMemo(
     () =>
       extractSyllabusSections(document)
@@ -88,34 +91,52 @@ export function SyllabusHighlights({
             className={styles.tabContent}
           >
             <div className={styles.content}>
-              {section.schedule?.items.length ? (
-                <>
-                  {section.schedule.note ? (
-                    <p className={styles.note}>{section.schedule.note}</p>
-                  ) : null}
-                  <ol className={styles.timeline}>
-                    {section.schedule.items.map((item, index) => (
-                      <li key={`${index}-${item.label}`}>
-                        <span className={styles.week}>
-                          {item.weekStart !== null
-                            ? text(
-                                locale,
-                                `Week ${item.weekStart}${item.weekEnd !== item.weekStart ? `–${item.weekEnd}` : ""}`,
-                                `第 ${item.weekStart}${item.weekEnd !== item.weekStart ? `–${item.weekEnd}` : ""} 周`,
-                              )
-                            : item.label}
-                        </span>
-                        <div>
-                          <span className={styles.dot} />
-                          {item.topic ? (
-                            item.topic.length > 240 ? (
-                              <details className={styles.topicDetails}>
-                                <summary>
-                                  {item.topic
-                                    .slice(0, 140)
-                                    .replace(/\s+\S*$/, "")}
-                                  …
-                                </summary>
+              <HighlightTranslation
+                key={document.snapshotId + section.id + model}
+                document={document}
+                model={model}
+                section={section}
+                locale={locale}
+              >
+                {section.schedule?.items.length ? (
+                  <>
+                    {section.schedule.note ? (
+                      <p className={styles.note}>{section.schedule.note}</p>
+                    ) : null}
+                    <ol className={styles.timeline}>
+                      {section.schedule.items.map((item, index) => (
+                        <li key={`${index}-${item.label}`}>
+                          <span className={styles.week}>
+                            {item.weekStart !== null
+                              ? text(
+                                  locale,
+                                  `Week ${item.weekStart}${item.weekEnd !== item.weekStart ? `–${item.weekEnd}` : ""}`,
+                                  `第 ${item.weekStart}${item.weekEnd !== item.weekStart ? `–${item.weekEnd}` : ""} 周`,
+                                )
+                              : item.label}
+                          </span>
+                          <div>
+                            <span className={styles.dot} />
+                            {item.topic ? (
+                              item.topic.length > 240 ? (
+                                <details className={styles.topicDetails}>
+                                  <summary>
+                                    {item.topic
+                                      .slice(0, 140)
+                                      .replace(/\s+\S*$/, "")}
+                                    …
+                                  </summary>
+                                  <p>
+                                    <ScheduleText
+                                      parts={
+                                        item.topicParts ?? [
+                                          { text: item.topic },
+                                        ]
+                                      }
+                                    />
+                                  </p>
+                                </details>
+                              ) : (
                                 <p>
                                   <ScheduleText
                                     parts={
@@ -123,67 +144,59 @@ export function SyllabusHighlights({
                                     }
                                   />
                                 </p>
-                              </details>
-                            ) : (
-                              <p>
-                                <ScheduleText
-                                  parts={
-                                    item.topicParts ?? [{ text: item.topic }]
-                                  }
-                                />
-                              </p>
-                            )
-                          ) : null}
-                          <ScheduleBlocks blocks={item.blocks} />
-                          {item.sessions.length ? (
-                            <div className={styles.sessions}>
-                              {item.sessions.map((session, sessionIndex) => {
-                                const short =
-                                  session.blocks.length === 1 &&
-                                  scheduleBlockText(session.blocks[0]).length <=
-                                    140;
-                                return short ? (
-                                  <div
-                                    className={styles.session}
-                                    key={sessionIndex}
-                                  >
-                                    <strong>{session.label}</strong>
-                                    <ScheduleBlocks blocks={session.blocks} />
-                                  </div>
-                                ) : (
-                                  <details
-                                    className={styles.sessionDetails}
-                                    key={sessionIndex}
-                                  >
-                                    <summary>
+                              )
+                            ) : null}
+                            <ScheduleBlocks blocks={item.blocks} />
+                            {item.sessions.length ? (
+                              <div className={styles.sessions}>
+                                {item.sessions.map((session, sessionIndex) => {
+                                  const short =
+                                    session.blocks.length === 1 &&
+                                    scheduleBlockText(session.blocks[0])
+                                      .length <= 140;
+                                  return short ? (
+                                    <div
+                                      className={styles.session}
+                                      key={sessionIndex}
+                                    >
                                       <strong>{session.label}</strong>
-                                      <span>
-                                        {text(
-                                          locale,
-                                          `${session.blocks.length} items`,
-                                          `${session.blocks.length} 项`,
-                                        )}
-                                      </span>
-                                    </summary>
-                                    <ScheduleBlocks blocks={session.blocks} />
-                                  </details>
-                                );
-                              })}
-                            </div>
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              ) : (
-                <div
-                  className={styles.sourceBody}
-                  dangerouslySetInnerHTML={{
-                    __html: syllabusSectionBody(section.html),
-                  }}
-                />
-              )}
+                                      <ScheduleBlocks blocks={session.blocks} />
+                                    </div>
+                                  ) : (
+                                    <details
+                                      className={styles.sessionDetails}
+                                      key={sessionIndex}
+                                    >
+                                      <summary>
+                                        <strong>{session.label}</strong>
+                                        <span>
+                                          {text(
+                                            locale,
+                                            `${session.blocks.length} items`,
+                                            `${session.blocks.length} 项`,
+                                          )}
+                                        </span>
+                                      </summary>
+                                      <ScheduleBlocks blocks={session.blocks} />
+                                    </details>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </>
+                ) : (
+                  <div
+                    className={styles.sourceBody}
+                    dangerouslySetInnerHTML={{
+                      __html: syllabusSectionBody(section.html),
+                    }}
+                  />
+                )}
+              </HighlightTranslation>
             </div>
             {onNavigate ? (
               <button

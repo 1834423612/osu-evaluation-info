@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Languages, LoaderCircle, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDown, Languages, LoaderCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDraftGuard } from "@/components/forms/draft-guard";
 import { useTranslationPreferences } from "@/components/translation/translate-text";
@@ -22,6 +22,8 @@ export function SyllabusTranslation({
   onDocument: (document: SyllabusDocument | null) => void;
   locale: Locale;
 }) {
+  const controlsId = useId();
+  const [expanded, setExpanded] = useState(false);
   const { model: preferredModel } = useTranslationPreferences();
   const [modelOverride, setModelOverride] = useState<TranslationModel | null>(
     null,
@@ -96,129 +98,163 @@ export function SyllabusTranslation({
         <Languages size={16} />
         <strong>{text(locale, "Syllabus translation", "大纲翻译")}</strong>
         <small>
-          {text(
-            locale,
-            "Machine translation · confirm against the source",
-            "机器翻译 · 请核对原文",
-          )}
+          {busy
+            ? `${progress.done}/${progress.total}`
+            : active
+              ? text(locale, "Translation active", "译文已开启")
+              : expanded
+                ? text(
+                    locale,
+                    "Machine translation · confirm against the source",
+                    "机器翻译 · 请核对原文",
+                  )
+                : text(
+                    locale,
+                    "Translate document & PDF on demand",
+                    "按需翻译全文与 PDF",
+                  )}
         </small>
-      </div>
-      <div className={styles.controls}>
-        <label>
-          {text(locale, "Translation service", "翻译服务")}
-          <select
-            disabled={busy}
-            value={model}
-            onChange={(e) =>
-              setModelOverride(e.target.value as TranslationModel)
-            }
-          >
-            <option value="auto">
-              {text(locale, "Automatic", "自动选择")}
-            </option>
-            <option value="chrome">
-              {text(locale, "Browser model", "浏览器模型")}
-            </option>
-            <option value="ollama">kjch ai service</option>
-            <option value="google">Google</option>
-          </select>
-        </label>
-        <label>
-          {text(locale, "Language", "目标语言")}
-          <select
-            value={target}
-            disabled={busy}
-            onChange={(e) => setTarget(e.target.value as "zh-CN" | "en")}
-          >
-            <option value="zh-CN">简体中文</option>
-            <option value="en">English</option>
-          </select>
-        </label>
-        <label>
-          {text(locale, "Display & PDF", "显示与 PDF")}
-          <select
-            value={mode}
-            disabled={busy}
-            onChange={(e) => setMode(e.target.value as SyllabusTranslationMode)}
-          >
-            <option value="bilingual">
-              {text(locale, "Bilingual", "双语对照")}
-            </option>
-            <option value="replace">
-              {text(locale, "Replace original", "替换原文")}
-            </option>
-          </select>
-        </label>
         <Button
-          size="sm"
-          variant="outline"
-          disabled={busy}
-          onClick={() => void run()}
-        >
-          {busy ? (
-            <LoaderCircle size={14} className="spin" />
-          ) : (
-            <Languages size={14} />
-          )}{" "}
-          {text(
+          size="icon-sm"
+          variant="ghost"
+          aria-label={text(
             locale,
-            busy ? "Translating…" : "Translate document",
-            busy ? "正在翻译…" : "翻译全文",
+            expanded
+              ? "Collapse syllabus translation"
+              : "Expand syllabus translation",
+            expanded ? "收起大纲翻译" : "展开大纲翻译",
           )}
+          aria-expanded={expanded}
+          aria-controls={controlsId}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <ChevronDown
+            size={16}
+            className={styles.chevron}
+            data-expanded={expanded}
+          />
         </Button>
-        {busy ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              controller.current?.abort();
-              setBusy(false);
-            }}
-          >
-            <X size={14} />
-            {text(locale, "Cancel", "取消")}
-          </Button>
-        ) : active ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              onDocument(null);
-              setActive(false);
-            }}
-          >
-            {text(locale, "Show original", "查看原文")}
-          </Button>
-        ) : null}
       </div>
-      {busy ? (
-        <div className={styles.progress}>
-          <progress value={progress.done} max={progress.total || 1} />
-          <span>
-            {progress.done}/{progress.total}
-          </span>
-        </div>
-      ) : null}
-      {notice ? <p role="status">{notice}</p> : null}
-      {active ? (
-        <p>
-          <strong>
-            {text(locale, "Current version: ", "当前译文：")}
-            {completed?.target === "en" ? "English" : "简体中文"} ·{" "}
+      <div id={controlsId} hidden={!expanded}>
+        <div className={styles.controls}>
+          <label>
+            {text(locale, "Translation service", "翻译服务")}
+            <select
+              disabled={busy}
+              value={model}
+              onChange={(e) =>
+                setModelOverride(e.target.value as TranslationModel)
+              }
+            >
+              <option value="auto">
+                {text(locale, "Automatic", "自动选择")}
+              </option>
+              <option value="chrome">
+                {text(locale, "Browser model", "浏览器模型")}
+              </option>
+              <option value="ollama">kjch ai service</option>
+              <option value="google">Google</option>
+            </select>
+          </label>
+          <label>
+            {text(locale, "Language", "目标语言")}
+            <select
+              value={target}
+              disabled={busy}
+              onChange={(e) => setTarget(e.target.value as "zh-CN" | "en")}
+            >
+              <option value="zh-CN">简体中文</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label>
+            {text(locale, "Display & PDF", "显示与 PDF")}
+            <select
+              value={mode}
+              disabled={busy}
+              onChange={(e) =>
+                setMode(e.target.value as SyllabusTranslationMode)
+              }
+            >
+              <option value="bilingual">
+                {text(locale, "Bilingual", "双语对照")}
+              </option>
+              <option value="replace">
+                {text(locale, "Replace original", "替换原文")}
+              </option>
+            </select>
+          </label>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void run()}
+          >
+            {busy ? (
+              <LoaderCircle size={14} className="spin" />
+            ) : (
+              <Languages size={14} />
+            )}{" "}
             {text(
               locale,
-              completed?.mode === "replace" ? "Replacement" : "Bilingual",
-              completed?.mode === "replace" ? "替换原文" : "双语对照",
+              busy ? "Translating…" : "Translate document",
+              busy ? "正在翻译…" : "翻译全文",
             )}
-          </strong>
-          {" · "}
-          {text(
-            locale,
-            "Preview and PDF use this translated version. Change the mode and translate again to switch output.",
-            "下方预览与 PDF 下载均使用此译文；切换模式后再次翻译即可更新。",
-          )}
-        </p>
-      ) : null}
+          </Button>
+          {busy ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                controller.current?.abort();
+                setBusy(false);
+              }}
+            >
+              <X size={14} />
+              {text(locale, "Cancel", "取消")}
+            </Button>
+          ) : active ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                onDocument(null);
+                setActive(false);
+              }}
+            >
+              {text(locale, "Show original", "查看原文")}
+            </Button>
+          ) : null}
+        </div>
+        {busy ? (
+          <div className={styles.progress}>
+            <progress value={progress.done} max={progress.total || 1} />
+            <span>
+              {progress.done}/{progress.total}
+            </span>
+          </div>
+        ) : null}
+        {notice ? <p role="status">{notice}</p> : null}
+        {active ? (
+          <p>
+            <strong>
+              {text(locale, "Current version: ", "当前译文：")}
+              {completed?.target === "en" ? "English" : "简体中文"} ·{" "}
+              {text(
+                locale,
+                completed?.mode === "replace" ? "Replacement" : "Bilingual",
+                completed?.mode === "replace" ? "替换原文" : "双语对照",
+              )}
+            </strong>
+            {" · "}
+            {text(
+              locale,
+              "Preview and PDF use this translated version. Change the mode and translate again to switch output.",
+              "下方预览与 PDF 下载均使用此译文；切换模式后再次翻译即可更新。",
+            )}
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

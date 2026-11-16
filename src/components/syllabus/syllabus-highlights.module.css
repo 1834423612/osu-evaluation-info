@@ -231,6 +231,22 @@
   margin-bottom: 6px;
   color: var(--muted);
 }
+.translationTools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: -14px;
+  z-index: 1;
+  padding-block: 3px 8px;
+  margin-bottom: 5px;
+  background: var(--subtle-surface);
+}
+.translationTools small {
+  color: var(--muted);
+  font-size: 10px;
+}
 @media (max-width: 600px) {
   .tabList {
     gap: 14px;
