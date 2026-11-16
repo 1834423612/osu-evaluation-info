@@ -24,7 +24,10 @@ export const documentSchema = z
     publicationStatus: z.enum(["draft", "published", "unknown"]),
     courseReferences: z.array(code).max(1000),
     pageCount: z.number().int().min(1).max(100).nullable(),
-    extractionStatus: z.enum(["references", "unstructured"]),
+    extractionStatus: z.enum(["references", "unstructured", "unsupported"]),
+    extractionIssue: z
+      .enum(["page-limit", "line-limit", "parse-failed"])
+      .optional(),
     reviewStatus: z.literal("pending"),
   })
   .strict();

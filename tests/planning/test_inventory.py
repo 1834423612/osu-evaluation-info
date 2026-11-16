@@ -33,6 +33,9 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(data['appliedVersions'], [])
         self.assertEqual(data['documentKind'], 'sample-plan')
         self.assertEqual(len(data['courseReferences']), 2)
+        unsupported=inventory.document_metadata({**record,'extractionIssue':'page-limit'},[])
+        self.assertEqual(unsupported['extractionStatus'],'unsupported')
+        self.assertEqual(unsupported['extractionIssue'],'page-limit')
 
     def test_public_revisions_and_official_aliases_only(self):
         self.assertIn('VersionId=v1', official_url('https://files.fisher.osu.edu/x.pdf?VersionId=v1'))

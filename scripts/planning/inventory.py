@@ -102,7 +102,7 @@ def document_metadata(record, blocks, label=''):
     academic_years = sorted(set(a + '-' + (b if len(b) == 4 else a[:2] + b) for a, b in years if int(b[-2:]) == (int(a) + 1) % 100))
     terms = sorted(set(m[0].upper() + m[1] for m in re.findall(r'\bEffective(?:\s+Term)?\s*:?\s*(AU|SP|SU)\s*[\x27’]?\s*(20\d{2}|\d{2})\b', text, re.I)))
     terms = [t[:2] + ('20' + t[2:] if len(t) == 4 else t[2:]) for t in terms]
-    applied = sorted(set(re.findall(r'\bApplied Version\s*:?\s*((?:AU|SP|SU)20\d{2})\b', text, re.I)))
+    applied = sorted(set(value.upper() for value in re.findall(r'\bApplied Version\s*:?\s*((?:AU|SP|SU)20\d{2})\b', text, re.I)))
     codes = course_codes(text)
     kind = ('sample-plan' if re.search(r'\b(?:sample|four[- ]year|4[- ]year)\b', title + ('\n' + text[:500] if record.get('contentType') == 'application/pdf' else ''), re.I)
             else 'requirements' if re.search(r'requirement|curriculum sheet', title, re.I) and codes else 'source')
@@ -111,7 +111,8 @@ def document_metadata(record, blocks, label=''):
             'geSystems': ge_systems(title, text),
             'publicationStatus': 'draft' if re.search(r'\bdraft\b', title, re.I) else 'unknown',
             'courseReferences': [{'subject': s, 'number': n} for s, n in codes[:1000]],
-            'pageCount': record.get('pageCount'), 'extractionStatus': 'references' if codes else 'unstructured'}
+            'pageCount': record.get('pageCount'), 'extractionStatus': 'unsupported' if record.get('extractionIssue') else 'references' if codes else 'unstructured',
+            **({'extractionIssue':record['extractionIssue']} if record.get('extractionIssue') else {})}
 
 
 def build(cache):
@@ -144,7 +145,7 @@ def build(cache):
                 extracted = cache / 'extracted' / (version['sha256'] + '.json')
                 evidence = json.loads(extracted.read_text(encoding='utf-8')) if extracted.is_file() else {}
                 blocks = evidence.get('blocks', [])
-                version = {**version, 'pageCount': evidence.get('pageCount')}
+                version = {**version, 'pageCount': evidence.get('pageCount'), 'extractionIssue':evidence.get('reason') if evidence.get('status')=='unsupported' else None}
             metadata = document_metadata(version, blocks, next(iter(labels.get(url, [])), ''))
             identity = hashlib.sha256((url + '\n' + version['sha256']).encode()).hexdigest()[:24]
             matches = []
@@ -172,7 +173,7 @@ def build(cache):
             'counts': {'indexEntries': len(programs), 'downloadedVersions': len(resources),
                        'withCourseReferences': sum(bool(d['courseReferences']) for d in resources),
                        'programsWithReferences': sum(bool(p['documentIds']) for p in programs),
-                       'blockedOrFailed': len(pending), 'unvisited': len(set(state['discovered']) - state['sources'].keys()), 'approved': 0}}
+                       'blockedOrFailed': len(pending), 'unvisited': len(set(state['discovered']) - state['sources'].keys()), 'unsupportedExtractions':sum(d['extractionStatus']=='unsupported' for d in resources), 'approved': 0}}
 
 
 if __name__ == '__main__':

@@ -8,6 +8,8 @@ const cache = resolve(process.argv[2] ?? ".planning-cache");
 const state = JSON.parse(await readFile(join(cache, "state.json"), "utf8"));
 await mkdir(join(cache, "extracted"), { recursive: true });
 let extracted = 0,
+  reused = 0,
+  unsupported = 0,
   failed = 0;
 for (const record of Object.values(state.sources)) {
   for (const source of [...(record.versions ?? []), record]) {
@@ -16,7 +18,9 @@ for (const record of Object.values(state.sources)) {
       !/^[a-f0-9]{64}$/.test(source.sha256 ?? "")
     )
       continue;
-    let task;
+    let task,
+      verified = false,
+      pageCount = null;
     try {
       const data = await readFile(join(cache, source.sha256));
       if (
@@ -24,6 +28,30 @@ for (const record of Object.values(state.sources)) {
         createHash("sha256").update(data).digest("hex") !== source.sha256
       )
         throw Error("digest");
+      verified = true;
+      try {
+        const cached = JSON.parse(
+          await readFile(
+            join(cache, "extracted", source.sha256 + ".json"),
+            "utf8",
+          ),
+        );
+        if (
+          cached.sha256 === source.sha256 &&
+          cached.parserVersion === "pdfjs-geometry-v2" &&
+          (cached.status === "unsupported" ||
+            (Array.isArray(cached.blocks) &&
+              cached.blocks.length <= 30000 &&
+              cached.pageCount > 0 &&
+              cached.pageCount <= 100))
+        ) {
+          reused++;
+          if (cached.status === "unsupported") unsupported++;
+          continue;
+        }
+      } catch {
+        /* Missing/corrupt extraction is regenerated from verified bytes. */
+      }
       task = getDocument({
         data: new Uint8Array(data),
         verbosity: 0,
@@ -32,6 +60,7 @@ for (const record of Object.values(state.sources)) {
         isEvalSupported: false,
       });
       const pdf = await task.promise;
+      pageCount = pdf.numPages;
       if (pdf.numPages > 100) throw Error("pages");
       const blocks = [];
       for (let page = 1; page <= pdf.numPages; page++) {
@@ -53,18 +82,40 @@ for (const record of Object.values(state.sources)) {
         JSON.stringify({
           sha256: source.sha256,
           parserVersion: "pdfjs-geometry-v2",
+          status: "extracted",
           extractedAt: new Date().toISOString(),
           pageCount: pdf.numPages,
           blocks,
         }) + "\n",
       );
       extracted++;
-    } catch {
-      failed++;
+    } catch (error) {
+      if (!verified) failed++;
+      else {
+        unsupported++;
+        await writeFile(
+          join(cache, "extracted", source.sha256 + ".json"),
+          JSON.stringify({
+            sha256: source.sha256,
+            parserVersion: "pdfjs-geometry-v2",
+            extractedAt: new Date().toISOString(),
+            status: "unsupported",
+            reason:
+              error.message === "pages"
+                ? "page-limit"
+                : error.message === "content"
+                  ? "line-limit"
+                  : "parse-failed",
+            pageCount: null,
+            reportedPageCount: pageCount,
+            blocks: [],
+          }) + "\n",
+        );
+      }
     } finally {
       await task?.destroy();
     }
   }
 }
-console.log(JSON.stringify({ extracted, failed }));
+console.log(JSON.stringify({ extracted, reused, unsupported, failed }));
 if (failed) process.exitCode = 1;
