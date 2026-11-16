@@ -63,6 +63,7 @@
   font-size: 12px;
 }
 .tabs {
+  scrollbar-color: var(--line) transparent;
   display: flex;
   gap: 6px;
   border-bottom: 1px solid var(--line);

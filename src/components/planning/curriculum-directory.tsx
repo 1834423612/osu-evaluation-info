@@ -85,6 +85,8 @@ export function CurriculumDirectory({
   }, [query, college, program, year, ge, version, kind, page, retry]);
   useEffect(() => {
     if (!selected) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const controller = new AbortController();
     fetch("/api/planning/curricula?" + new URLSearchParams({ id: selected }), {
       signal: controller.signal,
@@ -99,7 +101,10 @@ export function CurriculumDirectory({
       .catch(() => {
         if (!controller.signal.aborted) setDetailError(true);
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      document.body.style.overflow = previousOverflow;
+    };
   }, [selected, retry]);
   const activeProgram = data?.programs.find((p) => p.id === program);
   function openDocument(id: string) {
