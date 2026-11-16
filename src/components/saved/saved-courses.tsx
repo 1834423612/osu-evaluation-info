@@ -180,6 +180,12 @@ function SavedCoursesBody() {
   const visibleSyllabi = savedSyllabi.filter((x) =>
     visible("syllabus:" + x.id),
   );
+  const hasSaved =
+    allSaved.length +
+      allSections.length +
+      allInstructors.length +
+      savedSyllabi.length >
+    0;
   const savedCount =
     saved.length +
     savedSections.length +
@@ -202,43 +208,39 @@ function SavedCoursesBody() {
           </div>
           <SavedStorageSummary locale={locale} />
         </div>
-        <SavedManager locale={locale} />
-        {allSaved.length +
-        allSections.length +
-        allInstructors.length +
-        savedSyllabi.length ? (
-          <Tabs
-            value={
-              kind !== "all"
-                ? ({
-                    course: "courses",
-                    section: "sections",
-                    instructor: "instructors",
-                    syllabus: "syllabi",
-                  }[kind] ?? "courses")
-                : saved.length
-                  ? "courses"
-                  : savedSections.length
-                    ? "sections"
-                    : savedInstructors.length
-                      ? "instructors"
-                      : "syllabi"
-            }
-            onValueChange={(value) =>
-              setKind(
-                (
-                  {
-                    courses: "course",
-                    sections: "section",
-                    instructors: "instructor",
-                    syllabi: "syllabus",
-                  } as Record<string, string>
-                )[value],
-              )
-            }
-            className={styles.tabs}
-            data-compact={(compact && selecting) || undefined}
-          >
+        <Tabs
+          value={
+            kind !== "all"
+              ? ({
+                  course: "courses",
+                  section: "sections",
+                  instructor: "instructors",
+                  syllabus: "syllabi",
+                }[kind] ?? "courses")
+              : saved.length
+                ? "courses"
+                : savedSections.length
+                  ? "sections"
+                  : savedInstructors.length
+                    ? "instructors"
+                    : "syllabi"
+          }
+          onValueChange={(value) =>
+            setKind(
+              (
+                {
+                  courses: "course",
+                  sections: "section",
+                  instructors: "instructor",
+                  syllabi: "syllabus",
+                } as Record<string, string>
+              )[value],
+            )
+          }
+          className={styles.tabs}
+          data-compact={(compact && selecting) || undefined}
+        >
+          {hasSaved ? (
             <TabsList
               className={styles.tabList}
               aria-label={text(locale, "Saved categories", "收藏分类")}
@@ -273,287 +275,295 @@ function SavedCoursesBody() {
                 ) : null}
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="syllabi" className={styles.tabContent}>
-              <SavedSyllabi locale={locale} />
-            </TabsContent>
-            <TabsContent value="courses" className={styles.tabContent}>
-              {saved.length ? (
-                <div className="course-list">
-                  {saved.map((course) => (
-                    <SavedCardFrame
-                      key={course.id}
-                      id={"course:" + course.id}
-                      title={course.subject + " " + course.catalogNumber}
-                      locale={locale}
-                    >
-                      <CourseCard
+          ) : null}
+          <SavedManager locale={locale} />
+          {hasSaved ? (
+            <>
+              <TabsContent value="syllabi" className={styles.tabContent}>
+                <SavedSyllabi locale={locale} />
+              </TabsContent>
+              <TabsContent value="courses" className={styles.tabContent}>
+                {saved.length ? (
+                  <div className="course-list">
+                    {saved.map((course) => (
+                      <SavedCardFrame
                         key={course.id}
-                        course={course}
+                        id={"course:" + course.id}
+                        title={course.subject + " " + course.catalogNumber}
                         locale={locale}
-                        saved
-                        enrollmentWatch={enrollmentWatch}
-                        enrollmentWatchInterval={enrollmentWatchInterval}
-                        onEnrollmentWatchChange={setEnrollmentWatch}
-                        onEnrollmentWatchIntervalChange={
-                          setEnrollmentWatchInterval
-                        }
-                        onSave={toggleSaved}
-                      />
-                    </SavedCardFrame>
-                  ))}
-                </div>
-              ) : (
-                <EmptyResult>
-                  {text(locale, "No saved courses.", "暂无收藏课程。")}
-                </EmptyResult>
-              )}
-            </TabsContent>
-            <TabsContent value="sections" className={styles.tabContent}>
-              {savedSections.length ? (
-                <div className={styles.list}>
-                  {savedSections.map((item) => (
-                    <SavedCardFrame
-                      key={item.id}
-                      id={"section:" + item.id}
-                      title={item.courseLabel}
-                      locale={locale}
-                    >
-                      <article className={styles.item}>
-                        <div className={styles.itemHeading}>
-                          <div className={styles.itemIdentity}>
-                            <Link
-                              className={styles.sectionDestination}
-                              href={courseHref(
-                                {
-                                  id: item.courseId,
-                                  label: item.courseLabel,
-                                  termCode: item.termCode,
-                                  campusCode: item.campusCode,
-                                },
-                                item.section.classNumber,
+                      >
+                        <CourseCard
+                          key={course.id}
+                          course={course}
+                          locale={locale}
+                          saved
+                          enrollmentWatch={enrollmentWatch}
+                          enrollmentWatchInterval={enrollmentWatchInterval}
+                          onEnrollmentWatchChange={setEnrollmentWatch}
+                          onEnrollmentWatchIntervalChange={
+                            setEnrollmentWatchInterval
+                          }
+                          onSave={toggleSaved}
+                        />
+                      </SavedCardFrame>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyResult>
+                    {text(locale, "No saved courses.", "暂无收藏课程。")}
+                  </EmptyResult>
+                )}
+              </TabsContent>
+              <TabsContent value="sections" className={styles.tabContent}>
+                {savedSections.length ? (
+                  <div className={styles.list}>
+                    {savedSections.map((item) => (
+                      <SavedCardFrame
+                        key={item.id}
+                        id={"section:" + item.id}
+                        title={item.courseLabel}
+                        locale={locale}
+                      >
+                        <article className={styles.item}>
+                          <div className={styles.itemHeading}>
+                            <div className={styles.itemIdentity}>
+                              <Link
+                                className={styles.sectionDestination}
+                                href={courseHref(
+                                  {
+                                    id: item.courseId,
+                                    label: item.courseLabel,
+                                    termCode: item.termCode,
+                                    campusCode: item.campusCode,
+                                  },
+                                  item.section.classNumber,
+                                )}
+                              >
+                                <span className={styles.courseCode}>
+                                  {item.courseLabel}
+                                </span>
+                                <strong>
+                                  {item.section.component}{" "}
+                                  {item.section.section}
+                                </strong>
+                                <span className={styles.muted}>
+                                  #{item.section.classNumber} · {item.term} ·{" "}
+                                  {item.campus}
+                                </span>
+                              </Link>
+                              <SavedSectionFacts item={item} locale={locale} />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={text(
+                                locale,
+                                `Remove ${item.courseLabel} section ${item.section.section}`,
+                                `取消收藏 ${item.courseLabel} ${item.section.section} 班次`,
                               )}
+                              title={text(
+                                locale,
+                                "Remove saved section",
+                                "取消收藏班次",
+                              )}
+                              onClick={() =>
+                                toggleSection(
+                                  relatedCourse({
+                                    id: item.courseId,
+                                    label: item.courseLabel,
+                                    title: item.courseTitle,
+                                    term: item.term,
+                                  }),
+                                  item.section,
+                                )
+                              }
                             >
-                              <span className={styles.courseCode}>
-                                {item.courseLabel}
-                              </span>
-                              <strong>
-                                {item.section.component} {item.section.section}
-                              </strong>
-                              <span className={styles.muted}>
-                                #{item.section.classNumber} · {item.term} ·{" "}
-                                {item.campus}
-                              </span>
-                            </Link>
-                            <SavedSectionFacts item={item} locale={locale} />
+                              <Trash2 />
+                            </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={text(
-                              locale,
-                              `Remove ${item.courseLabel} section ${item.section.section}`,
-                              `取消收藏 ${item.courseLabel} ${item.section.section} 班次`,
+                          <div className={styles.relatedTitle}>
+                            {item.courseTitle}
+                          </div>
+                          {item.section.instructors.length ? (
+                            <div className={styles.people}>
+                              {item.section.instructors.map((instructor) => (
+                                <div key={instructor.email ?? instructor.name}>
+                                  <InstructorDirectoryIdentity
+                                    name={instructor.name}
+                                    email={instructor.email}
+                                    locale={locale}
+                                    size={24}
+                                    subject={
+                                      item.courseLabel.split(/\s+/, 1)[0]
+                                    }
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                          <div className={styles.meetings}>
+                            {item.section.meetings.length ? (
+                              item.section.meetings.map((meeting, index) => (
+                                <MeetingStrip
+                                  key={index}
+                                  meeting={meeting}
+                                  instructionMode={item.section.instructionMode}
+                                  locale={locale}
+                                />
+                              ))
+                            ) : (
+                              <MeetingStrip
+                                instructionMode={item.section.instructionMode}
+                                locale={locale}
+                              />
                             )}
-                            title={text(
-                              locale,
-                              "Remove saved section",
-                              "取消收藏班次",
-                            )}
-                            onClick={() =>
-                              toggleSection(
-                                relatedCourse({
-                                  id: item.courseId,
-                                  label: item.courseLabel,
-                                  title: item.courseTitle,
-                                  term: item.term,
-                                }),
-                                item.section,
-                              )
-                            }
-                          >
-                            <Trash2 />
-                          </Button>
-                        </div>
-                        <div className={styles.relatedTitle}>
-                          {item.courseTitle}
-                        </div>
-                        {item.section.instructors.length ? (
-                          <div className={styles.people}>
-                            {item.section.instructors.map((instructor) => (
-                              <div key={instructor.email ?? instructor.name}>
+                          </div>
+                        </article>
+                      </SavedCardFrame>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyResult>
+                    {text(locale, "No saved sections.", "暂无收藏班次。")}
+                  </EmptyResult>
+                )}
+              </TabsContent>
+              <TabsContent value="instructors" className={styles.tabContent}>
+                {savedInstructors.length ? (
+                  <div className={styles.list}>
+                    {savedInstructors.map((instructor) => (
+                      <SavedCardFrame
+                        key={instructor.id}
+                        id={"instructor:" + instructor.id}
+                        title={instructor.name}
+                        locale={locale}
+                      >
+                        <article className={styles.item}>
+                          <div className={styles.instructorHeading}>
+                            <div className={styles.peopleIdentity}>
+                              {instructor.rmp ? (
+                                <div className={styles.rmpIdentity}>
+                                  <Link href={`/rmp/${instructor.rmp.id}`}>
+                                    <strong>{instructor.name}</strong>
+                                  </Link>
+                                  <span>
+                                    RMP #{instructor.rmp.id} ·{" "}
+                                    {instructor.rmp.username
+                                      ? text(
+                                          locale,
+                                          "Identity verified",
+                                          "身份已确认",
+                                        )
+                                      : text(
+                                          locale,
+                                          "Identity unconfirmed",
+                                          "身份待确认",
+                                        )}
+                                  </span>
+                                  <small>
+                                    {instructor.rmp.department} · RMP{" "}
+                                    {instructor.rmp.quality ?? "–"}/5 ·{" "}
+                                    {instructor.rmp.reviewCount}{" "}
+                                    {text(locale, "reviews", "条评价")}
+                                  </small>
+                                </div>
+                              ) : (
                                 <InstructorDirectoryIdentity
                                   name={instructor.name}
                                   email={instructor.email}
                                   locale={locale}
-                                  size={24}
-                                  subject={item.courseLabel.split(/\s+/, 1)[0]}
+                                  size={38}
+                                  subject={
+                                    instructor.courses[0]?.label.split(
+                                      /\s+/,
+                                      1,
+                                    )[0]
+                                  }
                                 />
+                              )}
+                            </div>
+                            {instructor.rmp ? (
+                              <RmpSavedRemove instructor={instructor} />
+                            ) : (
+                              <span className={styles.relationCount}>
+                                {instructor.courses.length}{" "}
+                                {text(locale, "courses", "门课程")}
+                              </span>
+                            )}
+                          </div>
+                          <div className={styles.relations}>
+                            {instructor.courses.map((course) => (
+                              <div className={styles.relation} key={course.id}>
+                                <div className={styles.relationInfo}>
+                                  <Link href={courseHref(course)}>
+                                    <span className={styles.courseCode}>
+                                      {course.label}
+                                    </span>
+                                    <span>{course.title}</span>
+                                    <small>{course.term}</small>
+                                  </Link>
+                                  <SavedCourseFacts
+                                    snapshot={course}
+                                    locale={locale}
+                                  />
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={text(
+                                    locale,
+                                    `Unsave ${instructor.name} for ${course.label}`,
+                                    `取消收藏 ${instructor.name} 在 ${course.label} 的关系`,
+                                  )}
+                                  title={text(
+                                    locale,
+                                    "Remove instructor course relation",
+                                    "取消教师课程关联收藏",
+                                  )}
+                                  onClick={() =>
+                                    toggleInstructor(
+                                      relatedCourse(course),
+                                      instructor,
+                                    )
+                                  }
+                                >
+                                  <Trash2 />
+                                </Button>
                               </div>
                             ))}
                           </div>
-                        ) : null}
-                        <div className={styles.meetings}>
-                          {item.section.meetings.length ? (
-                            item.section.meetings.map((meeting, index) => (
-                              <MeetingStrip
-                                key={index}
-                                meeting={meeting}
-                                instructionMode={item.section.instructionMode}
-                                locale={locale}
-                              />
-                            ))
-                          ) : (
-                            <MeetingStrip
-                              instructionMode={item.section.instructionMode}
-                              locale={locale}
-                            />
-                          )}
-                        </div>
-                      </article>
-                    </SavedCardFrame>
-                  ))}
-                </div>
-              ) : (
-                <EmptyResult>
-                  {text(locale, "No saved sections.", "暂无收藏班次。")}
-                </EmptyResult>
-              )}
-            </TabsContent>
-            <TabsContent value="instructors" className={styles.tabContent}>
-              {savedInstructors.length ? (
-                <div className={styles.list}>
-                  {savedInstructors.map((instructor) => (
-                    <SavedCardFrame
-                      key={instructor.id}
-                      id={"instructor:" + instructor.id}
-                      title={instructor.name}
-                      locale={locale}
-                    >
-                      <article className={styles.item}>
-                        <div className={styles.instructorHeading}>
-                          <div className={styles.peopleIdentity}>
-                            {instructor.rmp ? (
-                              <div className={styles.rmpIdentity}>
-                                <Link href={`/rmp/${instructor.rmp.id}`}>
-                                  <strong>{instructor.name}</strong>
-                                </Link>
-                                <span>
-                                  RMP #{instructor.rmp.id} ·{" "}
-                                  {instructor.rmp.username
-                                    ? text(
-                                        locale,
-                                        "Identity verified",
-                                        "身份已确认",
-                                      )
-                                    : text(
-                                        locale,
-                                        "Identity unconfirmed",
-                                        "身份待确认",
-                                      )}
-                                </span>
-                                <small>
-                                  {instructor.rmp.department} · RMP{" "}
-                                  {instructor.rmp.quality ?? "–"}/5 ·{" "}
-                                  {instructor.rmp.reviewCount}{" "}
-                                  {text(locale, "reviews", "条评价")}
-                                </small>
-                              </div>
-                            ) : (
-                              <InstructorDirectoryIdentity
-                                name={instructor.name}
-                                email={instructor.email}
-                                locale={locale}
-                                size={38}
-                                subject={
-                                  instructor.courses[0]?.label.split(
-                                    /\s+/,
-                                    1,
-                                  )[0]
-                                }
-                              />
-                            )}
-                          </div>
-                          {instructor.rmp ? (
-                            <RmpSavedRemove instructor={instructor} />
-                          ) : (
-                            <span className={styles.relationCount}>
-                              {instructor.courses.length}{" "}
-                              {text(locale, "courses", "门课程")}
-                            </span>
-                          )}
-                        </div>
-                        <div className={styles.relations}>
-                          {instructor.courses.map((course) => (
-                            <div className={styles.relation} key={course.id}>
-                              <div className={styles.relationInfo}>
-                                <Link href={courseHref(course)}>
-                                  <span className={styles.courseCode}>
-                                    {course.label}
-                                  </span>
-                                  <span>{course.title}</span>
-                                  <small>{course.term}</small>
-                                </Link>
-                                <SavedCourseFacts
-                                  snapshot={course}
-                                  locale={locale}
-                                />
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={text(
-                                  locale,
-                                  `Unsave ${instructor.name} for ${course.label}`,
-                                  `取消收藏 ${instructor.name} 在 ${course.label} 的关系`,
-                                )}
-                                title={text(
-                                  locale,
-                                  "Remove instructor course relation",
-                                  "取消教师课程关联收藏",
-                                )}
-                                onClick={() =>
-                                  toggleInstructor(
-                                    relatedCourse(course),
-                                    instructor,
-                                  )
-                                }
-                              >
-                                <Trash2 />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </article>
-                    </SavedCardFrame>
-                  ))}
-                </div>
-              ) : (
-                <EmptyResult>
-                  {text(locale, "No saved instructors.", "暂无收藏教师。")}
-                </EmptyResult>
-              )}
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <div className="empty-results">
-            <SceneMascot scene="no-results" size={136} />
-            <h2>
-              {text(locale, "Keep the courses you like", "收藏感兴趣的课程")}
-            </h2>
-            <p>
-              {text(
-                locale,
-                "Use the bookmark on any course to add it here.",
-                "点击课程卡片上的书签，即可添加到这里。",
-              )}
-            </p>
-            <Button asChild>
-              <Link href="/">
-                {text(locale, "Explore courses", "探索课程")}
-              </Link>
-            </Button>
-          </div>
-        )}
+                        </article>
+                      </SavedCardFrame>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyResult>
+                    {text(locale, "No saved instructors.", "暂无收藏教师。")}
+                  </EmptyResult>
+                )}
+              </TabsContent>
+            </>
+          ) : (
+            <div className="empty-results">
+              <SceneMascot scene="no-results" size={136} />
+              <h2>
+                {text(locale, "Keep the courses you like", "收藏感兴趣的课程")}
+              </h2>
+              <p>
+                {text(
+                  locale,
+                  "Use the bookmark on any course to add it here.",
+                  "点击课程卡片上的书签，即可添加到这里。",
+                )}
+              </p>
+              <Button asChild>
+                <Link href="/">
+                  {text(locale, "Explore courses", "探索课程")}
+                </Link>
+              </Button>
+            </div>
+          )}
+        </Tabs>
       </main>
       <AppFooter />
     </>
