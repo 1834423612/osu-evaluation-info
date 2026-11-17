@@ -1,6 +1,6 @@
 "use client";
 import { ChoiceSelect } from "@/components/ui/choice-select";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import {
   Download,
@@ -17,14 +17,7 @@ import { AppFooter } from "@/components/layout/app-footer";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useDraftGuard } from "@/components/forms/draft-guard";
 import { text } from "@/lib/i18n";
-import {
-  emptyPlan,
-  savePlan,
-  loadPlan,
-  serializePlan,
-  PLAN_STORAGE_KEY,
-  type Plan,
-} from "@/lib/planning/model";
+import { emptyPlan, serializePlan, type Plan } from "@/lib/planning/model";
 import { extractPlan } from "@/lib/planning/pdf";
 import { pruneAllocations, removeSnapshot } from "@/lib/planning/snapshots";
 import { importPlanningFiles } from "@/lib/planning/batch-import";
@@ -43,6 +36,11 @@ import { PlanningCatalogProvider } from "./course-catalog";
 
 import { CourseInspector } from "./course-inspector";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
+import {
+  planningScope,
+  subscribePlanningScope,
+} from "@/lib/planning/client-sync";
+import { usePlanningWorkspace } from "./use-planning-workspace";
 import { CloudBackup } from "./cloud-backup";
 import { ImportGuide } from "./import-guide";
 import styles from "./planning.module.css";
@@ -56,64 +54,38 @@ const SampleGallery = dynamic(() =>
   import("./sample-gallery").then((m) => m.SampleGallery),
 );
 export function PlanningWorkspace() {
+  const account = useSyncExternalStore(
+    subscribePlanningScope,
+    planningScope,
+    () => null,
+  );
+  return <PlanningWorkspaceBody key={account ?? "guest"} account={account} />;
+}
+function PlanningWorkspaceBody({ account }: { account: string | null }) {
   const { locale } = usePreferences();
   const t = (en: string, zh: string) => text(locale, en, zh);
-  const [plan, setPlan] = useState<Plan>(emptyPlan);
+  const { plan, setPlan, ready, saved, storageError } =
+    usePlanningWorkspace(account);
   const [tab, setTab] = useState<"board" | "map" | "official" | "import">(
     "board",
   );
   const [catalogTerm, setCatalogTerm] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
-  const [ready, setReady] = useState(false),
-    [saved, setSaved] = useState("");
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
-  const [progress, setProgress] = useState(""),
-    [storageError, setStorageError] = useState(false);
+  const [progress, setProgress] = useState("");
   const fileInput = useRef<HTMLInputElement>(null),
     profile = useRef<ImportProfile | null>(null);
   const guard = useRef(new ImportGuard());
-  const loadBlocked = useRef(false);
   const [inspected, setInspected] = useState<{
     subject: string;
     number: string;
   } | null>(null);
   const fingerprint = JSON.stringify(plan);
   useEffect(() => {
-    let active = true;
-    queueMicrotask(() => {
-      if (!active) return;
-      try {
-        const value = loadPlan(localStorage);
-        if (value) {
-          setPlan(value);
-          setSaved(JSON.stringify(value));
-        }
-      } catch {
-        loadBlocked.current = true;
-        setStorageError(true);
-      }
-      setReady(true);
-    });
     const current = guard.current;
-    return () => {
-      active = false;
-      current.invalidate();
-    };
+    return () => current.invalidate();
   }, []);
-  useEffect(() => {
-    if (!ready || busy || loadBlocked.current || fingerprint === saved) return;
-    const timer = setTimeout(() => {
-      try {
-        savePlan(localStorage, plan);
-        setSaved(fingerprint);
-        setStorageError(false);
-      } catch {
-        setStorageError(true);
-      }
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [plan, fingerprint, ready, busy, saved]);
   useDraftGuard(
     busy || (ready && !!plan.documents.length && fingerprint !== saved),
   );
@@ -475,6 +447,7 @@ export function PlanningWorkspace() {
           )}
           <WorkspaceDialog
             closeOnly
+            wide
             open={!!inspected}
             onOpenChange={(open) => {
               if (!open) setInspected(null);
@@ -521,13 +494,13 @@ export function PlanningWorkspace() {
                   </h2>
                   <p>
                     {t(
-                      "Reports are read locally. Names, student identifiers, email addresses and raw PDFs are removed from the saved plan. The structured plan stays on this device until you choose to back it up to your account.",
-                      "报告在本地读取，保存时移除姓名、学号、邮箱和原始 PDF。结构化规划默认保存在此设备，可自行备份到账号。",
+                      "Reports are read locally. Names, student identifiers, email addresses and raw PDFs are removed from the saved plan. Signed-in accounts sync structured plans automatically. Reusable program requirements are archived without student records.",
+                      "报告在本地读取，保存时移除姓名、学号、邮箱和原始 PDF。登录后自动同步结构化规划，并自动归档去除个人修读记录的通用专业要求。",
                     )}
                   </p>
                 </div>
               </div>
-              <CloudBackup plan={plan} locale={locale} update={update} />
+              <CloudBackup account={account} locale={locale} />
               <div className={styles.reportList}>
                 {plan.documents.map((document, i) => (
                   <article key={document.id}>
@@ -559,7 +532,9 @@ export function PlanningWorkspace() {
               </div>
               {!!plan.documents.length && (
                 <button onClick={() => setConfirmClear(true)}>
-                  {t("Clear local plan", "清除本地规划")}
+                  {account
+                    ? t("Clear account plan", "清除账号规划")
+                    : t("Clear local plan", "清除本地规划")}
                 </button>
               )}
             </div>
@@ -568,10 +543,18 @@ export function PlanningWorkspace() {
         <WorkspaceDialog
           open={confirmClear}
           onOpenChange={setConfirmClear}
-          title={t("Clear local plan?", "清除本地规划？")}
+          title={
+            account
+              ? t("Clear account plan?", "清除账号规划？")
+              : t("Clear local plan?", "清除本地规划？")
+          }
           description={t(
-            "Export a backup first if you want to keep this plan.",
-            "如需保留，请先导出备份。",
+            account
+              ? "This deletion syncs to your other devices. Export a backup first if needed."
+              : "Export a backup first if you want to keep this plan.",
+            account
+              ? "删除将同步到其他设备，如需保留请先导出备份。"
+              : "如需保留，请先导出备份。",
           )}
           closeLabel={t("Cancel", "取消")}
           guard={false}
@@ -581,9 +564,7 @@ export function PlanningWorkspace() {
             onClick={() => {
               guard.current.invalidate();
               setBusy(false);
-              localStorage.removeItem(PLAN_STORAGE_KEY);
               setPlan(emptyPlan());
-              setSaved("");
               setConfirmClear(false);
             }}
           >

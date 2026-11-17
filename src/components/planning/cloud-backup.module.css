@@ -6,6 +6,9 @@
   background: var(--surface);
 }
 .root h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   margin: 0 0 8px;
 }
@@ -21,21 +24,30 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin: 14px 0;
 }
 .root .actions button {
   background: var(--subtle-surface);
 }
-.root details {
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-  font-size: 12px;
-}
-.root summary {
-  cursor: pointer;
-}
 .root a {
   color: var(--primary);
   font-size: 12px;
+}
+.templates {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+}
+.templates svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.templates p {
+  margin: 0;
 }
