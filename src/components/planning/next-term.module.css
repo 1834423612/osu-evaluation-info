@@ -13,11 +13,7 @@
   letter-spacing: -0.04em;
   margin: 8px 0;
 }
-.heading p {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.7;
-}
+.heading p,
 .methods p {
   color: var(--muted);
   font-size: 13px;
@@ -41,13 +37,7 @@
   border-radius: 16px;
   background: var(--surface);
 }
-.controls label {
-  display: grid;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--muted);
-  min-width: 0;
-}
+.controls label,
 .ratingBar label {
   display: grid;
   gap: 8px;
@@ -58,6 +48,12 @@
 .controls input {
   width: 100%;
   min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
 }
 .controls select {
   width: 100%;
@@ -203,18 +199,19 @@
   font-size: 12px;
 }
 .root[data-compact="true"] .controls {
-  grid-template-columns: minmax(0, 1fr);
   padding: 12px;
   gap: 12px;
   border-radius: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .root[data-compact="true"] .cards {
   grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 .root[data-compact="true"] .card {
-  padding: 16px;
   border-radius: 8px;
+  padding: 12px;
+  gap: 8px;
 }
 .root[data-compact="true"] .bundle {
   flex-direction: column;
@@ -245,7 +242,7 @@
   border: 0;
   padding: 0;
   background: transparent;
-  color: var(--foreground);
+  color: var(--ink);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -259,6 +256,13 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
+}
+.root[data-compact="true"] .courseTitle {
+  font-size: 12px;
+  margin: 5px 0;
+}
+.root[data-compact="true"] .cardTop h3 {
+  font-size: 14px;
 }
 @media (max-width: 1000px) {
   .controls {

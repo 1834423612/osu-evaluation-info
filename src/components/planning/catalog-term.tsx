@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useState } from "react";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import type { CatalogTerm } from "@/lib/catalog/types";
@@ -27,10 +28,10 @@ export function CatalogTermSelect({
     return () => controller.abort();
   }, []);
   return (
-    <select
+    <ChoiceSelect
       aria-label={text(locale, "Catalog term", "课程目录学期")}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onValueChange={onChange}
     >
       <option value="">
         {text(locale, "Latest available", "最新可用学期")}
@@ -40,6 +41,6 @@ export function CatalogTermSelect({
           {term.label}
         </option>
       ))}
-    </select>
+    </ChoiceSelect>
   );
 }

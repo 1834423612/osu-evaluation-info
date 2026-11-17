@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useState } from "react";
 import type { Plan } from "@/lib/planning/model";
 import {
@@ -163,11 +164,11 @@ export function SourceReview({ plan, locale, update }: Props) {
               <div className={styles.meta}>
                 <label className={styles.field}>
                   {t("Rule", "规则")}
-                  <select
+                  <ChoiceSelect
                     value={r.kind}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       editRequirement(r.id, {
-                        kind: e.target.value as typeof r.kind,
+                        kind: value as typeof r.kind,
                       })
                     }
                   >
@@ -186,7 +187,7 @@ export function SourceReview({ plan, locale, update }: Props) {
                           : kind}
                       </option>
                     ))}
-                  </select>
+                  </ChoiceSelect>
                 </label>
                 <label className={styles.field}>
                   {t("Minimum credits", "最低学分")}
@@ -229,10 +230,10 @@ export function SourceReview({ plan, locale, update }: Props) {
               )}
               <label className={styles.field}>
                 {t("Allocate a reviewed course", "分配已核对课程")}
-                <select
+                <ChoiceSelect
                   value=""
-                  onChange={(e) => {
-                    const courseId = e.target.value;
+                  onValueChange={(value) => {
+                    const courseId = value;
                     if (courseId)
                       update((p) => ({
                         ...p,
@@ -261,7 +262,7 @@ export function SourceReview({ plan, locale, update }: Props) {
                       {t("record", "记录")} {i + 1} · {c.credits ?? "?"}
                     </option>
                   ))}
-                </select>
+                </ChoiceSelect>
               </label>
               {plan.allocations
                 .filter((a) => a.requirementId === r.id)
@@ -364,16 +365,16 @@ export function SourceReview({ plan, locale, update }: Props) {
           <div className={styles.panel}>
             <label className={styles.field}>
               {t("Source audit mode", "来源审核模式")}
-              <select
+              <ChoiceSelect
                 value={d.auditMode}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   update((p) => ({
                     ...p,
                     documents: p.documents.map((x) =>
                       x.id === d.id
                         ? {
                             ...x,
-                            auditMode: e.target.value as typeof d.auditMode,
+                            auditMode: value as typeof d.auditMode,
                           }
                         : x,
                     ),
@@ -383,7 +384,7 @@ export function SourceReview({ plan, locale, update }: Props) {
                 <option value="unknown">{t("Unknown", "未知")}</option>
                 <option value="official">Official</option>
                 <option value="planned">Planned</option>
-              </select>
+              </ChoiceSelect>
             </label>
             <div className={styles.actions}>
               <button onClick={() => addProgram(d.id)}>
@@ -430,11 +431,11 @@ export function SourceReview({ plan, locale, update }: Props) {
                     </label>
                     <label className={styles.field}>
                       {t("Declaration", "申报状态")}
-                      <select
+                      <ChoiceSelect
                         value={p.declaration}
-                        onChange={(e) =>
+                        onValueChange={(value) =>
                           editProgram(p.id, {
-                            declaration: e.target.value as typeof p.declaration,
+                            declaration: value as typeof p.declaration,
                           })
                         }
                       >
@@ -445,7 +446,7 @@ export function SourceReview({ plan, locale, update }: Props) {
                         <option value="undeclared">
                           {t("Undeclared", "未申报")}
                         </option>
-                      </select>
+                      </ChoiceSelect>
                     </label>
                     <label className={styles.field}>
                       {t("Applied Version", "适用要求版本")}

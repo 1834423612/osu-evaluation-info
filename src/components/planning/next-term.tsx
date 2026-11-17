@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Plus, Sparkles } from "lucide-react";
 import { courseSearchHref, type Plan } from "@/lib/planning/model";
@@ -242,9 +243,9 @@ export function NextTerm({
       <div className={styles.controls}>
         <label>
           {t("Planning program", "规划专业")}
-          <select
+          <ChoiceSelect
             value={program?.id ?? "manual"}
-            onChange={(e) => setProgramId(e.target.value)}
+            onValueChange={(value) => setProgramId(value)}
           >
             <option value="manual">
               {t("Manual plan only", "仅手动规划")}
@@ -260,7 +261,7 @@ export function NextTerm({
                   .join(" · ")}
               </option>
             ))}
-          </select>
+          </ChoiceSelect>
         </label>
       </div>
       <details className={styles.preferences}>
@@ -296,9 +297,9 @@ export function NextTerm({
           </label>
           <label>
             {t("Official sample (optional)", "官方样表（可选）")}
-            <select
+            <ChoiceSelect
               value={sampleId}
-              onChange={(e) => setSampleId(e.target.value)}
+              onValueChange={(value) => setSampleId(value)}
             >
               <option value="">{t("No example selected", "未选择样表")}</option>
               {samples.map((s) => (
@@ -306,20 +307,20 @@ export function NextTerm({
                   {s.label ?? s.program}
                 </option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <label>
             {t("Sample year", "样表年级")}
-            <select
+            <ChoiceSelect
               value={sampleYear}
-              onChange={(e) => setSampleYear(Number(e.target.value))}
+              onValueChange={(value) => setSampleYear(Number(value))}
             >
               {[1, 2, 3, 4].map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <label>
             {t("Limit these prefixes", "限制这些课程前缀")}
@@ -349,12 +350,12 @@ export function NextTerm({
         <div className={styles.ratingBar}>
           <label>
             {t("Evaluation campus", "评价校区")}
-            <select
+            <ChoiceSelect
               value={campus}
-              onChange={(e) => {
+              onValueChange={(value) => {
                 request.current?.abort();
                 setBusy(false);
-                setCampus(e.target.value);
+                setCampus(value);
                 setRatings({});
                 setMessage("");
               }}
@@ -362,7 +363,7 @@ export function NextTerm({
               {["COL", "LMA", "MNS", "MRN", "NWK", "WST"].map((c) => (
                 <option key={c}>{c}</option>
               ))}
-            </select>
+            </ChoiceSelect>
           </label>
           <button
             disabled={busy || !result?.candidates.length}

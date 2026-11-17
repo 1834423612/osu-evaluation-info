@@ -39,6 +39,9 @@ export function ChoiceSelect({
   className,
   ...props
 }: Props) {
+  const emptyValue = "__choice_empty__";
+  const encode = (value: string | number | readonly string[] | undefined) =>
+    value == null ? undefined : String(value) || emptyValue;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
   const bindTrigger = useCallback(
     (node: HTMLButtonElement | null) =>
@@ -50,13 +53,15 @@ export function ChoiceSelect({
   );
   return (
     <Select
-      key={defaultValue == null ? undefined : String(defaultValue)}
+      key={defaultValue == null ? undefined : encode(defaultValue)}
       name={name}
       required={required}
       disabled={disabled}
-      value={value == null ? undefined : String(value)}
-      defaultValue={defaultValue == null ? undefined : String(defaultValue)}
-      onValueChange={onValueChange}
+      value={value == null ? undefined : encode(value)}
+      defaultValue={defaultValue == null ? undefined : encode(defaultValue)}
+      onValueChange={(value) =>
+        onValueChange?.(value === emptyValue ? "" : value)
+      }
     >
       <SelectTrigger
         {...props}
@@ -77,7 +82,7 @@ export function ChoiceSelect({
         {options.map((option, index) => (
           <SelectItem
             key={option.key ?? index}
-            value={String(option.props.value ?? option.props.children)}
+            value={encode(option.props.value ?? String(option.props.children))!}
             disabled={option.props.disabled}
             data-choice-value={String(
               option.props.value ?? option.props.children,

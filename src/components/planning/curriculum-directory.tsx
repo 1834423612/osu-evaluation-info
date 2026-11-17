@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -171,10 +172,10 @@ export function CurriculumDirectory({
         </label>
         <label>
           {t("College or school", "学院或学部")}
-          <select
+          <ChoiceSelect
             value={college}
-            onChange={(e) => {
-              setCollege(e.target.value);
+            onValueChange={(value) => {
+              setCollege(value);
               setProgram("");
               setPage(1);
             }}
@@ -183,14 +184,14 @@ export function CurriculumDirectory({
             {[...new Set(data?.programs.map((p) => p.college))].map((c) => (
               <option key={c}>{c}</option>
             ))}
-          </select>
+          </ChoiceSelect>
         </label>
         <label>
           {t("Program index", "专业索引")}
-          <select
+          <ChoiceSelect
             value={program}
-            onChange={(e) => {
-              setProgram(e.target.value);
+            onValueChange={(value) => {
+              setProgram(value);
               setPage(1);
             }}
           >
@@ -205,14 +206,14 @@ export function CurriculumDirectory({
                     : t("coverage pending", "待补充资料")}
                 </option>
               ))}
-          </select>
+          </ChoiceSelect>
         </label>
         <label>
           {t("Document academic year", "文档学年")}
-          <select
+          <ChoiceSelect
             value={year}
-            onChange={(e) => {
-              setYear(e.target.value);
+            onValueChange={(value) => {
+              setYear(value);
               setPage(1);
             }}
           >
@@ -220,14 +221,14 @@ export function CurriculumDirectory({
             {data?.years.map((y) => (
               <option key={y}>{y}</option>
             ))}
-          </select>
+          </ChoiceSelect>
         </label>
         <label>
           {t("Published requirement term", "已公布的要求学期")}
-          <select
+          <ChoiceSelect
             value={version}
-            onChange={(e) => {
-              setVersion(e.target.value);
+            onValueChange={(value) => {
+              setVersion(value);
               setPage(1);
             }}
           >
@@ -235,28 +236,28 @@ export function CurriculumDirectory({
             {data?.versions.map((v) => (
               <option key={v}>{v}</option>
             ))}
-          </select>
+          </ChoiceSelect>
         </label>
         <label>
           {t("GE system", "通识体系")}
-          <select
+          <ChoiceSelect
             value={ge}
-            onChange={(e) => {
-              setGe(e.target.value);
+            onValueChange={(value) => {
+              setGe(value);
               setPage(1);
             }}
           >
             <option value="">{t("All / unknown", "全部 / 未知")}</option>
             <option>GEN</option>
             <option>GEL</option>
-          </select>
+          </ChoiceSelect>
         </label>
         <label>
           {t("Document type", "文档类型")}
-          <select
+          <ChoiceSelect
             value={kind}
-            onChange={(e) => {
-              setKind(e.target.value);
+            onValueChange={(value) => {
+              setKind(value);
               setPage(1);
             }}
           >
@@ -268,7 +269,7 @@ export function CurriculumDirectory({
               {t("Requirement references", "要求参考")}
             </option>
             <option value="source">{t("Source pages", "来源页面")}</option>
-          </select>
+          </ChoiceSelect>
         </label>
       </div>
       {activeProgram && (
