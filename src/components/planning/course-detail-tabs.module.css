@@ -28,9 +28,6 @@
   border-radius: 5px;
   font-size: 11px;
 }
-.root :global(.section-card) {
-  padding: 10px;
-}
 .root :global(.evaluation-panel) {
   padding: 10px 0;
 }
@@ -39,4 +36,16 @@
 }
 .root :global(.rating-source-tabs) {
   min-width: 0;
+}
+
+.root :global(.section-card) {
+  padding: 10px;
+  min-width: 0;
+}
+.root :global(.section-days) {
+  flex-wrap: wrap;
+}
+.root .tabs {
+  height: auto;
+  min-height: 38px;
 }

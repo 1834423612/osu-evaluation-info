@@ -6,7 +6,7 @@ import { readRequirementCourses } from "@/lib/planning/requirement-catalog";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import { text, type Locale } from "@/lib/i18n";
 import { usePlanningCatalog } from "./course-catalog";
-import styles from "./requirement-map.module.css";
+import styles from "./requirement-choices.module.css";
 export function RequirementChoices({
   title,
   locale,
@@ -113,13 +113,17 @@ export function RequirementChoices({
   }
   useEffect(() => () => request.current?.abort(), []);
   return (
-    <div ref={anchor} className={styles.courseRows}>
+    <div ref={anchor} className={styles.list}>
       {current?.courses.map((c) => {
         const code = { subject: c.subject, number: c.catalogNumber },
           id = `${c.subject} ${c.catalogNumber}`;
         return (
-          <div key={c.id} className={styles.courseRow}>
-            <button disabled={!inspect} onClick={() => inspect?.(code)}>
+          <div key={c.id} className={styles.row}>
+            <button
+              className={styles.course}
+              disabled={!inspect}
+              onClick={() => inspect?.(code)}
+            >
               <b>{id}</b>
               <span>{c.title}</span>
             </button>
@@ -129,6 +133,7 @@ export function RequirementChoices({
               {t("credits", "学分")}
             </small>
             <button
+              className={styles.add}
               disabled={unavailable.includes(id)}
               onClick={() => add(code)}
               aria-label={`${t("Add", "添加")} ${id}`}

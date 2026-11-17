@@ -354,7 +354,7 @@
   margin-bottom: 8px;
 }
 .dialog[data-wide] {
-  width: min(860px, calc(100vw - 48px));
+  width: min(1180px, calc(100vw - 48px));
 }
 .dialogHeading {
   min-width: 0;

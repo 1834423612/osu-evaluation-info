@@ -8,6 +8,7 @@ import {
   creditLabel,
   planningCredits,
 } from "@/lib/planning/course-catalog";
+import { TranslateText } from "@/components/translation/translate-text";
 import { CourseDetailTabs } from "./course-detail-tabs";
 import { CourseStatus } from "./course-status";
 import { boardCourses } from "@/lib/planning/workspace";
@@ -89,64 +90,87 @@ export function CourseInspector({
           {t("Retry details", "重试查询")}
         </button>
       )}
-      {overview && <p className={styles.description}>{overview}</p>}
-      <section className={styles.prerequisites}>
-        <h4>
-          <GitBranch size={16} />
-          {t("Prerequisites & restrictions", "先修与选课条件")}
-        </h4>
-        <p>
-          {prereq ??
-            t(
-              "Check the course catalog for the applicable prerequisite wording.",
-              "请在课程目录核对适用的先修条件。",
-            )}
-        </p>
-        {references.length > 0 && (
-          <ul>
-            {references.map((c) => {
-              const recorded = boardCourses(plan).filter(
-                (row) =>
-                  row.course.subject === c.subject &&
-                  row.course.number === c.number,
-              );
-              const status = [
-                "completed",
-                "in-progress",
-                "planned",
-                "withdrawn",
-                "dropped",
-                "failed",
-                "unknown",
-              ].find((status) =>
-                recorded.some((row) => row.course.status === status),
-              ) as
-                | Plan["semesters"][number]["courses"][number]["status"]
-                | undefined;
+      <div className={styles.detailActions}>
+        <button
+          className={styles.primary}
+          disabled={observations.some(
+            (c) => c.status === "completed" || c.status === "in-progress",
+          )}
+          onClick={() => add(code)}
+        >
+          <Plus size={16} />
+          {t("Add to selected semester", "加入所选学期")}
+        </button>
+      </div>
+      <div className={styles.detailOverview}>
+        {overview && (
+          <TranslateText
+            text={overview}
+            locale={locale}
+            className={styles.description}
+          />
+        )}
+        <section className={styles.prerequisites}>
+          <h4>
+            <GitBranch size={16} />
+            {t("Prerequisites & restrictions", "先修与选课条件")}
+          </h4>
+          {prereq ? (
+            <TranslateText text={prereq} locale={locale} />
+          ) : (
+            <p>
+              {t(
+                "Check the course catalog for the applicable prerequisite wording.",
+                "请在课程目录核对适用的先修条件。",
+              )}
+            </p>
+          )}
+          {references.length > 0 && (
+            <ul>
+              {references.map((c) => {
+                const recorded = boardCourses(plan).filter(
+                  (row) =>
+                    row.course.subject === c.subject &&
+                    row.course.number === c.number,
+                );
+                const status = [
+                  "completed",
+                  "in-progress",
+                  "planned",
+                  "withdrawn",
+                  "dropped",
+                  "failed",
+                  "unknown",
+                ].find((status) =>
+                  recorded.some((row) => row.course.status === status),
+                ) as
+                  | Plan["semesters"][number]["courses"][number]["status"]
+                  | undefined;
 
-              return (
-                <li key={c.subject + c.number}>
-                  <button onClick={() => inspect(c)}>
-                    {c.subject} {c.number}
-                  </button>
-                  <CourseStatus
-                    status={status ?? "remaining"}
-                    locale={locale}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {references.length > 0 && (
-          <small>
-            {t(
-              "Follow the full wording above for alternatives, concurrent study and minimum grades.",
-              "替代条件、同时修读和最低成绩请按上方完整原文核对。",
-            )}
-          </small>
-        )}
-      </section>
+                return (
+                  <li key={c.subject + c.number}>
+                    <button onClick={() => inspect(c)}>
+                      {c.subject} {c.number}
+                    </button>
+                    <CourseStatus
+                      status={status ?? "remaining"}
+                      locale={locale}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {references.length > 0 && (
+            <small>
+              {t(
+                "Follow the full wording above for alternatives, concurrent study and minimum grades.",
+                "替代条件、同时修读和最低成绩请按上方完整原文核对。",
+              )}
+            </small>
+          )}
+        </section>
+      </div>
       {observations.length > 0 && (
         <details>
           <summary>
@@ -172,18 +196,6 @@ export function CourseInspector({
             : ""}
         </small>
       )}
-      <div className={styles.detailActions}>
-        <button
-          className={styles.primary}
-          disabled={observations.some(
-            (c) => c.status === "completed" || c.status === "in-progress",
-          )}
-          onClick={() => add(code)}
-        >
-          <Plus size={16} />
-          {t("Add to selected semester", "加入所选学期")}
-        </button>
-      </div>
       {course && (
         <CourseDetailTabs key={course.id} course={course} locale={locale} />
       )}

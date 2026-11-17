@@ -9,7 +9,7 @@ import {
   moveCourseGroup,
 } from "@/lib/planning/groups";
 import { planningPrograms } from "@/lib/planning/programs";
-import { semesterLabel } from "@/lib/planning/workspace";
+import { boardCourses, semesterLabel } from "@/lib/planning/workspace";
 import { browserUuid } from "@/lib/uuid";
 import { text, type Locale } from "@/lib/i18n";
 import { ChoiceSelect } from "@/components/ui/choice-select";
@@ -95,9 +95,18 @@ export function SemesterGroups({
   const courses = plan.semesters.flatMap((s) => s.courses);
   const groups = plan.schedule.groups ?? [];
   const used = new Set(groups.flatMap((g) => g.courseIds));
+  const placed = new Set(
+    boardCourses(plan)
+      .filter((row) => row.term === term)
+      .map((row) => row.course.id),
+  );
   const eligible = courses.filter(
     (c) =>
-      c.id && c.kind === "course" && c.status === "planned" && !used.has(c.id),
+      c.id &&
+      placed.has(c.id) &&
+      c.kind === "course" &&
+      c.status === "planned" &&
+      !used.has(c.id),
   );
   const candidates = [
     ...new Map(eligible.map((c) => [`${c.subject} ${c.number}`, c])).values(),

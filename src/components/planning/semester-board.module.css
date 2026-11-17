@@ -1,4 +1,6 @@
-.root,
+.root {
+  min-width: 0;
+}
 .planner {
   min-width: 0;
 }
@@ -6,13 +8,12 @@
   min-width: 0;
   padding: 16px;
 }
-.root :where(button),
-.assistantBody :where(button) {
+.root :where(button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid transparent;
+  border: 1px solid var(--line);
   border-radius: 6px;
   min-height: 32px;
   padding: 6px 9px;
@@ -24,26 +25,57 @@
     background-color 0.16s,
     box-shadow 0.16s;
 }
-.root :where(button):hover,
+.assistantBody :where(button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: 32px;
+  padding: 6px 9px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.16s,
+    box-shadow 0.16s;
+}
+.root :where(button):hover {
+  background: var(--subtle-surface);
+}
 .assistantBody :where(button):hover {
   background: var(--subtle-surface);
 }
-.root :where(button):disabled,
+.root :where(button):disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 .assistantBody :where(button):disabled {
   opacity: 0.55;
   cursor: default;
 }
-.root :where(button, input):focus-visible,
+.root :where(button, input):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 .assistantBody :where(button, input):focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
-.root :where([data-choice-select]),
+.root :where([data-choice-select]) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
 .assistantBody :where([data-choice-select]) {
   background: var(--surface);
   border: 1px solid var(--line);
 }
-.root .primary,
+.root .primary {
+  background: var(--primary);
+  color: white;
+}
 .assistantBody .primary {
   background: var(--primary);
   color: white;
@@ -182,13 +214,6 @@
 }
 .termCredits[data-over="true"] {
   color: #b86716;
-}
-.termOptions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
 }
 .termOptions [data-choice-select] {
   min-height: 27px;
@@ -432,14 +457,24 @@
   display: block;
   margin-bottom: 8px;
 }
-.helper,
-.message,
+.helper {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.message {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
 .panelMessage {
   font-size: 11px;
   color: var(--muted);
   line-height: 1.6;
 }
-.message:empty,
+.message:empty {
+  display: none;
+}
 .panelMessage:empty {
   display: none;
 }
@@ -507,23 +542,20 @@
   font-size: 13px;
   margin: 0 0 10px;
 }
-.prerequisites p,
-.prerequisites small,
-.inspector small {
+.prerequisites p {
   font-size: 12px;
   color: var(--muted);
   line-height: 1.6;
 }
-.prerequisites ul {
-  padding: 0;
-  list-style: none;
+.prerequisites small {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
 }
-.prerequisites li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+.inspector small {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
 }
 .inspector details {
   font-size: 12px;
@@ -630,23 +662,181 @@
   padding: 7px 10px;
   border: 0;
   border-radius: 7px;
-  background: var(--surface-muted);
-  color: var(--text-secondary);
+  background: var(--subtle-surface);
+  color: var(--muted);
   font-size: 11px;
   cursor: pointer;
 }
 .simulate:hover {
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  color: var(--accent);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  color: var(--primary);
 }
 .termOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
   padding: 6px 8px;
-  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
   border-radius: 7px;
-  color: var(--accent);
+  color: var(--primary);
+}
+
+.assistantBody .assistantTabs button {
+  border-width: 0 0 2px;
+}
+.assistantBody .searchPanel > strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.root .termOptions {
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--line));
 }
 .termOptions > svg {
   flex-shrink: 0;
+  margin-left: 10px;
+}
+.root .simulate {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  margin-bottom: 12px;
+}
+.inspector > .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.detailActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.detailActions .primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.detailActions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.inspector > .back:hover {
+  background: var(--subtle-surface);
+}
+.prerequisites li button:hover {
+  background: var(--subtle-surface);
+}
+.inspector > details {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.root .termOptions [data-choice-select] > span {
+  text-align: left;
+  flex: 1;
+}
+.prerequisites ul {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 7px;
+  margin: 12px 0;
+}
+.prerequisites li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  padding: 5px 7px;
+  border-radius: 7px;
+}
+.prerequisites li button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 0;
+  padding: 3px 0;
+  background: transparent;
+  font-size: 11px;
+}
+.detailOverview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 18px 0;
+}
+.detailOverview > .description {
+  margin: 0;
+}
+.detailOverview .prerequisites {
+  border: 1px solid var(--line);
+  padding: 14px;
+  margin: 0;
+  border-radius: 10px;
+  background: var(--subtle-surface);
+}
+.inspector .detailActions {
+  margin: 12px 0;
+}
+
+.inspector > details summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.inspector > details summary::before {
+  content: "+";
+  color: var(--primary);
+  font-size: 16px;
+}
+.inspector > details[open] summary::before {
+  content: "−";
+}
+.inspector > details summary::-webkit-details-marker {
+  display: none;
+}
+
+.root .termOptions [data-choice-select] {
+  flex: 1;
+  text-align: left;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  min-height: 34px;
+  max-width: none;
+  color: var(--ink);
+}
+.assistantBody [data-choice-select] {
+  justify-content: space-between;
+  text-align: left;
+}
+.assistantBody [data-choice-select] > span {
+  flex: 1;
+  text-align: left;
 }
 @media (min-width: 1500px) {
   .yearTerms {
@@ -697,12 +887,22 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .column,
-  .root button,
+  .column {
+    transition: none;
+  }
+  .root button {
+    transition: none;
+  }
   .assistantBody button {
     transition: none;
   }
   .dragPreview {
     transform: none;
+  }
+}
+@media (max-width: 750px) {
+  .detailOverview {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }

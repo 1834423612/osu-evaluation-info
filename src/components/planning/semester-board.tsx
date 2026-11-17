@@ -483,7 +483,8 @@ export function SemesterBoard({
             ))}
           </ChoiceSelect>
         </label>
-        <div className={styles.catalogOptions}>
+        <div className={`${styles.catalogOptions} ${styles.target}`}>
+          <span>{t("Course catalog", "课程目录")}</span>
           <CatalogTermSelect
             value={context.term}
             onChange={onCatalogTermChange}
@@ -491,144 +492,131 @@ export function SemesterBoard({
           />
         </div>
       </div>
-      {selected ? (
-        <CourseInspector
-          code={selected}
-          plan={plan}
-          locale={locale}
-          back={() => setSelected(null)}
-          add={add}
-          inspect={inspect}
-        />
-      ) : (
-        <>
-          <div
-            className={styles.assistantTabs}
-            aria-label={t("Planning tools", "选课工具")}
-          >
-            {(
-              [
-                {
-                  id: "requirements",
-                  title: t("Remaining", "剩余要求"),
-                  Icon: GitBranch,
-                },
-                { id: "search", title: t("Search", "搜索课程"), Icon: Search },
-                {
-                  id: "suggestions",
-                  title: t("Recommend", "推荐课程"),
-                  Icon: Sparkles,
-                },
-              ] as const
-            ).map(({ id, title, Icon }) => (
-              <button
-                key={id}
-                aria-pressed={panel === id}
-                onClick={() => setPanel(id)}
-              >
-                <Icon size={15} />
-                {title}
-              </button>
-            ))}
-          </div>
-          {panel === "requirements" && (
-            <RequirementMap
-              plan={plan}
-              locale={locale}
-              addCourse={add}
-              onReview={onReview}
-              inspectCourse={inspect}
-              searchRequirement={(title) => {
-                setSearchQuery(title);
-                setReplacing(null);
-                setActiveRequirement(null);
-                setPanel("search");
-              }}
-              compact
-              remainingOnly
-            />
-          )}
-          {panel === "suggestions" && (
-            <NextTerm
-              inspect={inspect}
-              plan={plan}
-              locale={locale}
-              onReview={onReview}
-              initialTarget={targetTerm}
-              onTargetChange={setTargetTerm}
-              compact
-              apply={(items, term) => {
-                update((p) =>
-                  applyRecommendationBundle(p, items, term, browserUuid),
-                );
-                setTargetTerm(term);
-                setMessage(t("Suggested courses added.", "推荐课程已加入。"));
-              }}
-            />
-          )}
-          {panel === "search" &&
-            activeRequirement &&
-            (() => {
-              const rule = plan.requirements.find(
-                (r) => r.id === activeRequirement,
+      <>
+        <div
+          className={styles.assistantTabs}
+          aria-label={t("Planning tools", "选课工具")}
+        >
+          {(
+            [
+              {
+                id: "requirements",
+                title: t("Remaining", "剩余要求"),
+                Icon: GitBranch,
+              },
+              { id: "search", title: t("Search", "搜索课程"), Icon: Search },
+              {
+                id: "suggestions",
+                title: t("Recommend", "推荐课程"),
+                Icon: Sparkles,
+              },
+            ] as const
+          ).map(({ id, title, Icon }) => (
+            <button
+              key={id}
+              aria-pressed={panel === id}
+              onClick={() => setPanel(id)}
+            >
+              <Icon size={15} />
+              {title}
+            </button>
+          ))}
+        </div>
+        {panel === "requirements" && (
+          <RequirementMap
+            plan={plan}
+            locale={locale}
+            addCourse={add}
+            onReview={onReview}
+            inspectCourse={inspect}
+            searchRequirement={(title) => {
+              setSearchQuery(title);
+              setReplacing(null);
+              setActiveRequirement(null);
+              setPanel("search");
+            }}
+            compact
+            remainingOnly
+          />
+        )}
+        {panel === "suggestions" && (
+          <NextTerm
+            inspect={inspect}
+            plan={plan}
+            locale={locale}
+            onReview={onReview}
+            initialTarget={targetTerm}
+            onTargetChange={setTargetTerm}
+            compact
+            apply={(items, term) => {
+              update((p) =>
+                applyRecommendationBundle(p, items, term, browserUuid),
               );
-              if (!rule) return null;
-              const codes = requirementCodes(rule);
-              return (
-                <section className={styles.searchPanel}>
-                  <strong>{rule.title}</strong>
-                  {codes.length ? (
-                    codes.map((code) => (
-                      <div
-                        key={`${code.subject} ${code.number}`}
-                        className={styles.searchResult}
-                      >
-                        <button onClick={() => inspect(code)}>
-                          {code.subject} {code.number}
-                        </button>
-                        <button onClick={() => void add(code)}>
-                          <Plus size={14} />
-                          {t("Add", "添加")}
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <RequirementChoices
-                      title={rule.title ?? ""}
-                      locale={locale}
-                      unavailable={all
-                        .filter((r) =>
-                          ["completed", "in-progress"].includes(
-                            r.course.status,
-                          ),
-                        )
-                        .map((r) => `${r.course.subject} ${r.course.number}`)}
-                      add={(code) => void add(code)}
-                      inspect={inspect}
-                    />
-                  )}
-                </section>
-              );
-            })()}
-          {panel === "search" && !activeRequirement && (
-            <PlanningSearch
-              key={context.campus + "|" + context.term + "|" + searchQuery}
-              locale={locale}
-              initialQuery={searchQuery}
-              unavailable={all
-                .filter(
-                  (r) =>
-                    r.course.status === "completed" ||
-                    r.course.status === "in-progress",
-                )
-                .map((r) => `${r.course.subject} ${r.course.number}`)}
-              requirementLabel={replacing?.course.title}
-              inspect={inspect}
-              add={add}
-            />
-          )}
-        </>
-      )}
+              setTargetTerm(term);
+              setMessage(t("Suggested courses added.", "推荐课程已加入。"));
+            }}
+          />
+        )}
+        {panel === "search" &&
+          activeRequirement &&
+          (() => {
+            const rule = plan.requirements.find(
+              (r) => r.id === activeRequirement,
+            );
+            if (!rule) return null;
+            const codes = requirementCodes(rule);
+            return (
+              <section className={styles.searchPanel}>
+                <strong>{rule.title}</strong>
+                {codes.length ? (
+                  codes.map((code) => (
+                    <div
+                      key={`${code.subject} ${code.number}`}
+                      className={styles.searchResult}
+                    >
+                      <button onClick={() => inspect(code)}>
+                        {code.subject} {code.number}
+                      </button>
+                      <button onClick={() => void add(code)}>
+                        <Plus size={14} />
+                        {t("Add", "添加")}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <RequirementChoices
+                    title={rule.title ?? ""}
+                    locale={locale}
+                    unavailable={all
+                      .filter((r) =>
+                        ["completed", "in-progress"].includes(r.course.status),
+                      )
+                      .map((r) => `${r.course.subject} ${r.course.number}`)}
+                    add={(code) => void add(code)}
+                    inspect={inspect}
+                  />
+                )}
+              </section>
+            );
+          })()}
+        {panel === "search" && !activeRequirement && (
+          <PlanningSearch
+            key={context.campus + "|" + context.term + "|" + searchQuery}
+            locale={locale}
+            initialQuery={searchQuery}
+            unavailable={all
+              .filter(
+                (r) =>
+                  r.course.status === "completed" ||
+                  r.course.status === "in-progress",
+              )
+              .map((r) => `${r.course.subject} ${r.course.number}`)}
+            requirementLabel={replacing?.course.title}
+            inspect={inspect}
+            add={add}
+          />
+        )}
+      </>
       <p className={styles.panelMessage} role="status" aria-live="polite">
         {message}
       </p>
@@ -821,6 +809,15 @@ export function SemesterBoard({
                                 </small>
                               </span>
                             </header>
+                            <div className={styles.loadBar} aria-hidden="true">
+                              <span
+                                style={{
+                                  width: `${Math.min(100, (min / Math.max(1, ceiling)) * 100)}%`,
+                                }}
+                                data-over={min > ceiling}
+                              />
+                            </div>
+
                             {term !== "unassigned" && (
                               <div className={styles.termOptions}>
                                 <MapPin size={15} aria-hidden="true" />
@@ -877,14 +874,6 @@ export function SemesterBoard({
                                 {t("Simulate schedule", "模拟排课")}
                               </button>
                             )}
-                            <div className={styles.loadBar} aria-hidden="true">
-                              <span
-                                style={{
-                                  width: `${Math.min(100, (min / Math.max(1, ceiling)) * 100)}%`,
-                                }}
-                                data-over={min > ceiling}
-                              />
-                            </div>
                             {pending > 0 &&
                               original?.reportedCredits != null && (
                                 <small className={styles.pending}>
@@ -1098,10 +1087,39 @@ export function SemesterBoard({
                 />
               )}
             </WorkspaceDialog>
+            <WorkspaceDialog
+              wide
+              closeOnly
+              guard={false}
+              open={selected !== null}
+              onOpenChange={(open) => {
+                if (!open) setSelected(null);
+              }}
+              title={t("Course details", "课程详情")}
+              description={semesterLabel(targetTerm, locale)}
+              closeLabel={t("Close", "关闭")}
+            >
+              <PlanningCatalogProvider
+                campus={semesterCampus(plan, targetTerm)}
+                term={context.term}
+              >
+                {selected && (
+                  <CourseInspector
+                    code={selected}
+                    plan={plan}
+                    locale={locale}
+                    back={() => setSelected(null)}
+                    add={add}
+                    inspect={inspect}
+                  />
+                )}
+              </PlanningCatalogProvider>
+            </WorkspaceDialog>
             {narrow ? (
               <WorkspaceDialog
                 closeOnly
-                open={drawer}
+                wide
+                open={drawer && !selected}
                 onOpenChange={setDrawer}
                 title={t("Course planning", "选课与要求")}
                 description={semesterLabel(targetTerm, locale)}
