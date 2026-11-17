@@ -8,6 +8,7 @@ export async function extractPlan(
   origin: Plan["pdfOrigin"] = "export",
   _auditMode: Plan["auditMode"] = "unknown",
 ) {
+  void _auditMode; // The document body determines its view.
   if (file.size > 20 * 1024 * 1024) throw Error("size");
   const data = new Uint8Array(await file.arrayBuffer());
   try {
@@ -41,10 +42,13 @@ export async function extractPlan(
         page.cleanup();
         if (lines.length > 30000) throw Error("content");
       }
-      const detected =
-        detectPlanLayout(lines);
+      const detected = detectPlanLayout(lines);
       if (!detected) throw Error("layout");
-      const result = parsePlanLines(lines, detected, detected === "student-plan" ? "export" : origin);
+      const result = parsePlanLines(
+        lines,
+        detected,
+        detected === "student-plan" ? "export" : origin,
+      );
       // Caller choices guide download instructions. Report contents own their scope.
       return result;
     } finally {

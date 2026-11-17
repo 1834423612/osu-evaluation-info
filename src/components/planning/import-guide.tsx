@@ -6,7 +6,6 @@ import {
 } from "@/lib/planning/import-profile";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./planning.module.css";
-
 export function ImportGuide({
   plan,
   locale,
@@ -18,6 +17,32 @@ export function ImportGuide({
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const coverage = importCoverage(plan);
+  const reports = [
+    {
+      id: "student",
+      title: "Student Plan",
+      detail: t(
+        "Courses, semesters, transfer and exam credit.",
+        "课程、学期安排、转学学分和考试学分。",
+      ),
+    },
+    {
+      id: "official",
+      title: "Official · Expanded",
+      detail: t(
+        "Detailed requirements for your declared programs.",
+        "当前正式专业的详细毕业要求。",
+      ),
+    },
+    {
+      id: "planned",
+      title: "Planned · Expanded",
+      detail: t(
+        "Optional. Requirements for your intended programs.",
+        "按需添加，包含目标专业的详细要求。",
+      ),
+    },
+  ] as const;
   return (
     <section
       className={styles.importGuide}
@@ -31,97 +56,71 @@ export function ImportGuide({
         )}
       </p>
       <div className={styles.importChoices}>
-        {(
-          [
-            {
-              id: "student",
-              title: "Student Plan",
-              detail: t(
-                "Your courses, semesters, transfer and exam credit.",
-                "课程、学期安排、转学分和考试学分。",
-              ),
-            },
-            {
-              id: "official",
-              title: "Official · Expanded",
-              detail: t(
-                "Detailed requirements for your declared programs.",
-                "当前正式专业的详细毕业要求。",
-              ),
-            },
-            {
-              id: "planned",
-              title: "Planned · Expanded",
-              detail: t(
-                "Optional. Include each intended program and its requirements.",
-                "按需添加。包含期望专业及其详细要求。",
-              ),
-            },
-          ] as const
-        ).map((item) => (
-          <button key={item.id} onClick={() => choose(item.id)}>
-            {coverage[item.id] ? <Check size={20} /> : <FileText size={20} />}
-            <strong>{item.title}</strong>
-            <span>{item.detail}</span>
-            <small>
+        {reports.map((item) => (
+          <article key={item.id}>
+            <header>
+              {coverage[item.id] ? <Check size={18} /> : <FileText size={18} />}
+              <strong>{item.title}</strong>
+            </header>
+            <p>{item.detail}</p>
+            <details>
+              <summary>
+                {t("Download & print settings", "下载位置与打印设置")}
+              </summary>
+              <p>
+                {item.id === "student"
+                  ? t(
+                      "In Plan your Path, use the plan print/export button. Turn off profile, notes and activities when available.",
+                      "在 Plan your Path 使用计划的打印／导出按钮。可关闭个人资料、笔记和活动。",
+                    )
+                  : t(
+                      `In Track Progress, select ${item.id === "official" ? "Official" : "Planned"}, then Expanded (Beta) in the audit print menu. Enable Include all constraints and the required programs. Save as PDF with browser headers and footers off.`,
+                      `在 Track Progress 选择 ${item.id === "official" ? "Official" : "Planned"}，在审计打印菜单选择 Expanded（Beta）。勾选 Include all constraints 和所需专业。保存 PDF 时关闭浏览器页眉页脚。`,
+                    )}
+              </p>
+              {item.id !== "student" && (
+                <p>
+                  {t(
+                    "Standard supplies an outline when Expanded is unavailable. Confirm the intended program appears in the preview.",
+                    "Expanded 不可用时可用 Standard 获取概览。请确认预览中包含对应专业。",
+                  )}
+                </p>
+              )}
+            </details>
+            <button onClick={() => choose(item.id)}>
               {coverage[item.id]
-                ? t("Imported", "已导入")
-                : t("Choose this report", "选择此类文件")}
-            </small>
-          </button>
+                ? t("Update report", "更新报告")
+                : t("Choose PDF", "选择 PDF")}
+            </button>
+          </article>
         ))}
       </div>
-      <details>
-        <summary>
-          {t("Where to download and print", "下载位置与打印设置")}
-        </summary>
-        <ol>
-          <li>
-            {t(
-              "In Plan your Path, use the plan's print/export button to create Student Plan. Turn off profile, notes and activities when available.",
-              "在 Plan your Path 使用计划的打印／导出按钮生成 Student Plan。可关闭个人资料、笔记和活动。",
-            )}
-          </li>
-          <li>
-            {t(
-              "In Track Progress, select Official, then the audit print menu and Expanded (Beta). Select Include all constraints, include the required programs, and save the browser print view as PDF with headers and footers off.",
-              "在 Track Progress 选择 Official，通过审计打印菜单选择 Expanded（Beta）。勾选 Include all constraints，包含所需的全部项目，再用浏览器打印保存 PDF，关闭页眉页脚。",
-            )}
-          </li>
-          <li>
-            {t(
-              "For a what-if plan, switch to Planned and the intended plan, then repeat the Expanded export. Check the intended program's detailed requirements appear in the preview.",
-              "需要目标专业时，切换 Planned 和对应计划，再导出 Expanded。预览中应能看到目标专业的详细要求。",
-            )}
-          </li>
-        </ol>
-        <p>
-          {t(
-            "Standard provides an outline when Expanded is unavailable. Compact and repeated exports from another tab add little detail. Programs marked Planned-only require a Planned export.",
-            "Expanded 不可用时可用 Standard 获取概览。Compact 和另一入口的重复文件可省去。标注仅在 Planned 可见的专业需要另外导出 Planned。",
-          )}
-        </p>
-        <a
-          href="https://registrar.osu.edu/buckeye-degree-planner/student-guide/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("OSU BDP guide", "OSU BDP 使用指南")}
-        </a>
-      </details>
+      <p>
+        {t(
+          "Report type is detected from PDF contents. You can select multiple reports together.",
+          "系统根据 PDF 正文自动识别类型，可以一次选择多份报告。",
+        )}
+      </p>
+      <a
+        href="https://registrar.osu.edu/buckeye-degree-planner/student-guide/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        {t("OSU BDP guide", "OSU BDP 使用指南")}
+      </a>
       {coverage.outlineOnly && (
         <p role="status">
           {t(
-            "An outline report is present. Expanded adds course options, logical conditions and version details.",
-            "已导入概览报告。Expanded 可补充可选课程、逻辑条件和版本细节。",
+            "Expanded reports add course options, logical conditions and version details to your outline.",
+            "Expanded 可为已导入的概览补充可选课程、逻辑条件和版本细节。",
           )}
         </p>
       )}
       {coverage.unlabelled && (
         <p role="status">
           {t(
-            "This report does not identify its view. It remains separate from explicitly labelled Official and Planned reports.",
-            "此报告未标明视图，将单独保留，不会覆盖已标明 Official 或 Planned 的报告。",
+            "A report has no view label. Its requirements appear under Other reports.",
+            "一份报告缺少视图标记，其要求会显示在其他报告中。",
           )}
         </p>
       )}
