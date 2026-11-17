@@ -123,3 +123,18 @@ test("simulation preferences and selected sections survive validation and import
     }),
   );
 });
+
+test("invalid dates do not crash the simulator and closed sections remain flagged", () => {
+  const a = section("a", "09:00", "10:00", 0, {
+    startDate: "invalid",
+    endDate: "invalid",
+  });
+  a.enrollmentStatus = "Closed";
+  const result = simulateSchedule(
+    [course("1111", [a]), course("2222", [section("b", "09:30", "10:30")])],
+    {},
+    preferences,
+  );
+  assert.equal(result.conflicts.length, 1);
+  assert.deepEqual(result.restricted, ["CSE 1111"]);
+});

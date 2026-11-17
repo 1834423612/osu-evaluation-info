@@ -54,7 +54,11 @@ function overlap(a: Slot, b: Slot, buffer: number) {
     const start = new Date(from + "T00:00:00Z");
     const offset = (a.day - ((start.getUTCDay() + 6) % 7) + 7) % 7;
     start.setUTCDate(start.getUTCDate() + offset);
-    if (start.toISOString().slice(0, 10) > to) return false;
+    if (
+      Number.isFinite(start.getTime()) &&
+      start.toISOString().slice(0, 10) > to
+    )
+      return false;
   }
   return (
     a.day === b.day &&
@@ -199,6 +203,11 @@ export function simulateSchedule(
     choices,
     ...simulationDiagnostics(choices, preferences),
     unavailable,
+    restricted: choices
+      .filter((choice) =>
+        choice.sections.some((s) => /closed|wait/i.test(s.enrollmentStatus)),
+      )
+      .map((choice) => choice.key),
     capped,
     incomplete: courses
       .filter((c) => c.sectionsPartial)

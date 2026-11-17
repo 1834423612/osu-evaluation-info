@@ -186,31 +186,47 @@ export function SemesterSimulation({
     if (controller.signal.aborted) return;
     const selected = fixedChoices(data.courses);
     const runFingerprint = JSON.stringify([scope, preferences, selected]);
-    const active = new Worker(
-      new URL("../../lib/planning/simulation.worker.ts", import.meta.url),
-      { type: "module" },
-    );
-    worker.current = active;
-    active.onmessage = (event) => {
-      if (worker.current !== active) return;
-      active.terminate();
-      worker.current = null;
-      setBusy(false);
-      if (event.data.error)
+    try {
+      const active = new Worker(
+        new URL("../../lib/planning/simulation.worker.ts", import.meta.url),
+        { type: "module" },
+      );
+      worker.current = active;
+      active.onmessage = (event) => {
+        if (worker.current !== active) return;
+        active.terminate();
+        worker.current = null;
+        setBusy(false);
+        if (event.data.error)
+          setMessage(t("Could not simulate. Try again.", "模拟失败，请重试。"));
+        else {
+          setResult({ fingerprint: runFingerprint, value: event.data.result });
+          setView("result");
+        }
+      };
+      active.onerror = () => {
+        if (worker.current !== active) return;
+        active.terminate();
+        worker.current = null;
+        setBusy(false);
         setMessage(t("Could not simulate. Try again.", "模拟失败，请重试。"));
-      else {
-        setResult({ fingerprint: runFingerprint, value: event.data.result });
-        setView("result");
-      }
-    };
-    active.onerror = () => {
-      if (worker.current !== active) return;
-      active.terminate();
+      };
+      active.postMessage({
+        courses: data.courses,
+        fixed: selected,
+        preferences,
+      });
+    } catch {
+      worker.current?.terminate();
       worker.current = null;
       setBusy(false);
-      setMessage(t("Could not simulate. Try again.", "模拟失败，请重试。"));
-    };
-    active.postMessage({ courses: data.courses, fixed: selected, preferences });
+      setMessage(
+        t(
+          "Could not start local simulation. Try again.",
+          "本地模拟未能启动，请重试。",
+        ),
+      );
+    }
   }
   const conflicted = new Set(
     output?.conflicts.flatMap((c) => [c.left, c.right]) ?? [],
@@ -498,6 +514,7 @@ export function SemesterSimulation({
                   output.unknown.length ||
                   output.unavailable.length ||
                   output.incomplete.length ||
+                  output.restricted.length ||
                   loaded?.failed.length,
                 )}
                 data-conflict={output.conflicts.length > 0}
@@ -514,7 +531,8 @@ export function SemesterSimulation({
                     : output.unknown.length ||
                         loaded?.failed.length ||
                         output.unavailable.length ||
-                        output.incomplete.length
+                        output.incomplete.length ||
+                        output.restricted.length
                       ? t(
                           "Known meeting times do not overlap; some data is incomplete",
                           "已知时间无冲突，部分班次资料仍不完整",
@@ -543,6 +561,12 @@ export function SemesterSimulation({
                     "所选班次在当前目录中缺失",
                   )}{" "}
                   · {output.unavailable.join(" · ")}
+                </p>
+              )}
+              {!!output.restricted.length && (
+                <p className={styles.warning}>
+                  {t("Closed or waitlisted sections", "班次已满或仅可候补")} ·{" "}
+                  {output.restricted.join(" · ")}
                 </p>
               )}
               {!!output.linked.length && (
