@@ -75,6 +75,7 @@ const requirementSchema = z
           .object({
             subject: z.string().regex(/^[A-Z][A-Z& ]{1,11}$/),
             number: z.string().regex(/^\d{4}(?:\.\d{1,2})?[A-Z]?$/),
+            evidenceRole: z.enum(["observation", "option", "unknown"]).optional(),
           })
           .strip(),
       )

@@ -254,10 +254,20 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       const credit = line.match(
         /\b(?:minimum(?:\s+of)?|at least)\s+(\d{1,3}(?:\.\d+)?)\s*(?:credits?|hours?)\b/i,
       );
-      const countClause=line.match(/(?:at least|minimum(?: of)?)\s+(\d{1,2})\s+courses?/i);
-      const progressClause=line.match(/\(Courses:\s*\(([^)]*)\)/i)?.[1];
-      const progressCount=progressClause?[...progressClause.matchAll(/(\d+)\s+(?:taken|planned|in progress|remaining)/gi)].reduce((n,m)=>n+Number(m[1]),0):0;
-      const minimumCourses=countClause?Number(countClause[1]):progressCount||null;
+      const countClause = line.match(
+        /(?:at least|minimum(?: of)?)\s+(\d{1,2})\s+courses?/i,
+      );
+      const progressClause = line.match(/\(Courses:\s*\(([^)]*)\)/i)?.[1];
+      const progressCount = progressClause
+        ? [
+            ...progressClause.matchAll(
+              /(\d+)\s+(?:taken|planned|in progress|remaining)/gi,
+            ),
+          ].reduce((n, m) => n + Number(m[1]), 0)
+        : 0;
+      const minimumCourses = countClause
+        ? Number(countClause[1])
+        : progressCount || null;
       const codes = [
         ...line.matchAll(
           /\b([A-Z][A-Z&]{1,11})\s+(\d{4}(?:\.\d{1,2})?[A-Z]?)\b/g,
@@ -289,7 +299,8 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         category: categoryFor(line),
         kind: credit ? "credits" : codes.length === 1 ? "courses" : "unknown",
         minimumCredits: credit ? Number(credit[1]) : null,
-        minimumCourses: minimumCourses ?? (!credit && codes.length === 1 ? 1 : null),
+        minimumCourses:
+          minimumCourses ?? (!credit && codes.length === 1 ? 1 : null),
         alternatives: [],
         page,
       };
@@ -360,12 +371,24 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         /\b([A-Z][A-Z&]{1,11})\s+(\d{4}(?:\.\d{1,2})?[A-Z]?)\b/g,
       )) {
         if (["AU", "SP", "SU"].includes(m[1])) continue;
-        if (
-          !requirement.alternatives.some(
-            (a) => a.subject === m[1] && a.number === m[2],
-          )
-        )
-          requirement.alternatives.push({ subject: m[1], number: m[2] });
+        const through = line.search(/\bthrough\b/i);
+        const observation =
+          through >= 0
+            ? m.index >= through
+            : /\b(?:CURRENTLY TAKING|TAKEN IN|TRANSFERRED|PLANNED FOR)|\b(?:taken|in progress|planned|KA|EM)\s*$/i.test(
+                line,
+              );
+        const evidenceRole = observation ? "observation" : "option";
+        const alternative = requirement.alternatives.find(
+          (a) => a.subject === m[1] && a.number === m[2],
+        );
+        if (!alternative)
+          requirement.alternatives.push({
+            subject: m[1],
+            number: m[2],
+            evidenceRole,
+          });
+        else if (evidenceRole === "option") alternative.evidenceRole = "option";
         const course = plan.semesters
           .flatMap((s) => s.courses)
           .find((c) => c.subject === m[1] && c.number === m[2]);

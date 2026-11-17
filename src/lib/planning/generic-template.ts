@@ -36,10 +36,12 @@ export function genericRequirementTemplates(input: unknown) {
             category: rule.category,
             minimumCredits: rule.minimumCredits,
             minimumCourses: rule.minimumCourses,
-            alternatives: rule.alternatives.map((course) => ({
-              subject: course.subject,
-              number: course.number,
-            })),
+            alternatives: rule.alternatives
+              .filter((course) => course.evidenceRole === "option")
+              .map((course) => ({
+                subject: course.subject,
+                number: course.number,
+              })),
           })),
         },
       ];

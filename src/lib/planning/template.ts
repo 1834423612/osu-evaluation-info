@@ -79,10 +79,12 @@ export function programTemplate(plan: Plan, programId: string) {
       kind: r.kind,
       minimumCredits: r.minimumCredits,
       minimumCourses: r.minimumCourses,
-      alternatives: r.alternatives.map((c) => ({
-        subject: c.subject,
-        number: c.number,
-      })),
+      alternatives: r.alternatives
+        .filter((c) => c.evidenceRole === "option")
+        .map((c) => ({
+          subject: c.subject,
+          number: c.number,
+        })),
     })),
   });
 }

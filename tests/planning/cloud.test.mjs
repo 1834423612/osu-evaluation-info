@@ -14,6 +14,21 @@ const sample = () =>
     ].map((text) => ({ text, page: 1 })),
     "standard-audit",
   ).plan;
+test("generic templates omit observed and legacy-unverified course alternatives", () => {
+  const plan = parsePlanLines(
+    [
+      "Synthetic major - SYNTHETIC-BA (not declared)",
+      "Applied Version: AU2026",
+      "Writing (through ENGLISH 2999 Synthetic private course) (Courses: (1 taken))",
+      "–– CSE 2998 Synthetic option (3 hours) remaining",
+    ].map((text) => ({ text, page: 1 })),
+    "standard-audit",
+  ).plan;
+  plan.requirements[0].alternatives.push({ subject: "ART", number: "3999" });
+  const encoded = JSON.stringify(genericRequirementTemplates(plan));
+  assert.doesNotMatch(encoded, /2999|3999|Synthetic private/);
+  assert.match(encoded, /2998/);
+});
 test("generic trees preserve requirements while removing all student observations and identifiers", () => {
   const plan = sample();
   plan.requirements.push({
