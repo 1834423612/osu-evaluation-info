@@ -37,7 +37,7 @@ test("audit alternatives cannot masquerade as completed personal courses", () =>
   );
 });
 
-test("standard audit dash hierarchy and credits remain source-local unreviewed candidates", () => {
+test("standard audit preserves explicit hierarchy and academic titles", () => {
   const { plan } = parsePlanLines(
     lines(
       "Synthetic program - CPTRTEST-BA (not declared)",
@@ -54,11 +54,8 @@ test("standard audit dash hierarchy and credits remain source-local unreviewed c
   assert.equal(plan.requirements[2].parentId, plan.requirements[1].id);
   assert.equal(plan.semesters[0].courses[0].credits, 4);
   assert.equal(plan.semesters[0].courses[0].evidenceRole, "option");
-  assert.ok(plan.requirements.every((r) => r.hierarchyReviewed === false));
-  assert.doesNotMatch(
-    JSON.stringify(plan),
-    /Synthetic program|not declared|remaining\)\)/,
-  );
+  assert.ok(plan.requirements.every((r) => r.hierarchyReviewed === true));
+  assert.doesNotMatch(JSON.stringify(plan), /remaining\)\)/);
 });
 
 test("layout hints never persist filenames and unknown layouts require a choice", () => {

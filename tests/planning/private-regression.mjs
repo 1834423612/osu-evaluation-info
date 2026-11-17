@@ -1,13 +1,23 @@
+import {
+  academicRequirementTree,
+  compareRequirementTree,
+} from "./private-har.mjs";
 // Optional local-only regression. Never log paths, content, errors or plan values.
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parsePlanLines } from "../../src/lib/planning/parser.ts";
 import {
+  academicRoster,
+  compareAcademicRoster,
   academicResponses,
   academicEvidence,
   compareAcademicEvidence,
 } from "./private-har.mjs";
 import { planningLines } from "../../src/lib/planning/pdf-lines.ts";
+import { mergeSnapshots } from "../../src/lib/planning/snapshots.ts";
+import { boardCourses } from "../../src/lib/planning/workspace.ts";
+const representatives = new Map();
+let responseRoster = [];
 const directory = process.env.PLANNING_PRIVATE_PDF_DIR;
 if (!directory)
   throw Error(
@@ -25,6 +35,7 @@ async function walk(path, extension = /\.pdf$/i) {
   return files;
 }
 const groups = {};
+let responseTree;
 let harEvidence = null;
 if (process.env.PLANNING_PRIVATE_HAR_COMPARE === "1") {
   try {
@@ -34,12 +45,15 @@ if (process.env.PLANNING_PRIVATE_HAR_COMPARE === "1") {
         ...academicResponses(JSON.parse(await readFile(file, "utf8"))),
       );
     harEvidence = academicEvidence(responses);
+    responseRoster = academicRoster(responses);
+    responseTree = academicRequirementTree(responses);
   } catch {
     console.log(JSON.stringify({ localHarReadFailure: true }));
     process.exit(1);
   }
 }
 const comparisons = [];
+const treeComparisons = [];
 const files = await walk(directory).catch(() => {
   console.log(JSON.stringify({ localReadFailure: true }));
   process.exitCode = 1;
@@ -88,6 +102,13 @@ for (const file of files) {
       lines.push(...pageLines);
     }
     const { plan } = parsePlanLines(lines, type);
+    if (responseTree && type.includes("audit"))
+      treeComparisons.push({
+        type,
+        ...compareRequirementTree(plan, responseTree),
+      });
+    const key = type + (/planned/i.test(file) ? "-planned" : "");
+    if (!representatives.has(key)) representatives.set(key, plan);
     if (harEvidence && type === "student-plan")
       comparisons.push(compareAcademicEvidence(plan, harEvidence));
     group.programRecords += plan.programs.length;
@@ -115,10 +136,36 @@ for (const file of files) {
     await task?.destroy();
   }
 }
+let rosterComparison;
+if (responseRoster.length) {
+  const selection = [
+    representatives.get("student-plan"),
+    representatives.get("expanded-audit"),
+    representatives.get("standard-audit-planned"),
+  ].filter(Boolean);
+  if (selection.length)
+    rosterComparison = compareAcademicRoster(
+      boardCourses(selection.reduce((a, b) => mergeSnapshots(a, b))),
+      responseRoster,
+    );
+  if (
+    rosterComparison &&
+    (rosterComparison.missing ||
+      rosterComparison.matchingStatus !== rosterComparison.comparable ||
+      rosterComparison.matchingCredits !== rosterComparison.comparable)
+  )
+    process.exitCode = 1;
+}
 console.log(
   JSON.stringify({
+    rosterComparison,
+    treeComparisons,
     groups,
     ...(harEvidence ? { responseOnlyComparisons: comparisons } : {}),
   }),
 );
-if (Object.values(groups).some((g) => g.failures)) process.exitCode = 1;
+if (
+  Object.values(groups).some((g) => g.failures) ||
+  treeComparisons.some((c) => c.comparableEdges !== c.matchingEdges)
+)
+  process.exitCode = 1;

@@ -124,6 +124,17 @@ export function requirementProgress(
     ancestors.add(ancestor);
     ancestor = plan.requirements.find((r) => r.id === ancestor)?.parentId;
   }
+  if (node?.reportedStatus)
+    return {
+      state:
+        node.reportedStatus === "completed"
+          ? "satisfied"
+          : node.reportedStatus === "remaining"
+            ? "insufficient"
+            : "planned",
+      knownCredits: 0,
+      distinctCourses: 0,
+    };
   if (!node || node.hierarchyReviewed !== true)
     return {
       state: "unresolved",

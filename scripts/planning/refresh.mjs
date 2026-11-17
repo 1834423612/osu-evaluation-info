@@ -5,9 +5,10 @@ import { fileURLToPath } from "node:url";
 const { values } = parseArgs({
   options: {
     apply: { type: "boolean" },
+    discovery: { type: "boolean" },
     refresh: { type: "boolean" },
     retry: { type: "boolean" },
-    cache: { type: "string", default: ".planning-cache" },
+    cache: { type: "string" },
     limit: { type: "string", default: "100" },
     delay: { type: "string", default: "2" },
     "archive-local": { type: "string" },
@@ -21,36 +22,70 @@ if (
   Number(values.delay) < 1
 )
   throw Error("limit must be 1..2000 and delay at least 1 second");
+values.cache ??= values.discovery
+  ? ".planning-cache"
+  : ".planning-cache/samples";
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const commands = [
-  [
-    "python3",
-    "scripts/planning/sync.py",
-    "--output",
-    values.cache,
-    "--limit",
-    values.limit,
-    "--delay",
-    values.delay,
-    ...(values.refresh ? ["--refresh"] : []),
-    ...(values.retry ? ["--retry"] : []),
-  ],
-  [process.execPath, "scripts/planning/extract-public.mjs", values.cache],
-  ["python3", "scripts/planning/inventory.py", "--cache", values.cache],
-  [
-    "python3",
-    "scripts/planning/structure.py",
-    "--cache",
-    values.cache,
-    "--output",
-    "data/planning/curricula.json",
-  ],
-];
+const commands = values.discovery
+  ? [
+      [
+        "python3",
+        "scripts/planning/sync.py",
+        "--output",
+        values.cache,
+        "--limit",
+        values.limit,
+        "--delay",
+        values.delay,
+        ...(values.refresh ? ["--refresh"] : []),
+        ...(values.retry ? ["--retry"] : []),
+      ],
+      [process.execPath, "scripts/planning/extract-public.mjs", values.cache],
+      ["python3", "scripts/planning/inventory.py", "--cache", values.cache],
+      [
+        "python3",
+        "scripts/planning/structure.py",
+        "--cache",
+        values.cache,
+        "--output",
+        `${values.cache}/discovery-curricula.json`,
+      ],
+    ]
+  : [
+      [
+        "python3",
+        "scripts/planning/samples.py",
+        "fetch",
+        "--cache",
+        values.cache,
+        "--delay",
+        values.delay,
+        ...(values.refresh ? ["--refresh"] : []),
+      ],
+      [process.execPath, "scripts/planning/extract-public.mjs", values.cache],
+      [
+        "python3",
+        "scripts/planning/samples.py",
+        "structure",
+        "--cache",
+        values.cache,
+      ],
+    ];
 if (values["archive-local"])
   for (const [action, ...files] of [
     ["init"],
-    ["archive", "data/planning/directory.json"],
-    ["curricula", "data/planning/curricula.json"],
+    [
+      "archive",
+      values.discovery
+        ? "data/planning/directory.json"
+        : "data/planning/sample-directory.json",
+    ],
+    [
+      "curricula",
+      values.discovery
+        ? `${values.cache}/discovery-curricula.json`
+        : "data/planning/curricula.json",
+    ],
   ])
     commands.push([
       process.execPath,

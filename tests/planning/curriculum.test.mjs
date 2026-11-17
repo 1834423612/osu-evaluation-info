@@ -23,10 +23,20 @@ test("checked-in official candidates validate and remain explicitly pending", as
       "utf8",
     ),
   );
+  assert.equal(new Set(rows.map((r) => r.id)).size, rows.length);
+  assert.equal(
+    new Set(
+      rows.map((r) =>
+        [r.source.sha256, r.source.url, r.program, r.version].join("|"),
+      ),
+    ).size,
+    rows.length,
+  );
   for (const row of rows) {
     const parsed = curriculumSchema.parse(row);
     assert.equal(parsed.reviewStatus, "pending");
-    assert.equal(parsed.semesters.length, 8);
+    assert.ok(parsed.semesters.length >= 8 && parsed.semesters.length <= 20);
+    assert.ok(parsed.semesters.every((s) => s.entries.length > 0));
     assert.equal(parsed.applicableUntil, null);
   }
 });

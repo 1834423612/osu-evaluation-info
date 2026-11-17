@@ -16,6 +16,81 @@ export function academicResponses(archive) {
   }
   return responses;
 }
+/** Real BDP audit observations, distinct from status="planned" registration records. */
+export function academicRoster(responses) {
+  const records = new Map();
+  function visit(value) {
+    if (!value || typeof value !== "object") return;
+    if (value.course_plan_info && typeof value.course_plan_info === "object") {
+      for (const course of Object.values(value.course_plan_info).flat()) {
+        const key = code(course?.code);
+        if (!key) continue;
+        const status =
+          course.progress_status === "taken"
+            ? "completed"
+            : course.progress_status === "in_progress"
+              ? "in-progress"
+              : course.progress_status === "planned"
+                ? "planned"
+                : null;
+        if (!status) continue;
+        const record = records.get(key) ?? {
+          code: key,
+          statuses: new Set(),
+          credits: new Set(),
+          terms: new Set(),
+        };
+        record.statuses.add(status);
+        if (typeof course.units === "number") record.credits.add(course.units);
+        if (
+          [1, 2, 3].includes(course.semester) &&
+          Number.isInteger(course.year)
+        )
+          record.terms.add(
+            ["", "Spring", "Summer", "Autumn"][course.semester] + course.year,
+          );
+        records.set(key, record);
+      }
+    }
+    for (const child of Object.values(value))
+      if (child && typeof child === "object") visit(child);
+  }
+  responses.forEach(visit);
+  return [...records.values()];
+}
+
+export function compareAcademicRoster(rows, roster) {
+  const result = {
+    comparable: 0,
+    matchingStatus: 0,
+    matchingCredits: 0,
+    missing: 0,
+    ambiguous: 0,
+  };
+  for (const expected of roster) {
+    if (expected.statuses.size !== 1) {
+      result.ambiguous++;
+      continue;
+    }
+    const actual = rows.find(
+      (row) =>
+        code(`${row.course.subject}${row.course.number}`) === expected.code,
+    );
+    if (!actual) {
+      result.missing++;
+      continue;
+    }
+    result.comparable++;
+    result.matchingStatus += Number(
+      expected.statuses.has(actual.course.status),
+    );
+    result.matchingCredits += Number(
+      expected.credits.size === 1 &&
+        expected.credits.has(actual.course.credits),
+    );
+  }
+  return result;
+}
 const code = (value) =>
   typeof value === "string"
     ? (value
@@ -146,4 +221,66 @@ export function compareAcademicEvidence(plan, evidence) {
       else result.unknownCalendarYears++;
     }
   return result;
+}
+/** Compare only academic requirement titles/edges, never HAR identity fields. */
+export function academicRequirementTree(responses) {
+  const titles = new Set(),
+    edges = new Set();
+  const normalize = (s) =>
+    typeof s === "string"
+      ? s
+          .toLowerCase()
+          .replace(/&/g, "and")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim()
+      : "";
+  const tree = (node, parent) => {
+    if (!node || typeof node !== "object") return;
+    const title = normalize(node.screen_name);
+    if (title) {
+      titles.add(title);
+      if (parent) edges.add(parent + "\n" + title);
+    }
+    const choices =
+      node.choices && typeof node.choices === "object"
+        ? Object.values(node.choices)
+        : [];
+    choices.forEach((child) => tree(child, title || parent));
+  };
+  const visit = (value) => {
+    if (!value || typeof value !== "object") return;
+    if (value.audit_reqs && typeof value.audit_reqs === "object")
+      for (const requirement of Object.values(value.audit_reqs))
+        for (const root of Object.values(requirement?.trees ?? {}))
+          tree(root, null);
+    for (const child of Object.values(value))
+      if (child && typeof child === "object") visit(child);
+  };
+  responses.forEach(visit);
+  return { titles, edges, normalize };
+}
+export function compareRequirementTree(plan, tree) {
+  const actual = new Map(
+    plan.requirements.map((r) => [r.id, tree.normalize(r.title)]),
+  );
+  const matched = new Set(
+    [...actual.values()].filter((t) => tree.titles.has(t)),
+  );
+  let comparableEdges = 0,
+    matchingEdges = 0;
+  for (const r of plan.requirements) {
+    const parent = actual.get(r.parentId),
+      child = actual.get(r.id);
+    if (matched.has(parent) && matched.has(child)) {
+      comparableEdges++;
+      matchingEdges += Number(tree.edges.has(parent + "\n" + child));
+    }
+  }
+  return {
+    pdfRequirements: plan.requirements.length,
+    harDistinctTitles: tree.titles.size,
+    matchingDistinctTitles: matched.size,
+    comparableEdges,
+    matchingEdges,
+  };
 }

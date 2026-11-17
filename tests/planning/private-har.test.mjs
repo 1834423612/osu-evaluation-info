@@ -68,3 +68,36 @@ test("ambiguous repeated courses are excluded from agreement denominators", () =
   assert.equal(report.comparableCourseObservations, 0);
   assert.equal(report.ambiguousOrMissingCourseObservations, 1);
 });
+
+test("academic tree comparison detects wrong parent edges without retaining identity fields", async () => {
+  const { academicRequirementTree, compareRequirementTree } =
+    await import("./private-har.mjs");
+  const tree = academicRequirementTree([
+    {
+      audit_reqs: {
+        a: {
+          program: 12345,
+          student_name: "private",
+          trees: {
+            a: {
+              screen_name: "Core",
+              choices: [{ screen_name: "Writing", choices: [] }],
+            },
+            b: { screen_name: "Other", choices: [] },
+          },
+        },
+      },
+    },
+  ]);
+  assert.equal(tree.titles.size, 3);
+  const plan = {
+    requirements: [
+      { id: "a", title: "Core", parentId: null },
+      { id: "b", title: "Writing", parentId: "a" },
+    ],
+  };
+  assert.equal(compareRequirementTree(plan, tree).matchingEdges, 1);
+  plan.requirements[0].title = "Other";
+  assert.equal(compareRequirementTree(plan, tree).matchingEdges, 0);
+  assert.ok(!tree.titles.has("private"));
+});

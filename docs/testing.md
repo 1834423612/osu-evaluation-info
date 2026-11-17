@@ -485,11 +485,11 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 ## Schedule planning
 
-- `tests/planning/model.test.mjs`: Whitelist, review gate, storage failures and course links. `node --test tests/planning/model.test.mjs`. No services or external writes.
+- `tests/planning/model.test.mjs`: Whitelist, local serialization, storage failures and course links. `node --test tests/planning/model.test.mjs`. No services or external writes.
 - `tests/planning/parser.test.mjs`: Synthetic layouts, unknown credits, placeholders, conflicting versions and print ordering. `node --test tests/planning/parser.test.mjs`. No services or external writes.
 - `tests/planning/curriculum.test.mjs`: Official candidates, isolated namespace and import validation. `node --test tests/planning/curriculum.test.mjs`. No services or external writes.
 - `tests/planning/test_sync.py`: Public URL restrictions and unknown layouts. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline; no database or network writes.
-- `tests/planning/workspace.browser.mjs`: Local import, correction, save/export, bilingual responsive and privacy flow. `node tests/planning/workspace.browser.mjs`. Requires a running local app, Playwright and Chromium; configure `BASE_URL`, `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE` as needed. Writes synthetic data only to isolated browser storage and temporary screenshots; no official-source or production database calls.
+- `tests/planning/workspace.browser.mjs`: Automatic local import, movement persistence, backup, bilingual responsive views and privacy. `node tests/planning/workspace.browser.mjs`. Requires a running local app, Playwright and Chromium; configure `BASE_URL`, `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE` as needed. Writes synthetic data only to isolated browser storage and temporary screenshots; no official-source or production database calls.
 - `tests/planning/pdf.integration.test.mjs`: Exercises PDF.js extraction into the whitelist model using an in-memory generated PDF; `node --test tests/planning/pdf.integration.test.mjs`. No browser, database or network required.
 - `tests/planning/synthetic-pdf.mjs`: Shared synthetic PDF generator for the browser and PDF integration tests; not standalone and writes no private data.
 - `tests/planning/import-guard.test.mjs`: Late completion versus edits, loading, deletion and newer imports. `node --test tests/planning/import-guard.test.mjs`. Synthetic data only; no network service, production configuration or credentials.
@@ -497,7 +497,7 @@ Browser regression: open a new collection, search in both languages, filter cate
 - `tests/planning/database.integration.test.mjs`: Real planning SQL in isolated in-memory PGlite PostgreSQL; migrations, foreign keys, review constraints and rollback. `node --test tests/planning/database.integration.test.mjs`. Synthetic data only; no network service, production configuration or credentials.
 - `tests/planning/private-regression.mjs`: Opt-in local private PDF regression. Set `PLANNING_PRIVATE_PDF_DIR` to the local attachment directory, then run `node tests/planning/private-regression.mjs`. By default reads PDFs only; explicitly set `PLANNING_PRIVATE_HAR_COMPARE=1` for response-only offline HAR comparison. Writes no extracted text and emits only type-level counts/failure totals and agreement aggregates. Do not supply private attachments to public CI or upload source data.
 
-- `tests/planning/private-har.test.mjs`: Synthetic XSSI/base64 response decoding, academic-field minimization, aggregate credit/year agreement and exclusion of ambiguous repeated courses. No real attachment fixtures.
+- `tests/planning/private-har.test.mjs`: Synthetic XSSI/base64 response decoding, academic-field minimization, aggregate status/credit/year agreement, normalized requirement parent edges and exclusion of ambiguous repeated courses. No real attachment fixtures.
 
 - `tests/planning/audit-evidence.test.mjs`: Distinguishes audit options from observations, explicit audit credits, layout hints and unreviewed hierarchy. `node --test tests/planning/audit-evidence.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
 
@@ -513,6 +513,18 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 - `tests/planning/test_inventory.py`: Official college index, title/version metadata and source-discovery boundaries. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
 
-- `tests/planning/test_public_layouts.py`: Official subject aliases, strict eight-semester grids/PDF columns, centered year labels, alternatives and unknown credits. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
+- `tests/planning/test_public_layouts.py`: Official subject aliases, paired-year HTML, optional summer, Music/Engineering/Nursing/Knowlton/Public Health PDF columns, wrapped credits, alternatives and footer exclusion. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
 
 - `tests/planning/directory.test.mjs`: College/program coverage, bounded paging, explicit requirement-term facets and public metadata minimization. Synthetic/public inputs only; no external network, database or writes. `node --test tests/planning/directory.test.mjs`.
+
+- `tests/planning/import-profile.test.mjs` checks minimal report selection, explicit Official/Planned mode and program headers. Run `node --test tests/planning/import-profile.test.mjs`. Synthetic input, no network or writes.
+
+- `tests/planning/course-catalog.test.mjs` checks identifier allowlists, shared reads, variable credits and inherited prerequisite prefixes. Run `node --test tests/planning/course-catalog.test.mjs`. Mock transport, no network or writes.
+
+- `tests/planning/workspace.test.mjs` checks duplicate-safe placement, protected records across sources and semester defaults. Run `node --test tests/planning/workspace.test.mjs`. Synthetic input, no network or writes.
+
+- `tests/test_planning_samples.py` checks inspected CSE table layouts and grouped Earth Sciences choices. Run `python3 -m unittest discover -s tests -p test_planning_samples.py`. Offline, no services or writes.
+
+- `tests/planning/automatic-import.test.mjs` checks cross-report attendance precedence, full academic titles, automatic serialization and metadata privacy. Run `node --test tests/planning/automatic-import.test.mjs`. Synthetic inputs only; no network or persistent writes.
+
+- `tests/planning/requirement-search.test.mjs` checks exact GE attributes and bounded course-family fallback. Run `node --test tests/planning/requirement-search.test.mjs`. Offline synthetic inputs; no network or writes.

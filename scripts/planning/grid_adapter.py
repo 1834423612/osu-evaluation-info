@@ -11,17 +11,19 @@ class Grids(HTMLParser):
         self.row = None
         self.parts = None
         self.unsupported = False
+        self.table_unsupported = False
+        self.invalid_tables = set()
     def handle_starttag(self, tag, attrs):
         if tag == 'table':
             if self.table is not None:
                 self.unsupported = True
             self.table = []
+            self.table_unsupported = False
         elif tag == 'tr' and self.table is not None:
             self.row = []
         elif tag in ('th', 'td') and self.row is not None:
             self.parts = []
-            if any(k in ('colspan', 'rowspan') and v != '1' for k, v in attrs):
-                self.unsupported = True
+            self.cell_span = any(k in ('colspan', 'rowspan') and v != '1' for k, v in attrs)
         elif tag in ('br', 'p', 'li', 'div') and self.parts is not None:
             self.parts.append('\n')
     def handle_data(self, data):
@@ -31,18 +33,22 @@ class Grids(HTMLParser):
         if tag in ('p', 'li', 'div') and self.parts is not None:
             self.parts.append('\n')
         elif tag in ('td', 'th') and self.parts is not None:
+            if self.cell_span and ''.join(self.parts).strip():
+                self.unsupported = True
+                self.table_unsupported = True
             self.row.append([' '.join(line.split()) for line in ''.join(self.parts).splitlines() if line.strip()])
             self.parts = None
         elif tag == 'tr' and self.row is not None:
             self.table.append(self.row)
             self.row = None
         elif tag == 'table' and self.table is not None:
+            if self.table_unsupported:self.invalid_tables.add(len(self.tables))
             self.tables.append(self.table)
             self.table = None
 
 
 def credits(text):
-    match = re.search(r'(\d{1,2}(?:\.\d+)?)(?:\s*[-–]\s*(\d{1,2}(?:\.\d+)?))?\s*(?:cr(?:edits?)?|hours?)\b', text, re.I)
+    match = re.search(r'(\d{1,2}(?:\.\d+)?)(?:\s*[-–]\s*(\d{1,2}(?:\.\d+)?))?\s*(?:cr(?:edits?)?|hrs?|hours?)\b', text, re.I)
     if not match:
         return None
     low, high = float(match[1]), float(match[2] or match[1])
@@ -54,18 +60,17 @@ def structure_grid(data, record, metadata):
         return []
     parser = Grids()
     parser.feed(data.decode('utf-8'))
-    if parser.unsupported:
-        return []
     candidates = []
     year_words = {'first':1, 'second':2, 'third':3, 'fourth':4, 'freshman':1, 'sophomore':2, 'junior':3, 'senior':4}
     for ordinal, table in enumerate(parser.tables):
-        if not table or len(table[0]) != 3:
+        if ordinal in parser.invalid_tables or not table or len(table[0]) != 3:
             continue
         header = [' '.join(c).lower() for c in table[0]]
         if header[0] != 'year' or not re.fullmatch(r'(?:autumn|fall)(?: semester)?', header[1]) or not re.fullmatch(r'spring(?: semester)?', header[2]):
             continue
         semesters = []
         for row in table[1:]:
+            if not any(cell for cell in row):continue
             if len(row) != 3:
                 semesters = []
                 break

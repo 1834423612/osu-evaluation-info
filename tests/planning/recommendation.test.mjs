@@ -6,7 +6,10 @@ import {
   applyRecommendationBundle,
   ratingRequest,
 } from "../../src/lib/planning/recommendation.ts";
-import { publicSamples } from "../../src/lib/planning/public-samples.ts";
+import {
+  publicSamples,
+  sampleReferenceReader,
+} from "../../src/lib/planning/public-samples.ts";
 import { readFile } from "node:fs/promises";
 const options = {
   programId: "p",
@@ -193,6 +196,7 @@ test("public samples expose course evidence without assigning a bundle's credits
     ...curricula[0],
     semesters: [
       {
+        label: "Year 1: Autumn",
         entries: [
           { evidence: "MATH 1151 or CSE 1223", credits: { min: 8, max: 8 } },
         ],
@@ -222,4 +226,109 @@ test("future-only sample courses stay out of an earlier semester combination", (
   });
   assert.ok(result.candidates.some((c) => c.key === "ARTSSCI 1100"));
   assert.ok(!result.bundle.some((c) => c.key === "ARTSSCI 1100"));
+});
+
+test("catalog credits drive estimates without rewriting imported academic facts", () => {
+  const plan = fixture();
+  const result = recommendCourses(plan, {
+    ...options,
+    catalogCredits: {
+      "CSE 1223": { min: 4, max: 4 },
+      "STAT 3201": { min: 1, max: 6 },
+    },
+  });
+  assert.equal(result.candidates.find((c) => c.key === "CSE 1223").credits, 4);
+  assert.equal(
+    result.candidates.find((c) => c.key === "STAT 3201").credits,
+    null,
+  );
+  assert.equal(plan.semesters[0].courses[1].credits, 3);
+});
+
+test("recommendation placement reuses imported planned courses", () => {
+  const plan = fixture();
+  let count = 0;
+  const result = recommendCourses(plan, options);
+  const next = applyRecommendationBundle(
+    plan,
+    result.bundle,
+    options.targetTerm,
+    () => "new-" + ++count,
+  );
+  assert.equal(next.semesters.flatMap((s) => s.courses).length, 4);
+  assert.deepEqual(next.semesters, plan.semesters);
+  assert.equal(next.schedule.placements.length, result.bundle.length);
+});
+
+test("conditional exclusions do not become sample course suggestions", () => {
+  const references = sampleReferenceReader([
+    { code: "PHILOS", title: "Philosophy" },
+  ]);
+  assert.deepEqual(references("[GE-Theme if not PHILOS 2338] — [4] hours"), []);
+  assert.deepEqual(references("PHILOS 2338 — 4 hours"), [
+    { subject: "PHILOS", number: "2338" },
+  ]);
+});
+
+test("recommendation caps include courses already placed in the target semester", () => {
+  const plan = fixture();
+  plan.schedule.placements = [{ courseId: "m", term: options.targetTerm }];
+  const tight = recommendCourses(plan, options);
+  assert.equal(tight.existingCredits, 5);
+  assert.ok(!tight.candidates.some((c) => c.key === "MATH 1151"));
+  assert.equal(tight.credits, 5);
+  assert.equal(tight.bundle.length, 0);
+  const room = recommendCourses(plan, {
+    ...options,
+    maxCredits: 8,
+    maxQuantitative: 2,
+  });
+  assert.equal(room.credits, 8);
+  assert.deepEqual(
+    room.bundle.map((c) => c.key),
+    ["CSE 1223"],
+  );
+  plan.schedule.placements.push({ courseId: "u", term: options.targetTerm });
+  const unknown = recommendCourses(plan, { ...options, maxCredits: 18 });
+  assert.equal(unknown.unresolvedExisting, 1);
+  assert.equal(unknown.bundle.length, 0);
+});
+
+test("summer terms do not shift subsequent sample-year matching", () => {
+  const result = recommendCourses(fixture(), {
+    ...options,
+    sampleYear: 2,
+    sample: {
+      id: "summer-sample",
+      program: "Synthetic",
+      url: "https://example.osu.edu/sample",
+      reviewStatus: "pending",
+      courses: [
+        {
+          subject: "CHEM",
+          number: "1220",
+          credits: 3,
+          semesterIndex: 4,
+          year: 2,
+          season: "Spring",
+        },
+        {
+          subject: "ARTSSCI",
+          number: "1100",
+          credits: 1,
+          semesterIndex: 3,
+          year: 2,
+          season: "Autumn",
+        },
+      ],
+    },
+  });
+  assert.equal(
+    result.candidates.find((c) => c.key === "CHEM 1220").sampleMatch,
+    true,
+  );
+  assert.equal(
+    result.candidates.find((c) => c.key === "ARTSSCI 1100").sampleMatch,
+    false,
+  );
 });

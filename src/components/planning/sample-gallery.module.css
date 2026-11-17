@@ -1,0 +1,248 @@
+.root {
+  color: #252629;
+}
+.heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 22px 0;
+}
+.sampleHeading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 22px 0;
+}
+.heading h2 {
+  margin: 0 0 8px;
+  font-size: 23px;
+  letter-spacing: -0.5px;
+}
+.heading p {
+  color: #686b70;
+  margin: 0;
+  line-height: 1.6;
+}
+.sampleHeading p {
+  color: #686b70;
+  margin: 0;
+  line-height: 1.6;
+}
+.heading > span {
+  white-space: nowrap;
+  font-size: 13px;
+  color: #686b70;
+}
+.search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 440px;
+  border: 1px solid #d8dade;
+  background: white;
+  border-radius: 12px;
+  padding: 11px 14px;
+  margin: 24px 0;
+}
+.search input {
+  border: 0;
+  background: transparent;
+  width: 100%;
+  min-width: 0;
+  outline: none;
+  font: inherit;
+}
+.samples {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.sample {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid #dedfe2;
+  border-radius: 16px;
+  background: white;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.sample:hover {
+  border-color: #b84343;
+  box-shadow: 0 5px 18px #2526290a;
+}
+.college {
+  color: #787b80;
+  font-size: 12px;
+}
+.sample h3 {
+  font-size: 20px;
+  line-height: 1.35;
+  margin: 12px 0 26px;
+  font-weight: 650;
+}
+.sample p {
+  font-size: 13px;
+  color: #686b70;
+}
+.sample footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  margin-top: auto;
+  font-size: 12px;
+}
+.sample footer span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.links a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: #9b2931;
+}
+.back {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  padding: 10px 0;
+  color: #7c3036;
+  font: inherit;
+  cursor: pointer;
+}
+.choices button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid #ead7d9;
+  border-radius: 6px;
+  background: #fcf6f6;
+  color: #952b34;
+  padding: 5px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.sample footer span:last-child {
+  color: #a52b32;
+}
+.sampleHeading h3 {
+  margin: 5px 0 12px;
+  font-size: 27px;
+  letter-spacing: -0.6px;
+}
+.sampleHeading span {
+  color: #686b70;
+  font-size: 13px;
+}
+.links {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.note {
+  color: #74767c;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 20px 0;
+}
+.semesters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.semester {
+  border: 1px solid #dedfe2;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.semester header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  background: #f3f3f4;
+  border-bottom: 1px solid #e4e5e7;
+}
+.semester h4 {
+  margin: 0;
+  font-size: 15px;
+}
+.semester header span {
+  color: #74767c;
+  font-size: 12px;
+}
+.semester ul {
+  list-style: none;
+  margin: 0;
+  padding: 4px 20px;
+}
+.semester li {
+  padding: 13px 0;
+  border-bottom: 1px solid #eeeef0;
+}
+.semester li:last-child {
+  border-bottom: 0;
+}
+.semester li p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+.evidence {
+  margin: 24px 0;
+  font-size: 13px;
+  color: #74767c;
+  line-height: 1.7;
+}
+.evidence summary {
+  cursor: pointer;
+}
+.evidence code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1050px) {
+  .samples {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .samples,
+  .semesters {
+    grid-template-columns: 1fr;
+  }
+  .heading,
+  .sampleHeading {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sample {
+    padding: 20px;
+  }
+  .sampleHeading h3 {
+    font-size: 23px;
+  }
+  .choices button {
+    min-height: 38px;
+  }
+}

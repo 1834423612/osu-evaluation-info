@@ -1,5 +1,6 @@
 import { planSchema, type Plan } from "./model.ts";
 import { requirementProgress } from "./snapshots.ts";
+import { boardCourses } from "./workspace.ts";
 import { termOrder } from "./schedule.ts";
 
 export type SampleCourse = {
@@ -7,6 +8,8 @@ export type SampleCourse = {
   number: string;
   credits: number | null;
   semesterIndex: number;
+  year?: number;
+  season?: "Autumn" | "Spring" | "Summer";
 };
 export type PublicSample = {
   id: string;
@@ -45,6 +48,7 @@ export type RecommendationOptions = {
   quantitativeSubjects: string[];
   maxQuantitative: number;
   ratings?: Record<string, Rating>;
+  catalogCredits?: Record<string, { min: number; max: number }>;
 };
 
 /** Local, explainable ranking. Never interprets prerequisites, grades or eligibility. */
@@ -129,10 +133,11 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   for (const course of options.sample?.courses ?? []) {
     const candidate = get(course.subject, course.number);
     candidate.sample = true;
-    const season = course.semesterIndex % 2 === 0 ? "Autumn" : "Spring";
+    const season =
+      course.season ?? (course.semesterIndex % 2 === 0 ? "Autumn" : "Spring");
     candidate.sampleMatch ||=
-      Math.floor(course.semesterIndex / 2) + 1 === options.sampleYear &&
-      options.targetTerm.startsWith(season);
+      (course.year ?? Math.floor(course.semesterIndex / 2) + 1) ===
+        options.sampleYear && options.targetTerm.startsWith(season);
     if (
       candidate.credits === null &&
       !observations.get(candidate.key)?.length &&
@@ -146,14 +151,26 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
       const [subject, number] = key.split(" ");
       get(subject, number);
     }
+  for (const candidate of pool.values()) {
+    const range = options.catalogCredits?.[candidate.key];
+    if (
+      range &&
+      Number.isFinite(range.min) &&
+      Number.isFinite(range.max) &&
+      range.min >= 0 &&
+      range.max <= 99 &&
+      range.min <= range.max
+    )
+      candidate.credits = range.min === range.max ? range.min : null;
+  }
   const candidates = [...pool.values()]
     .filter((c) => {
       const facts = observations.get(c.key) ?? [];
-      // Conflicting snapshots stay visible. A consistent completed/in-progress
-      // observation suppresses duplicate recommendations without claiming credit.
+      // Positive attendance evidence excludes a course even when a plan export
+      // labels the same registration as planned. Unknown never overrides completion.
       return (
         !facts.length ||
-        !facts.every(
+        !facts.some(
           (f) => f.status === "completed" || f.status === "in-progress",
         )
       );
@@ -194,15 +211,58 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
     covered: Set<string>;
     score: number;
   };
-  let beam: State[] = [
-    { items: [], credits: 0, quant: 0, covered: new Set(), score: 0 },
-  ];
   const quantitative = new Set(
     options.quantitativeSubjects.map((s) => s.toUpperCase()),
   );
+  const existing = new Map<
+    string,
+    { values: Set<number | null>; quantitative: boolean }
+  >();
+  for (const [index, row] of boardCourses(plan).entries()) {
+    if (row.term !== options.targetTerm) continue;
+    const code =
+      row.course.subject && row.course.number
+        ? `${row.course.subject} ${row.course.number}`
+        : `placeholder-${index}`;
+    const catalog = options.catalogCredits?.[code];
+    const value = catalog
+      ? catalog.min === catalog.max
+        ? catalog.min
+        : null
+      : row.course.credits;
+    const entry = existing.get(code) ?? {
+      values: new Set<number | null>(),
+      quantitative: quantitative.has(row.course.subject ?? ""),
+    };
+    entry.values.add(value);
+    existing.set(code, entry);
+  }
+  let existingCredits = 0,
+    unresolvedExisting = 0,
+    existingQuantitative = 0;
+  for (const entry of existing.values()) {
+    if (entry.values.size === 1 && !entry.values.has(null))
+      existingCredits += [...entry.values][0]!;
+    else unresolvedExisting++;
+    if (entry.quantitative) existingQuantitative++;
+  }
+  const covered = new Set(
+    candidates.filter((c) => existing.has(c.key)).flatMap((c) => c.ruleIds),
+  );
+  let beam: State[] = [
+    {
+      items: [],
+      credits: existingCredits,
+      quant: existingQuantitative,
+      covered,
+      score: 0,
+    },
+  ];
   for (const candidate of candidates
     .filter(
       (c) =>
+        !unresolvedExisting &&
+        !existing.has(c.key) &&
         c.credits !== null &&
         c.credits > 0 &&
         !c.conflict &&
@@ -252,10 +312,12 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   }
   const bundle = beam[0];
   return {
-    candidates,
+    candidates: candidates.filter((candidate) => !existing.has(candidate.key)),
     bundle: bundle.items,
     credits: bundle.credits,
     quantitative: bundle.quant,
+    existingCredits,
+    unresolvedExisting,
   };
 }
 
@@ -290,8 +352,6 @@ export function applyRecommendationBundle(
     auditMode: "unknown" as const,
     catalogTerm: null,
   };
-  if (!next.documents.some((d) => d.id === document.id))
-    next.documents.push(document);
   const courses = [];
   for (const c of items) {
     const existing = next.semesters
@@ -309,7 +369,9 @@ export function applyRecommendationBundle(
       )
     )
       continue;
-    const manual = existing.find((x) => x.documentId === document.id);
+    const manual =
+      existing.find((x) => x.documentId === document.id) ??
+      existing.find((x) => x.id);
     if (manual?.id) {
       next.schedule.placements = next.schedule.placements.filter(
         (p) => p.courseId !== manual.id,
@@ -328,7 +390,9 @@ export function applyRecommendationBundle(
         page: null,
       });
   }
-  if (courses.length)
+  if (courses.length) {
+    if (!next.documents.some((d) => d.id === document.id))
+      next.documents.push(document);
     next.semesters.push({
       documentId: document.id,
       term,
@@ -336,6 +400,7 @@ export function applyRecommendationBundle(
       creditOrigin: "unknown",
       courses,
     });
+  }
   next.schedule.terms = [...new Set([...next.schedule.terms, term])].sort(
     termOrder,
   );
