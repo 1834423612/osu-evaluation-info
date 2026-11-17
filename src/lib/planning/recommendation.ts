@@ -1,4 +1,5 @@
 import { planSchema, type Plan } from "./model.ts";
+import { requirementCoverage } from "./groups.ts";
 import { requirementProgress } from "./snapshots.ts";
 import { boardCourses } from "./workspace.ts";
 import { programRequirements, requirementCodes } from "./programs.ts";
@@ -115,7 +116,7 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
       satisfied ||= requirementProgress(plan, parent).state === "satisfied";
       parent = plan.requirements.find((r) => r.id === parent)?.parentId ?? null;
     }
-    if (satisfied) continue;
+    if (satisfied || (plan.schedule.groups?.some((g)=>g.requirementId===rule.id) && requirementCoverage(plan,rule.id).fulfilled)) continue;
     for (const code of [
       ...requirementCodes(rule),
       ...(options.requirementCandidates?.[rule.id] ?? []),

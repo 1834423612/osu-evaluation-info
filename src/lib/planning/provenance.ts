@@ -254,6 +254,10 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       const credit = line.match(
         /\b(?:minimum(?:\s+of)?|at least)\s+(\d{1,3}(?:\.\d+)?)\s*(?:credits?|hours?)\b/i,
       );
+      const countClause=line.match(/(?:at least|minimum(?: of)?)\s+(\d{1,2})\s+courses?/i);
+      const progressClause=line.match(/\(Courses:\s*\(([^)]*)\)/i)?.[1];
+      const progressCount=progressClause?[...progressClause.matchAll(/(\d+)\s+(?:taken|planned|in progress|remaining)/gi)].reduce((n,m)=>n+Number(m[1]),0):0;
+      const minimumCourses=countClause?Number(countClause[1]):progressCount||null;
       const codes = [
         ...line.matchAll(
           /\b([A-Z][A-Z&]{1,11})\s+(\d{4}(?:\.\d{1,2})?[A-Z]?)\b/g,
@@ -285,7 +289,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         category: categoryFor(line),
         kind: credit ? "credits" : codes.length === 1 ? "courses" : "unknown",
         minimumCredits: credit ? Number(credit[1]) : null,
-        minimumCourses: !credit && codes.length === 1 ? 1 : null,
+        minimumCourses: minimumCourses ?? (!credit && codes.length === 1 ? 1 : null),
         alternatives: [],
         page,
       };

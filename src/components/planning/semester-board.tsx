@@ -57,6 +57,10 @@ import {
   usePlanningCatalog,
 } from "./course-catalog";
 import { CourseInspector } from "./course-inspector";
+import { PendingRequirements, SemesterGroups } from "./course-groups";
+import { RequirementChoices } from "./requirement-choices";
+import { assignRequirement, requirementCoverage } from "@/lib/planning/groups";
+import { requirementCodes } from "@/lib/planning/programs";
 import { PlanningSearch } from "./planning-search";
 import styles from "./semester-board.module.css";
 const RequirementMap = dynamic(() =>
@@ -272,6 +276,9 @@ export function SemesterBoard({
   } | null>(null);
   const [filter, setFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeRequirement, setActiveRequirement] = useState<string | null>(
+    null,
+  );
   const [replacing, setReplacing] = useState<BoardCourse | null>(null);
   const [details, setDetails] = useState<Record<string, PlanningCourseDetail>>(
     {},
@@ -309,6 +316,9 @@ export function SemesterBoard({
     ...new Set([
       ...defaultTerms,
       ...plan.schedule.terms,
+      ...(plan.schedule.groups ?? []).flatMap((g) =>
+        g.term ? [g.term.replace(/ /g, "")] : [],
+      ),
       ...all
         .filter((r) => !["credit", "unassigned"].includes(r.term))
         .map((r) => r.term),
@@ -325,16 +335,46 @@ export function SemesterBoard({
     setSelected(code);
     setDrawer(true);
   };
-  function add(code: { subject: string; number: string }) {
+  async function add(code: { subject: string; number: string }) {
     try {
-      const next = addPlanningCourse(plan, code, targetTerm, browserUuid);
-      if (replacing?.course.id)
-        next.semesters = next.semesters.map((s) => ({
-          ...s,
-          courses: s.courses.filter((c) => c.id !== replacing.course.id),
-        }));
-      update(() => next);
-      setReplacing(null);
+      let credits: number | null = null;
+      if (activeRequirement) {
+        try {
+          const detail = await context.reader.read(
+            {
+              ...code,
+              campus: semesterCampus(plan, targetTerm),
+              term: context.term,
+            },
+            new AbortController().signal,
+          );
+          if (detail.course.creditsMin === detail.course.creditsMax)
+            credits = detail.course.creditsMin;
+        } catch {}
+      }
+      update((current) => {
+        const next = activeRequirement
+          ? assignRequirement(
+              current,
+              activeRequirement,
+              code,
+              targetTerm,
+              credits,
+              browserUuid,
+            )
+          : addPlanningCourse(current, code, targetTerm, browserUuid);
+        if (
+          replacing?.course.id &&
+          (!activeRequirement ||
+            requirementCoverage(next, activeRequirement).fulfilled)
+        )
+          next.semesters = next.semesters.map((s) => ({
+            ...s,
+            courses: s.courses.filter((c) => c.id !== replacing.course.id),
+          }));
+        return next;
+      });
+      if (!activeRequirement) setReplacing(null);
       setMessage(
         `${code.subject} ${code.number} · ${semesterLabel(targetTerm, locale)} · ${t("Added", "已加入")}`,
       );
@@ -347,7 +387,28 @@ export function SemesterBoard({
       );
     }
   }
+  function chooseRequirement(id: string, term?: string) {
+    const rule = plan.requirements.find((r) => r.id === id);
+    if (!rule) return;
+    setActiveRequirement(id);
+    setReplacing(null);
+    setSelected(null);
+    setPanel("search");
+    setSearchQuery(rule.title ?? "");
+    setDrawer(true);
+    if (term && term !== "unassigned") setTargetTerm(term);
+  }
   function choose(row: BoardCourse) {
+    const normalize = (value: string) =>
+      value
+        .replace(/^Placeholder:\s*/i, "")
+        .trim()
+        .toLowerCase();
+    const rule = plan.requirements.find(
+      (r) =>
+        r.title && normalize(r.title) === normalize(row.course.title ?? ""),
+    );
+    setActiveRequirement(rule?.id ?? null);
     setReplacing(row);
     if (!["unassigned", "credit"].includes(row.term)) setTargetTerm(row.term);
     setSearchQuery(
@@ -369,7 +430,8 @@ export function SemesterBoard({
     ),
   ].sort();
   const yearGroups = [
-    ...(rows.some((r) => r.term === "unassigned")
+    ...(rows.some((r) => r.term === "unassigned") ||
+    plan.schedule.groups?.some((g) => !g.term)
       ? [{ year: 0, terms: ["unassigned"] }]
       : []),
     ...academicYears.map((year) => ({
@@ -479,6 +541,7 @@ export function SemesterBoard({
               searchRequirement={(title) => {
                 setSearchQuery(title);
                 setReplacing(null);
+                setActiveRequirement(null);
                 setPanel("search");
               }}
               compact
@@ -503,7 +566,51 @@ export function SemesterBoard({
               }}
             />
           )}
-          {panel === "search" && (
+          {panel === "search" &&
+            activeRequirement &&
+            (() => {
+              const rule = plan.requirements.find(
+                (r) => r.id === activeRequirement,
+              );
+              if (!rule) return null;
+              const codes = requirementCodes(rule);
+              return (
+                <section className={styles.searchPanel}>
+                  <strong>{rule.title}</strong>
+                  {codes.length ? (
+                    codes.map((code) => (
+                      <div
+                        key={`${code.subject} ${code.number}`}
+                        className={styles.searchResult}
+                      >
+                        <button onClick={() => inspect(code)}>
+                          {code.subject} {code.number}
+                        </button>
+                        <button onClick={() => void add(code)}>
+                          <Plus size={14} />
+                          {t("Add", "添加")}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <RequirementChoices
+                      title={rule.title ?? ""}
+                      locale={locale}
+                      unavailable={all
+                        .filter((r) =>
+                          ["completed", "in-progress"].includes(
+                            r.course.status,
+                          ),
+                        )
+                        .map((r) => `${r.course.subject} ${r.course.number}`)}
+                      add={(code) => void add(code)}
+                      inspect={inspect}
+                    />
+                  )}
+                </section>
+              );
+            })()}
+          {panel === "search" && !activeRequirement && (
             <PlanningSearch
               key={context.campus + "|" + context.term + "|" + searchQuery}
               locale={locale}
@@ -563,6 +670,7 @@ export function SemesterBoard({
                 setSelected(null);
                 setReplacing(null);
                 setSearchQuery("");
+                setActiveRequirement(null);
                 setPanel("search");
                 setDrawer(true);
               }}
@@ -612,6 +720,11 @@ export function SemesterBoard({
                 </div>
               )}
               <div className={styles.board}>
+                <PendingRequirements
+                  plan={plan}
+                  locale={locale}
+                  choose={chooseRequirement}
+                />
                 {yearGroups.map(({ year, terms: yearTerms }) => (
                   <section className={styles.academicYear} key={year}>
                     <header className={styles.yearHeading}>
@@ -799,6 +912,14 @@ export function SemesterBoard({
                               term={context.term}
                             >
                               <div className={styles.columnCourses}>
+                                <SemesterGroups
+                                  plan={plan}
+                                  term={term}
+                                  terms={terms}
+                                  locale={locale}
+                                  choose={chooseRequirement}
+                                  update={update}
+                                />
                                 {group.map((row, i) => (
                                   <CourseCard
                                     key={row.course.id ?? i}
@@ -833,6 +954,7 @@ export function SemesterBoard({
                                   setPanel("search");
                                   setReplacing(null);
                                   setSearchQuery("");
+                                  setActiveRequirement(null);
                                   setDrawer(true);
                                 }}
                               >
@@ -863,6 +985,7 @@ export function SemesterBoard({
                             setSelected(null);
                             setReplacing(null);
                             setSearchQuery("");
+                            setActiveRequirement(null);
                             setDrawer(true);
                           }}
                         >

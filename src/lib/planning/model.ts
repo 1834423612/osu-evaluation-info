@@ -114,6 +114,7 @@ const planObject = z
     schemaVersion: z.literal(2),
     schedule: z
       .object({
+        groups: z.array(z.object({id:reference,kind:z.enum(["requirement","alternatives"]),requirementId:reference.optional(),title,term,courseIds:z.array(reference).max(100),selectedCourseId:reference.nullable().optional(),credits:z.record(reference,z.number().min(0).max(99)).optional()}).strip()).max(200).optional(),
         sectionChoices: z.record(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/), z.record(z.string().max(30), z.array(z.string().regex(/^[a-zA-Z0-9-]{1,80}$/)).max(12))).optional(),
         simulationPreferences: z.record(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/), z.object({
           compact: z.boolean(), buffer: z.number().int().min(0).max(120),
@@ -234,6 +235,11 @@ export const planSchema = z
         (p.term && !plan.schedule.terms.includes(p.term.replace(/ /g, "")))
       )
         issue();
+    const groupIds=new Set<string>();
+    for(const group of plan.schedule.groups ?? []) {
+      if(groupIds.has(group.id) || group.courseIds.some((id)=>!courseIds.has(id)) || (group.requirementId&&!requirements.has(group.requirementId)) || (group.selectedCourseId&&!group.courseIds.includes(group.selectedCourseId)))issue();
+      groupIds.add(group.id);
+    }
     for (const p of plan.programs) if (!documents.has(p.documentId)) issue();
     for (const s of plan.semesters) {
       if (

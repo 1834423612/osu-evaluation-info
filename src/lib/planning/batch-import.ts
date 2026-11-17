@@ -1,4 +1,5 @@
 import { emptyPlan, planSchema, type Plan } from "./model.ts";
+import { replaceImportedReports } from "./reimport.ts";
 import { mergeSnapshots } from "./snapshots.ts";
 type Input = Pick<File, "name" | "size" | "text">;
 type Options = {
@@ -41,7 +42,9 @@ export async function importPlanningFiles(
         incoming.reviewed = false;
         plan =
           plan.documents.length || plan.semesters.length
-            ? mergeSnapshots(plan, incoming)
+            ? /\.json$/i.test(file.name)
+              ? mergeSnapshots(plan, incoming)
+              : replaceImportedReports(plan, incoming)
             : incoming;
         imported++;
       }

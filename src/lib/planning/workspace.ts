@@ -81,7 +81,10 @@ export function boardCourses(plan: Plan) {
       resolved.set(key, status);
   }
   const seen = new Set<string>();
+  const alternatives=(plan.schedule.groups ?? []).filter((g)=>g.kind==="alternatives");
   return rows
+    .filter((r)=>!alternatives.some((g)=>r.course.id&&g.courseIds.includes(r.course.id)&&g.selectedCourseId!==r.course.id))
+    .map((r)=>{const group=alternatives.find((g)=>g.selectedCourseId===r.course.id);return group?{...r,term:group.term?.replace(/ /g,"") ?? "unassigned"}:r;})
     .filter(
       (r) =>
         r.source?.source === "student-plan" ||
@@ -120,7 +123,7 @@ export function addPlanningCourse(
   term: string | null,
   id: () => string,
 ) {
-  const existing = boardCourses(plan).find(
+  const existing = boardCourses({...plan,schedule:{...plan.schedule,groups:plan.schedule.groups?.filter((g)=>g.kind!=="alternatives")}}).find(
     (r) =>
       !["withdrawn", "dropped", "failed"].includes(r.course.status) &&
       r.course.kind === "course" &&
@@ -135,7 +138,11 @@ export function addPlanningCourse(
       existing.term === "credit"
     )
       throw Error("Course already completed or in progress");
-    if (existing.course.id) return placeCourse(plan, existing.course.id, term);
+    if (existing.course.id) {
+      const next=placeCourse(plan,existing.course.id,term);
+      next.schedule.groups=next.schedule.groups?.map((g)=>g.kind==="alternatives"&&g.courseIds.includes(existing.course.id!)?{...g,selectedCourseId:existing.course.id,term}:g);
+      return next;
+    }
   }
   const document = plan.documents.find((d) => d.source === "manual") ?? {
     id: id(),
@@ -199,7 +206,7 @@ export function semesterCampus(plan: Plan, term: string) {
 }
 
 export function removeEmptySemester(plan: Plan, term: string) {
-  if (boardCourses(plan).some((row) => row.term === term)) return plan;
+  if (boardCourses(plan).some((row) => row.term === term) || plan.schedule.groups?.some((g)=>g.term?.replace(/ /g, "")===term)) return plan;
   const campuses = { ...plan.schedule.campuses };
   delete campuses[term];
   const sectionChoices={...plan.schedule.sectionChoices};

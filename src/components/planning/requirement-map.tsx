@@ -3,6 +3,7 @@ import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useState } from "react";
 import { Plus, GitBranch } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
+import { requirementCoverage } from "@/lib/planning/groups";
 import { requirementProgress } from "@/lib/planning/snapshots";
 import { planningPrograms, requirementCodes } from "@/lib/planning/programs";
 import { boardCourses } from "@/lib/planning/workspace";
@@ -85,8 +86,13 @@ export function RequirementMap({
       .map((r) => {
         const progress = requirementProgress(plan, r.id);
         if (remaining && progress.state === "satisfied") return null;
+        const coverage = requirementCoverage(plan, r.id);
         const status =
-          r.reportedStatus ??
+          (coverage.fulfilled &&
+          r.reportedStatus !== "completed" &&
+          plan.schedule.groups?.some((g) => g.requirementId === r.id)
+            ? "planned"
+            : r.reportedStatus) ??
           (
             {
               satisfied: "completed",
@@ -125,7 +131,13 @@ export function RequirementMap({
                             .join(" / ")
                         : t("Degree requirement", "学业要求"))}
                   </strong>
-                  {constraint && <span>{constraint}</span>}
+                  {constraint && (
+                    <span>
+                      {constraint}
+                      {coverage.count > 0 &&
+                        ` · ${coverage.count} ${t("assigned", "已安排")}`}
+                    </span>
+                  )}
                 </span>
                 <span className={styles.chevron} aria-hidden="true">
                   ›

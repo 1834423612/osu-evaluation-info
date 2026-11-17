@@ -1,0 +1,140 @@
+.pending {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 16px;
+}
+.pending h3,
+.pending summary,
+.group header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pending h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.pending summary {
+  font-size: 12px;
+  padding: 9px 0;
+  cursor: pointer;
+}
+.pending summary span {
+  margin-left: auto;
+  color: var(--text-secondary);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  padding: 4px 0 12px;
+}
+.requirement,
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 9px;
+  background: var(--surface);
+  font-size: 11px;
+  text-align: left;
+  min-width: 0;
+}
+.requirement {
+  cursor: pointer;
+}
+.requirement:hover {
+  background: var(--surface-muted);
+}
+.requirement strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.requirement span,
+.group small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+}
+.groups {
+  display: grid;
+  gap: 8px;
+}
+.group[data-kind="alternatives"] {
+  border-color: #8b78bc;
+  background: color-mix(in srgb, #a99add 8%, var(--surface));
+}
+.group[data-filled="true"] {
+  border-style: solid;
+}
+.group header strong {
+  flex: 1;
+}
+.group header button {
+  padding: 3px;
+}
+.group button,
+.create button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--surface-muted);
+  padding: 5px 7px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.group button:hover,
+.create button:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.group button[aria-pressed="true"] {
+  background: color-mix(in srgb, #29a383 18%, var(--surface));
+}
+.group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.group > div span {
+  background: var(--surface-muted);
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+.group > button {
+  align-self: flex-start;
+}
+.group [role="combobox"] {
+  min-height: 28px;
+  font-size: 10px;
+}
+.create summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 7px 0;
+}
+.create > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow: auto;
+  font-size: 11px;
+  margin: 8px 0;
+}
+.create label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
