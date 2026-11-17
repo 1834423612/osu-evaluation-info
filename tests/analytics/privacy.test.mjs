@@ -218,6 +218,12 @@ test("root collectors cover every route and planning portals retain replay maski
     await read("components/ui/choice-select.tsx"),
     /action: "select_change"/,
   );
+  const select = await read("components/ui/choice-select.tsx");
+  assert.match(
+    select,
+    /node\?\.closest\("\[data-telemetry-private\], \.rr-block"\)/,
+  );
+  assert.match(select, /privateOptions && "rr-block"/);
   const dialog = await read("components/ui/workspace-dialog.tsx");
   assert.equal(
     (dialog.match(/className=\{`\$\{styles.dialog\} rr-block`\}/g) ?? [])

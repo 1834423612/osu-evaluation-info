@@ -46,10 +46,14 @@ export function ChoiceSelect({
   const encode = (value: string | number | readonly string[] | undefined) =>
     value == null ? undefined : String(value) || emptyValue;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
+  const [privateOptions, setPrivateOptions] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const bindTrigger = useCallback((node: HTMLButtonElement | null) => {
     trigger.current = node;
     setPortal(node?.closest<HTMLElement>("[data-debug-tools]") ?? null);
+    setPrivateOptions(
+      Boolean(node?.closest("[data-telemetry-private], .rr-block")),
+    );
   }, []);
   const options = Children.toArray(children).filter(
     isValidElement<ComponentProps<"option">>,
@@ -88,7 +92,7 @@ export function ChoiceSelect({
         position="popper"
         align="start"
         portalContainer={portal}
-        className={styles.content}
+        className={cn(styles.content, privateOptions && "rr-block")}
         collisionPadding={10}
       >
         {options.map((option, index) => (
