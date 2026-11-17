@@ -309,7 +309,7 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   }
   const bundle = beam[0];
   return {
-    candidates,
+    candidates: candidates.filter((candidate) => !existing.has(candidate.key)),
     bundle: bundle.items,
     credits: bundle.credits,
     quantitative: bundle.quant,

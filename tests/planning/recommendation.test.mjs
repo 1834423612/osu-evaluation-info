@@ -274,6 +274,7 @@ test("recommendation caps include courses already placed in the target semester"
   plan.schedule.placements = [{ courseId: "m", term: options.targetTerm }];
   const tight = recommendCourses(plan, options);
   assert.equal(tight.existingCredits, 5);
+  assert.ok(!tight.candidates.some(c => c.key === "MATH 1151"));
   assert.equal(tight.credits, 5);
   assert.equal(tight.bundle.length, 0);
   const room = recommendCourses(plan, {
