@@ -536,3 +536,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译、防止点击外侧误关及手机下拉关闭手柄。规划弹窗跨响应式断点保留子组件状态。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
+
+- `tests/planning/backup.test.mjs` 验证跨环境备份恢复、稳定 ID、学期校区、班次选择、模拟偏好、旧版本升级、隐私字段白名单和取消操作。运行 `node --test tests/planning/backup.test.mjs`。只用内存样例，无外部服务和持久化写入。
+
+`tests/catalog/detail-refresh.test.mjs` 覆盖收藏卡片的自动补全入口。`tests/catalog/change-budgets.test.mjs` 同时验证查询超时后的回滚与缩小批次重试。规划数据库集成测试通过内存 PGlite 和仓库公开样例验证不可变目录版本、重复发布、完整模板往返和事务回滚。这些测试均通过 `pnpm test` 运行，无需网络服务，不写外部数据库。

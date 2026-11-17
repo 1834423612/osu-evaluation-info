@@ -84,7 +84,7 @@ pnpm planning:subjects --term 1272
 
 仅接受 OSU 公开 HTTPS 域名。拒绝凭据、身份／登录域名及任意查询参数，唯一例外是有长度限制的公开 PDF VersionId。检查 robots、重定向和公开 DNS；下载上限 8 MB，限制超时和重定向次数，按来源限速，默认两秒、最少一秒。部分公开 Drupal 页面的传输拒绝可通过有界匿名 curl 重试处理，忽略 curl 配置且不跟随重定向。禁止复用 HAR 请求头、cookie、学生会话或合作方令牌。
 
-使用独立 schema：`osu_planning_dev` 和 `osu_planning`；`PLANNING_SCHEMA` 可指定该领域内的隔离名称。原生 PostgreSQL 必须明确提供 `PLANNING_DATABASE_URL`，不会推断课程或账号数据库配置。
+使用独立 schema：`osu_planning_dev` 和 `osu_planning`；`PLANNING_SCHEMA` 可指定该领域内的隔离名称。PostgreSQL 优先使用 `PLANNING_DATABASE_URL`，未设置时使用 `DATABASE_URL`，所有表均带规划 schema 全名。
 
 | 表                 | 保留的数据                                   |
 | ------------------ | -------------------------------------------- |
@@ -95,7 +95,7 @@ pnpm planning:subjects --term 1272
 | curriculum_version | 独立的来源、解析器、方案分支版本及适用元数据 |
 | template_seed      | 经过审核的要求输入，等待运维发布审核         |
 
-归档事务可重复执行，唯一标识不会静默覆盖其他方案。解析变化使用新版本。备份只能写入不存在的新文件并限制权限，PGlite 恢复使用一次性数据库验证；这些测试不等于原生 PostgreSQL 部署、连接及恢复已验证。本次更新未修改云端数据库。公开 PDF 中不能写入 jsonb 的 NUL／孤立代理字符按明确策略替换为 U+FFFD，原文件和哈希保持不变。
+归档事务可重复执行，唯一标识不会静默覆盖其他方案。解析变化使用新版本。备份只能写入不存在的新文件并限制权限，PGlite 恢复使用一次性数据库验证；这些测试不等于原生 PostgreSQL 部署、连接及恢复已验证。公开 PDF 中不能写入 jsonb 的 NUL／孤立代理字符按明确策略替换为 U+FFFD，原文件和哈希保持不变。
 
 ## 验证与限制
 
@@ -111,3 +111,18 @@ pnpm planning:subjects --term 1272
 合并后的名单包括八门已完成、六门正在修读、五项计划记录。15 个无歧义的名单交集与 HAR 的状态和学分一致；七个学期交集的位置及学分一致。可比较的要求父子关系在 Expanded 中为 28/28，Planned Standard 为 65/65，Official Standard 为 8/8。这些是交集检查，不代表完整审核召回率；HAR 有一些所提供 PDF 视图中没有的要求。最低成绩、GPA、驻校学分、替代规则和全部逻辑条件尚未完整求值。学业标题可能保留所需 GPA 门槛，但不保留学生实际 GPA。
 
 浏览器验收覆盖真实文件自动导入、目录学分、占位项替换、同页详情、移动后恢复及响应式布局。自动测试覆盖隐私白名单、状态合并、要求树、推荐排除、公开版式、不可变归档事务及备份恢复。独立 Playwright 脚本与交互式浏览器验收分开维护，运行前提及执行状态以测试报告为准。
+
+## 数据库发布与跨环境备份
+
+运行时 `/api/planning/curricula` 从 PostgreSQL 读取最新的不可变 `catalog_release`。每个版本包含完整学期模板、目录证据、学科词表和来源元数据。仓库 JSON 用于管理员发布导入。数据库不可用时返回 503。开发环境默认 `osu_planning_dev`，生产环境默认 `osu_planning`。
+
+```sh
+node --env-file-if-exists=.env.local scripts/planning/database.mjs init --apply
+node --env-file-if-exists=.env.local scripts/planning/database.mjs publish --apply
+NODE_ENV=production node --env-file-if-exists=.env.local scripts/planning/database.mjs init --apply
+NODE_ENV=production node --env-file-if-exists=.env.local scripts/planning/database.mjs publish --apply
+```
+
+发布先校验全部输入，再原子写入一个版本，重复发布相同内容会去重，历史版本完整保留。Schema 备份包含发布表。更新并核对模板后重新执行发布。成功读取具有一分钟进程缓存和五分钟 HTTP 缓存。
+
+点击**导出备份**可保存完整脱敏规划 JSON。**导入备份**先预览校验后的文件，点击**恢复此备份**后通过统一的本地保存与账号同步流程替换当前规划。跨数据库环境保留 ID、校区、课程组、班次选择和模拟偏好，重复导入同一备份保留原有标识。恢复窗口也提供备份当前规划的操作。文件上限为 4 MB，旧版 schema 1 自动升级。

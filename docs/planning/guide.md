@@ -84,7 +84,7 @@ Without `--apply`, refresh prints its intended commands. The default public cach
 
 Only public HTTPS OSU domains are accepted. Credentials, identity/login hosts and arbitrary queries are rejected; a bounded public PDF VersionId is the sole query exception. Robots, redirects and public DNS are checked. Downloads cap at 8 MB with bounded timeouts/redirects and per-origin delay (default two seconds, minimum one). A bounded anonymous curl retry handles some public Drupal transport rejections; it ignores curl configuration and follows no redirects. Never reuse HAR headers, cookies, student sessions or partner tokens.
 
-The dedicated schemas are `osu_planning_dev` and `osu_planning`; `PLANNING_SCHEMA` permits isolated names in that domain. Native PostgreSQL requires explicit `PLANNING_DATABASE_URL`; course/account database settings are never inferred.
+The dedicated schemas are `osu_planning_dev` and `osu_planning`; `PLANNING_SCHEMA` permits isolated names in that domain. PostgreSQL uses `PLANNING_DATABASE_URL` when set and otherwise `DATABASE_URL`, always with fully qualified planning tables.
 
 | Table              | Retained data                                                         |
 | ------------------ | --------------------------------------------------------------------- |
@@ -95,7 +95,7 @@ The dedicated schemas are `osu_planning_dev` and `osu_planning`; `PLANNING_SCHEM
 | curriculum_version | Separate source/parser/variant versions and applicability metadata    |
 | template_seed      | Reviewed requirements-only input, pending operator publication review |
 
-Archive operations are transactional and repeatable; unique identities cannot silently overwrite another variant. Changed parsing uses a new version. Backups are exclusive new files with restricted permissions. PGlite restoration is tested in a disposable database. Native PostgreSQL deployment/connectivity/restore is not validated by those tests. No cloud database was modified for this update. Public PDF NUL/lone-surrogate text is stored as U+FFFD with an explicit policy; original bytes/hash remain unchanged.
+Archive operations are transactional and repeatable; unique identities cannot silently overwrite another variant. Changed parsing uses a new version. Backups are exclusive new files with restricted permissions. PGlite restoration is tested in a disposable database. Native PostgreSQL deployment/connectivity/restore is not validated by those tests. Public PDF NUL/lone-surrogate text is stored as U+FFFD with an explicit policy; original bytes/hash remain unchanged.
 
 ## Verification and limits
 
@@ -111,3 +111,18 @@ See [testing](../testing.md). Local private regression covers 11 PDFs/71 pages a
 The merged roster has eight completed, six current and five planned entries. Fifteen unambiguous roster overlaps agree with HAR on status and credits; seven semester overlaps agree on placement and credits. Comparable requirement edges match for Expanded (28/28), Planned Standard (65/65) and Official Standard (8/8). These are overlap checks, not total audit recall; HAR contains requirements absent from the supplied PDF views. Minimum-grade, GPA, residency, substitutions and all logical constraints are not fully evaluated. Source academic headings may retain a required GPA threshold, but no student's GPA is retained.
 
 Browser acceptance exercises real-file automatic import, catalog-backed credits, placeholder replacement, same-page details, movement persistence and responsive layouts. Automated suites cover whitelist/privacy, status reconciliation, requirement ancestry, recommendation exclusions, public layouts, immutable archive transactions and backup restore. The standalone Playwright script is maintained separately from interactive browser acceptance; its prerequisites and execution status belong in the test report.
+
+## Database publication and portable backups
+
+The runtime `/api/planning/curricula` reads the latest immutable `catalog_release` from PostgreSQL. Each release contains full semester templates, directory evidence, subject vocabulary and source metadata. Repository JSON is an operator publication input. An unavailable database returns 503. Development defaults to `osu_planning_dev` and production to `osu_planning`.
+
+```sh
+node --env-file-if-exists=.env.local scripts/planning/database.mjs init --apply
+node --env-file-if-exists=.env.local scripts/planning/database.mjs publish --apply
+NODE_ENV=production node --env-file-if-exists=.env.local scripts/planning/database.mjs init --apply
+NODE_ENV=production node --env-file-if-exists=.env.local scripts/planning/database.mjs publish --apply
+```
+
+Publishing validates all inputs before one atomic insert, deduplicates identical releases and preserves older releases. Schema backups include the release table. Run publication again after reviewing refreshed templates. Successful reads have a one-minute process cache and a five-minute HTTP cache.
+
+Choose **Export backup** to save the complete sanitized plan as JSON. **Import backup** previews a validated file and **Restore this backup** replaces the current workspace through the regular local-save and account-sync path. It preserves IDs, campuses, groups, section choices and simulation preferences across database environments. Reimporting the same backup preserves its identities. The restore dialog also offers an export of the current plan. Files are limited to 4 MB and legacy schema version 1 is upgraded automatically.

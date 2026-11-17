@@ -207,3 +207,9 @@ normalization and tokenization from the usual first request; it does not guarant
 instant results or prewarm every serverless instance. Existing live exact-code
 routing and official-service latency are unchanged. Validate cold and warm
 end-to-end timings against an isolated representative database before deployment.
+
+## Shared response caching
+
+Public indexed-search responses use a 30-second browser cache, five-minute shared cache and ten-minute stale-while-revalidate window. Filtered URLs and pinned cursors remain distinct cache keys. Failed requests remain uncached. The browser honors these headers unless debug cache bypass is enabled. `Server-Timing` reports origin search duration for distinguishing database/index work from network latency.
+
+Search-index maintenance runs whenever catalog publication succeeds, including after an independent RMP or change-history maintenance failure. Timed-out change-history chunks roll back to a savepoint and retry with fewer courses. The outer transaction still publishes an entire term atomically and honors its runtime budget.

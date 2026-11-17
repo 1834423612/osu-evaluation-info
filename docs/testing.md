@@ -543,3 +543,7 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 - `tests/planning/course-details.test.mjs` Shared course detail panels, translation, outside-dismissal protection and mobile drag handles. Planning dialogs preserve child state across responsive breakpoints. `node --test tests/planning/course-details.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
+
+- `tests/planning/backup.test.mjs` validates portable backup restoration, stable IDs, semester campuses, section choices, simulation preferences, legacy versions, privacy allowlists and cancellation. Run `node --test tests/planning/backup.test.mjs`. In-memory fixtures only, with no external services or persistent writes.
+
+The saved-preview entry point is covered by `tests/catalog/detail-refresh.test.mjs`. `tests/catalog/change-budgets.test.mjs` also checks rollback and smaller-batch retry after a statement timeout. The planning database integration test checks immutable catalog releases, repeat publication, complete public template round trips and rollback using in-memory PGlite and repository public fixtures. These tests run through `pnpm test` without network services or external database writes.
