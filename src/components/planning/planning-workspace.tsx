@@ -21,6 +21,7 @@ import { emptyPlan, serializePlan, type Plan } from "@/lib/planning/model";
 import { extractPlan } from "@/lib/planning/pdf";
 import { pruneAllocations, removeSnapshot } from "@/lib/planning/snapshots";
 import { importPlanningFiles } from "@/lib/planning/batch-import";
+import { readPlanBackup } from "@/lib/planning/backup";
 import { ImportGuard } from "@/lib/planning/import-guard";
 import {
   importProfile,
@@ -74,6 +75,8 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [progress, setProgress] = useState("");
+  const [backup, setBackup] = useState<Plan | null>(null);
+  const backupInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null),
     profile = useRef<ImportProfile | null>(null);
   const guard = useRef(new ImportGuard());
@@ -167,6 +170,25 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
     link.click();
     URL.revokeObjectURL(url);
   }
+  async function previewBackup(file?: File) {
+    if (!file) return;
+    const token = guard.current.start();
+    setMessage("");
+    try {
+      const incoming = await readPlanBackup(file, token.signal);
+      if (guard.current.current(token.generation)) setBackup(incoming);
+    } catch {
+      if (guard.current.current(token.generation))
+        setMessage(
+          t(
+            "Invalid planning backup. Choose an exported JSON file under 4 MB.",
+            "规划备份无效，请选择本站导出的 JSON 文件，大小不超过 4 MB。",
+          ),
+        );
+    } finally {
+      if (backupInput.current) backupInput.current.value = "";
+    }
+  }
   function addCourse(code: { subject: string; number: string }) {
     try {
       const next = addPlanningCourse(plan, code, nextSemester(), browserUuid);
@@ -217,9 +239,16 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
                     ? t("Saved on this device", "已自动保存到此设备")
                     : t("Private workspace", "私密工作区")}
               </span>
-              <button onClick={exportBackup} disabled={!plan.documents.length}>
+              <button onClick={exportBackup} disabled={!ready}>
                 <Download size={16} />
-                {t("Backup", "备份")}
+                {t("Export backup", "导出备份")}
+              </button>
+              <button
+                disabled={!ready || busy}
+                onClick={() => backupInput.current?.click()}
+              >
+                <FileUp size={16} />
+                {t("Import backup", "导入备份")}
               </button>
               <button
                 className={styles.primary}
@@ -237,11 +266,19 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
           <input
             ref={fileInput}
             type="file"
-            accept=".pdf,.json"
+            accept=".pdf"
             multiple
             hidden
             aria-label={t("Import BDP reports", "导入 BDP 报告")}
             onChange={(e) => void importFiles(Array.from(e.target.files ?? []))}
+          />
+          <input
+            ref={backupInput}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            aria-label={t("Import planning backup", "导入规划备份")}
+            onChange={(e) => void previewBackup(e.target.files?.[0])}
           />
           {busy && (
             <div className={styles.notice} role="status">
@@ -540,6 +577,44 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
             </div>
           )}
         </main>
+        <WorkspaceDialog
+          open={backup !== null}
+          onOpenChange={(open) => {
+            if (!open) setBackup(null);
+          }}
+          title={t("Restore planning backup", "恢复规划备份")}
+          description={t(
+            "Restoring replaces this plan, including semesters, campuses, groups and section choices. Signed-in accounts sync the restored plan automatically.",
+            "恢复后将替换当前规划，包括学期、校区、课程组与班次选择。登录后会自动同步恢复后的规划。",
+          )}
+          closeLabel={t("Close", "关闭")}
+          guard={false}
+          closeOnly
+        >
+          <p>
+            {backup?.programs.length ?? 0} {t("programs", "个专业")} ·{" "}
+            {backup?.semesters.reduce((n, s) => n + s.courses.length, 0) ?? 0}{" "}
+            {t("academic entries", "项学业记录")}
+          </p>
+          <div className={styles.globalActions}>
+            <button onClick={exportBackup}>
+              <Download size={16} />
+              {t("Back up current plan", "备份当前规划")}
+            </button>
+            <button
+              className={styles.primary}
+              onClick={() => {
+                if (!backup) return;
+                update(() => backup);
+                setBackup(null);
+                setTab("board");
+                setMessage(t("Planning backup restored.", "规划备份已恢复。"));
+              }}
+            >
+              {t("Restore this backup", "恢复此备份")}
+            </button>
+          </div>
+        </WorkspaceDialog>
         <WorkspaceDialog
           open={confirmClear}
           onOpenChange={setConfirmClear}
