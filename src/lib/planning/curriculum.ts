@@ -50,6 +50,9 @@ export const curriculumSchema = z
     planScope: z
       .enum(["single-program", "multi-program", "unknown"])
       .default("unknown"),
+    scheduleScope: z
+      .enum(["degree-plan", "major-sequence"])
+      .default("degree-plan"),
     academicYear: z
       .string()
       .regex(/^20\d{2}-20\d{2}$/)

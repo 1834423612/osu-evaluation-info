@@ -44,7 +44,7 @@ export function GET(request: Request) {
           .filter(
             (c) =>
               c.documentKind === "sample-plan" &&
-              c.semesters.length === 8 &&
+              c.semesters.length >= 8 &&
               c.semesters.every((s) => s.entries.length),
           ),
       },

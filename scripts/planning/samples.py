@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Refresh only manually inspected, explicitly semester-based public samples."""
+from inspected_pdf_adapter import structure_music, structure_engineering, structure_nursing, structure_knowlton, structure_public_health
 import argparse
 import hashlib
 import json
@@ -11,6 +12,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from cse_adapter import structure_cse
 from grid_adapter import structure_grid
+from html_schedule_adapter import structure_html
 from inventory import document_metadata, html_blocks
 from pdf_adapter import structure_math_schedule
 from structure import structure
@@ -121,19 +123,31 @@ def build_samples(registry, folder):
             found = structure_cse(data, record, source)
         elif adapter == 'earth-grid':
             found = [group_choices(c) for c in structure_grid(data, record, metadata)]
+        elif adapter in ('paired-years', 'year-lists'):
+            found = structure_html(data, record, source)
+        elif adapter == 'music-pdf':
+            found = structure_music(extracted, record, source)
+        elif adapter == 'engineering-pdf':
+            found = structure_engineering(extracted, record, source)
+        elif adapter in ('nursing-pdf','knowlton-pdf','public-health-pdf'):
+            found = {'nursing-pdf':structure_nursing,'knowlton-pdf':structure_knowlton,'public-health-pdf':structure_public_health}[adapter](extracted, record, source)
         elif adapter == 'math-pdf':
             found = structure_math_schedule(extracted, record, metadata)
         elif adapter == 'molgen-list':
             found = structure(data, record)
         else:
             raise ValueError('Unimplemented inspected adapter')
-        if len(found) != source['expectedSamples'] or any(len(c['semesters']) != 8 or not all(s['entries'] for s in c['semesters']) for c in found):
+        expected_terms = source.get('expectedTerms', [8] * source['expectedSamples'])
+        if len(found) != source['expectedSamples'] or [len(c['semesters']) for c in found] != expected_terms or any(not all(s['entries'] for s in c['semesters']) for c in found):
             raise ValueError('Sample layout changed: ' + source['id'])
-        for candidate in found:
+        for ordinal, candidate in enumerate(found):
             candidate['program'] = source['program']
             candidate['geSystem'] = source.get('geSystem')
-            candidate['id'] += '-inspected-v2'
-            candidate['version'] += '-inspected-v2'
+            candidate['campus'] = source.get('campus', candidate.get('campus'))
+            candidate['scheduleScope'] = source.get('scheduleScope', 'degree-plan')
+            if source.get('academicYear'): candidate['academicYear'] = source['academicYear']
+            candidate['id'] += '-inspected-v3'
+            candidate['version'] = record['sha256'][:16] + '-' + adapter + '-v3-' + str(ordinal)
             candidate['evidence'].append(source['structure'])
             if source.get('comparison'):
                 candidate['evidence'].append(source['comparison'])

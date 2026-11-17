@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "coverage": "partial",
-  "generatedAt": "2026-11-16T21:18:02.708842+00:00",
+  "generatedAt": "2026-11-17T00:51:56.994184+00:00",
   "index": {
     "url": "https://cse.osu.edu/ba-cis-program-information",
     "sha256": "c07bfa42c331b8eecfbc1ce67de9a0a717ac0bfe2869eb80c08d0deb72dc4f24",
@@ -14,7 +14,9 @@
       "college": "Arts and Sciences",
       "category": null,
       "indexUrl": "https://cse.osu.edu/ba-cis-program-information",
-      "documentIds": ["442c8c0c68f51bf071978fd6"],
+      "documentIds": [
+        "442c8c0c68f51bf071978fd6"
+      ],
       "coverage": "references"
     },
     {
@@ -23,7 +25,9 @@
       "college": "Arts and Sciences",
       "category": null,
       "indexUrl": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cis-program-information",
-      "documentIds": ["eda265dba60ebc20c491ad7d"],
+      "documentIds": [
+        "eda265dba60ebc20c491ad7d"
+      ],
       "coverage": "references"
     },
     {
@@ -32,7 +36,9 @@
       "college": "Engineering",
       "category": null,
       "indexUrl": "https://cse.osu.edu/prospective-students/undergrad/majors/bs-cse-program-information",
-      "documentIds": ["48ec46c05db4a58fab8eede0"],
+      "documentIds": [
+        "48ec46c05db4a58fab8eede0"
+      ],
       "coverage": "references"
     },
     {
@@ -41,7 +47,9 @@
       "college": "Arts and Sciences",
       "category": null,
       "indexUrl": "https://molgen.osu.edu/sample-curriculum",
-      "documentIds": ["7ee5aaa83241038706c9374d"],
+      "documentIds": [
+        "7ee5aaa83241038706c9374d"
+      ],
       "coverage": "references"
     },
     {
@@ -50,7 +58,9 @@
       "college": "Arts and Sciences",
       "category": null,
       "indexUrl": "https://earthsciences.osu.edu/b.s.-geophysics-subprogram-sample-four-year-curriculum",
-      "documentIds": ["6fc8da4530ef17166c0d6275"],
+      "documentIds": [
+        "6fc8da4530ef17166c0d6275"
+      ],
       "coverage": "references"
     },
     {
@@ -59,7 +69,9 @@
       "college": "Arts and Sciences",
       "category": null,
       "indexUrl": "https://earthsciences.osu.edu/b.s.-climate-water-environment-subprogram-sample-four-year-curriculum",
-      "documentIds": ["0be30405bd5cf7e030d05d6f"],
+      "documentIds": [
+        "0be30405bd5cf7e030d05d6f"
+      ],
       "coverage": "references"
     },
     {
@@ -68,7 +80,471 @@
       "college": "Arts and Sciences",
       "category": null,
       "indexUrl": "https://math.osu.edu/undergrad/current-majors/actsci/requirements",
-      "documentIds": ["ac3a89d321725151bd7b5b20"],
+      "documentIds": [
+        "ac3a89d321725151bd7b5b20"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "ba9676fb6c5a0a47",
+      "name": "Biomedical Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://bme.osu.edu/bme-sample-curriculum-sheets",
+      "documentIds": [
+        "30ef42a650b4529c03de50cd"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "c8ccf053e3884230",
+      "name": "Civil Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://ceg.osu.edu/civil-engineering-curriculum",
+      "documentIds": [
+        "06c7a1a7525d722585934397"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "318ba2bc76e03b91",
+      "name": "Environmental Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://ceg.osu.edu/environmental-engineering-curriculum",
+      "documentIds": [
+        "c4a2ab7bdc10a388ef1c749e"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "9584a9d739eadbbc",
+      "name": "Industrial and Systems Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://ise.osu.edu/autumn-2022-sample-curriculum",
+      "documentIds": [
+        "0d65d23d55f2f84ce14bb476"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "95f7f7362de49f7f",
+      "name": "Aerospace Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://mae.osu.edu/students-starting-math-1151",
+      "documentIds": [
+        "f27db152d74a44c48e8daa4f"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "4226e4da5cf74743",
+      "name": "Chemical Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://cbe.osu.edu/curriculum-students-starting-math-1151",
+      "documentIds": [
+        "b6369ed15acc343f75b2daf8"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "d002f779a5f45ed3",
+      "name": "Mathematics · Theoretical",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://math.osu.edu/undergrad/current-majors/requirements/theoretical",
+      "documentIds": [
+        "b83a95cc752ed286490cfb5f"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "7d271498c334920a",
+      "name": "Mathematics · Applied",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://math.osu.edu/undergrad/current-majors/requirements/applied",
+      "documentIds": [
+        "af323e57d0d796eaaaa4fbcf"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "80f0eaaa16eb6448",
+      "name": "Mathematics · Biology",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://math.osu.edu/undergrad/current-majors/requirements/biology",
+      "documentIds": [
+        "761f0b46682d49a2402e6146"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "ef50e1de18f7c3ef",
+      "name": "Mathematics · Education",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://math.osu.edu/undergrad/current-majors/requirements/education",
+      "documentIds": [
+        "e7956c73edc00a0b6b888326"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "89fa2f07e951306d",
+      "name": "Mathematics · Financial",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://math.osu.edu/undergrad/current-majors/requirements/financial",
+      "documentIds": [
+        "167ab1f07df920222601f64d"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "7117827b54a37252",
+      "name": "French and History · double major",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://frit.osu.edu/ug/majors/ffs-major/sample-plan",
+      "documentIds": [
+        "216f65d0bb967e3c81be2c74"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "0009fdf30e3f5fc9",
+      "name": "Mechanical Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://mae.osu.edu/me-students-starting-math-1151",
+      "documentIds": [
+        "02e68decdfedd154eac32799"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "b5a6d9c6f5dec31b",
+      "name": "Social Work · BSSW",
+      "college": "Social Work",
+      "category": null,
+      "indexUrl": "https://lima.osu.edu/department-social-work/social-work-curriculum",
+      "documentIds": [
+        "fb2694189bbdc9b1f351ab0c"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "fe2136cb18b34bc7",
+      "name": "Microbiology",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://microbiology.osu.edu/students/ugrad-curriculum",
+      "documentIds": [
+        "5b32b074a40165f8c3fe0577"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "7f8e830dd52c9a2e",
+      "name": "Dietetics · DPD",
+      "college": "Education and Human Ecology",
+      "category": null,
+      "indexUrl": "https://ehe.osu.edu/undergraduate/dietetics/sample-didactic-program-dietetics",
+      "documentIds": [
+        "0db910994f6e6cf0d5321b31"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "8b20a16709585998",
+      "name": "Materials Science and Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "382f95aea5fd9d8b8c037be4"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "e7cb502e079ee18f",
+      "name": "Welding Engineering",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "f7ff62b26dd26d88f1d0b92b"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "bb3c03f837b6c15c",
+      "name": "Engineering Physics",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "6c906a76e85ace0324310150"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "cd62fca156758e56",
+      "name": "Food, Agricultural and Biological Engineering · Food",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "fbca04fbb32bc6d6f7a1862e"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "dc5274e7a0a18258",
+      "name": "Food, Agricultural and Biological Engineering · Agricultural",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "279f2816a760f6907646f2d2"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "b343652f295a112c",
+      "name": "Food, Agricultural and Biological Engineering · Biological",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "a3fe5f964732005310a5e801"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "6bf838d400372810",
+      "name": "Food, Agricultural and Biological Engineering · Ecological",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://advising.engineering.osu.edu/current-students/curriculum/major-curriculum-sheets",
+      "documentIds": [
+        "decf012f45bbbb29506dc644"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "96fc69d2a50526a1",
+      "name": "Music · BA",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "b94fd5050716deb6ef55d589"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "c5d92239ecf6fbc0",
+      "name": "Music · BM Jazz Composition",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "d3b76ae22af853834e41c7e6"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "8fef0e86c62c84d5",
+      "name": "Music · BM Jazz Performance",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "4f5860f4482b2020b67f70a3"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "50a267d9c54f0002",
+      "name": "Music · BM Composition",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "0a34c6a11e4c92172d123b31"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "f02ceae5f1c277b8",
+      "name": "Music · BM Theory",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "0a19f126c5af056ad67d4194"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "8a763c4cebd8ba0d",
+      "name": "Music · BM Musicology",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "80fe9dc9d4be14851692e18f"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "0fc0e180cbf85303",
+      "name": "Music · BM Orchestral Performance",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "812b7ce62bda9062a2756f77"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "8d616fb45dc58cf6",
+      "name": "Music · BM Piano Performance",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "b17bf50395b8154872fee5a8"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "d2b24750e91fce65",
+      "name": "Music · BM Voice Performance",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "94692c8dc6ae8aa99bcca16a"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "066d1d19fc949702",
+      "name": "Music Education · General",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "d71e8329fc4ff30de1abd184"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "f0d97cdc1bb8a910",
+      "name": "Music Education · Choral",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "9c36299361ba4f6d168d0b5b"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "77838928f62a09a4",
+      "name": "Music Education · Instrumental",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "50528c57d922c84bbb398923"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "c9d12521e2f647b9",
+      "name": "Music Education · Instrumental Jazz",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "ebf8a2d2892caec3bf5cf565"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "5202c54cf3907dc4",
+      "name": "Music · BS Computer Sciences",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "a21981137afc217f0d4a32de"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "594776d06ec32296",
+      "name": "Music · BS Media and Enterprise",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "b526a7c56a9d58674dd401e1"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "6b005f618d90588b",
+      "name": "Music · BS Sonic Arts",
+      "college": "Arts and Sciences",
+      "category": null,
+      "indexUrl": "https://music.osu.edu/current/ug-curriculum",
+      "documentIds": [
+        "ea4b58828eef4a02da60e35f"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "cce65423f9bdef7e",
+      "name": "Nursing · BSN",
+      "college": "Nursing",
+      "category": null,
+      "indexUrl": "https://nursing.osu.edu/bsn",
+      "documentIds": [
+        "b66b5d72b26f6fc55ae5ede2"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "2e74b06ae84e9b4f",
+      "name": "Architecture · BS",
+      "college": "Engineering",
+      "category": null,
+      "indexUrl": "https://knowlton.osu.edu/sites/default/files/2022-07/curriculum_22-23_BSArch_1.pdf",
+      "documentIds": [
+        "553117496ece434648b5a27b"
+      ],
+      "coverage": "references"
+    },
+    {
+      "id": "8ec5692a3df274aa",
+      "name": "Public Health · Environmental Public Health",
+      "college": "Public Health",
+      "category": null,
+      "indexUrl": "https://cph.osu.edu/doc/curriculum-guide/bsph-eph-curriculum-guide-24-25/view",
+      "documentIds": [
+        "26bde0927eb23ea323ecdeec"
+      ],
       "coverage": "references"
     }
   ],
@@ -80,14 +556,19 @@
       "sha256": "c07bfa42c331b8eecfbc1ce67de9a0a717ac0bfe2869eb80c08d0deb72dc4f24",
       "fetchedAt": "2026-11-16T21:17:54.200583+00:00",
       "mediaType": "text/html",
-      "programIds": ["41ced12661785076"],
+      "programIds": [
+        "41ced12661785076"
+      ],
       "reviewStatus": "pending",
       "title": "BA CIS Program Information",
       "documentKind": "sample-plan",
       "academicYears": [],
       "effectiveTerms": [],
       "appliedVersions": [],
-      "geSystems": ["GEN", "GEL"],
+      "geSystems": [
+        "GEN",
+        "GEL"
+      ],
       "publicationStatus": "unknown",
       "courseReferences": [
         {
@@ -581,14 +1062,18 @@
       "sha256": "67d34047390df9d61ced3c97e38b001aef9fde02fa4162d98cd3f94acf7b8347",
       "fetchedAt": "2026-11-16T21:17:58.625202+00:00",
       "mediaType": "text/html",
-      "programIds": ["ee79bba1d6de7c36"],
+      "programIds": [
+        "ee79bba1d6de7c36"
+      ],
       "reviewStatus": "pending",
       "title": "BS CIS Program Information",
       "documentKind": "sample-plan",
       "academicYears": [],
       "effectiveTerms": [],
       "appliedVersions": [],
-      "geSystems": ["GEN"],
+      "geSystems": [
+        "GEN"
+      ],
       "publicationStatus": "unknown",
       "courseReferences": [
         {
@@ -830,14 +1315,19 @@
       "sha256": "559d6c3e5b4ce8c57e5762adb1d9ac8dea2d92d60f031f8212f8dd636e9e0c19",
       "fetchedAt": "2026-11-16T21:18:02.708842+00:00",
       "mediaType": "text/html",
-      "programIds": ["a133d9c2fbfeeae0"],
+      "programIds": [
+        "a133d9c2fbfeeae0"
+      ],
       "reviewStatus": "pending",
       "title": "BS CSE Program Information",
       "documentKind": "sample-plan",
       "academicYears": [],
       "effectiveTerms": [],
       "appliedVersions": [],
-      "geSystems": ["GEN", "GEL"],
+      "geSystems": [
+        "GEN",
+        "GEL"
+      ],
       "publicationStatus": "unknown",
       "courseReferences": [
         {
@@ -1191,14 +1681,18 @@
       "sha256": "9c374d1d9792a4fab3d37266ab906c54cb315458701f82c7f2b1f93c4379bb2c",
       "fetchedAt": "2026-11-16T21:13:10.856683+00:00",
       "mediaType": "text/html",
-      "programIds": ["4ed7e210ccf51b92"],
+      "programIds": [
+        "4ed7e210ccf51b92"
+      ],
       "reviewStatus": "pending",
       "title": "Sample Curriculum",
       "documentKind": "sample-plan",
       "academicYears": [],
       "effectiveTerms": [],
       "appliedVersions": [],
-      "geSystems": ["GEN"],
+      "geSystems": [
+        "GEN"
+      ],
       "publicationStatus": "unknown",
       "courseReferences": [
         {
@@ -1288,7 +1782,9 @@
       "sha256": "7dd8a2c5a2d67d81176f61e855d5388e6607e1f52cf2bc4c8e07926ea35d239d",
       "fetchedAt": "2026-11-16T21:13:14.940148+00:00",
       "mediaType": "text/html",
-      "programIds": ["30b45450a4501df8"],
+      "programIds": [
+        "30b45450a4501df8"
+      ],
       "reviewStatus": "pending",
       "title": "B.S. Geophysics Subprogram Sample Four-Year Curriculum",
       "documentKind": "sample-plan",
@@ -1369,7 +1865,9 @@
       "sha256": "0dac53b24b7fb01b64619de871f25ac246ecef86040d916b6e06a7d42cddbba7",
       "fetchedAt": "2026-11-16T21:13:18.871885+00:00",
       "mediaType": "text/html",
-      "programIds": ["8e46ae9cceb3be63"],
+      "programIds": [
+        "8e46ae9cceb3be63"
+      ],
       "reviewStatus": "pending",
       "title": "B.S. Climate, Water & Environment Subprogram Sample Four-Year Curriculum",
       "documentKind": "sample-plan",
@@ -1442,7 +1940,9 @@
       "sha256": "76ae0167af343722b791c4e91f6d03bd31a28f0342bf79555d91099af5c53f15",
       "fetchedAt": "2026-11-16T21:13:20.868410+00:00",
       "mediaType": "application/pdf",
-      "programIds": ["161c8275a6fb4570"],
+      "programIds": [
+        "161c8275a6fb4570"
+      ],
       "reviewStatus": "pending",
       "title": "Actuarial Science",
       "documentKind": "sample-plan",
@@ -1571,11 +2071,6440 @@
       ],
       "pageCount": 2,
       "extractionStatus": "references"
+    },
+    {
+      "id": "30ef42a650b4529c03de50cd",
+      "url": "https://bme.osu.edu/bme-sample-curriculum-sheets",
+      "resolvedUrl": "https://bme.osu.edu/bme-sample-curriculum-sheets",
+      "sha256": "45e2d1f8cf6b15ea1cc9e9eedc0c7a3546d115e2d4c3e7cc25bd3aabd70719ce",
+      "fetchedAt": "2026-11-17T00:08:11.331748+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "ba9676fb6c5a0a47"
+      ],
+      "reviewStatus": "pending",
+      "title": "BME Sample Curriculum Sheets",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOCHEM",
+          "number": "4511"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1208"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2520"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2540"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2550"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1138"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2301"
+        },
+        {
+          "subject": "MATH",
+          "number": "1075"
+        },
+        {
+          "subject": "MATH",
+          "number": "1120"
+        },
+        {
+          "subject": "MATH",
+          "number": "1121"
+        },
+        {
+          "subject": "MATH",
+          "number": "1140"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1148"
+        },
+        {
+          "subject": "MATH",
+          "number": "1149"
+        },
+        {
+          "subject": "MATH",
+          "number": "1150"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3500"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "06c7a1a7525d722585934397",
+      "url": "https://ceg.osu.edu/civil-engineering-curriculum",
+      "resolvedUrl": "https://ceg.osu.edu/civil-engineering-curriculum",
+      "sha256": "de605942a7914495674e40de437d5e272dd6f380abdd97e496da42379f6de8ca",
+      "fetchedAt": "2026-11-17T00:08:15.729348+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "c8ccf053e3884230"
+      ],
+      "reviewStatus": "pending",
+      "title": "Civil Engineering Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1208"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "2001"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "2405"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "2410"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3080"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3130"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3160"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3310"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3510"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3540"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3700"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "4001"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "4002"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "4320"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "4350"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "4552"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "5220"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "5571"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "5730"
+        },
+        {
+          "subject": "CONSYSM",
+          "number": "2205"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "1110.0X"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "3305"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1138"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1300"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2301"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "3200"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "3210"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "5410"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "5760"
+        },
+        {
+          "subject": "MATH",
+          "number": "1140"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1148"
+        },
+        {
+          "subject": "MATH",
+          "number": "1149"
+        },
+        {
+          "subject": "MATH",
+          "number": "1150"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATH",
+          "number": "2415"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2010"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2020"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1248"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1249"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "STAT",
+          "number": "3450"
+        },
+        {
+          "subject": "STAT",
+          "number": "3450.0X"
+        },
+        {
+          "subject": "STAT",
+          "number": "3460"
+        },
+        {
+          "subject": "STAT",
+          "number": "3470"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "c4a2ab7bdc10a388ef1c749e",
+      "url": "https://ceg.osu.edu/environmental-engineering-curriculum",
+      "resolvedUrl": "https://ceg.osu.edu/environmental-engineering-curriculum",
+      "sha256": "20fe85f9cda03cf63c71632c6608b761d10f45cce3773933d236b13ad696aa2a",
+      "fetchedAt": "2026-11-17T00:08:21.631103+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "318ba2bc76e03b91"
+      ],
+      "reviewStatus": "pending",
+      "title": "Environmental Engineering Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1208"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2310"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "2001"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "2060"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "2090"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3080"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3130"
+        },
+        {
+          "subject": "CIVILEN",
+          "number": "3160"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "1110.0X"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "3305"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1138"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1300"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2301"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "2100"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "3200"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "3210"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "4090"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "4090.0X"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "4200"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "5110"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "5140"
+        },
+        {
+          "subject": "ENVENG",
+          "number": "5170"
+        },
+        {
+          "subject": "MATH",
+          "number": "1140"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1148"
+        },
+        {
+          "subject": "MATH",
+          "number": "1149"
+        },
+        {
+          "subject": "MATH",
+          "number": "1150"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2010"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4000.0X"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "STAT",
+          "number": "3470.0X"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "0d65d23d55f2f84ce14bb476",
+      "url": "https://ise.osu.edu/autumn-2022-sample-curriculum",
+      "resolvedUrl": "https://ise.osu.edu/autumn-2022-sample-curriculum",
+      "sha256": "6a6f9328fda3d5f80501e4f7ca539176197154d61381af31b31fdf739e027dc7",
+      "fetchedAt": "2026-11-17T00:08:25.710572+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "9584a9d739eadbbc"
+      ],
+      "reviewStatus": "pending",
+      "title": "Autumn 2022 Sample Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ANATOMY",
+          "number": "2220"
+        },
+        {
+          "subject": "ANTHROP",
+          "number": "2200"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "CSE",
+          "number": "2112"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "1911"
+        },
+        {
+          "subject": "EEOB",
+          "number": "2510"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENR",
+          "number": "2155"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GEOG",
+          "number": "2200"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040.01"
+        },
+        {
+          "subject": "ISE",
+          "number": "2400"
+        },
+        {
+          "subject": "ISE",
+          "number": "2500"
+        },
+        {
+          "subject": "ISE",
+          "number": "3200"
+        },
+        {
+          "subject": "ISE",
+          "number": "3210"
+        },
+        {
+          "subject": "ISE",
+          "number": "3400"
+        },
+        {
+          "subject": "ISE",
+          "number": "3600"
+        },
+        {
+          "subject": "ISE",
+          "number": "3700"
+        },
+        {
+          "subject": "ISE",
+          "number": "3800"
+        },
+        {
+          "subject": "ISE",
+          "number": "4100"
+        },
+        {
+          "subject": "ISE",
+          "number": "4120"
+        },
+        {
+          "subject": "ISE",
+          "number": "4900"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2415"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "PHILOS",
+          "number": "1332"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "3700"
+        },
+        {
+          "subject": "STAT",
+          "number": "3470"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "f27db152d74a44c48e8daa4f",
+      "url": "https://mae.osu.edu/students-starting-math-1151",
+      "resolvedUrl": "https://mae.osu.edu/students-starting-math-1151",
+      "sha256": "112cec39b1cfeae460b44582e2050332281a0231fc8187a522b5e4d34632a981",
+      "fetchedAt": "2026-11-17T00:08:32.018503+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "95f7f7362de49f7f"
+      ],
+      "reviewStatus": "pending",
+      "title": "Students Starting in Math 1151",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "AEROENG",
+          "number": "2200"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "2405"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3520"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3521"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3522"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3542"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3543"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3560"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3570"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3580"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "3581"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4510"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4511"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4515"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4516"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4517"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4518"
+        },
+        {
+          "subject": "AEROENG",
+          "number": "4550"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "ECE",
+          "number": "2300"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.01"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181.01"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "MATH",
+          "number": "1130"
+        },
+        {
+          "subject": "MATH",
+          "number": "1140"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1150"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2010"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2030"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "b6369ed15acc343f75b2daf8",
+      "url": "https://cbe.osu.edu/curriculum-students-starting-math-1151",
+      "resolvedUrl": "https://cbe.osu.edu/curriculum-students-starting-math-1151",
+      "sha256": "bea3ea9e7e99d168e62880e9f44e1050725efd1d69d4762db6f7eb7c587c6959",
+      "fetchedAt": "2026-11-17T00:08:37.838364+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "4226e4da5cf74743"
+      ],
+      "reviewStatus": "pending",
+      "title": "Curriculum for Students Starting in Math 1151",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CBE",
+          "number": "2100"
+        },
+        {
+          "subject": "CBE",
+          "number": "2200"
+        },
+        {
+          "subject": "CBE",
+          "number": "2345"
+        },
+        {
+          "subject": "CBE",
+          "number": "2420"
+        },
+        {
+          "subject": "CBE",
+          "number": "2523"
+        },
+        {
+          "subject": "CBE",
+          "number": "3421"
+        },
+        {
+          "subject": "CBE",
+          "number": "3422"
+        },
+        {
+          "subject": "CBE",
+          "number": "3508"
+        },
+        {
+          "subject": "CBE",
+          "number": "3509"
+        },
+        {
+          "subject": "CBE",
+          "number": "3610"
+        },
+        {
+          "subject": "CBE",
+          "number": "3730"
+        },
+        {
+          "subject": "CBE",
+          "number": "3731"
+        },
+        {
+          "subject": "CBE",
+          "number": "3732"
+        },
+        {
+          "subject": "CBE",
+          "number": "4624"
+        },
+        {
+          "subject": "CBE",
+          "number": "4755"
+        },
+        {
+          "subject": "CBE",
+          "number": "4760"
+        },
+        {
+          "subject": "CBE",
+          "number": "4764"
+        },
+        {
+          "subject": "CBE",
+          "number": "5779"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2540"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.15"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181.01"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "MATH",
+          "number": "1140"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1150"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "b83a95cc752ed286490cfb5f",
+      "url": "https://math.osu.edu/undergrad/current-majors/requirements/theoretical",
+      "resolvedUrl": "https://math.osu.edu/undergrad/current-majors/requirements/theoretical",
+      "sha256": "967a719b8a63c568cae574281e02090563e0f99d7b4ec1196e44e8b011dcf74d",
+      "fetchedAt": "2026-11-17T00:08:43.892665+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "d002f779a5f45ed3"
+      ],
+      "reviewStatus": "pending",
+      "title": "Math Theoretical Track",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1295"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2255"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "3350"
+        },
+        {
+          "subject": "MATH",
+          "number": "3589"
+        },
+        {
+          "subject": "MATH",
+          "number": "3607"
+        },
+        {
+          "subject": "MATH",
+          "number": "3618"
+        },
+        {
+          "subject": "MATH",
+          "number": "4350"
+        },
+        {
+          "subject": "MATH",
+          "number": "4504"
+        },
+        {
+          "subject": "MATH",
+          "number": "4507"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "MATH",
+          "number": "4547"
+        },
+        {
+          "subject": "MATH",
+          "number": "4548"
+        },
+        {
+          "subject": "MATH",
+          "number": "4551"
+        },
+        {
+          "subject": "MATH",
+          "number": "4552"
+        },
+        {
+          "subject": "MATH",
+          "number": "4556"
+        },
+        {
+          "subject": "MATH",
+          "number": "4557"
+        },
+        {
+          "subject": "MATH",
+          "number": "4570"
+        },
+        {
+          "subject": "MATH",
+          "number": "4573"
+        },
+        {
+          "subject": "MATH",
+          "number": "4575"
+        },
+        {
+          "subject": "MATH",
+          "number": "4578"
+        },
+        {
+          "subject": "MATH",
+          "number": "4580"
+        },
+        {
+          "subject": "MATH",
+          "number": "4581"
+        },
+        {
+          "subject": "MATH",
+          "number": "5001"
+        },
+        {
+          "subject": "MATH",
+          "number": "5051"
+        },
+        {
+          "subject": "MATH",
+          "number": "5101"
+        },
+        {
+          "subject": "MATH",
+          "number": "5102"
+        },
+        {
+          "subject": "MATH",
+          "number": "5451"
+        },
+        {
+          "subject": "MATH",
+          "number": "5522H"
+        },
+        {
+          "subject": "MATH",
+          "number": "5529H"
+        },
+        {
+          "subject": "MATH",
+          "number": "5540H"
+        },
+        {
+          "subject": "MATH",
+          "number": "5576H"
+        },
+        {
+          "subject": "MATH",
+          "number": "5601"
+        },
+        {
+          "subject": "MATH",
+          "number": "5602"
+        },
+        {
+          "subject": "MATH",
+          "number": "5603"
+        },
+        {
+          "subject": "MATH",
+          "number": "5632"
+        },
+        {
+          "subject": "MATH",
+          "number": "5702"
+        },
+        {
+          "subject": "MATH",
+          "number": "5756"
+        },
+        {
+          "subject": "MATH",
+          "number": "5757"
+        },
+        {
+          "subject": "MATH",
+          "number": "5801"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "4202"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "af323e57d0d796eaaaa4fbcf",
+      "url": "https://math.osu.edu/undergrad/current-majors/requirements/applied",
+      "resolvedUrl": "https://math.osu.edu/undergrad/current-majors/requirements/applied",
+      "sha256": "fb98c28422693a3d88a57d3b928de069802958143d3c70acc8abc0253e2c31f6",
+      "fetchedAt": "2026-11-17T00:08:48.044962+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "7d271498c334920a"
+      ],
+      "reviewStatus": "pending",
+      "title": "Math Applied Track",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "4300"
+        },
+        {
+          "subject": "CHEM",
+          "number": "4310"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1295"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2255"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "3607"
+        },
+        {
+          "subject": "MATH",
+          "number": "4350"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "MATH",
+          "number": "4547"
+        },
+        {
+          "subject": "MATH",
+          "number": "4548"
+        },
+        {
+          "subject": "MATH",
+          "number": "4551"
+        },
+        {
+          "subject": "MATH",
+          "number": "4552"
+        },
+        {
+          "subject": "MATH",
+          "number": "4556"
+        },
+        {
+          "subject": "MATH",
+          "number": "4557"
+        },
+        {
+          "subject": "MATH",
+          "number": "4578"
+        },
+        {
+          "subject": "MATH",
+          "number": "5101"
+        },
+        {
+          "subject": "MATH",
+          "number": "5102"
+        },
+        {
+          "subject": "MATH",
+          "number": "5451"
+        },
+        {
+          "subject": "MATH",
+          "number": "5756"
+        },
+        {
+          "subject": "MATH",
+          "number": "5757"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2300"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2301"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "4202"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "761f0b46682d49a2402e6146",
+      "url": "https://math.osu.edu/undergrad/current-majors/requirements/biology",
+      "resolvedUrl": "https://math.osu.edu/undergrad/current-majors/requirements/biology",
+      "sha256": "115f1be764ec369f332c5c2373365f17ff7398da3a18964b4d283ae45584d540",
+      "fetchedAt": "2026-11-17T00:08:50.020291+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "80f0eaaa16eb6448"
+      ],
+      "reviewStatus": "pending",
+      "title": "Math Biology Track",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOCHEM",
+          "number": "4511"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "3401"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "EEOB",
+          "number": "3310"
+        },
+        {
+          "subject": "EEOB",
+          "number": "3420"
+        },
+        {
+          "subject": "EEOB",
+          "number": "4520"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1295"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2255"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "3350"
+        },
+        {
+          "subject": "MATH",
+          "number": "3607"
+        },
+        {
+          "subject": "MATH",
+          "number": "4350"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "MATH",
+          "number": "4547"
+        },
+        {
+          "subject": "MATH",
+          "number": "4551"
+        },
+        {
+          "subject": "MATH",
+          "number": "4552"
+        },
+        {
+          "subject": "MATH",
+          "number": "4556"
+        },
+        {
+          "subject": "MATH",
+          "number": "4557"
+        },
+        {
+          "subject": "MATH",
+          "number": "4580"
+        },
+        {
+          "subject": "MATH",
+          "number": "5101"
+        },
+        {
+          "subject": "MATH",
+          "number": "5102"
+        },
+        {
+          "subject": "MATH",
+          "number": "5421"
+        },
+        {
+          "subject": "MATH",
+          "number": "5540H"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "4500"
+        },
+        {
+          "subject": "MOLGEN",
+          "number": "5601"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "4202"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "e7956c73edc00a0b6b888326",
+      "url": "https://math.osu.edu/undergrad/current-majors/requirements/education",
+      "resolvedUrl": "https://math.osu.edu/undergrad/current-majors/requirements/education",
+      "sha256": "06112cd8438b3173dc80f2273bdaa3a45af3f9f612715ba9e8b993414798e94a",
+      "fetchedAt": "2026-11-17T00:08:52.018039+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "ef50e1de18f7c3ef"
+      ],
+      "reviewStatus": "pending",
+      "title": "Math Education Track",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "CSE",
+          "number": "2221"
+        },
+        {
+          "subject": "EDUTL",
+          "number": "5442"
+        },
+        {
+          "subject": "EDUTL",
+          "number": "5501"
+        },
+        {
+          "subject": "ESEPSY",
+          "number": "5401"
+        },
+        {
+          "subject": "ESSPED",
+          "number": "2251"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1295"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "4504"
+        },
+        {
+          "subject": "MATH",
+          "number": "4507"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "MATH",
+          "number": "4547"
+        },
+        {
+          "subject": "MATH",
+          "number": "4548"
+        },
+        {
+          "subject": "MATH",
+          "number": "4578"
+        },
+        {
+          "subject": "MATH",
+          "number": "4580"
+        },
+        {
+          "subject": "MATH",
+          "number": "4581"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "3351"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "4202"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "167ab1f07df920222601f64d",
+      "url": "https://math.osu.edu/undergrad/current-majors/requirements/financial",
+      "resolvedUrl": "https://math.osu.edu/undergrad/current-majors/requirements/financial",
+      "sha256": "b46483b2907939c9445bfd9a407cdba567f1059bdc21a504523794d01a97d342",
+      "fetchedAt": "2026-11-17T00:08:54.079346+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "89fa2f07e951306d"
+      ],
+      "reviewStatus": "pending",
+      "title": "Math Financial Track",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ACCTMIS",
+          "number": "2000"
+        },
+        {
+          "subject": "ACCTMIS",
+          "number": "2200"
+        },
+        {
+          "subject": "BUSFIN",
+          "number": "3120"
+        },
+        {
+          "subject": "BUSFIN",
+          "number": "3220"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "2111"
+        },
+        {
+          "subject": "ECON",
+          "number": "2001"
+        },
+        {
+          "subject": "ECON",
+          "number": "2001.01"
+        },
+        {
+          "subject": "ECON",
+          "number": "2002"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1295"
+        },
+        {
+          "subject": "MATH",
+          "number": "2153"
+        },
+        {
+          "subject": "MATH",
+          "number": "2255"
+        },
+        {
+          "subject": "MATH",
+          "number": "2568"
+        },
+        {
+          "subject": "MATH",
+          "number": "3345"
+        },
+        {
+          "subject": "MATH",
+          "number": "3589"
+        },
+        {
+          "subject": "MATH",
+          "number": "3607"
+        },
+        {
+          "subject": "MATH",
+          "number": "3618"
+        },
+        {
+          "subject": "MATH",
+          "number": "4512"
+        },
+        {
+          "subject": "MATH",
+          "number": "4530"
+        },
+        {
+          "subject": "MATH",
+          "number": "4547"
+        },
+        {
+          "subject": "MATH",
+          "number": "4557"
+        },
+        {
+          "subject": "MATH",
+          "number": "5632"
+        },
+        {
+          "subject": "STAT",
+          "number": "4201"
+        },
+        {
+          "subject": "STAT",
+          "number": "4202"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "216f65d0bb967e3c81be2c74",
+      "url": "https://frit.osu.edu/ug/majors/ffs-major/sample-plan",
+      "resolvedUrl": "https://frit.osu.edu/ug/majors/ffs-major/sample-plan",
+      "sha256": "85a6908044523c836c617c0b2d5fbd094af61d98110f94a5225f554d0f03d568",
+      "fetchedAt": "2026-11-17T00:08:56.022454+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "7117827b54a37252"
+      ],
+      "reviewStatus": "pending",
+      "title": "Sample 4-Year Plan",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ENGLISH",
+          "number": "1110"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "1101"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "1102"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "1103"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "2101"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "3101"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "3103"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "3401"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "3403"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "3801"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "4401"
+        },
+        {
+          "subject": "FRENCH",
+          "number": "5403"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "2081"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "2610"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "2800"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3254"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3263"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3301"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3304"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3310"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "3404"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "4255"
+        },
+        {
+          "subject": "HISTORY",
+          "number": "4675"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "02e68decdfedd154eac32799",
+      "url": "https://mae.osu.edu/me-students-starting-math-1151",
+      "resolvedUrl": "https://mae.osu.edu/me-students-starting-math-1151",
+      "sha256": "72a65a98334078deb91fd7be7b3a727cc2f042ff850847ca004b1189f799f9ca",
+      "fetchedAt": "2026-11-17T00:23:33.109144+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "0009fdf30e3f5fc9"
+      ],
+      "reviewStatus": "pending",
+      "title": "ME Students Starting in Math 1151",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "ECE",
+          "number": "2300"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.15"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040"
+        },
+        {
+          "subject": "ISE",
+          "number": "4500"
+        },
+        {
+          "subject": "MATH",
+          "number": "1130"
+        },
+        {
+          "subject": "MATH",
+          "number": "1140"
+        },
+        {
+          "subject": "MATH",
+          "number": "1141"
+        },
+        {
+          "subject": "MATH",
+          "number": "1150"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2010"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2010"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2020"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2030"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2850.01"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2900"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3260"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3360"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3501"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3503"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3670"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3671"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3751"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "3870"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "4510"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "4870"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        },
+        {
+          "subject": "STAT",
+          "number": "3450"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "fb2694189bbdc9b1f351ab0c",
+      "url": "https://lima.osu.edu/department-social-work/social-work-curriculum",
+      "resolvedUrl": "https://lima.osu.edu/department-social-work/social-work-curriculum",
+      "sha256": "25f37d8317d44564324f4894b1783c931c4a9d62ed3c7611312029f637369488",
+      "fetchedAt": "2026-11-17T00:23:37.375034+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "b5a6d9c6f5dec31b"
+      ],
+      "reviewStatus": "pending",
+      "title": "Social Work Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ENGLISH",
+          "number": "1110"
+        },
+        {
+          "subject": "MATH",
+          "number": "1116"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        },
+        {
+          "subject": "SOCIOL",
+          "number": "1101"
+        },
+        {
+          "subject": "SOCWORK",
+          "number": "1120"
+        },
+        {
+          "subject": "SOCWORK",
+          "number": "1130"
+        },
+        {
+          "subject": "SOCWORK",
+          "number": "1140"
+        },
+        {
+          "subject": "SOCWORK",
+          "number": "3301"
+        },
+        {
+          "subject": "STAT",
+          "number": "1350"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "5b32b074a40165f8c3fe0577",
+      "url": "https://microbiology.osu.edu/students/ugrad-curriculum",
+      "resolvedUrl": "https://microbiology.osu.edu/students/ugrad-curriculum",
+      "sha256": "676b644439175f330debfeca9cd865d4ac418915f055697985965db040fc6647",
+      "fetchedAt": "2026-11-17T00:23:45.617130+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "fe2136cb18b34bc7"
+      ],
+      "reviewStatus": "pending",
+      "title": "Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ARTSSCI",
+          "number": "1100.07"
+        },
+        {
+          "subject": "BIOCHEM",
+          "number": "4511"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2520"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2540"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4100"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4110"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4120"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4130"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4140"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1200"
+        },
+        {
+          "subject": "STAT",
+          "number": "1450.01"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "0db910994f6e6cf0d5321b31",
+      "url": "https://ehe.osu.edu/undergraduate/dietetics/sample-didactic-program-dietetics",
+      "resolvedUrl": "https://ehe.osu.edu/undergraduate/dietetics/sample-didactic-program-dietetics",
+      "sha256": "24555770e8e0809c44a4c64154ff93de551394e310a4d08e873e0f5f5d391277",
+      "fetchedAt": "2026-11-17T00:23:47.810529+00:00",
+      "mediaType": "text/html",
+      "programIds": [
+        "7f8e830dd52c9a2e"
+      ],
+      "reviewStatus": "pending",
+      "title": "Sample Didactic Program in Dietetics and Master of Dietetics and Nutrition Curriculum",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ANATOMY",
+          "number": "2300.04"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "BIOPHRM",
+          "number": "3311"
+        },
+        {
+          "subject": "BIOPHRM",
+          "number": "3312"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CSHSPMG",
+          "number": "3700"
+        },
+        {
+          "subject": "CSHSPMG",
+          "number": "3720"
+        },
+        {
+          "subject": "CSHSPMG",
+          "number": "3730"
+        },
+        {
+          "subject": "ECON",
+          "number": "2001.01"
+        },
+        {
+          "subject": "EEOB",
+          "number": "2520"
+        },
+        {
+          "subject": "EHE",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "1110.01"
+        },
+        {
+          "subject": "HTHRHSC",
+          "number": "2500"
+        },
+        {
+          "subject": "MATH",
+          "number": "1148"
+        },
+        {
+          "subject": "MATH",
+          "number": "1149"
+        },
+        {
+          "subject": "MDN",
+          "number": "6001"
+        },
+        {
+          "subject": "MDN",
+          "number": "6002"
+        },
+        {
+          "subject": "MDN",
+          "number": "6050"
+        },
+        {
+          "subject": "MDN",
+          "number": "6089"
+        },
+        {
+          "subject": "MDN",
+          "number": "6150"
+        },
+        {
+          "subject": "MDN",
+          "number": "6189"
+        },
+        {
+          "subject": "MDN",
+          "number": "6200"
+        },
+        {
+          "subject": "MDN",
+          "number": "6250"
+        },
+        {
+          "subject": "MDN",
+          "number": "6300"
+        },
+        {
+          "subject": "MDN",
+          "number": "6350"
+        },
+        {
+          "subject": "MDN",
+          "number": "6489"
+        },
+        {
+          "subject": "MDN",
+          "number": "6500"
+        },
+        {
+          "subject": "MDN",
+          "number": "6589"
+        },
+        {
+          "subject": "MDN",
+          "number": "6800"
+        },
+        {
+          "subject": "MDN",
+          "number": "6889"
+        },
+        {
+          "subject": "MDN",
+          "number": "6900"
+        },
+        {
+          "subject": "MDN",
+          "number": "6950"
+        },
+        {
+          "subject": "MDN",
+          "number": "7999"
+        },
+        {
+          "subject": "POLITSC",
+          "number": "1100"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        },
+        {
+          "subject": "SOCIOL",
+          "number": "1101"
+        }
+      ],
+      "pageCount": null,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "382f95aea5fd9d8b8c037be4",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-10-19/00-mse-2026-2027-gen-curriculum-sheet_0.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-10-19/00-mse-2026-2027-gen-curriculum-sheet_0.pdf",
+      "sha256": "5e025cd7bfb2f49fc787213b6b122a96a663d8575d97d5b1895ec73d000c3d28",
+      "fetchedAt": "2026-11-17T00:34:41.997801+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "8b20a16709585998"
+      ],
+      "reviewStatus": "pending",
+      "title": "Materials Science and Engineering",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2025-2026",
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2310"
+        },
+        {
+          "subject": "ECE",
+          "number": "2300"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2025"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2010"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2241"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2251"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2321"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2331"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3141"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3151"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3261"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3271"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3321"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3331"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3332"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "4181"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "4381"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "4382"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "5000"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": 2,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "f7ff62b26dd26d88f1d0b92b",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-10-19/00-we-26-27-updated-curriculum-sheet-curriculum-change_0.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-10-19/00-we-26-27-updated-curriculum-sheet-curriculum-change_0.pdf",
+      "sha256": "95581a5692e63c0c87e8e56bc1b3e920645166bd20a70ae1131a3dffb3a07c59",
+      "fetchedAt": "2026-11-17T00:34:44.458814+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "e7cb502e079ee18f"
+      ],
+      "reviewStatus": "pending",
+      "title": "Welding Engineering",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [
+        "GEN"
+      ],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2310"
+        },
+        {
+          "subject": "ECE",
+          "number": "2300"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1110"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2010"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "2251"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3141"
+        },
+        {
+          "subject": "MATSCEN",
+          "number": "3333"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        },
+        {
+          "subject": "STAT",
+          "number": "3450"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "2001"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "2026"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "2601"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4001"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4002"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4101"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4102"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4189"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4193.01"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4201"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4202"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4301"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4602"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4901"
+        },
+        {
+          "subject": "WELDENG",
+          "number": "4902"
+        }
+      ],
+      "pageCount": 2,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "6c906a76e85ace0324310150",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-10-19/eng_phy_curriculum_sheet_26_27_math1151.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-10-19/eng_phy_curriculum_sheet_26_27_math1151.pdf",
+      "sha256": "197090b00b648bfd6f874398dd9001ae76bfaf971cf42492e1b103e59c9296bd",
+      "fetchedAt": "2026-11-17T00:34:46.391734+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "bb3c03f837b6c15c"
+      ],
+      "reviewStatus": "pending",
+      "title": "Engineering Physics",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ASTRON",
+          "number": "1221"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1281H"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2173"
+        },
+        {
+          "subject": "MATH",
+          "number": "2174"
+        },
+        {
+          "subject": "MATH",
+          "number": "2255"
+        },
+        {
+          "subject": "MATH",
+          "number": "2415"
+        },
+        {
+          "subject": "MATH",
+          "number": "5520H"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1270"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1271"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2026"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2095"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2300"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "2301"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "3470"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "3700"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "4700"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "5400"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "5500"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "5800"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "5801"
+        }
+      ],
+      "pageCount": 2,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "fbca04fbb32bc6d6f7a1862e",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-food-engineering-curriculum-sheet-2026-2027.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-food-engineering-curriculum-sheet-2026-2027.pdf",
+      "sha256": "3aca360823d8e9783a018277aaa3d3e50c94ac712ccf5ba3bc717129bdc7f1d3",
+      "fetchedAt": "2026-11-17T00:34:48.206714+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "cd62fca156758e56"
+      ],
+      "reviewStatus": "pending",
+      "title": "Food, Agricultural and Biological Engineering · Food",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOCHEM",
+          "number": "5721"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113.01"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1208"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2310"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.15"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2026"
+        },
+        {
+          "subject": "FDSCTE",
+          "number": "5536"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040.01"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4000.01"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "279f2816a760f6907646f2d2",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-ag-engineering-curriculum-sheet-2026-2027.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-ag-engineering-curriculum-sheet-2026-2027.pdf",
+      "sha256": "61f2e045df69bf8db6b820c3cdb9f394cfb20d97756cf1f3c50fba5cc02ab92f",
+      "fetchedAt": "2026-11-17T00:34:50.390662+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "dc5274e7a0a18258"
+      ],
+      "reviewStatus": "pending",
+      "title": "Food, Agricultural and Biological Engineering · Agricultural",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.15"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2026"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040.01"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2010"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2020"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2030"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "a3fe5f964732005310a5e801",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-bio-engineering-curriculum-sheet-2026-2027.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-bio-engineering-curriculum-sheet-2026-2027.pdf",
+      "sha256": "60b65b7661c2711ad1022d147f9446f596043c8e64f6277ca05fec5db441d6b1",
+      "fetchedAt": "2026-11-17T00:34:52.439361+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "b343652f295a112c"
+      ],
+      "reviewStatus": "pending",
+      "title": "Food, Agricultural and Biological Engineering · Biological",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOLOGY",
+          "number": "1113.01"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1208"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2310"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.15"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2026"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040.01"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "MECHENG",
+          "number": "2040"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4000.01"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "decf012f45bbbb29506dc644",
+      "url": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-eco-engineering-curriculum-sheet-2026-2027.pdf",
+      "resolvedUrl": "https://advising.engineering.osu.edu/media/document/2026-07-27/fabe-eco-engineering-curriculum-sheet-2026-2027.pdf",
+      "sha256": "1f71878a2bcbbcbe6944b09ceb5903deefabe482816c68714a83e0231d92b7f7",
+      "fetchedAt": "2026-11-17T00:34:54.322291+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "6bf838d400372810"
+      ],
+      "reviewStatus": "pending",
+      "title": "Food, Agricultural and Biological Engineering · Ecological",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2026-2027"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOLOGY",
+          "number": "1114.01"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1206"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1250"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2310"
+        },
+        {
+          "subject": "CSE",
+          "number": "1222"
+        },
+        {
+          "subject": "CSE",
+          "number": "1224"
+        },
+        {
+          "subject": "EEOB",
+          "number": "3410"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1100.15"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1181"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1182"
+        },
+        {
+          "subject": "ENGR",
+          "number": "1221"
+        },
+        {
+          "subject": "ENGR",
+          "number": "2026"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "ISE",
+          "number": "2040.01"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1172"
+        },
+        {
+          "subject": "MATH",
+          "number": "2177"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1251"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "b94fd5050716deb6ef55d589",
+      "url": "https://music.osu.edu/sites/default/files/2024-09/BA.4year.planAU24.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2024-09/BA.4year.planAU24.pdf",
+      "sha256": "5edf4d56ee7a126881d4a9106acc812cba3993540bc14df671f5f9f6113e0694",
+      "fetchedAt": "2026-11-17T00:34:56.373250+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "96fc69d2a50526a1"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BA",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "d3b76ae22af853834e41c7e6",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_jazzstudiescomposition_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_jazzstudiescomposition_gen_1.pdf",
+      "sha256": "f9a76559d94acc99fdc6221ec4b52c89b246c2059384d02adcd6f398bcc67b61",
+      "fetchedAt": "2026-11-17T00:35:00.299068+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "c5d92239ecf6fbc0"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Jazz Composition",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2209"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2231"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2232"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2271"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3210"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3433"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3446"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4501"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4533"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4535"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4566"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.03"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5635"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "4f5860f4482b2020b67f70a3",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_jazzstudiesperformance_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_jazzstudiesperformance_gen_1.pdf",
+      "sha256": "34f19e1b7c1af96beedee255ea3355b20374dc07249bec7442018fc744f658d7",
+      "fetchedAt": "2026-11-17T00:35:02.358074+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "8fef0e86c62c84d5"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Jazz Performance",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2209"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2231"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2232"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2271"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3210"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3427"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3433"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3446"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4502"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4510"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4535"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4566"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4602"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4605"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "0a34c6a11e4c92172d123b31",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_compositionau23_gen_9_13.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_compositionau23_gen_9_13.pdf",
+      "sha256": "87e3af9bf3e7dbb3064554645c654884793b1c0b083e5c721590233b75c59971",
+      "fetchedAt": "2026-11-17T00:35:04.352827+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "50a267d9c54f0002"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Composition",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2293"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3403"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4524"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4531"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5623"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5625"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5630"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5635"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.01"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "0a19f126c5af056ad67d4194",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_theory_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_theory_gen_1.pdf",
+      "sha256": "f8920193b322b817f60e950829c0c4f3ead63b7450ad111ea71ed1892728e568",
+      "fetchedAt": "2026-11-17T00:35:06.463701+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "f02ceae5f1c277b8"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Theory",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3427"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3428"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4524"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4531"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4535"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5620"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5621"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5622"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5623"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5631"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "80fe9dc9d4be14851692e18f",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_musicology_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_musicology_gen_1.pdf",
+      "sha256": "1593580faa8692ff15e808e249b0ef01f1852094d169000c5e4d92ec187608d0",
+      "fetchedAt": "2026-11-17T00:35:08.282513+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "8a763c4cebd8ba0d"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Musicology",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200.21"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2252"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3312"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4501"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4531"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4555.06"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.04"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "812b7ce62bda9062a2756f77",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_performanceorc_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_performanceorc_gen_1.pdf",
+      "sha256": "04f96e4bf323fcf48e63fa3447f465c71d611f9c27324c87eed4dadd00ec15db",
+      "fetchedAt": "2026-11-17T00:35:10.343473+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "0fc0e180cbf85303"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Orchestral Performance",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2204"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2208"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2267"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3402"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4502"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4524"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4531"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4535"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4602"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4605"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.05"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5591"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "b17bf50395b8154872fee5a8",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_performancepia_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_performancepia_gen_1.pdf",
+      "sha256": "a3b652d4b15a488a90ae0729673eefc75e602a3ac96ad59b1246fe8557cbc176",
+      "fetchedAt": "2026-11-17T00:35:12.489073+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "8d616fb45dc58cf6"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Piano Performance",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2202"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3402.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4000"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4502.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4531"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4602.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4605"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4611"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5607"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5653.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5653.02"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "94692c8dc6ae8aa99bcca16a",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bm_performancevoi_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bm_performancevoi_gen_1.pdf",
+      "sha256": "da2412ef2b5b05485c8c6e290ceaac96f9d3672f05523e4c87dcca70050c556a",
+      "fetchedAt": "2026-11-17T00:35:14.310363+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "d2b24750e91fce65"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BM Voice Performance",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "ITALIAN",
+          "number": "1101"
+        },
+        {
+          "subject": "ITALIAN",
+          "number": "1102"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201.21"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2208.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.12"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2413"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2414"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3310"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3312"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3315"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3342"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3402.21"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4502.21"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4602.21"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4605"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5652"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5655"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "d71e8329fc4ff30de1abd184",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedgme_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedgme_gen_1.pdf",
+      "sha256": "848cbe15400ec4e91b1fbffa26c11b1ecc46cdfce812f857ae4874eae16aa6fc",
+      "fetchedAt": "2026-11-17T00:35:16.371241+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "066d1d19fc949702"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music Education · General",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ESEPSY",
+          "number": "2309"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "3206"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "4403"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2206"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2208"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.99"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2297"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2470"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3578"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4501"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4572"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4574"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4586"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4587"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5415"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "9c36299361ba4f6d168d0b5b",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedchr_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedchr_gen_1.pdf",
+      "sha256": "d1eccdf1c6c8af5428f3a794d2821eb50e0af3082ff11d048d14e871d61a0d50",
+      "fetchedAt": "2026-11-17T00:35:18.240725+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "f0d97cdc1bb8a910"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music Education · Choral",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ESEPSY",
+          "number": "2309"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "3206"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "4403"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2206"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2208"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.12"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.99"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.12"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2470"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3578"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4501"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4572"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4574"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4575"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4586"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4587"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5415"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "50528c57d922c84bbb398923",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedins_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedins_gen_1.pdf",
+      "sha256": "c1319895aa72c09d41564a4ab5168837bc7ad4ea14a952d8fb70316b8bfeed25",
+      "fetchedAt": "2026-11-17T00:35:20.306695+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "77838928f62a09a4"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music Education · Instrumental",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ESEPSY",
+          "number": "2309"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "3206"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "4403"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2204"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2206"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2208"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.03"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.13"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2297"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2470"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3578"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4501"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4576"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4577"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4586"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4587"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "ebf8a2d2892caec3bf5cf565",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedins_jazz_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bme_musicedins_jazz_gen_1.pdf",
+      "sha256": "b72876ce6104a975b3d81696787ce06be8cb708b458c356864fb05583220e1c2",
+      "fetchedAt": "2026-11-17T00:35:22.245081+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "c9d12521e2f647b9"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music Education · Instrumental Jazz",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ESEPSY",
+          "number": "2309"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "3206"
+        },
+        {
+          "subject": "ESPHE",
+          "number": "4403"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2200"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2201"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2204"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2206"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2208"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.03"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.11"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2262.13"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2297"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2470"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3401"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3578"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4501"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4505"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4576"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4577"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4586"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4587"
+        },
+        {
+          "subject": "PSYCH",
+          "number": "1100"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "a21981137afc217f0d4a32de",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bs_musiccs_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bs_musiccs_gen_1.pdf",
+      "sha256": "f1b669f08122dae1eefcd4982d90c876bf03e6e158a6d50130e6d95f7ba6f4bf",
+      "fetchedAt": "2026-11-17T00:35:24.304911+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "5202c54cf3907dc4"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BS Computer Sciences",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "2221"
+        },
+        {
+          "subject": "CSE",
+          "number": "2231"
+        },
+        {
+          "subject": "CSE",
+          "number": "2321"
+        },
+        {
+          "subject": "CSE",
+          "number": "2421"
+        },
+        {
+          "subject": "CSE",
+          "number": "3541"
+        },
+        {
+          "subject": "CSE",
+          "number": "3902"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2000"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.06"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.02"
+        },
+        {
+          "subject": "SPHHRNG",
+          "number": "3340"
+        },
+        {
+          "subject": "STAT",
+          "number": "2450"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "b526a7c56a9d58674dd401e1",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bs_musicme_gen_1.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bs_musicme_gen_1.pdf",
+      "sha256": "c11e98b35284593b425604ceab068370686c666df5458b69e4d1131b9c2f497f",
+      "fetchedAt": "2026-11-17T00:35:26.319585+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "594776d06ec32296"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BS Media and Enterprise",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ARTEDUC",
+          "number": "3680"
+        },
+        {
+          "subject": "BUSMHR",
+          "number": "2500"
+        },
+        {
+          "subject": "BUSMHR",
+          "number": "3510"
+        },
+        {
+          "subject": "BUSMHR",
+          "number": "3665"
+        },
+        {
+          "subject": "COMM",
+          "number": "2540"
+        },
+        {
+          "subject": "COMM",
+          "number": "3413"
+        },
+        {
+          "subject": "COMM",
+          "number": "3440"
+        },
+        {
+          "subject": "COMM",
+          "number": "3466"
+        },
+        {
+          "subject": "COMM",
+          "number": "3554"
+        },
+        {
+          "subject": "ECON",
+          "number": "3400"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2000"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2263.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2271"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3330"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3348"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3431"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.06"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5638"
+        },
+        {
+          "subject": "SPHHRNG",
+          "number": "3340"
+        },
+        {
+          "subject": "THEATRE",
+          "number": "5321"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "ea4b58828eef4a02da60e35f",
+      "url": "https://music.osu.edu/sites/default/files/2023-09/bs_musicsa_gen_1_0.pdf",
+      "resolvedUrl": "https://music.osu.edu/sites/default/files/2023-09/bs_musicsa_gen_1_0.pdf",
+      "sha256": "b3e2afd47f44fabb2c65c905881f0f997cb593ffb6b29ad5356507729c901407",
+      "fetchedAt": "2026-11-17T00:35:28.317156+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "6b005f618d90588b"
+      ],
+      "reviewStatus": "pending",
+      "title": "Music · BS Sonic Arts",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ACCAD",
+          "number": "4101"
+        },
+        {
+          "subject": "CSE",
+          "number": "1223"
+        },
+        {
+          "subject": "CSE",
+          "number": "2221"
+        },
+        {
+          "subject": "CSE",
+          "number": "2231"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2000"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2203"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2215"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2221"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2222"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2224"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2225"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2244"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2261.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2264.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "2271"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3364"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3421"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3422"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3424"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "3425"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "4679.06"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5636.02"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5638"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5639"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5677.01"
+        },
+        {
+          "subject": "MUSIC",
+          "number": "5677.02"
+        },
+        {
+          "subject": "SPHHRNG",
+          "number": "3340"
+        },
+        {
+          "subject": "STAT",
+          "number": "1350"
+        },
+        {
+          "subject": "THEATRE",
+          "number": "5321"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "b66b5d72b26f6fc55ae5ede2",
+      "url": "https://nursing.osu.edu/sites/default/files/attachments/Student%20Affairs/CNUR_SA_CurriculumUpdates_6071901_BSN-022025_R1-2.pdf",
+      "resolvedUrl": "https://nursing.osu.edu/sites/default/files/attachments/Student%20Affairs/CNUR_SA_CurriculumUpdates_6071901_BSN-022025_R1-2.pdf",
+      "sha256": "5e8fca89309157f10ab8474c9008b542a4b81d86af23098ec13466c75c5993c7",
+      "fetchedAt": "2026-11-17T00:51:50.798531+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "cce65423f9bdef7e"
+      ],
+      "reviewStatus": "pending",
+      "title": "Nursing · BSN",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "HUMNNTR",
+          "number": "2200"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4010"
+        },
+        {
+          "subject": "NURSING",
+          "number": "1100"
+        },
+        {
+          "subject": "NURSING",
+          "number": "5115"
+        },
+        {
+          "subject": "STAT",
+          "number": "1350"
+        }
+      ],
+      "pageCount": 1,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "553117496ece434648b5a27b",
+      "url": "https://knowlton.osu.edu/sites/default/files/2022-07/curriculum_22-23_BSArch_1.pdf",
+      "resolvedUrl": "https://knowlton.osu.edu/sites/default/files/2022-07/curriculum_22-23_BSArch_1.pdf",
+      "sha256": "e9071fe14db7cb5c58b3a6d09d728a807d246b5c6a803140a9171b726668d9ff",
+      "fetchedAt": "2026-11-17T00:51:53.055254+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "2e74b06ae84e9b4f"
+      ],
+      "reviewStatus": "pending",
+      "title": "Architecture · BS",
+      "documentKind": "sample-plan",
+      "academicYears": [],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "ACADAFF",
+          "number": "1201"
+        },
+        {
+          "subject": "ARCH",
+          "number": "2410"
+        },
+        {
+          "subject": "ARCH",
+          "number": "2420"
+        },
+        {
+          "subject": "ARCH",
+          "number": "3410"
+        },
+        {
+          "subject": "ARCH",
+          "number": "3420"
+        },
+        {
+          "subject": "ARCH",
+          "number": "4410"
+        },
+        {
+          "subject": "ARCH",
+          "number": "4420"
+        },
+        {
+          "subject": "ARCH",
+          "number": "4780H"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5110"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5120"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5210"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5290"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5510"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5520"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5590"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5590.01"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5610"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5620"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5710"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5798"
+        },
+        {
+          "subject": "ARCH",
+          "number": "5810"
+        },
+        {
+          "subject": "KNOW",
+          "number": "1100"
+        },
+        {
+          "subject": "KNOW",
+          "number": "2300"
+        },
+        {
+          "subject": "KNOW",
+          "number": "2310"
+        },
+        {
+          "subject": "MATH",
+          "number": "1118"
+        },
+        {
+          "subject": "MATH",
+          "number": "1148"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1200"
+        }
+      ],
+      "pageCount": 2,
+      "extractionStatus": "references"
+    },
+    {
+      "id": "26bde0927eb23ea323ecdeec",
+      "url": "https://cph.osu.edu/doc/curriculum-guide/bsph-eph-curriculum-guide-24-25/view",
+      "resolvedUrl": "https://cph.osu.edu/doc/curriculum-guide/bsph-eph-curriculum-guide-24-25/view",
+      "sha256": "d8c3eeeda33e3979572e6f2080fcc4a90631caaea8d3d4a55af7acb337118495",
+      "fetchedAt": "2026-11-17T00:51:56.994184+00:00",
+      "mediaType": "application/pdf",
+      "programIds": [
+        "8ec5692a3df274aa"
+      ],
+      "reviewStatus": "pending",
+      "title": "Public Health · Environmental Public Health",
+      "documentKind": "sample-plan",
+      "academicYears": [
+        "2024-2025"
+      ],
+      "effectiveTerms": [],
+      "appliedVersions": [],
+      "geSystems": [],
+      "publicationStatus": "unknown",
+      "courseReferences": [
+        {
+          "subject": "BIOLOGY",
+          "number": "1101"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113"
+        },
+        {
+          "subject": "BIOLOGY",
+          "number": "1113.01"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1210"
+        },
+        {
+          "subject": "CHEM",
+          "number": "1220"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2510"
+        },
+        {
+          "subject": "CHEM",
+          "number": "2540"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "1100"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2203"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2204"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "2245"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "3411"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "4450"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "5203"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "5651"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "5663"
+        },
+        {
+          "subject": "EARTHSC",
+          "number": "5797.20"
+        },
+        {
+          "subject": "EDUTL",
+          "number": "1001"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "1109"
+        },
+        {
+          "subject": "ENGLISH",
+          "number": "1110.0X"
+        },
+        {
+          "subject": "ENR",
+          "number": "2100"
+        },
+        {
+          "subject": "ENR",
+          "number": "3000"
+        },
+        {
+          "subject": "GENED",
+          "number": "1201"
+        },
+        {
+          "subject": "GENED",
+          "number": "4001"
+        },
+        {
+          "subject": "GEOG",
+          "number": "2800"
+        },
+        {
+          "subject": "GEOG",
+          "number": "5210"
+        },
+        {
+          "subject": "MATH",
+          "number": "1040"
+        },
+        {
+          "subject": "MATH",
+          "number": "1148"
+        },
+        {
+          "subject": "MATH",
+          "number": "1149"
+        },
+        {
+          "subject": "MATH",
+          "number": "1151"
+        },
+        {
+          "subject": "MATH",
+          "number": "1152"
+        },
+        {
+          "subject": "MICRBIO",
+          "number": "4000.01"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1200"
+        },
+        {
+          "subject": "PHYSICS",
+          "number": "1250"
+        },
+        {
+          "subject": "PUBHBIO",
+          "number": "2210"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "3310"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "3320"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "3330"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "4325"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "4330"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "4340"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "4530"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "5315"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "5325"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "5335"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "5340"
+        },
+        {
+          "subject": "PUBHEHS",
+          "number": "5395"
+        },
+        {
+          "subject": "PUBHEPI",
+          "number": "2410"
+        },
+        {
+          "subject": "PUBHEPI",
+          "number": "3411"
+        },
+        {
+          "subject": "PUBHEPI",
+          "number": "5412"
+        },
+        {
+          "subject": "PUBHHBP",
+          "number": "3510"
+        },
+        {
+          "subject": "PUBHHMP",
+          "number": "3610"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "1100"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "2010"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "3180"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "3189.05"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "3191"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "3998"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "3999"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "4999"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "4999.01H"
+        },
+        {
+          "subject": "PUBHLTH",
+          "number": "5015"
+        },
+        {
+          "subject": "VETPREV",
+          "number": "5721"
+        }
+      ],
+      "pageCount": 3,
+      "extractionStatus": "references"
     }
   ],
   "pending": [],
   "counts": {
-    "inspectedPrograms": 7,
-    "semesterSamples": 8
+    "inspectedPrograms": 49,
+    "semesterSamples": 63
   }
 }

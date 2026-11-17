@@ -92,6 +92,13 @@ export function SampleGallery({
             <div>
               <p>{selected.college}</p>
               <h3>{selected.program}</h3>
+              {selected.specialization && <p>{selected.specialization}</p>}
+              <p>
+                {selected.academicYear} {selected.campus}{" "}
+                {selected.scheduleScope === "major-sequence"
+                  ? t("Major course sequence", "专业课程顺序示例")
+                  : ""}
+              </p>
               <span>
                 {selected.geSystem ??
                   t("GE version unspecified", "未注明 GE 版本")}{" "}
@@ -114,10 +121,8 @@ export function SampleGallery({
           </div>
           {selected.comparison && (
             <p className={styles.note}>
-              {t(
-                "HTML and Word differ on STAT 3470 credits. This view retains the HTML schedule. Consult the original and catalog before scheduling.",
-                "网页与 Word 版对 STAT 3470 学分记载不同。本视图保留网页课表，安排前请对照原件和课程目录。",
-              )}
+              <strong>{t("Source difference: ", "原件差异：")}</strong>
+              {selected.comparison}
             </p>
           )}
           <p className={styles.note}>
@@ -184,7 +189,13 @@ export function SampleGallery({
           <div className={styles.samples}>
             {samples
               .filter((sample) =>
-                (sample.program + " " + sample.college)
+                (
+                  sample.program +
+                  " " +
+                  sample.college +
+                  " " +
+                  (sample.specialization ?? "")
+                )
                   .toLowerCase()
                   .includes(query.trim().toLowerCase()),
               )
@@ -196,6 +207,13 @@ export function SampleGallery({
                 >
                   <span className={styles.college}>{sample.college}</span>
                   <h3>{sample.program}</h3>
+                  {sample.specialization && <p>{sample.specialization}</p>}
+                  <p>
+                    {sample.academicYear} {sample.geSystem}{" "}
+                    {sample.scheduleScope === "major-sequence"
+                      ? t("Major sequence", "专业课顺序")
+                      : ""}
+                  </p>
                   {sample.evidence.find((line) => /^Example \d/.test(line)) && (
                     <p>
                       {sample.evidence.find((line) => /^Example \d/.test(line))}
@@ -204,7 +222,7 @@ export function SampleGallery({
                   <footer>
                     <span>
                       <CalendarDays size={15} />
-                      {t("8 semesters", "8 个学期")}
+                      {sample.semesters.length} {t("semesters", "个学期")}
                     </span>
                     <span>
                       {t("View schedule", "查看课表")}

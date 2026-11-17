@@ -8,6 +8,8 @@ export type SampleCourse = {
   number: string;
   credits: number | null;
   semesterIndex: number;
+  year?: number;
+  season?: "Autumn" | "Spring" | "Summer";
 };
 export type PublicSample = {
   id: string;
@@ -131,10 +133,11 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   for (const course of options.sample?.courses ?? []) {
     const candidate = get(course.subject, course.number);
     candidate.sample = true;
-    const season = course.semesterIndex % 2 === 0 ? "Autumn" : "Spring";
+    const season =
+      course.season ?? (course.semesterIndex % 2 === 0 ? "Autumn" : "Spring");
     candidate.sampleMatch ||=
-      Math.floor(course.semesterIndex / 2) + 1 === options.sampleYear &&
-      options.targetTerm.startsWith(season);
+      (course.year ?? Math.floor(course.semesterIndex / 2) + 1) ===
+        options.sampleYear && options.targetTerm.startsWith(season);
     if (
       candidate.credits === null &&
       !observations.get(candidate.key)?.length &&

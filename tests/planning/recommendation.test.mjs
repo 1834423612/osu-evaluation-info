@@ -196,6 +196,7 @@ test("public samples expose course evidence without assigning a bundle's credits
     ...curricula[0],
     semesters: [
       {
+        label: "Year 1: Autumn",
         entries: [
           { evidence: "MATH 1151 or CSE 1223", credits: { min: 8, max: 8 } },
         ],
@@ -274,7 +275,7 @@ test("recommendation caps include courses already placed in the target semester"
   plan.schedule.placements = [{ courseId: "m", term: options.targetTerm }];
   const tight = recommendCourses(plan, options);
   assert.equal(tight.existingCredits, 5);
-  assert.ok(!tight.candidates.some(c => c.key === "MATH 1151"));
+  assert.ok(!tight.candidates.some((c) => c.key === "MATH 1151"));
   assert.equal(tight.credits, 5);
   assert.equal(tight.bundle.length, 0);
   const room = recommendCourses(plan, {
@@ -291,4 +292,43 @@ test("recommendation caps include courses already placed in the target semester"
   const unknown = recommendCourses(plan, { ...options, maxCredits: 18 });
   assert.equal(unknown.unresolvedExisting, 1);
   assert.equal(unknown.bundle.length, 0);
+});
+
+test("summer terms do not shift subsequent sample-year matching", () => {
+  const result = recommendCourses(fixture(), {
+    ...options,
+    sampleYear: 2,
+    sample: {
+      id: "summer-sample",
+      program: "Synthetic",
+      url: "https://example.osu.edu/sample",
+      reviewStatus: "pending",
+      courses: [
+        {
+          subject: "CHEM",
+          number: "1220",
+          credits: 3,
+          semesterIndex: 4,
+          year: 2,
+          season: "Spring",
+        },
+        {
+          subject: "ARTSSCI",
+          number: "1100",
+          credits: 1,
+          semesterIndex: 3,
+          year: 2,
+          season: "Autumn",
+        },
+      ],
+    },
+  });
+  assert.equal(
+    result.candidates.find((c) => c.key === "CHEM 1220").sampleMatch,
+    true,
+  );
+  assert.equal(
+    result.candidates.find((c) => c.key === "ARTSSCI 1100").sampleMatch,
+    false,
+  );
 });

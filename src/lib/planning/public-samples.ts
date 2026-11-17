@@ -16,6 +16,9 @@ export function sampleReferenceReader(
     ["asc", "ARTSSCI"],
     ["engr", "ENGR"],
     ["gened", "GENED"],
+    ["swk", "SOCWORK"],
+    ["mse", "MATSCEN"],
+    ["stats", "STAT"],
   ])
     if (subjects.some((subject) => subject.code === code))
       aliases.set(alias, code);
@@ -49,9 +52,11 @@ export function publicSamples(
     .map((c) => ({
       id: c.id,
       program: c.program,
-      label: c.evidence.some((e) => /^Example [0-9]/.test(e))
-        ? c.program + " · " + c.evidence.find((e) => /^Example [0-9]/.test(e))
-        : c.program,
+      label: c.specialization
+        ? c.program + " · " + c.specialization
+        : c.evidence.some((e) => /^Example [0-9]/.test(e))
+          ? c.program + " · " + c.evidence.find((e) => /^Example [0-9]/.test(e))
+          : c.program,
       url: c.source.url,
       reviewStatus: c.reviewStatus,
       courses: c.semesters.flatMap((semester, semesterIndex) =>
@@ -73,6 +78,12 @@ export function publicSamples(
                 number,
                 credits,
                 semesterIndex,
+                year:
+                  Number(semester.label.match(/Year\s+(\d+)/i)?.[1]) ||
+                  undefined,
+                season: semester.label.match(
+                  /Autumn|Spring|Summer/,
+                )?.[0] as SampleCourse["season"],
               } satisfies SampleCourse,
             ];
           });
