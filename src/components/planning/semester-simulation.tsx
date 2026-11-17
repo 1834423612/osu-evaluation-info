@@ -2,8 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CalendarClock,
-  Clock3,
-  MapPin,
   SlidersHorizontal,
   CheckCircle2,
   AlertTriangle,
@@ -20,7 +18,6 @@ import {
 } from "@/lib/planning/workspace";
 import {
   defaultSimulationPreferences,
-  meetingSlots,
   sectionGroups,
   semesterCatalogCode,
   type simulateSchedule,
@@ -29,6 +26,8 @@ import { text, type Locale } from "@/lib/i18n";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { usePlanningCatalog } from "./course-catalog";
 import styles from "./semester-simulation.module.css";
+import { SimulationTimetable } from "./simulation-timetable";
+import { meetingDelivery } from "@/lib/planning/timetable";
 type Result = ReturnType<typeof simulateSchedule>;
 const timeLabel = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -235,22 +234,6 @@ export function SemesterSimulation({
     locale === "zh"
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const events =
-    output?.choices.flatMap((choice) =>
-      choice.sections.flatMap((section) =>
-        section.meetings.flatMap((meeting) =>
-          meetingSlots([meeting]).map((slot) => ({
-            ...slot,
-            key: choice.key,
-            section: section.section,
-            location: meeting.location,
-            title: loaded?.courses.find(
-              (c) => `${c.subject} ${c.catalogNumber}` === choice.key,
-            )?.title,
-          })),
-        ),
-      ),
-    ) ?? [];
   return (
     <div className={styles.root}>
       <div className={styles.heading}>
@@ -483,7 +466,7 @@ export function SemesterSimulation({
                             {s.meetings
                               .map(
                                 (m) =>
-                                  `${m.days.map((d) => days[d]).join("/")} ${m.startTime ?? "TBA"}–${m.endTime ?? ""}`,
+                                  `${m.days.map((d) => days[d]).join("/")} ${m.startTime && m.endTime ? `${m.startTime}–${m.endTime}` : t("Time TBA", "时间待定")} · ${{ online: t("Online", "线上"), "in-person": t("In person", "线下"), unknown: t("Mode TBA", "方式待定") }[meetingDelivery(m, s.instructionMode)]}`,
                               )
                               .join(" · ")}
                           </option>
@@ -597,51 +580,12 @@ export function SemesterSimulation({
                   )}
                 </small>
               )}
-              <div className={styles.week}>
-                {days.map((label, day) => (
-                  <section
-                    key={day}
-                    hidden={day > 4 && !events.some((e) => e.day === day)}
-                  >
-                    <h4>
-                      {label}
-                      <small>
-                        {events.filter((e) => e.day === day).length}{" "}
-                        {t("classes", "节课")}
-                      </small>
-                    </h4>
-                    {events
-                      .filter((e) => e.day === day)
-                      .sort((a, b) => a.start - b.start)
-                      .map((e, i) => (
-                        <div
-                          className={styles.meeting}
-                          data-conflict={conflicted.has(e.key)}
-                          key={i}
-                        >
-                          <div className={styles.time}>
-                            <Clock3 size={13} />
-                            {timeLabel(e.start)}–{timeLabel(e.end)}
-                          </div>
-                          <strong>{e.key}</strong>
-                          <p>{e.title}</p>
-                          <span>
-                            <MapPin size={12} />
-                            {e.location || t("Location TBA", "地点待公布")}
-                          </span>
-                          <small>
-                            {t("Section", "班次")} {e.section}
-                          </small>
-                          {e.from && e.to && (
-                            <small>
-                              {e.from.slice(5)} – {e.to.slice(5)}
-                            </small>
-                          )}
-                        </div>
-                      ))}
-                  </section>
-                ))}
-              </div>
+              <SimulationTimetable
+                choices={output.choices}
+                courses={loaded?.courses ?? []}
+                conflicted={conflicted}
+                locale={locale}
+              />
               <button
                 className={styles.run}
                 disabled={
