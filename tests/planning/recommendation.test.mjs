@@ -20,6 +20,28 @@ const options = {
   quantitativeSubjects: ["MATH"],
   maxQuantitative: 1,
 };
+test("recommended retakes preserve all unsuccessful historical attempts", () => {
+  for (const status of ["withdrawn", "dropped", "failed"]) {
+    const plan = fixture();
+    plan.semesters[0].term = "Autumn2026";
+    plan.semesters[0].courses[0].status = status;
+    const before = structuredClone(plan.semesters);
+    let counter = 0;
+    const next = applyRecommendationBundle(
+      plan,
+      [{ subject: "MATH", number: "1151", credits: 5 }],
+      "Spring2027",
+      () => "retake-" + ++counter,
+    );
+    assert.deepEqual(next.semesters[0], before[0]);
+    assert.equal(
+      next.schedule.placements.some((p) => p.courseId === "m"),
+      false,
+    );
+    assert.equal(next.semesters.at(-1).courses[0].status, "planned");
+    assert.equal(next.semesters.at(-1).courses[0].repeated, true);
+  }
+});
 function fixture() {
   const plan = emptyPlan();
   plan.documents = [

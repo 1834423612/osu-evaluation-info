@@ -116,7 +116,12 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
       satisfied ||= requirementProgress(plan, parent).state === "satisfied";
       parent = plan.requirements.find((r) => r.id === parent)?.parentId ?? null;
     }
-    if (satisfied || (plan.schedule.groups?.some((g)=>g.requirementId===rule.id) && requirementCoverage(plan,rule.id).fulfilled)) continue;
+    if (
+      satisfied ||
+      (plan.schedule.groups?.some((g) => g.requirementId === rule.id) &&
+        requirementCoverage(plan, rule.id).fulfilled)
+    )
+      continue;
     for (const code of [
       ...requirementCodes(rule),
       ...(options.requirementCandidates?.[rule.id] ?? []),
@@ -374,8 +379,9 @@ export function applyRecommendationBundle(
     )
       continue;
     const manual =
-      existing.find((x) => x.documentId === document.id) ??
-      existing.find((x) => x.id);
+      existing.find(
+        (x) => x.status === "planned" && x.documentId === document.id,
+      ) ?? existing.find((x) => x.status === "planned" && x.id);
     if (manual?.id) {
       next.schedule.placements = next.schedule.placements.filter(
         (p) => p.courseId !== manual.id,
@@ -391,6 +397,10 @@ export function applyRecommendationBundle(
         evidenceRole: "observation" as const,
         credits: c.credits,
         status: "planned" as const,
+        repeated:
+          existing.some((x) =>
+            ["withdrawn", "dropped", "failed"].includes(x.status),
+          ) || undefined,
         page: null,
       });
   }
