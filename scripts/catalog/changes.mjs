@@ -70,10 +70,15 @@ export async function captureCourseChanges(
     )
   ).rows.map((x) => x.course_id);
   let count = 0;
-  for (let i = 0; i < ids.length; i += chunkSize) {
+  let offset = 0,
+    size = chunkSize;
+  while (offset < ids.length) {
     check();
-    const result = await client.query(
-      `/* course-change-chunk */
+    await client.query("SAVEPOINT course_change_chunk");
+    try {
+      // A slow chunk gets less work on retry, while the outer term stays atomic.
+      const result = await client.query(
+        `/* course-change-chunk */
       WITH old AS MATERIALIZED (${courseChangeStateSql("$1", "$2", "$4")}),
       fresh AS MATERIALIZED (${courseChangeStateSql("$3", "$2", "$4")}),
       delta AS (
@@ -93,9 +98,27 @@ export async function captureCourseChanges(
       INSERT INTO osu_catalog.course_changes(run_id,term_code,course_id,offering_number,campus_code,subject,catalog_number,title,kind,fields,before_data,after_data,observed_at)
       SELECT $3,$2,d.course_id,d.offering_number,d.campus_code,d.subject,d.catalog_number,d.title,d.kind,d.fields,d.before_data,d.after_data,$5
       FROM delta d WHERE d.kind<>'changed' OR cardinality(d.fields)>0`,
-      [prior, term, target, ids.slice(i, i + chunkSize), row.published_at],
-    );
-    count += result.rowCount;
+        [
+          prior,
+          term,
+          target,
+          ids.slice(offset, offset + size),
+          row.published_at,
+        ],
+      );
+      count += result.rowCount;
+      offset += size;
+      await client.query("RELEASE SAVEPOINT course_change_chunk");
+    } catch (error) {
+      await client.query("ROLLBACK TO SAVEPOINT course_change_chunk");
+      await client.query("RELEASE SAVEPOINT course_change_chunk");
+      check();
+      if (error.code !== "57014" || size === 1) throw error;
+      size = Math.max(1, Math.floor(size / 2));
+      console.warn(
+        `Course change query timed out; retrying with ${size} courses per chunk.`,
+      );
+    }
   }
   return count;
 }
