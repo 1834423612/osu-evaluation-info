@@ -347,6 +347,7 @@ function CoursePreview({
 export function CourseCard({
   course,
   showSearchMatch = false,
+  refreshPreview = false,
   locale,
   saved,
   onSave,
@@ -357,6 +358,7 @@ export function CourseCard({
 }: {
   course: CatalogCourse;
   showSearchMatch?: boolean;
+  refreshPreview?: boolean;
   locale: Locale;
   saved: boolean;
   onSave: (course: CatalogCourse) => void;
@@ -394,7 +396,10 @@ export function CourseCard({
     loading,
     error,
     refresh: loadDetail,
-  } = useCourseDetails(course, isSelected || (visible && !course.courseId));
+  } = useCourseDetails(
+    course,
+    isSelected || (visible && (refreshPreview || !course.courseId)),
+  );
   const loaded = detail ?? course;
   const seatChecks = useSectionAvailability(loaded, {
     visible,

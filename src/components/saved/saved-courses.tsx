@@ -297,6 +297,7 @@ function SavedCoursesBody() {
                           course={course}
                           locale={locale}
                           saved
+                          refreshPreview
                           enrollmentWatch={enrollmentWatch}
                           enrollmentWatchInterval={enrollmentWatchInterval}
                           onEnrollmentWatchChange={setEnrollmentWatch}
