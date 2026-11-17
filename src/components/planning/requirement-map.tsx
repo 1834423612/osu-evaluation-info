@@ -1,16 +1,9 @@
 "use client";
 import { useState } from "react";
-import {
-  GitBranch,
-  Check,
-  Clock3,
-  CircleHelp,
-  CircleDashed,
-  Plus,
-  ArrowUpRight,
-} from "lucide-react";
+import { Check, Clock3, CircleDashed, Plus, GitBranch } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
 import { requirementProgress } from "@/lib/planning/snapshots";
+import { boardCourses } from "@/lib/planning/workspace";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./requirement-map.module.css";
 export function RequirementMap({
@@ -19,207 +12,182 @@ export function RequirementMap({
   addCourse,
   onReview,
   inspectCourse,
+  searchRequirement,
   compact = false,
+  remainingOnly = false,
 }: {
   plan: Plan;
   locale: Locale;
   addCourse: (c: { subject: string; number: string }) => void;
   onReview: () => void;
   inspectCourse?: (c: { subject: string; number: string }) => void;
+  searchRequirement?: (title: string) => void;
   compact?: boolean;
+  remainingOnly?: boolean;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const [selected, setSelected] = useState("");
-  const [remaining, setRemaining] = useState(false);
-  const program =
-    plan.programs.find((p) => p.id === selected) ??
-    plan.programs.find((p) =>
-      plan.requirements.some((r) => r.programId === p.id),
+  const [selectedMode, setMode] = useState<
+    "official" | "planned" | "unknown" | null
+  >(null);
+  const mode =
+    selectedMode ??
+    (["planned", "official", "unknown"] as const).find((m) =>
+      plan.documents.some(
+        (d) =>
+          d.auditMode === m &&
+          plan.requirements.some((r) => r.documentId === d.id),
+      ),
     ) ??
-    plan.programs[0];
-  const stateLabels = {
-    satisfied: t("Completed numeric check", "已完成数值条件"),
-    planned: t("Planned coverage", "计划覆盖"),
-    insufficient: t("Add courses", "需添加课程"),
-    unresolved: t("Needs review", "待核对"),
-  };
-  const categories = {
-    general: t("Requirement", "要求"),
-    launch: t("GE Launch", "通识导论"),
-    writing: t("Writing & literacy", "写作与素养"),
-    math: t("Math & quantitative reasoning", "数学与定量推理"),
-    arts: t("Arts", "艺术"),
-    history: t("History & culture", "历史与文化"),
-    science: t("Science", "科学"),
-    social: t("Social & behavioral science", "社会与行为科学"),
-    diversity: t("Diversity", "多样性"),
-    citizenship: t("Citizenship", "公民素养"),
-    reflection: t("GE Reflection", "通识反思"),
-    core: t("Major core", "专业核心"),
-    electives: t("Electives", "选修"),
-    survey: t("College survey", "学院导论"),
-  };
+    "official";
+  const [remaining, setRemaining] = useState(remainingOnly);
+  const documents = new Map(plan.documents.map((d) => [d.id, d]));
+  const programs = Array.from(
+    new Map(
+      plan.programs
+        .filter(
+          (p) =>
+            plan.requirements.some((r) => r.programId === p.id) &&
+            documents.get(p.documentId)?.auditMode === mode,
+        )
+        .map((p) => [p.code ?? p.title ?? p.id, p]),
+    ).values(),
+  );
+  const program = programs.find((p) => p.id === selected) ?? programs[0];
   const rules = plan.requirements.filter((r) => r.programId === program?.id);
+  const roster = boardCourses(plan),
+    facts = new Map(
+      roster
+        .filter((r) => r.course.subject)
+        .map((r) => [`${r.course.subject} ${r.course.number}`, r.course]),
+    );
   function branch(parentId: string | null, depth = 0): React.ReactNode {
-    if (depth > 24)
-      return (
-        <li>
-          <button onClick={onReview}>
-            {t(
-              "Open deeper rules in source review",
-              "在来源核对中查看更深层条件",
-            )}
-          </button>
-        </li>
-      );
+    if (depth > 24) return null;
     return rules
       .filter((r) => r.parentId === parentId)
       .map((r) => {
         const progress = requirementProgress(plan, r.id);
         if (remaining && progress.state === "satisfied") return null;
-        const Icon = {
-          satisfied: Check,
-          planned: Clock3,
-          insufficient: CircleDashed,
-          unresolved: CircleHelp,
-        }[progress.state];
-        const title = categories[r.category ?? "general"];
-        const rule =
+        const status =
+          r.reportedStatus ??
+          (
+            {
+              satisfied: "completed",
+              planned: "planned",
+              insufficient: "remaining",
+              unresolved: "remaining",
+            } as const
+          )[progress.state];
+        const Icon =
+          status === "completed"
+            ? Check
+            : status === "in-progress" || status === "planned"
+              ? Clock3
+              : CircleDashed;
+        const label = {
+          completed: t("Completed", "已完成"),
+          "in-progress": t("In progress", "正在修读"),
+          planned: t("Planned", "已安排"),
+          remaining: t("Remaining", "待完成"),
+        }[status];
+        const children = rules.filter((c) => c.parentId === r.id);
+        const constraint =
           r.kind === "all"
-            ? t("All child conditions", "全部子条件")
+            ? t("fulfill all", "全部满足")
             : r.kind === "any"
-              ? t("Any child condition", "任一子条件")
-              : r.kind === "credits"
-                ? (r.minimumCredits ?? "—") +
-                  " " +
-                  t("credits minimum", "最低学分")
-                : r.kind === "courses"
-                  ? (r.minimumCourses ?? "—") +
-                    " " +
-                    t("courses minimum", "最低课程数")
-                  : t("Rule needs review", "规则待核对");
-        const allocations = plan.allocations.filter(
-          (a) => a.requirementId === r.id,
-        );
-        const children = rules.some((x) => x.parentId === r.id);
+              ? t("fulfill any", "满足任一")
+              : r.minimumCredits !== null
+                ? `${r.minimumCredits} ${t("credits minimum", "最低学分")}`
+                : r.minimumCourses !== null
+                  ? `${r.minimumCourses} ${t("course(s)", "门课程")}`
+                  : "";
         return (
           <li key={r.id}>
             <details
               className={styles.node}
-              open={depth === 0}
+              open={depth < 1}
               data-state={progress.state}
             >
               <summary>
                 <span className={styles.icon}>
-                  <Icon size={17} />
+                  <Icon size={18} />
                 </span>
                 <span className={styles.nodeTitle}>
                   <strong>
-                    {title}
-                    {r.alternatives.length === 1
-                      ? " · " +
-                        r.alternatives[0].subject +
-                        " " +
-                        r.alternatives[0].number
-                      : ""}
+                    {r.title ??
+                      (r.alternatives.length
+                        ? r.alternatives
+                            .map((c) => `${c.subject} ${c.number}`)
+                            .join(" / ")
+                        : t("Degree requirement", "学业要求"))}
                   </strong>
-                  <span>{rule}</span>
+                  {constraint && <span>{constraint}</span>}
                 </span>
-                <span className={styles.state}>
-                  {stateLabels[progress.state]}
-                </span>
+                <span className={styles.state}>{label}</span>
               </summary>
-              <div className={styles.nodeBody}>
-                <div className={styles.facts}>
-                  <span>
-                    {r.kind === "all" || r.kind === "any" ? (
-                      <>
-                        {
-                          rules.filter(
-                            (child) =>
-                              child.parentId === r.id &&
-                              ["satisfied", "planned"].includes(
-                                requirementProgress(plan, child.id).state,
-                              ),
-                          ).length
-                        }{" "}
-                        /{" "}
-                        {
-                          rules.filter((child) => child.parentId === r.id)
-                            .length
-                        }{" "}
-                        {t(
-                          "child checks with completed or planned coverage",
-                          "个子条件已有完成或计划覆盖",
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {progress.knownCredits} {t("known credits", "已知学分")}{" "}
-                        · {progress.distinctCourses}{" "}
-                        {t("distinct courses", "门不同课程")}
-                      </>
-                    )}
-                  </span>
-                  <span>
-                    {allocations.filter((a) => a.confirmed).length}/
-                    {allocations.length}{" "}
-                    {t("allocations reviewed", "项分配已核对")}
-                    {r.page ? " · " + t("p.", "页") + " " + r.page : ""}
-                  </span>
-                </div>
-                {r.alternatives.length > 0 && (
-                  <details className={styles.choices}>
-                    <summary>
-                      {t("Course choices", "课程选项")} ({r.alternatives.length}
-                      )
-                    </summary>
-                    <div className={styles.codes}>
-                      {r.alternatives.map((c) => (
-                        <div key={c.subject + c.number}>
-                          {inspectCourse ? (
-                            <button onClick={() => inspectCourse(c)}>
-                              <b>{c.subject}</b> {c.number}
-                            </button>
+              {!!r.alternatives.length && (
+                <div className={styles.courseRows}>
+                  {r.alternatives.map((c) => {
+                    const key = `${c.subject} ${c.number}`,
+                      fact = facts.get(key),
+                      locked =
+                        fact?.status === "completed" ||
+                        fact?.status === "in-progress";
+                    return (
+                      <div className={styles.courseRow} key={key}>
+                        <span
+                          className={styles.courseStatus}
+                          data-status={fact?.status}
+                        >
+                          {fact?.status === "completed" ? (
+                            <Check size={16} />
+                          ) : fact?.status === "in-progress" ? (
+                            <Clock3 size={16} />
                           ) : (
-                            <a
-                              href={
-                                "/?" +
-                                new URLSearchParams({
-                                  q: c.subject + " " + c.number,
-                                })
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <b>{c.subject}</b> {c.number}
-                            </a>
+                            <CircleDashed size={16} />
                           )}
+                        </span>
+                        <button
+                          onClick={() => inspectCourse?.(c)}
+                          disabled={!inspectCourse}
+                        >
+                          <b>{key}</b>
+                          {fact?.title && <span>{fact.title}</span>}
+                        </button>
+                        {locked ? (
+                          <small>
+                            {fact.status === "completed"
+                              ? t("Completed", "已完成")
+                              : t("In progress", "正在修读")}
+                          </small>
+                        ) : (
                           <button
+                            aria-label={`${t("Add", "添加")} ${key}`}
                             onClick={() => addCourse(c)}
-                            aria-label={
-                              t("Add to plan", "添加到规划") +
-                              " " +
-                              c.subject +
-                              " " +
-                              c.number
-                            }
                           >
-                            <Plus size={14} />
+                            <Plus size={15} />
                           </button>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                {!r.hierarchyReviewed && (
-                  <button onClick={onReview}>
-                    {t("Review rule & parent", "核对规则及上级")}
-                    <ArrowUpRight size={14} />
-                  </button>
-                )}
-              </div>
-              {children && <ol>{branch(r.id, depth + 1)}</ol>}
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {children.length > 0 && <ol>{branch(r.id, depth + 1)}</ol>}
+              {!children.length && !r.alternatives.length && (
+                <div className={styles.ruleNote}>
+                  {t(
+                    "Choose a course with this requirement's attributes in the course search.",
+                    "通过课程搜索选择符合此项要求属性的课程。",
+                  )}
+                  {searchRequirement && r.title && (
+                    <button onClick={() => searchRequirement(r.title!)}>
+                      <Plus size={14} />
+                      {t("Find courses", "选择课程")}
+                    </button>
+                  )}
+                </div>
+              )}
             </details>
           </li>
         );
@@ -227,34 +195,63 @@ export function RequirementMap({
   }
   return (
     <section className={styles.root} data-compact={compact}>
-      <div className={styles.heading}>
-        <div>
-          <h2>{t("Degree requirements", "学业要求")}</h2>
-          <p>
-            {t(
-              "Expand branches to explore course choices. Progress uses verified rules and confirmed personal-course allocations.",
-              "展开分支查看课程选项。进度依据已核对规则和已确认的个人课程分配。",
-            )}
-          </p>
+      {!compact && (
+        <div className={styles.heading}>
+          <div>
+            <h2>{t("Track your progress", "学业进度")}</h2>
+            <p>
+              {t(
+                "Your imported BDP requirements, organized by program.",
+                "按专业查看导入的 BDP 学业要求。",
+              )}
+            </p>
+          </div>
+          <GitBranch size={30} />
         </div>
-        <GitBranch size={42} strokeWidth={1.25} />
+      )}
+      <div className={styles.viewModes}>
+        {(["official", "planned", "unknown"] as const)
+          .filter(
+            (value) =>
+              value !== "unknown" ||
+              plan.programs.some(
+                (p) =>
+                  documents.get(p.documentId)?.auditMode === "unknown" &&
+                  plan.requirements.some((r) => r.programId === p.id),
+              ),
+          )
+          .map((value) => (
+            <button
+              key={value}
+              aria-pressed={mode === value}
+              onClick={() => {
+                setMode(value);
+                setSelected("");
+              }}
+            >
+              {value === "official"
+                ? t("Official", "Official · 正式专业")
+                : value === "planned"
+                  ? t("Planned", "Planned · 目标专业")
+                  : t("Other reports", "其他报告")}
+            </button>
+          ))}
       </div>
       <div className={styles.toolbar}>
         <label>
-          {t("Program & source version", "项目及来源版本")}
+          {t("Program", "专业")}
           <select
             value={program?.id ?? ""}
             onChange={(e) => setSelected(e.target.value)}
           >
-            <option value="" disabled>
-              {t("Choose a program", "选择项目")}
-            </option>
-            {plan.programs.map((p, i) => (
+            {!program && (
+              <option value="">
+                {t("No report for this view", "尚未导入此视图报告")}
+              </option>
+            )}
+            {programs.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.code ?? t("Program", "项目") + " " + (i + 1)} ·{" "}
-                {p.appliedVersion ?? t("version unknown", "版本未知")} ·{" "}
-                {t("Source", "来源")}{" "}
-                {plan.documents.findIndex((d) => d.id === p.documentId) + 1}
+                {p.title ?? p.code ?? t("Program", "专业")}
               </option>
             ))}
           </select>
@@ -265,52 +262,43 @@ export function RequirementMap({
             checked={remaining}
             onChange={(e) => setRemaining(e.target.checked)}
           />
-          {t("Hide completed checks", "隐藏已完成条件")}
+          {t("Hide completed", "隐藏已完成")}
         </label>
-        <button onClick={onReview}>
-          {t("Edit rules & allocations", "编辑规则与分配")}
-        </button>
       </div>
-      <div className={styles.legend}>
-        {Object.entries(stateLabels).map(([state, label]) => (
-          <span data-state={state} key={state}>
-            <i />
-            {label}
-          </span>
-        ))}
-      </div>
-      {rules.length ? (
-        <>
-          <div className={styles.program}>
-            <h3>{program?.code ?? t("Program", "项目")}</h3>
-            <span>Applied Version: {program?.appliedVersion ?? "—"}</span>
-            <span>Catalog Term: {program?.catalogTerm ?? "—"}</span>
-          </div>
-          <ol className={styles.tree}>{branch(null)}</ol>
-        </>
-      ) : (
-        <div className={styles.empty}>
-          <GitBranch size={36} />
-          <h3>
-            {t("Connect a program to its requirements", "为项目建立要求连接")}
-          </h3>
-          <p>
-            {t(
-              "Import an audit or add rules and course allocations in source review.",
-              "导入审核文件，或在来源核对中添加规则及课程分配。",
-            )}
-          </p>
-          <button onClick={onReview}>
-            {t("Open source review", "打开来源核对")}
-          </button>
+      {program && (
+        <div className={styles.program}>
+          <h3>{program.title ?? program.code}</h3>
+          {program.appliedVersion && (
+            <span>Applied Version: {program.appliedVersion}</span>
+          )}
+          {program.catalogTerm && (
+            <span>Catalog Term: {program.catalogTerm}</span>
+          )}
         </div>
       )}
-      <p className={styles.note}>
-        {t(
-          "Numeric coverage is not graduation approval. Grade, residency, prerequisite and exception checks still need official review.",
-          "数值条件覆盖不代表毕业审核通过。成绩、修读地点、先修条件及例外仍须官方核对。",
-        )}
-      </p>
+      {rules.length ? (
+        <ol className={styles.tree}>{branch(null)}</ol>
+      ) : (
+        <div className={styles.empty}>
+          <GitBranch size={32} />
+          <h3>{t("Bring your degree requirements", "导入你的专业要求")}</h3>
+          <p>
+            {t(
+              "Import the Official or Planned audit from Track Progress.",
+              "从 Track Progress 导入 Official 或 Planned 审核报告。",
+            )}
+          </p>
+          <button onClick={onReview}>{t("Import reports", "导入报告")}</button>
+        </div>
+      )}
+      {!compact && (
+        <p className={styles.note}>
+          {t(
+            "BDP report status reflects the export date. New planning choices do not change your official degree audit.",
+            "BDP 状态对应报告导出时的结果。本站新增的课程安排不会修改官方毕业审核。",
+          )}
+        </p>
+      )}
     </section>
   );
 }
