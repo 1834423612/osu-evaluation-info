@@ -5,6 +5,10 @@ import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { creditLabel } from "@/lib/planning/course-catalog";
 import { text, type Locale } from "@/lib/i18n";
+import {
+  requirementSearch,
+  courseFamilyQueries,
+} from "@/lib/planning/requirement-search";
 import { usePlanningCatalog } from "./course-catalog";
 import styles from "./semester-board.module.css";
 
@@ -12,14 +16,21 @@ export function PlanningSearch({
   locale,
   inspect,
   add,
+  initialQuery = "",
+  requirementLabel,
+  unavailable = [],
 }: {
   locale: Locale;
+  unavailable?: string[];
+  initialQuery?: string;
+  requirementLabel?: string;
   inspect: (code: { subject: string; number: string }) => void;
   add: (code: { subject: string; number: string }) => void;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const context = usePlanningCatalog();
-  const [query, setQuery] = useState("");
+  const category = requirementSearch(initialQuery);
+  const [query, setQuery] = useState(category ? "" : initialQuery);
   const [results, setResults] = useState<CatalogCourse[]>([]);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState("");
@@ -28,8 +39,14 @@ export function PlanningSearch({
     () => () => request.current?.abort(),
     [context.campus, context.term],
   );
+  useEffect(() => {
+    if (initialQuery) void search();
+    return () => request.current?.abort();
+    // A changed initial query remounts this panel; typing is submitted explicitly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   async function search() {
-    if (!query.trim()) return;
+    if (!query.trim() && !category) return;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
@@ -45,11 +62,34 @@ export function PlanningSearch({
             campus: context.campus.toLowerCase(),
             limit: "12",
             exactPreview: "1",
+            ...(category ? { "gen-categories": category } : {}),
           }),
         { signal: controller.signal },
       );
       if (!response.ok) throw Error();
       const data = await response.json();
+      if (!data.courses?.length) {
+        const variants = courseFamilyQueries(
+          query,
+          data.searchInfo?.suggestions,
+        );
+        const alternatives = await Promise.all(
+          variants.map(async (q) => {
+            const result = await fetchCatalogResource(
+              "/api/catalog?" +
+                new URLSearchParams({
+                  q,
+                  term: context.term,
+                  campus: context.campus.toLowerCase(),
+                  exactPreview: "1",
+                }),
+              { signal: controller.signal },
+            );
+            return result.ok ? ((await result.json()).courses ?? []) : [];
+          }),
+        );
+        data.courses = alternatives.flat();
+      }
       if (!controller.signal.aborted) {
         setResults(data.courses ?? []);
         if (!data.courses?.length)
@@ -74,6 +114,12 @@ export function PlanningSearch({
   }
   return (
     <div className={styles.searchPanel}>
+      {requirementLabel && (
+        <p className={styles.requirementFilter}>
+          {t("Replacing requirement", "替换要求占位项")} · {requirementLabel}
+        </p>
+      )}
+      {category && <p className={styles.requirementFilter}>{category}</p>}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -120,13 +166,16 @@ export function PlanningSearch({
               {t("credits", "学分")}
             </span>
             <button
+              disabled={unavailable.includes(`${c.subject} ${c.catalogNumber}`)}
               aria-label={`${t("Add", "添加")} ${c.subject} ${c.catalogNumber}`}
               onClick={() =>
                 add({ subject: c.subject, number: c.catalogNumber })
               }
             >
               <Plus size={16} />
-              {t("Add", "添加")}
+              {unavailable.includes(`${c.subject} ${c.catalogNumber}`)
+                ? t("On record", "已有修读记录")
+                : t("Add", "添加")}
             </button>
           </div>
         </article>

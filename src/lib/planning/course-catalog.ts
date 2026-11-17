@@ -131,12 +131,19 @@ export function prerequisiteReferences(
   const names = [...aliases.keys()]
     .sort((a, b) => b.length - a.length)
     .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const explicit = new RegExp("(?:^|[^a-z])(" + names.join("|") + ")\\s*$", "i");
-  const prerequisites = text.split(/\b(?:not open|repeatability|credit for)\b/i)[0];
+  const explicit = new RegExp(
+    "(?:^|[^a-z])(" + names.join("|") + ")\\s*$",
+    "i",
+  );
+  const prerequisites = text.split(
+    /\b(?:not open|repeatability|credit for)\b/i,
+  )[0];
   const references = new Map<string, { subject: string; number: string }>();
   let subject = ownSubject;
   let previousEnd = 0;
-  for (const match of prerequisites.matchAll(/\b\d{4}(?:\.\d{1,2})?[A-Z]?\b/gi)) {
+  for (const match of prerequisites.matchAll(
+    /\b\d{4}(?:\.\d{1,2})?[A-Z]?\b/gi,
+  )) {
     const between = prerequisites.slice(previousEnd, match.index);
     if (/\bprereq(?:uisites?)?\b/i.test(between)) subject = ownSubject;
     const prefix = between.match(explicit);

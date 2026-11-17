@@ -80,12 +80,26 @@ test("mismatched course responses cannot fill a planning card", async () => {
   );
 });
 
-
 test("prerequisite navigation inherits subject prefixes and excludes restriction prose", () => {
-  const result = prerequisiteReferences("Prereq: 1212, 1221, Engr 1281.01H, 1281.02H, or CSE Placement Level A. Prereq or concur: Math 1151, 1161.01, or 1161.02. Not open to students with credit for 5022.", "CSE", [
-    { code: "CSE", title: "Computer Science and Engineering" },
-    { code: "ENGR", title: "Engineering" },
-    { code: "MATH", title: "Mathematics" },
-  ]);
-  assert.deepEqual(result.map((c) => c.subject + " " + c.number), ["CSE 1212", "CSE 1221", "ENGR 1281.01H", "ENGR 1281.02H", "MATH 1151", "MATH 1161.01", "MATH 1161.02"]);
+  const result = prerequisiteReferences(
+    "Prereq: 1212, 1221, Engr 1281.01H, 1281.02H, or CSE Placement Level A. Prereq or concur: Math 1151, 1161.01, or 1161.02. Not open to students with credit for 5022.",
+    "CSE",
+    [
+      { code: "CSE", title: "Computer Science and Engineering" },
+      { code: "ENGR", title: "Engineering" },
+      { code: "MATH", title: "Mathematics" },
+    ],
+  );
+  assert.deepEqual(
+    result.map((c) => c.subject + " " + c.number),
+    [
+      "CSE 1212",
+      "CSE 1221",
+      "ENGR 1281.01H",
+      "ENGR 1281.02H",
+      "MATH 1151",
+      "MATH 1161.01",
+      "MATH 1161.02",
+    ],
+  );
 });

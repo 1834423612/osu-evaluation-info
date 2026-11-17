@@ -118,7 +118,7 @@ export function CourseInspector({
                 );
               const complete =
                 recorded.length > 0 &&
-                recorded.every((row) => row.status === "completed");
+                recorded.some((row) => row.status === "completed");
               return (
                 <li key={c.subject + c.number}>
                   <button onClick={() => inspect(c)}>
@@ -179,7 +179,13 @@ export function CourseInspector({
         </small>
       )}
       <div className={styles.detailActions}>
-        <button className={styles.primary} onClick={() => add(code)}>
+        <button
+          className={styles.primary}
+          disabled={observations.some(
+            (c) => c.status === "completed" || c.status === "in-progress",
+          )}
+          onClick={() => add(code)}
+        >
           <Plus size={16} />
           {t("Add to selected semester", "加入所选学期")}
         </button>
