@@ -3,7 +3,18 @@ import { useEffect } from "react";
 import { refreshTelemetryContext } from "@/lib/telemetry/client";
 import { authClient } from "@/lib/auth/client";
 import { setSavedScope, setAuthenticatedAccount } from "@/lib/saved/scope";
-import { SYNC_EVENT, readSyncState, syncCycle } from "@/lib/sync/client";
+import {
+  SYNC_EVENT,
+  readSyncState,
+  syncCycle,
+  enableSync,
+  previewMerge,
+} from "@/lib/sync/client";
+import {
+  PLANNING_SYNC_REQUEST,
+  setPlanningScope,
+  syncPlanning,
+} from "@/lib/planning/client-sync";
 import { debugFlag } from "@/lib/debug/flags";
 export function SyncProvider() {
   const { data: session, isPending } = authClient.useSession();
@@ -18,6 +29,7 @@ export function SyncProvider() {
       failures = 0,
       timer: ReturnType<typeof setTimeout> | undefined;
     setSavedScope(null);
+    setPlanningScope(accountId);
     async function tick() {
       if (stopped || running || !accountId || debugFlag("factory")) return;
       if (Date.now() < retryAfter) {
@@ -26,11 +38,22 @@ export function SyncProvider() {
       }
       running = true;
       try {
-        const state = await readSyncState(accountId);
+        let state = await readSyncState(accountId);
+        if (!state.initialized) {
+          await enableSync(accountId, await previewMerge(accountId));
+          state = await readSyncState(accountId);
+        }
         if (stopped) return;
         if (state.initialized) setSavedScope(accountId);
         if (state.enabled) {
-          await syncCycle(accountId);
+          const results = await Promise.allSettled([
+            syncCycle(accountId),
+            syncPlanning(accountId),
+          ]);
+          const failure = results.find(
+            (result) => result.status === "rejected",
+          );
+          if (failure?.status === "rejected") throw failure.reason;
           failures = 0;
           retryAfter = 0;
         }
@@ -65,6 +88,7 @@ export function SyncProvider() {
     window.addEventListener("course-atlas:preferences", schedule);
     window.addEventListener("storage", schedule);
     window.addEventListener(SYNC_EVENT, pending);
+    window.addEventListener(PLANNING_SYNC_REQUEST, schedule);
     window.addEventListener("online", schedule);
     document.addEventListener("visibilitychange", schedule);
     return () => {
@@ -74,10 +98,12 @@ export function SyncProvider() {
       window.removeEventListener("course-atlas:preferences", schedule);
       window.removeEventListener("storage", schedule);
       window.removeEventListener(SYNC_EVENT, pending);
+      window.removeEventListener(PLANNING_SYNC_REQUEST, schedule);
       window.removeEventListener("online", schedule);
       document.removeEventListener("visibilitychange", schedule);
       setSavedScope(null);
       setAuthenticatedAccount(null);
+      setPlanningScope(null);
     };
   }, [accountId, isPending]);
   return null;

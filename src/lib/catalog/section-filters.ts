@@ -29,7 +29,7 @@ export function componentKind(value: string): ComponentKind | null {
   return value.trim() || null;
 }
 
-function minuteOfDay(value: string | null) {
+export function minuteOfDay(value: string | null) {
   if (!value) return null;
   const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
   if (!match) return null;

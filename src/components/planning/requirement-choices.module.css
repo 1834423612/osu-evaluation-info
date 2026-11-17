@@ -1,0 +1,79 @@
+.list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 12px;
+}
+.list .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+.list .course {
+  display: grid;
+  justify-content: start;
+  justify-items: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.course b {
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.course span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.list .course:disabled {
+  opacity: 1;
+}
+.row small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.list .add {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--subtle-surface);
+  border-radius: 7px;
+}
+.list .add:hover:enabled {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.list button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.ruleNote,
+.list p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+@media (max-width: 420px) {
+  .list .row {
+    gap: 8px;
+    padding: 10px;
+    grid-template-columns: minmax(0, 1fr) auto 34px;
+  }
+}

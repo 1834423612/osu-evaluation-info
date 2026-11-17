@@ -1,0 +1,205 @@
+.pending {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 16px;
+}
+.group header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pending h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.pending summary span {
+  margin-left: auto;
+  color: var(--muted);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  padding: 4px 0 12px;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 40%, var(--line));
+  border-radius: 9px;
+  background: var(--surface);
+  font-size: 11px;
+  text-align: left;
+  min-width: 0;
+}
+.requirement {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 40%, var(--line));
+  border-radius: 9px;
+  background: var(--surface);
+  font-size: 11px;
+  text-align: left;
+  min-width: 0;
+  cursor: pointer;
+}
+.requirement:hover {
+  background: var(--subtle-surface);
+}
+.requirement strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.requirement span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.group small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.groups {
+  display: grid;
+  gap: 8px;
+}
+.group[data-kind="alternatives"] {
+  border-color: #8b78bc;
+  background: color-mix(in srgb, #a99add 8%, var(--surface));
+}
+.group[data-filled="true"] {
+  border-style: solid;
+}
+.group header strong {
+  flex: 1;
+}
+.group header button {
+  padding: 3px;
+}
+.group button:hover {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+}
+.create button:hover {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+}
+.group button[aria-pressed="true"] {
+  background: color-mix(in srgb, #29a383 18%, var(--surface));
+}
+.group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.group > div span {
+  background: var(--subtle-surface);
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+.group > button {
+  align-self: flex-start;
+}
+.group [role="combobox"] {
+  min-height: 28px;
+  font-size: 10px;
+}
+.create > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow: auto;
+  font-size: 11px;
+  margin: 8px 0;
+}
+.create label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pending summary {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  gap: 10px;
+  padding: 11px 0;
+}
+.pending summary::before {
+  content: "+";
+  width: 18px;
+  flex-shrink: 0;
+  color: var(--primary);
+  font-size: 16px;
+}
+.pending details[open] > summary::before {
+  content: "−";
+}
+.pending summary::-webkit-details-marker {
+  display: none;
+}
+.create summary::-webkit-details-marker {
+  display: none;
+}
+.pending .requirement {
+  align-items: stretch;
+  justify-content: start;
+  text-align: left;
+  border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--line));
+}
+.create {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  padding: 0 10px;
+  margin-bottom: 8px;
+}
+.create summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 7px 0;
+  list-style: none;
+  min-height: 32px;
+}
+.group button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 5px;
+  background: var(--subtle-surface);
+  padding: 5px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+}
+.create button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 5px;
+  background: var(--subtle-surface);
+  padding: 5px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+}

@@ -30,3 +30,33 @@ test("selected campuses and actual facets are counted once with their effective 
     ],
   );
 });
+
+import {
+  catalogPreferences,
+  restoreCatalogPreferences,
+} from "../../src/lib/catalog/filter-preferences.ts";
+test("catalog preferences restore campus before a new query, preserve explicit URLs and honor reset", () => {
+  const raw = JSON.stringify({
+    campus: "mns",
+    subject: "CSE",
+    q: "private",
+    cursor: "old",
+  });
+  const restored = restoreCatalogPreferences("q=MATH+1131", raw);
+  assert.equal(restored.get("campus"), "mns");
+  assert.equal(restored.get("q"), "MATH 1131");
+  assert.equal(restored.has("cursor"), false);
+  assert.equal(
+    restoreCatalogPreferences("campus=nwk", raw).get("campus"),
+    "nwk",
+  );
+  assert.equal(
+    restoreCatalogPreferences("filters=1&campus=col", raw).has("subject"),
+    false,
+  );
+  assert.deepEqual(catalogPreferences(restored), {
+    campus: "mns",
+    subject: "CSE",
+  });
+  assert.equal(restoreCatalogPreferences("q=test", "bad").get("q"), "test");
+});

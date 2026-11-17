@@ -8,6 +8,8 @@ Integration tests check components together, including SQL, transactions and rec
 
 ## Run the default checks
 
+The planning review regressions cover unsuccessful retakes, unrelated audit observations, repeated placeholders, JSONB key-order retries, and option-only generic templates. `tests/planning/import-profile.test.mjs` also extracts the synthetic browser PDF with PDF.js before automatic layout detection. The browser workspace script uses custom combobox options and checks the restored label after reload. Private HAR comparisons fail when course credits conflict. Analytics privacy tests cover planning pageviews, metadata allowlists, masked dialog and private-select portals, custom-select wiring and redacted share paths. Run these through `pnpm test`; browser and private-file scripts remain opt-in with their documented setup below.
+
 Run commands from the repository root with Node.js 24+ and installed dependencies:
 
 ```sh
@@ -305,9 +307,9 @@ Fixture files such as `tests/syllabus/fixtures.mjs` and HTML samples support the
 | [tests/user-data/workspace.test.mjs](../tests/user-data/workspace.test.mjs)                                 | Unit        | Atomic local snapshots, per-field deltas, exact acknowledgements and corrupt-data handling                                                                                                                                                                       |
 | [tests/user-data/local.test.mjs](../tests/user-data/local.test.mjs)                                         | Unit        | Import/removal/undo preserve complete snapshots and intervening edits                                                                                                                                                                                            |
 | [tests/user-data/exchange.test.mjs](../tests/user-data/exchange.test.mjs)                                   | Unit        | Four-kind exchange validation, limits, public redaction and import identity                                                                                                                                                                                      |
-| [tests/user-data/auth.test.mjs](../tests/user-data/auth.test.mjs)                                           | Unit        | Pinned origins, bounded streamed bodies and isolated development namespaces                                                                                                                                                                                      |
+| [tests/user-data/auth.test.mjs](../tests/user-data/auth.test.mjs)                                           | Unit        | Pinned origins, Tailscale CIDR boundaries and same-origin enforcement, bounded streamed bodies and isolated development namespaces                                                                                                                                                                                      |
 | [tests/user-data/auth-errors.test.mjs](../tests/user-data/auth-errors.test.mjs)                             | Unit        | Password, OTP, origin, throttle and passkey error classification; no services or writes                                                                                                                                                                          |
-| [tests/user-data/auth-boundary.integration.test.mjs](../tests/user-data/auth-boundary.integration.test.mjs) | Integration | `USER_DATA_INTEGRATION=1`; disposable PostgreSQL schema; auth HTTP guards, policy acknowledgment, 8-character passwords, domain-scoped foreign keys, one-use school-mail codes, loopback origins and signed WebAuthn email matching; mocked delivery and cleanup |
+| [tests/user-data/auth-boundary.integration.test.mjs](../tests/user-data/auth-boundary.integration.test.mjs) | Integration | `USER_DATA_INTEGRATION=1`; disposable PostgreSQL schema; auth HTTP guards, policy acknowledgment, 8-character passwords, domain-scoped foreign keys, one-use school-mail codes, loopback/Tailscale login, callback, session and sign-out, plus signed WebAuthn email matching; mocked delivery and cleanup |
 | [tests/user-data/auth.integration.test.mjs](../tests/user-data/auth.integration.test.mjs)                   | Integration | Real email-OTP/password/passkey/session/recovery protocols; injected delivery, disposable auth tables                                                                                                                                                            |
 | [tests/user-data/sharing.integration.test.mjs](../tests/user-data/sharing.integration.test.mjs)             | Integration | Real SQL capabilities, expiry, codes, ownership, counters, concurrent quotas and retry receipts                                                                                                                                                                  |
 | [tests/user-data/sharing.browser.mjs](../tests/user-data/sharing.browser.mjs)                               | Browser     | Creates and revokes synthetic guest shares; partial import, in-place details, retry and mobile management                                                                                                                                                        |
@@ -391,7 +393,7 @@ Collection and backup browser checks use the Node/Playwright environment above. 
 | Script                                                                                                        | Type         | Purpose                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | [tests/user-data/collections.test.mjs](../tests/user-data/collections.test.mjs)                               | Unit         | Private collection validation, preserved organization, bounded batches and rename conflicts                                     |
-| [tests/user-data/compact-tabs.browser.mjs](../tests/user-data/compact-tabs.browser.mjs) | Browser | Compact category tabs stay above results at 1440/768/390/320 pixels; synthetic local data, external requests blocked |
+| [tests/user-data/compact-tabs.browser.mjs](../tests/user-data/compact-tabs.browser.mjs)                       | Browser      | Compact category tabs stay above results at 1440/768/390/320 pixels; synthetic local data, external requests blocked            |
 | [tests/user-data/collections.browser.mjs](../tests/user-data/collections.browser.mjs)                         | Browser      | Create, organize, rename, delete/undo, scoped export and private restore at 1440/768/390/320 pixels                             |
 | [tests/user-data/rmp-favorites.test.mjs](../tests/user-data/rmp-favorites.test.mjs)                           | Unit         | RMP source identities, preserved ratings and public exchange validation                                                         |
 | [tests/user-data/rmp-favorites.browser.mjs](../tests/user-data/rmp-favorites.browser.mjs)                     | Browser      | Library/profile/saved-page favorites and Undo with same-name verified/unconfirmed profiles                                      |
@@ -474,6 +476,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 ## Account readiness regression
 
 Run `node --test tests/user-data/account-status.test.mjs` (also included in `pnpm test`). The in-memory tests cover missing extension tables, pending or failed readiness requests, complete setup, and fail-closed guest entry. They do not connect to a database, change accounts, or call external services. A valid session keeps the account workspace visible when extensions are unavailable; school-email settings remain unavailable until their tables exist. This is degraded UI handling, not a substitute for applying the user-data migrations.
+
 ## Collection icon picker
 
 `node --test tests/user-data/collection-icons.test.mjs` checks all bundled icon identities against the saved-collection schema, Chinese/English local search and categories, required Lucide SVG stroke attributes, and the search Enter/selection cues. It needs Node.js 24+ and installed dependencies, writes no data, and calls no external service. These assertions do not replace browser verification.
@@ -481,3 +484,68 @@ Run `node --test tests/user-data/account-status.test.mjs` (also included in `pnp
 The picker bundles 99 local icons in eight categories. Search does not send queries to an icon provider. Existing icon identifiers remain valid. Neutral tiles use the shared foreground/surface tokens; selection adds an accent border and check mark rather than relying only on color.
 
 Browser regression: open a new collection, search in both languages, filter categories, test a query with no results, and press Enter in search without saving. Select an icon, save a synthetic group, refresh and reopen it; the selected icon must persist. Changing only filters must not trigger the unsaved-draft warning, while changing the icon must. Check icon strokes and focus rings at 320, 390, 768 and 1440px. Use an isolated local origin without production credentials; saving a group writes to that origin's browser storage.
+
+## Schedule planning
+
+- `tests/planning/model.test.mjs`: Whitelist, local serialization, storage failures and course links. `node --test tests/planning/model.test.mjs`. No services or external writes.
+- `tests/planning/parser.test.mjs`: Synthetic layouts, unknown credits, placeholders, conflicting versions and print ordering. `node --test tests/planning/parser.test.mjs`. No services or external writes.
+- `tests/planning/curriculum.test.mjs`: Official candidates, isolated namespace and import validation. `node --test tests/planning/curriculum.test.mjs`. No services or external writes.
+- `tests/planning/test_sync.py`: Public URL restrictions and unknown layouts. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline; no database or network writes.
+- `tests/planning/workspace.browser.mjs`: Automatic local import, movement persistence, backup, bilingual responsive views and privacy. `node tests/planning/workspace.browser.mjs`. Requires a running local app, Playwright and Chromium; configure `BASE_URL`, `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE` as needed. Writes synthetic data only to isolated browser storage and temporary screenshots; no official-source or production database calls.
+- `tests/planning/pdf.integration.test.mjs`: Exercises PDF.js extraction into the whitelist model using an in-memory generated PDF; `node --test tests/planning/pdf.integration.test.mjs`. No browser, database or network required.
+- `tests/planning/synthetic-pdf.mjs`: Shared synthetic PDF generator for the browser and PDF integration tests; not standalone and writes no private data.
+- `tests/planning/import-guard.test.mjs`: Late completion versus edits, loading, deletion and newer imports. `node --test tests/planning/import-guard.test.mjs`. Synthetic data only; no network service, production configuration or credentials.
+- `tests/planning/snapshots.test.mjs`: Multi-source identifiers, per-program versions, rule hierarchy and duplicate-safe allocation checks. `node --test tests/planning/snapshots.test.mjs`. Synthetic data only; no network service, production configuration or credentials.
+- `tests/planning/database.integration.test.mjs`: Real planning SQL in isolated in-memory PGlite PostgreSQL; migrations, foreign keys, review constraints and rollback. `node --test tests/planning/database.integration.test.mjs`. Synthetic data only; no network service, production configuration or credentials.
+- `tests/planning/private-regression.mjs`: Opt-in local private PDF regression. Set `PLANNING_PRIVATE_PDF_DIR` to the local attachment directory, then run `node tests/planning/private-regression.mjs`. By default reads PDFs only; explicitly set `PLANNING_PRIVATE_HAR_COMPARE=1` for response-only offline HAR comparison. Writes no extracted text and emits only type-level counts/failure totals and agreement aggregates. Do not supply private attachments to public CI or upload source data.
+
+- `tests/planning/private-har.test.mjs`: Synthetic XSSI/base64 response decoding, academic-field minimization, aggregate status/credit/year agreement, normalized requirement parent edges and exclusion of ambiguous repeated courses. No real attachment fixtures.
+
+- `tests/planning/audit-evidence.test.mjs`: Distinguishes audit options from observations, explicit audit credits, layout hints and unreviewed hierarchy. `node --test tests/planning/audit-evidence.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/batch-import.test.mjs`: Atomic multi-file append/replace, bounded JSON restore and cancellation. `node --test tests/planning/batch-import.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/schedule.test.mjs`: Separate placement overrides, locked credit groups and duplicate-safe semester totals. `node --test tests/planning/schedule.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/template.test.mjs`: Requirements-only seed whitelist, explicit review gate, remapped references and cycle rejection. `node --test tests/planning/template.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/archive.integration.test.mjs`: Real PGlite raw-byte archive, hash verification, immutable parser revisions, Unicode compatibility, version collision rejection, rollback and backup restoration. `node --test tests/planning/archive.integration.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/recommendation.test.mjs`: Workload/prefix caps, completed-course exclusion, rating shrinkage/request allowlist, pending public samples, source-preserving draft application, alternative selection on acceptance and mutually exclusive course bundles. `node --test tests/planning/recommendation.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+
+- `tests/planning/test_inventory.py`: Official college index, title/version metadata and source-discovery boundaries. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
+
+- `tests/planning/test_public_layouts.py`: Official subject aliases, paired-year HTML, optional summer, Music/Engineering/Nursing/Knowlton/Public Health PDF columns, wrapped credits, alternatives and footer exclusion. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
+
+- `tests/planning/directory.test.mjs`: College/program coverage, bounded paging, explicit requirement-term facets and public metadata minimization. Synthetic/public inputs only; no external network, database or writes. `node --test tests/planning/directory.test.mjs`.
+
+- `tests/planning/import-profile.test.mjs` checks minimal report selection, explicit Official/Planned mode and program headers. Run `node --test tests/planning/import-profile.test.mjs`. Synthetic input, no network or writes.
+
+- `tests/planning/course-catalog.test.mjs` checks identifier allowlists, shared reads, variable credits and inherited prerequisite prefixes. Run `node --test tests/planning/course-catalog.test.mjs`. Mock transport, no network or writes.
+
+- `tests/planning/workspace.test.mjs` checks duplicate-safe placement, protected records across sources and semester defaults. Run `node --test tests/planning/workspace.test.mjs`. Synthetic input, no network or writes.
+
+- `tests/test_planning_samples.py` checks inspected CSE table layouts and grouped Earth Sciences choices. Run `python3 -m unittest discover -s tests -p test_planning_samples.py`. Offline, no services or writes.
+
+- `tests/planning/automatic-import.test.mjs` checks cross-report attendance precedence, full academic titles, automatic serialization and metadata privacy. Run `node --test tests/planning/automatic-import.test.mjs`. Synthetic inputs only; no network or persistent writes.
+
+- `tests/planning/requirement-search.test.mjs` checks exact GE attributes and bounded course-family fallback. Run `node --test tests/planning/requirement-search.test.mjs`. Offline synthetic inputs; no network or writes.
+
+- `tests/planning/cloud.test.mjs` validates account isolation, revision conflicts, idempotent retries, deletion revisions, generic template privacy, deduplication and repeated client/server template projection using the real migration in in-memory PGlite. Run `node --test tests/planning/cloud.test.mjs`. Synthetic data only, with no network, external service or persistent writes.
+
+- `tests/planning/reconcile.test.mjs` Concurrent plan changes, deletions, in-flight acknowledgements and identity remapping on first sync. It also checks repeated same-term recommendation containers and merges exceeding 100 courses. Run `node --test tests/planning/reconcile.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/groups.test.mjs` Credit/course quotas, alternative groups, selected-course movement between semesters or back to the pending area, duplicate audit views and repeated imports. `node --test tests/planning/groups.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/simulation.test.mjs` Fixed sections, blocked times, session overlap, unknown dates and closed-section warnings. `node --test tests/planning/simulation.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/timetable.test.mjs` Per-meeting online/on-campus display, mixed-delivery sections, unknown locations, unscheduled meetings and weekend slots. `node --test tests/planning/timetable.test.mjs`. Synthetic inputs only. No external services or persistent writes.
+
+- `tests/planning/requirement-catalog.test.mjs` Eligible category filtering, pagination and strict attribute matching. `node --test tests/planning/requirement-catalog.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/course-details.test.mjs` Shared course detail panels, translation, outside-dismissal protection and mobile drag handles. Planning dialogs preserve child state across responsive breakpoints. `node --test tests/planning/course-details.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+
+- `tests/planning/backup.test.mjs` validates portable backup restoration, stable IDs, semester campuses, section choices, simulation preferences, legacy versions, privacy allowlists and cancellation. Run `node --test tests/planning/backup.test.mjs`. In-memory fixtures only, with no external services or persistent writes.
+
+The saved-preview entry point is covered by `tests/catalog/detail-refresh.test.mjs`. `tests/catalog/change-budgets.test.mjs` also checks rollback and smaller-batch retry after a statement timeout. The planning database integration test checks immutable catalog releases, repeat publication, complete public template round trips and rollback using in-memory PGlite and repository public fixtures. These tests run through `pnpm test` without network services or external database writes.

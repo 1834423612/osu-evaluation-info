@@ -1,7 +1,11 @@
 import { getDatabasePool } from "../db.ts";
-import { authTablePrefix } from "../auth/config.ts";
+import { authTablePrefix, authSchema } from "../auth/config.ts";
 import { userDataSchema, userDataTable as table } from "./namespace.ts";
 const rules = [
+  [
+    "planning_backup",
+    `account_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
+  ],
   ["rate_bucket", "expires_at<now()"],
   ["cooldown_bucket", "expires_at<now()"],
   ["institutional_challenge", "expires_at<now()"],

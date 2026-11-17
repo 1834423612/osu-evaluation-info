@@ -30,6 +30,7 @@ export function WorkspaceDialog({
   wide = false,
   dirty = false,
   guard = true,
+  closeOnly = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,6 +41,7 @@ export function WorkspaceDialog({
   wide?: boolean;
   dirty?: boolean;
   guard?: boolean;
+  closeOnly?: boolean;
 }) {
   const mobile = useSyncExternalStore(subscribe, snapshot, () => false);
   const body = useRef<HTMLDivElement>(null);
@@ -100,27 +102,37 @@ export function WorkspaceDialog({
       {children}
     </div>
   );
-  if (mobile)
+  if (mobile && !closeOnly)
     return (
       <Drawer.Root
         open={open}
         onOpenChange={change}
         shouldScaleBackground={false}
         repositionInputs={false}
+        dismissible={!closeOnly}
         handleOnly
         autoFocus
       >
         <Drawer.Portal>
           <Drawer.Overlay className={styles.overlay} />
           <Drawer.Content
-            className={styles.dialog}
+            className={`${styles.dialog} rr-block`}
+            data-analytics-area="workspace_dialog"
+            onInteractOutside={(event) => {
+              if (closeOnly) event.preventDefault();
+            }}
+            onEscapeKeyDown={(event) => {
+              if (closeOnly) event.preventDefault();
+            }}
             data-slot="drawer-content"
             data-telemetry-private
           >
-            <DrawerDismissHandle
-              label={closeLabel}
-              onDismiss={() => change(false)}
-            />
+            {!closeOnly && (
+              <DrawerDismissHandle
+                label={closeLabel}
+                onDismiss={() => change(false)}
+              />
+            )}
             <div className={styles.dialogHeading}>
               <Drawer.Title className={styles.dialogTitle}>
                 {title}
@@ -128,16 +140,15 @@ export function WorkspaceDialog({
               <Drawer.Description className={styles.muted}>
                 {description}
               </Drawer.Description>
-              <Drawer.Close asChild>
-                <Button
-                  className={styles.dialogClose}
-                  size="icon"
-                  variant="ghost"
-                  aria-label={closeLabel}
-                >
-                  <X size={17} />
-                </Button>
-              </Drawer.Close>
+              <Button
+                className={styles.dialogClose}
+                size="icon"
+                variant="ghost"
+                aria-label={closeLabel}
+                onClick={() => change(false)}
+              >
+                <X size={17} />
+              </Button>
             </div>
             {content}
           </Drawer.Content>
@@ -149,10 +160,26 @@ export function WorkspaceDialog({
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content
-          className={styles.dialog}
+          className={`${styles.dialog} rr-block`}
+          data-analytics-area="workspace_dialog"
+          onInteractOutside={(event) => {
+            if (closeOnly) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (closeOnly) event.preventDefault();
+          }}
           data-wide={wide || undefined}
+          data-slot="sheet-content"
           data-telemetry-private
         >
+          {mobile && (
+            <DrawerDismissHandle
+              label={
+                closeLabel === "关闭" ? "向下拖动关闭" : "Drag down to close"
+              }
+              onDismiss={() => change(false)}
+            />
+          )}
           <div className={styles.dialogHeading}>
             <Dialog.Title className={styles.dialogTitle}>{title}</Dialog.Title>
             <Dialog.Description className={styles.muted}>

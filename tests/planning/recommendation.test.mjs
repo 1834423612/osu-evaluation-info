@@ -1,0 +1,469 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { emptyPlan, planSchema } from "../../src/lib/planning/model.ts";
+import {
+  recommendCourses,
+  applyRecommendationBundle,
+  ratingRequest,
+} from "../../src/lib/planning/recommendation.ts";
+import {
+  publicSamples,
+  sampleReferenceReader,
+} from "../../src/lib/planning/public-samples.ts";
+import { readFile } from "node:fs/promises";
+import { createAlternativeGroup } from "../../src/lib/planning/groups.ts";
+import { boardCourses } from "../../src/lib/planning/workspace.ts";
+const options = {
+  programId: "p",
+  currentTerm: "Autumn2026",
+  targetTerm: "Spring2027",
+  sampleYear: 1,
+  maxCredits: 6,
+  quantitativeSubjects: ["MATH"],
+  maxQuantitative: 1,
+};
+test("recommended retakes preserve all unsuccessful historical attempts", () => {
+  for (const status of ["withdrawn", "dropped", "failed"]) {
+    const plan = fixture();
+    plan.semesters[0].term = "Autumn2026";
+    plan.semesters[0].courses[0].status = status;
+    const before = structuredClone(plan.semesters);
+    let counter = 0;
+    const next = applyRecommendationBundle(
+      plan,
+      [{ subject: "MATH", number: "1151", credits: 5 }],
+      "Spring2027",
+      () => "retake-" + ++counter,
+    );
+    assert.deepEqual(next.semesters[0], before[0]);
+    assert.equal(
+      next.schedule.placements.some((p) => p.courseId === "m"),
+      false,
+    );
+    assert.equal(next.semesters.at(-1).courses[0].status, "planned");
+    assert.equal(next.semesters.at(-1).courses[0].repeated, true);
+  }
+});
+function fixture() {
+  const plan = emptyPlan();
+  plan.documents = [
+    {
+      id: "d",
+      source: "standard-audit",
+      pdfOrigin: "export",
+      auditMode: "official",
+      catalogTerm: null,
+    },
+  ];
+  plan.programs = [
+    {
+      id: "p",
+      documentId: "d",
+      code: "TEST-BA",
+      declaration: "declared",
+      appliedVersion: "AU2026",
+      catalogTerm: null,
+      remainingCredits: null,
+    },
+  ];
+  plan.requirements = [
+    {
+      id: "r",
+      documentId: "d",
+      programId: "p",
+      parentId: null,
+      kind: "courses",
+      minimumCredits: null,
+      minimumCourses: 1,
+      alternatives: [
+        { subject: "MATH", number: "1151" },
+        { subject: "CSE", number: "1223" },
+      ],
+      page: 1,
+      hierarchyReviewed: true,
+    },
+  ];
+  plan.semesters = [
+    {
+      documentId: "d",
+      term: null,
+      reportedCredits: null,
+      courses: [
+        {
+          id: "m",
+          documentId: "d",
+          subject: "MATH",
+          number: "1151",
+          credits: 5,
+          status: "planned",
+          kind: "course",
+          evidenceRole: "observation",
+          page: 1,
+        },
+        {
+          id: "c",
+          documentId: "d",
+          subject: "CSE",
+          number: "1223",
+          credits: 3,
+          status: "planned",
+          kind: "course",
+          evidenceRole: "observation",
+          page: 1,
+        },
+        {
+          id: "e",
+          documentId: "d",
+          subject: "ENGLISH",
+          number: "1110",
+          credits: 3,
+          status: "completed",
+          kind: "course",
+          evidenceRole: "observation",
+          page: 1,
+        },
+        {
+          id: "u",
+          documentId: "d",
+          subject: "STAT",
+          number: "3201",
+          credits: null,
+          status: "planned",
+          kind: "course",
+          evidenceRole: "observation",
+          page: 1,
+        },
+      ],
+    },
+  ];
+  plan.requirements.push({
+    ...plan.requirements[0],
+    id: "stat",
+    alternatives: [{ subject: "STAT", number: "3201" }],
+  });
+  return planSchema.parse(plan);
+}
+test("recommendation respects quantitative and credit caps, excludes completed and unknown-credit packs", () => {
+  const plan = fixture();
+  const result = recommendCourses(plan, { ...options, maxQuantitative: 0 });
+  assert.deepEqual(
+    result.bundle.map((c) => c.key),
+    ["CSE 1223"],
+  );
+  assert.ok(result.candidates.some((c) => c.key === "STAT 3201"));
+  assert.ok(!result.candidates.some((c) => c.key === "ENGLISH 1110"));
+  assert.throws(
+    () =>
+      recommendCourses(plan, { ...options, targetTerm: options.currentTerm }),
+    /later|after/,
+  );
+  plan.allocations = [{ courseId: "c", requirementId: "r", confirmed: true }];
+  plan.semesters[0].courses[1].status = "completed";
+  const satisfied = recommendCourses(plan, options).candidates.find(
+    (c) => c.subject === "MATH",
+  );
+  assert.equal(satisfied, undefined);
+});
+test("ratings stay separate by instrument, shrink small samples and whitelist requests", () => {
+  const result = recommendCourses(fixture(), {
+    ...options,
+    ratings: {
+      "CSE 1223": { score: 5, responses: 1, instrument: "SSLE" },
+      "MATH 1151": { score: 4.5, responses: 100, instrument: "SEI" },
+    },
+  });
+  assert.equal(result.candidates[0].key, "MATH 1151");
+  const body = ratingRequest(result.candidates, "COL");
+  assert.doesNotMatch(
+    JSON.stringify(body),
+    /documentId|programId|term|status|credit|semester|appliedVersion/,
+  );
+  assert.throws(() => ratingRequest([], "invalid"));
+});
+test("applying a suggestion keeps source observations unchanged and reuses manual courses", () => {
+  const original = fixture(),
+    result = recommendCourses(original, options);
+  let n = 0;
+  const first = applyRecommendationBundle(
+    original,
+    result.bundle,
+    options.targetTerm,
+    () => "new-" + ++n,
+  );
+  assert.deepEqual(first.semesters[0], original.semesters[0]);
+  const second = applyRecommendationBundle(
+    first,
+    result.bundle,
+    "Autumn2027",
+    () => "new-" + ++n,
+  );
+  assert.equal(
+    second.semesters.flatMap((s) => s.courses).length,
+    first.semesters.flatMap((s) => s.courses).length,
+  );
+  assert.equal(second.reviewed, false);
+  assert.equal(second.schedule.placements[0].term, "Autumn2027");
+});
+test("public samples expose course evidence without assigning a bundle's credits to alternatives", async () => {
+  const curricula = JSON.parse(
+    await readFile(
+      new URL("../../data/planning/curricula.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const subjects = JSON.parse(
+    await readFile(
+      new URL("../../data/planning/subjects.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const samples = publicSamples(curricula, subjects.subjects);
+  assert.ok(samples.length >= 4);
+  assert.notEqual(samples[0].label, samples[1].label);
+  assert.ok(samples.some((s) => s.courses.some((c) => c.subject === "MATH")));
+  const sample = {
+    ...curricula[0],
+    semesters: [
+      {
+        label: "Year 1: Autumn",
+        entries: [
+          { evidence: "MATH 1151 or CSE 1223", credits: { min: 8, max: 8 } },
+        ],
+      },
+    ],
+  };
+  assert.ok(
+    publicSamples([sample], subjects.subjects)[0].courses.every(
+      (c) => c.credits === null,
+    ),
+  );
+});
+
+test("future-only sample courses stay out of an earlier semester combination", () => {
+  const result = recommendCourses(fixture(), {
+    ...options,
+    sample: {
+      id: "sample",
+      program: "Synthetic",
+      url: "https://example.osu.edu/sample",
+      reviewStatus: "pending",
+      courses: [
+        { subject: "ARTSSCI", number: "1100", credits: 1, semesterIndex: 7 },
+        { subject: "CHEM", number: "1220", credits: 2, semesterIndex: 1 },
+      ],
+    },
+  });
+  assert.ok(result.candidates.some((c) => c.key === "ARTSSCI 1100"));
+  assert.ok(!result.bundle.some((c) => c.key === "ARTSSCI 1100"));
+});
+
+test("catalog credits drive estimates without rewriting imported academic facts", () => {
+  const plan = fixture();
+  const result = recommendCourses(plan, {
+    ...options,
+    catalogCredits: {
+      "CSE 1223": { min: 4, max: 4 },
+      "STAT 3201": { min: 1, max: 6 },
+    },
+  });
+  assert.equal(result.candidates.find((c) => c.key === "CSE 1223").credits, 4);
+  assert.equal(
+    result.candidates.find((c) => c.key === "STAT 3201").credits,
+    null,
+  );
+  assert.equal(plan.semesters[0].courses[1].credits, 3);
+});
+
+test("recommendation placement reuses imported planned courses", () => {
+  const plan = fixture();
+  let count = 0;
+  const result = recommendCourses(plan, options);
+  const next = applyRecommendationBundle(
+    plan,
+    result.bundle,
+    options.targetTerm,
+    () => "new-" + ++count,
+  );
+  assert.equal(next.semesters.flatMap((s) => s.courses).length, 4);
+  assert.deepEqual(next.semesters, plan.semesters);
+  assert.equal(next.schedule.placements.length, result.bundle.length);
+});
+
+test("accepting an existing alternative selects and moves it into the recommendation term", () => {
+  for (const selection of ["none", "same", "other"]) {
+    let ordinal = 0;
+    const nextId = () => `alternative-${++ordinal}`;
+    const original = fixture();
+    const candidate = original.semesters[0].courses.find(
+      (course) => course.id !== "m" && course.status === "planned",
+    );
+    assert.ok(candidate);
+    const plan = createAlternativeGroup(
+      original,
+      ["m", candidate.id],
+      "Autumn2027",
+      nextId,
+    );
+    plan.schedule.groups[0].selectedCourseId =
+      selection === "other" ? candidate.id : selection === "same" ? "m" : null;
+    const next = applyRecommendationBundle(
+      plan,
+      [{ subject: "MATH", number: "1151", credits: 5 }],
+      "Spring2028",
+      nextId,
+    );
+    assert.equal(next.schedule.groups[0].term, "Spring2028");
+    assert.equal(next.schedule.groups[0].selectedCourseId, "m");
+    assert.equal(
+      boardCourses(next).find((row) => row.course.id === "m").term,
+      "Spring2028",
+    );
+    assert.equal(
+      boardCourses(next).some((row) => row.course.id === candidate.id),
+      false,
+    );
+    assert.equal(
+      next.schedule.placements.find((row) => row.courseId === "m").term,
+      "Spring2028",
+    );
+    assert.deepEqual(next.semesters, plan.semesters);
+    assert.equal(plan.schedule.groups[0].term, "Autumn2027");
+  }
+});
+
+test("recommendation bundles select at most one course per alternative group", () => {
+  let ordinal = 0;
+  const plan = createAlternativeGroup(
+    fixture(),
+    ["m", "c"],
+    "Autumn2027",
+    () => `group-${++ordinal}`,
+  );
+  const choices = plan.schedule.groups[0].courseIds;
+  const codes = new Set(
+    plan.semesters
+      .flatMap((s) => s.courses)
+      .filter((c) => choices.includes(c.id))
+      .map((c) => `${c.subject} ${c.number}`),
+  );
+  const settings = { ...options, maxCredits: 18, maxQuantitative: 5 };
+  const recommendation = recommendCourses(plan, settings);
+  assert.equal(recommendation.bundle.filter((c) => codes.has(c.key)).length, 1);
+  plan.schedule.groups[0].selectedCourseId = "m";
+  plan.schedule.groups[0].term = options.targetTerm;
+  assert.equal(
+    recommendCourses(plan, settings).bundle.filter((c) => codes.has(c.key))
+      .length,
+    0,
+  );
+});
+
+test("conditional exclusions do not become sample course suggestions", () => {
+  const references = sampleReferenceReader([
+    { code: "PHILOS", title: "Philosophy" },
+  ]);
+  assert.deepEqual(references("[GE-Theme if not PHILOS 2338] — [4] hours"), []);
+  assert.deepEqual(references("PHILOS 2338 — 4 hours"), [
+    { subject: "PHILOS", number: "2338" },
+  ]);
+});
+
+test("recommendation caps include courses already placed in the target semester", () => {
+  const plan = fixture();
+  plan.schedule.placements = [{ courseId: "m", term: options.targetTerm }];
+  const tight = recommendCourses(plan, options);
+  assert.equal(tight.existingCredits, 5);
+  assert.ok(!tight.candidates.some((c) => c.key === "MATH 1151"));
+  assert.equal(tight.credits, 5);
+  assert.equal(tight.bundle.length, 0);
+  const room = recommendCourses(plan, {
+    ...options,
+    maxCredits: 8,
+    maxQuantitative: 2,
+  });
+  assert.equal(room.credits, 8);
+  assert.deepEqual(
+    room.bundle.map((c) => c.key),
+    ["CSE 1223"],
+  );
+  plan.schedule.placements.push({ courseId: "u", term: options.targetTerm });
+  const unknown = recommendCourses(plan, { ...options, maxCredits: 18 });
+  assert.equal(unknown.unresolvedExisting, 1);
+  assert.equal(unknown.bundle.length, 0);
+});
+
+test("summer terms do not shift subsequent sample-year matching", () => {
+  const result = recommendCourses(fixture(), {
+    ...options,
+    sampleYear: 2,
+    sample: {
+      id: "summer-sample",
+      program: "Synthetic",
+      url: "https://example.osu.edu/sample",
+      reviewStatus: "pending",
+      courses: [
+        {
+          subject: "CHEM",
+          number: "1220",
+          credits: 3,
+          semesterIndex: 4,
+          year: 2,
+          season: "Spring",
+        },
+        {
+          subject: "ARTSSCI",
+          number: "1100",
+          credits: 1,
+          semesterIndex: 3,
+          year: 2,
+          season: "Autumn",
+        },
+      ],
+    },
+  });
+  assert.equal(
+    result.candidates.find((c) => c.key === "CHEM 1220").sampleMatch,
+    true,
+  );
+  assert.equal(
+    result.candidates.find((c) => c.key === "ARTSSCI 1100").sampleMatch,
+    false,
+  );
+});
+
+test("same-program requirements remain available across report IDs without unrelated planned courses", () => {
+  const plan = fixture();
+  plan.documents.push({
+    ...plan.documents[0],
+    id: "d2",
+    source: "expanded-audit",
+  });
+  plan.programs.push({ ...plan.programs[0], id: "p2", documentId: "d2" });
+  plan.requirements.push({
+    ...plan.requirements[0],
+    id: "r2",
+    programId: "p2",
+    documentId: "d2",
+    alternatives: [{ subject: "CSE", number: "2221" }],
+  });
+  plan.semesters[0].courses.push({
+    id: "unrelated",
+    documentId: "d",
+    subject: "BIOLOGY",
+    number: "1113",
+    kind: "course",
+    status: "planned",
+    evidenceRole: "observation",
+    credits: 4,
+    page: 1,
+  });
+  const result = recommendCourses(plan, options);
+  assert.ok(result.candidates.some((c) => c.key === "CSE 2221"));
+  assert.ok(!result.candidates.some((c) => c.key === "BIOLOGY 1113"));
+  plan.programs[1].appliedVersion = "AU2017";
+  assert.ok(
+    !recommendCourses(plan, options).candidates.some(
+      (c) => c.key === "CSE 2221",
+    ),
+  );
+});

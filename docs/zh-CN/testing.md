@@ -8,6 +8,8 @@
 
 ## 默认检查
 
+规划审查回归覆盖失败修读后的重修、独立审计记录、重复占位项、JSONB 键顺序变化后的重试，以及仅含明确可选课程的通用模板。`tests/planning/import-profile.test.mjs` 还使用 PDF.js 提取浏览器合成 PDF 后验证自动识别。浏览器工作区脚本通过自定义选择框选项操作，并在刷新后核对恢复的标签。私有 HAR 对比遇到学分冲突会失败。统计隐私测试覆盖规划页面访问、元数据白名单、弹窗与私密选择器浮层回放屏蔽、自定义选择器埋点和分享路径脱敏。可通过 `pnpm test` 执行，浏览器与私有文件脚本仍按下文说明显式运行。
+
 在仓库根目录使用 Node.js 24+ 并安装依赖后运行：
 
 ```sh
@@ -303,9 +305,9 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 | [tests/user-data/workspace.test.mjs](../../tests/user-data/workspace.test.mjs)                                 | Unit        | 本机快照写入、逐字段改动、修订确认和损坏数据处理                                                                                                                                         |
 | [tests/user-data/local.test.mjs](../../tests/user-data/local.test.mjs)                                         | Unit        | 导入、移除、撤销保留完整快照和中途改动                                                                                                                                                   |
 | [tests/user-data/exchange.test.mjs](../../tests/user-data/exchange.test.mjs)                                   | Unit        | 四类交换格式验证、上限、公开信息筛减和导入身份                                                                                                                                           |
-| [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                                           | Unit        | 固定来源验证、流式请求上限、开发环境命名空间隔离                                                                                                                                         |
+| [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                                           | Unit        | 固定来源验证、Tailscale 网段边界与同源校验、流式请求上限、开发环境命名空间隔离                                                                                                                                         |
 | [tests/user-data/auth-errors.test.mjs](../../tests/user-data/auth-errors.test.mjs)                             | 单元        | 区分密码、验证码、来源、节流和通行密钥错误；不访问服务或写入数据                                                                                                                         |
-| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成        | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、条款确认、八位密码、模式内外键、学校验证码限次和一次性使用、回环来源与真实签名通行密钥的邮箱匹配；模拟邮件，结束后清理 |
+| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成        | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、条款确认、八位密码、模式内外键、学校验证码限次和一次性使用、回环及 Tailscale 登录、回调、会话和退出，以及真实签名通行密钥的邮箱匹配；模拟邮件，结束后清理 |
 | [tests/user-data/auth.integration.test.mjs](../../tests/user-data/auth.integration.test.mjs)                   | Integration | 真实验证码、密码、密钥、会话和恢复协议；注入邮件投递，使用临时认证表                                                                                                                     |
 | [tests/user-data/sharing.integration.test.mjs](../../tests/user-data/sharing.integration.test.mjs)             | Integration | 真实 SQL 验证凭据、过期、短码、归属、计数、并发上限和重试                                                                                                                                |
 | [tests/user-data/sharing.browser.mjs](../../tests/user-data/sharing.browser.mjs)                               | Browser     | 创建并撤销测试分享；部分转存、原地详情、重试和手机管理                                                                                                                                   |
@@ -389,7 +391,7 @@ ALLOW_SERVER_WRITES=1 node tests/user-data/sharing.browser.mjs
 | 脚本                                                                                                             | 类型       | 用途                                                                                       |
 | ---------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
 | [tests/user-data/collections.test.mjs](../../tests/user-data/collections.test.mjs)                               | 单元       | 私人分组校验、保留分组结构、批次体积限制与重命名冲突                                       |
-| [tests/user-data/compact-tabs.browser.mjs](../../tests/user-data/compact-tabs.browser.mjs) | 浏览器 | 1440／768／390／320 像素下简略列表分类标签位于结果上方；使用本地合成数据并阻止外部请求 |
+| [tests/user-data/compact-tabs.browser.mjs](../../tests/user-data/compact-tabs.browser.mjs)                       | 浏览器     | 1440／768／390／320 像素下简略列表分类标签位于结果上方；使用本地合成数据并阻止外部请求     |
 | [tests/user-data/collections.browser.mjs](../../tests/user-data/collections.browser.mjs)                         | 浏览器     | 1440／768／390／320 像素下的新建、整理、改名、删除撤销、分组导出和私人恢复                 |
 | [tests/user-data/rmp-favorites.test.mjs](../../tests/user-data/rmp-favorites.test.mjs)                           | 单元       | RMP 来源身份、评分保留及公开交换格式校验                                                   |
 | [tests/user-data/rmp-favorites.browser.mjs](../../tests/user-data/rmp-favorites.browser.mjs)                     | 浏览器     | 教师库、档案、收藏页操作，以及同名已确认／待确认档案与撤回                                 |
@@ -467,6 +469,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 ## 账号就绪状态回归
 
 运行 `node --test tests/user-data/account-status.test.mjs`（也包含在 `pnpm test` 中）。内存测试覆盖扩展表缺失、就绪请求等待或失败、完整配置以及游客入口的安全关闭行为。不连接数据库、不修改账号，也不调用外部服务。有效会话在扩展功能不可用时仍显示账号工作区；学校邮箱设置须等相关表就绪后才能使用。这是界面降级处理，不能替代用户数据迁移。
+
 ## 分组图标选择器
 
 `node --test tests/user-data/collection-icons.test.mjs` 检查全部内置图标标识与收藏分组结构的兼容性、中英文离线搜索和类别、Lucide SVG 必需的描边属性，以及搜索框回车和选中提示。需要 Node.js 24+ 及已安装的依赖，不写入数据、不调用外部服务。这些断言不能替代浏览器验收。
@@ -474,3 +477,68 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 选择器内置 99 个本地图标，分为八类。搜索不会向图标服务发送关键词，现有图标标识保持有效。中性图标卡使用统一的前景与背景颜色变量；选中时增加强调色边框和勾选标记，不仅依赖颜色区分。
 
 浏览器回归：新建分组，分别用中英文搜索、切换类别、检查无结果提示，并确认搜索框回车不会保存。选择图标，保存合成测试分组，刷新后重新打开，确认图标保留。仅改变筛选条件不应触发未保存警告，改变图标则应触发。检查 320、390、768、1440px 下的描边和焦点轮廓。使用不含生产凭据的独立本地站点；保存分组会写入该站点的浏览器存储。
+
+## 学期规划
+
+- `tests/planning/model.test.mjs`: 白名单、本地序列化、存储失败和课程链接. `node --test tests/planning/model.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/parser.test.mjs`: 合成版式、未知学分、占位项、冲突版本及打印顺序. `node --test tests/planning/parser.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/curriculum.test.mjs`: 官方候选、独立域和导入验证. `node --test tests/planning/curriculum.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/test_sync.py`: 公开 URL 限制和未知布局。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线，无数据库或网络写入。
+- `tests/planning/workspace.browser.mjs`: 本地导入、纠错、保存/导出、双语及响应式隐私流程。 `node tests/planning/workspace.browser.mjs`. 需本地运行应用、Playwright 和 Chromium；可设 `BASE_URL`、`PLAYWRIGHT_MODULE`、`PLAYWRIGHT_CHROMIUM_EXECUTABLE`。仅向隔离浏览器存储写入合成数据，截图保存在临时目录；不访问官方来源或生产数据库。
+- `tests/planning/pdf.integration.test.mjs`: 使用内存生成的 PDF 验证 PDF.js 提取到白名单规划的完整链路；`node --test tests/planning/pdf.integration.test.mjs`. 无需浏览器、数据库或网络。
+- `tests/planning/synthetic-pdf.mjs`: 上述浏览器和 PDF 集成测试共享的合成 PDF 生成器，不单独执行，不写私人数据。
+- `tests/planning/import-guard.test.mjs`: 导入较晚完成与编辑、载入、删除、新导入之间的竞争. `node --test tests/planning/import-guard.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/snapshots.test.mjs`: 多来源标识、项目独立版本、要求层级及分配去重. `node --test tests/planning/snapshots.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/database.integration.test.mjs`: 在隔离内存 PGlite PostgreSQL 中执行真实规划 SQL，测试迁移、外键、审核约束和回滚. `node --test tests/planning/database.integration.test.mjs`. 只用合成数据，不需网络服务、生产配置或凭据。
+- `tests/planning/private-regression.mjs`: 明确选择运行的本地私人 PDF 回归。设置 `PLANNING_PRIVATE_PDF_DIR` 指向本地附件目录，然后运行 `node tests/planning/private-regression.mjs`。默认仅读取 PDF；显式设置 `PLANNING_PRIVATE_HAR_COMPARE=1` 可启用仅响应正文的离线 HAR 对照。不写原文，仅输出类型级计数、失败数量和一致性汇总。不得在公共 CI 提供附件或上传输出以外的数据。
+
+- `tests/planning/private-har.test.mjs`：合成 XSSI/base64 响应解码、学术字段最小化、学分与年份一致性汇总，以及重复课程歧义排除测试。不使用真实附件 fixture。
+
+- `tests/planning/audit-evidence.test.mjs`: 区分 audit 选项与课程记录，验证明确学分、版式提示和未核对层级。 `node --test tests/planning/audit-evidence.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/batch-import.test.mjs`: 多文件追加/替换原子性、受限 JSON 恢复及取消。 `node --test tests/planning/batch-import.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/schedule.test.mjs`: 独立排课覆盖、锁定学分组和去重学期汇总。 `node --test tests/planning/schedule.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/template.test.mjs`: 仅要求规则的种子白名单、明确审核、引用重映射和循环拒绝。 `node --test tests/planning/template.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/archive.integration.test.mjs`: 真实 PGlite 原文件归档、哈希验证、不可变解析版本、Unicode 兼容、版本冲突拒绝、回滚和恢复。 `node --test tests/planning/archive.integration.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/recommendation.test.mjs`: 负担/前缀上限、已完成排除、评分收缩/请求白名单、待审核样表、保留来源的建议应用、接受推荐时的备选选择和互斥课程组合。 `node --test tests/planning/recommendation.test.mjs`. 仅合成/公开 fixture；无外部服务、网络或持久化写入（PGlite 位于内存）。
+
+- `tests/planning/test_inventory.py`: 官方学院索引、标题/版本元数据和发现边界。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
+
+- `tests/planning/test_public_layouts.py`: 官方前缀别名、HTML 年级双列、可选暑期、音乐/工程/护理/建筑/公共卫生 PDF、换行学分、替代课和页脚排除。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
+
+- `tests/planning/directory.test.mjs`: 学院/专业覆盖、有界分页、明确要求学期分面及公开元数据最小化。仅合成/公开输入，无外部网络、数据库或写入。 `node --test tests/planning/directory.test.mjs`.
+
+- `tests/planning/import-profile.test.mjs` 验证最小报告组合、明确的 Official/Planned 视图及专业标题。运行 `node --test tests/planning/import-profile.test.mjs`，仅合成输入，无网络或写入。
+
+- `tests/planning/course-catalog.test.mjs` 验证公开标识白名单、重复查询合并、浮动学分和先修前缀继承。运行 `node --test tests/planning/course-catalog.test.mjs`，模拟传输，无网络或写入。
+
+- `tests/planning/workspace.test.mjs` 验证课程位置复用、跨来源修读保护和学期默认值。运行 `node --test tests/planning/workspace.test.mjs`，仅合成输入，无网络或写入。
+
+- `tests/test_planning_samples.py` 验证已检查的 CSE 表格与 Earth Sciences 选择组。运行 `python3 -m unittest discover -s tests -p test_planning_samples.py`，离线执行，无服务或写入。
+
+- `tests/planning/automatic-import.test.mjs` 验证跨报告修读状态优先级、完整学业标题、自动保存及元数据隐私。运行 `node --test tests/planning/automatic-import.test.mjs`。仅合成数据，无网络或持久化写入。
+
+- `tests/planning/requirement-search.test.mjs` 验证准确 GE 属性筛选和受限课程族回退。运行 `node --test tests/planning/requirement-search.test.mjs`。离线合成数据，无网络或写入。
+
+- `tests/planning/cloud.test.mjs` 在内存 PGlite 中执行真实迁移，验证账户隔离、版本冲突、幂等重试、删除版本、通用模板脱敏、去重及客户端与服务端重复模板转换。运行 `node --test tests/planning/cloud.test.mjs`。仅合成数据，无网络、外部服务或持久写入。
+
+- `tests/planning/reconcile.test.mjs` 验证跨设备规划并发编辑、删除、请求期间修改及首次同步标识重映射，同时覆盖重复推荐生成的同学期容器与超过 100 门课程的合并。运行 `node --test tests/planning/reconcile.test.mjs`。仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/groups.test.mjs` 课程与学分配额、备选组、已选备选课程跨学期移动或退回待安排区、重复审计视图和重复导入。 `node --test tests/planning/groups.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/simulation.test.mjs` 固定班次、避开时段、分段学期重叠、未知日期及已满班次提示。 `node --test tests/planning/simulation.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/timetable.test.mjs` 逐次授课区分线上与线下，覆盖混合授课班次、未知地点、时间待定课程及周末时段。 `node --test tests/planning/timetable.test.mjs`. 仅使用合成输入，无外部服务或持久写入。
+
+- `tests/planning/requirement-catalog.test.mjs` 学业类别课程筛选、分页和严格属性匹配。 `node --test tests/planning/requirement-catalog.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译、防止点击外侧误关及手机下拉关闭手柄。规划弹窗跨响应式断点保留子组件状态。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+
+- `tests/planning/backup.test.mjs` 验证跨环境备份恢复、稳定 ID、学期校区、班次选择、模拟偏好、旧版本升级、隐私字段白名单和取消操作。运行 `node --test tests/planning/backup.test.mjs`。只用内存样例，无外部服务和持久化写入。
+
+`tests/catalog/detail-refresh.test.mjs` 覆盖收藏卡片的自动补全入口。`tests/catalog/change-budgets.test.mjs` 同时验证查询超时后的回滚与缩小批次重试。规划数据库集成测试通过内存 PGlite 和仓库公开样例验证不可变目录版本、重复发布、完整模板往返和事务回滚。这些测试均通过 `pnpm test` 运行，无需网络服务，不写外部数据库。

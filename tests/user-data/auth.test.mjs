@@ -155,3 +155,52 @@ test("only same-port loopback aliases are trusted in development", () => {
   ])
     assert.ok(!authOrigins(dev).includes(origin));
 });
+
+test("Tailscale development origins cover the CGNAT range for same-origin requests", () => {
+  const dev = {
+    NODE_ENV: "development",
+    AUTH_DEV_BASE_URL: "http://localhost:3000",
+  };
+  const request = (origin, target = origin) =>
+    new Request(target + "/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { origin, "content-type": "application/json" },
+    });
+  for (const host of ["100.64.0.0", "100.106.78.98", "100.127.255.255"]) {
+    const origin = `http://${host}:3000`;
+    assert.ok(authOrigins(dev, request(origin)).includes(origin));
+    assert.ok(
+      !authOrigins(
+        { NODE_ENV: "production", AUTH_BASE_URL: "https://site.example" },
+        request(origin),
+      ).includes(origin),
+    );
+  }
+  for (const origin of [
+    "http://100.63.255.255:3000",
+    "http://100.128.0.0:3000",
+    "http://100.1.2.3:3000",
+    "http://100.106.78.98:3001",
+    "https://100.106.78.98:3000",
+    "http://100.106.78.98.evil.example:3000",
+  ])
+    assert.ok(!authOrigins(dev, request(origin)).includes(origin));
+  const origin = "http://100.106.78.98:3000";
+  for (const target of [
+    "http://localhost:3000",
+    "http://100.64.0.1:3000",
+    "https://evil.example",
+  ]) {
+    const forged = request(origin, target);
+    forged.headers.set("x-forwarded-host", "100.106.78.98:3000");
+    assert.ok(!authOrigins(dev, forged).includes(origin));
+  }
+  const nextRequest = request(origin, "http://0.0.0.0:3000");
+  nextRequest.headers.set("host", "100.106.78.98:3000");
+  assert.ok(authOrigins(dev, nextRequest).includes(origin));
+  nextRequest.headers.set("host", "100.64.0.1:3000");
+  assert.ok(!authOrigins(dev, nextRequest).includes(origin));
+  const missing = request(origin);
+  missing.headers.delete("origin");
+  assert.ok(!authOrigins(dev, missing).includes(origin));
+});

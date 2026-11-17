@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import vm from "node:vm";
+import { readFile } from "node:fs/promises";
 import {
   analyticsAssetUrl,
+  analyticsPath,
   analyticsBeforeSend,
   captureLinkCapability,
   parseAnalyticsPreference,
@@ -23,9 +25,12 @@ test("versioned collector URLs retain proxy parameters and reject script schemes
     replay: true,
   });
 });
-function send(payload, { path = "/", setting = null, dnt = "0" } = {}) {
+function send(
+  payload,
+  { path = "/", setting = null, dnt = "0", type = "error" } = {},
+) {
   return vm.runInNewContext(
-    `(${analyticsBeforeSend.toString()})("error", payload)`,
+    `(${analyticsBeforeSend.toString()})(type, payload)`,
     {
       window: {},
       location: { pathname: path, origin: "https://site.example" },
@@ -34,6 +39,7 @@ function send(payload, { path = "/", setting = null, dnt = "0" } = {}) {
       URL,
       URLSearchParams,
       payload,
+      type,
     },
   );
 }
@@ -134,4 +140,111 @@ test("startup events wait for one visit token, remain bounded, and honor opt-out
   while (callbacks.length) callbacks.shift()();
   assert.ok((await Promise.all(pending)).every((x) => x === false));
   assert.equal(window.__COURSE_ATLAS_UMAMI_STARTING__.waiting, 0);
+});
+
+test("planning records pageviews and static UI actions while suppressing academic data and errors", () => {
+  assert.equal(
+    send({ message: "private PDF text" }, { path: "/planning" }),
+    false,
+  );
+  assert.equal(send({ url: "private" }, { path: "/planning/review" }), false);
+  const pageview = send(
+    { url: "/planning?student=private", title: "Planning" },
+    { path: "/planning", type: "event" },
+  );
+  assert.equal(pageview.url, "https://site.example/planning");
+  const event = send(
+    {
+      name: "ui_interaction",
+      data: {
+        action: "planning_view",
+        area: "planning",
+        control: "board",
+        path: "/planning",
+        selection: "MATH 1131",
+        program: "Private major",
+        filename: "Private.pdf",
+        rawText: "Private transcript",
+        count: 2,
+      },
+    },
+    { path: "/planning", type: "event" },
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(event.data)), {
+    action: "planning_view",
+    area: "planning",
+    control: "board",
+    path: "/planning",
+    count: 2,
+  });
+  assert.equal(send({}, { path: "/planning", type: "event", dnt: "1" }), false);
+  assert.equal(
+    send(
+      {},
+      { path: "/planning", type: "event", setting: '{"enabled":false}' },
+    ),
+    false,
+  );
+});
+
+test("page paths and payload URLs redact capability resource identifiers", () => {
+  assert.equal(
+    analyticsPath("/share/private-id?secret=abc#k=xyz"),
+    "/share/[id]",
+  );
+  const event = send(
+    {
+      url: "/transfer/private-id?secret=abc",
+      data: { path: "/share/private-id" },
+    },
+    { type: "event" },
+  );
+  assert.doesNotMatch(JSON.stringify(event), /private-id|abc/);
+  assert.equal(event.data.path, "/share/[id]");
+});
+
+test("root collectors cover every route and planning portals retain replay masking", async () => {
+  const read = (path) =>
+    readFile(new URL("../../src/" + path, import.meta.url), "utf8");
+  assert.match(await read("app/layout.tsx"), /<UmamiAnalytics/);
+  const tracker = await read("components/analytics/umami-analytics.tsx");
+  assert.doesNotMatch(tracker, /planning\(\?:/);
+  assert.match(tracker, /role="combobox"/);
+  assert.match(
+    tracker,
+    /control.closest\("\[data-telemetry-private\], \.rr-block"\)/,
+  );
+  assert.match(
+    await read("components/ui/choice-select.tsx"),
+    /action: "select_change"/,
+  );
+  const select = await read("components/ui/choice-select.tsx");
+  assert.match(
+    select,
+    /node\?\.closest\("\[data-telemetry-private\], \.rr-block"\)/,
+  );
+  assert.match(select, /privateOptions && "rr-block"/);
+  const dialog = await read("components/ui/workspace-dialog.tsx");
+  assert.equal(
+    (dialog.match(/className=\{`\$\{styles.dialog\} rr-block`\}/g) ?? [])
+      .length,
+    2,
+  );
+  for (const file of [
+    "planning-workspace",
+    "semester-board",
+    "planning-search",
+    "next-term",
+    "requirement-map",
+    "sample-gallery",
+    "course-inspector",
+    "course-groups",
+    "semester-simulation",
+    "import-guide",
+    "cloud-backup",
+  ])
+    assert.match(
+      await read("components/planning/" + file + ".tsx"),
+      /data-analytics-area="planning/,
+    );
 });

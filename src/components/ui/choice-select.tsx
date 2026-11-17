@@ -16,6 +16,9 @@ import {
 } from "./select";
 import { cn } from "@/lib/utils";
 import styles from "./choice-select.module.css";
+import { useRef } from "react";
+import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
+import { analyticsPath } from "@/lib/analytics/privacy";
 
 type Props = Omit<
   ComponentProps<"button">,
@@ -39,24 +42,42 @@ export function ChoiceSelect({
   className,
   ...props
 }: Props) {
+  const emptyValue = "__choice_empty__";
+  const encode = (value: string | number | readonly string[] | undefined) =>
+    value == null ? undefined : String(value) || emptyValue;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
-  const bindTrigger = useCallback(
-    (node: HTMLButtonElement | null) =>
-      setPortal(node?.closest<HTMLElement>("[data-debug-tools]") ?? null),
-    [],
-  );
+  const [privateOptions, setPrivateOptions] = useState(false);
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const bindTrigger = useCallback((node: HTMLButtonElement | null) => {
+    trigger.current = node;
+    setPortal(node?.closest<HTMLElement>("[data-debug-tools]") ?? null);
+    setPrivateOptions(
+      Boolean(node?.closest("[data-telemetry-private], .rr-block")),
+    );
+  }, []);
   const options = Children.toArray(children).filter(
     isValidElement<ComponentProps<"option">>,
   );
   return (
     <Select
-      key={defaultValue == null ? undefined : String(defaultValue)}
+      key={defaultValue == null ? undefined : encode(defaultValue)}
       name={name}
       required={required}
       disabled={disabled}
-      value={value == null ? undefined : String(value)}
-      defaultValue={defaultValue == null ? undefined : String(defaultValue)}
-      onValueChange={onValueChange}
+      value={value == null ? undefined : encode(value)}
+      defaultValue={defaultValue == null ? undefined : encode(defaultValue)}
+      onValueChange={(value) => {
+        onValueChange?.(value === emptyValue ? "" : value);
+        trackUmamiEvent("ui_interaction", {
+          action: "select_change",
+          control: "choice_select",
+          area:
+            trigger.current
+              ?.closest("[data-analytics-area]")
+              ?.getAttribute("data-analytics-area") ?? "selection",
+          path: analyticsPath(window.location.pathname),
+        });
+      }}
     >
       <SelectTrigger
         {...props}
@@ -71,13 +92,13 @@ export function ChoiceSelect({
         position="popper"
         align="start"
         portalContainer={portal}
-        className={styles.content}
+        className={cn(styles.content, privateOptions && "rr-block")}
         collisionPadding={10}
       >
         {options.map((option, index) => (
           <SelectItem
             key={option.key ?? index}
-            value={String(option.props.value ?? option.props.children)}
+            value={encode(option.props.value ?? String(option.props.children))!}
             disabled={option.props.disabled}
             data-choice-value={String(
               option.props.value ?? option.props.children,

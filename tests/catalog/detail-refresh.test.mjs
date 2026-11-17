@@ -81,3 +81,18 @@ test("closing aborts metadata and a late response cannot replace another course"
   await flush();
   assert.equal(updates.length, count);
 });
+
+// Keep the saved-page entry point connected to metadata hydration even with cached course IDs.
+test("saved cards hydrate visible previews independently of opening a detail dialog", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const saved = await readFile(
+    new URL("../../src/components/saved/saved-courses.tsx", import.meta.url),
+    "utf8",
+  );
+  const card = await readFile(
+    new URL("../../src/components/catalog/course-card.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(saved, /<CourseCard[\s\S]*?refreshPreview/);
+  assert.match(card, /visible && \(refreshPreview \|\| !course.courseId\)/);
+});

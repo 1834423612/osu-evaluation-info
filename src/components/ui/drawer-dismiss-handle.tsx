@@ -84,7 +84,8 @@ export function DrawerDismissHandle({
         moveDrawerDrag(drag, event.clientX, event.clientY);
         active.current = null;
         if (shouldDismissDrawer(drag, event.timeStamp)) onDismiss();
-        else reset();
+        // Restore position when an unsaved-draft guard keeps the drawer open.
+        reset();
       }}
       onPointerCancel={(event) => {
         event.stopPropagation();

@@ -7,6 +7,7 @@ import {
 } from "@/lib/catalog/search-client";
 import {
   Search,
+  MapPin,
   SlidersHorizontal,
   X,
   LoaderCircle,
@@ -20,7 +21,12 @@ import type {
   CatalogResponse,
   CatalogFacet,
 } from "@/lib/catalog/types";
-import { text, localizedCampus, localizedTerm } from "@/lib/i18n";
+import {
+  text,
+  localizedCampus,
+  localizedTerm,
+  campusOptions,
+} from "@/lib/i18n";
 import { RecentSearches } from "@/components/history/recent-searches";
 import { recordSearchHistory } from "@/lib/history/store";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -62,12 +68,20 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 
+import { browserStorage } from "@/lib/preferences/browser-storage";
+import {
+  CATALOG_PREFERENCES_KEY,
+  catalogPreferences,
+  restoreCatalogPreferences,
+} from "@/lib/catalog/filter-preferences";
+
 const PAGE_HISTORY_PARAM = "pageHistory";
 const MAX_SAVED_PAGE_CURSORS = 20;
 
 function catalogParams(value: string) {
   const params = new URLSearchParams(value);
   for (const key of [
+    "filters",
     "course",
     "detailTab",
     "ratingSource",
@@ -139,6 +153,23 @@ export function CourseExplorer() {
   const searchParams = useSearchParams();
   const query = searchParams.toString();
   const catalogQuery = catalogParams(query);
+  const preferencesReady = searchParams.get("filters") === "1";
+  useEffect(() => {
+    let raw: string | null = null;
+    try {
+      raw = browserStorage().getItem(CATALOG_PREFERENCES_KEY);
+    } catch {}
+    const params = restoreCatalogPreferences(query, raw);
+    const restored = params.toString();
+    if (restored !== query)
+      window.history.replaceState(null, "", `/?${params}`);
+    try {
+      browserStorage().setItem(
+        CATALOG_PREFERENCES_KEY,
+        JSON.stringify(catalogPreferences(params)),
+      );
+    } catch {}
+  }, [query]);
   const {
     locale,
     saved,
@@ -203,7 +234,7 @@ export function CourseExplorer() {
     window.history.pushState(null, "", `/?${params}`);
   }
   function resetFilters(campus = "col") {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ filters: "1", campus });
     if (searchParams.get("q")) params.set("q", searchParams.get("q")!);
     if (searchParams.get("term")) params.set("term", searchParams.get("term")!);
     if (campus === "all") params.set("campus", "all");
@@ -224,6 +255,7 @@ export function CourseExplorer() {
   }
 
   useEffect(() => {
+    if (!preferencesReady) return;
     const controller = new AbortController();
     if (skipQueryFetch.current === catalogQuery) {
       skipQueryFetch.current = null;
@@ -296,7 +328,7 @@ export function CourseExplorer() {
     }
     void load();
     return () => controller.abort();
-  }, [catalogQuery, retry]);
+  }, [catalogQuery, retry, preferencesReady]);
 
   const loadPage = useCallback(
     async (direction: "next" | "previous" | "current") => {
@@ -431,14 +463,9 @@ export function CourseExplorer() {
   const count = result?.matchedSections ?? result?.totalItems;
   const selectedCampus = searchParams.get("campus") ?? "col";
   const campusLabel =
-    searchParams.get("campus") === "all"
+    selectedCampus === "all"
       ? text(locale, "All campuses", "所有校区")
-      : (result?.courses[0]?.campus ??
-        result?.filters
-          .find((facet) => facet.slug === "campus")
-          ?.items.find((item) => item.value.toLowerCase() === selectedCampus)
-          ?.label ??
-        localizedCampus(selectedCampus, locale));
+      : localizedCampus(selectedCampus, locale);
   return (
     <>
       <AppHeader />
@@ -524,6 +551,37 @@ export function CourseExplorer() {
           <span className="search-shortcut">↵</span>
           <Button type="submit">{text(locale, "Search", "搜索")}</Button>
         </form>
+        <div className="catalog-campus-context">
+          <MapPin size={19} aria-hidden="true" />
+          <label htmlFor="search-campus">
+            {text(locale, "Search campus", "当前查询校区")}
+          </label>
+          <Select
+            value={selectedCampus}
+            onValueChange={(value) => updateParam("campus", value)}
+          >
+            <SelectTrigger id="search-campus">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {campusOptions.map((campus) => (
+                <SelectItem key={campus.value} value={campus.value}>
+                  {campus.en} · {campus.zh}
+                </SelectItem>
+              ))}
+              <SelectItem value="all">
+                {text(locale, "All campuses", "全部校区")}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <small>
+            {text(
+              locale,
+              "Filters saved on this device",
+              "已记住此设备的筛选设置",
+            )}
+          </small>
+        </div>
         <RecentSearches locale={locale} />
         <div className="workspace-layout">
           <aside className="desktop-filters">{filters}</aside>

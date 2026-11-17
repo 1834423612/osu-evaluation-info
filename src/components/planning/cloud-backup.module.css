@@ -1,0 +1,53 @@
+.root {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.root h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.root p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.root small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+}
+.root .actions button {
+  background: var(--subtle-surface);
+}
+.root a {
+  color: var(--primary);
+  font-size: 12px;
+}
+.templates {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+}
+.templates svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.templates p {
+  margin: 0;
+}

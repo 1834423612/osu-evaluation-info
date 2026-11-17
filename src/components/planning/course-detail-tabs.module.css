@@ -1,0 +1,51 @@
+.root {
+  min-width: 0;
+  margin-top: 20px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.tabs {
+  display: flex;
+  width: 100%;
+  gap: 2px;
+  margin: 12px 0;
+}
+.tabs > button {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 4px;
+  font-size: 11px;
+}
+.attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0;
+}
+.attributes > span {
+  padding: 4px 7px;
+  background: var(--subtle-surface);
+  border-radius: 5px;
+  font-size: 11px;
+}
+.root :global(.evaluation-panel) {
+  padding: 10px 0;
+}
+.root h3 {
+  font-size: 15px;
+}
+.root :global(.rating-source-tabs) {
+  min-width: 0;
+}
+
+.root :global(.section-card) {
+  padding: 10px;
+  min-width: 0;
+}
+.root :global(.section-days) {
+  flex-wrap: wrap;
+}
+.root .tabs {
+  height: auto;
+  min-height: 38px;
+}

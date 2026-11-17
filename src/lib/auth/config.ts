@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { isIP } from "node:net";
 export function authBaseURL(env: NodeJS.ProcessEnv = process.env) {
   const raw =
     env.NODE_ENV === "production"
@@ -22,8 +23,11 @@ export function authBaseURL(env: NodeJS.ProcessEnv = process.env) {
     return null;
   }
 }
-/** Explicit development loopback aliases; production remains pinned. */
-export function authOrigins(env: NodeJS.ProcessEnv = process.env) {
+/** Development aliases are evaluated for the current same-origin request. */
+export function authOrigins(
+  env: NodeJS.ProcessEnv = process.env,
+  request?: Request,
+) {
   const base = authBaseURL(env);
   if (!base) return [];
   const url = new URL(base);
@@ -32,12 +36,38 @@ export function authOrigins(env: NodeJS.ProcessEnv = process.env) {
     !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
   )
     return [base];
-  return [
+  const origins = [
     base,
     ...["localhost", "127.0.0.1", "[::1]"].map(
       (host) => url.protocol + "//" + host + (url.port ? ":" + url.port : ""),
     ),
   ].filter((origin, index, origins) => origins.indexOf(origin) === index);
+  if (request) {
+    const target = new URL(request.url);
+    // Next can construct request.url from its listen hostname. Host preserves
+    // the HTTP authority used by the browser, including a Tailscale address.
+    const authority = request.headers.get("host") ?? target.host;
+    let candidate: URL;
+    try {
+      candidate = new URL(target.protocol + "//" + authority);
+    } catch {
+      return origins;
+    }
+    const origin = request.headers.get("origin");
+    const octets = candidate.hostname.split(".").map(Number);
+    if (
+      isIP(candidate.hostname) === 4 &&
+      octets[0] === 100 &&
+      octets[1] >= 64 &&
+      octets[1] <= 127 &&
+      target.protocol === url.protocol &&
+      candidate.port === url.port &&
+      origin === candidate.origin &&
+      candidate.host === authority
+    )
+      origins.push(origin);
+  }
+  return origins;
 }
 export function authTablePrefix(env: NodeJS.ProcessEnv = process.env) {
   const prefix = env.AUTH_TABLE_PREFIX || "";

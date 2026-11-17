@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import {
   ANALYTICS_EVENT,
   ANALYTICS_KEY,
+  analyticsPath,
   parseAnalyticsPreference,
   safeSearchTerm,
 } from "@/lib/analytics/privacy";
@@ -68,7 +69,13 @@ export function trackUmamiEvent(name: string, properties: EventProperties) {
     return;
   }
   if (window.umami?.track) {
-    window.umami.track(name, properties);
+    try {
+      void Promise.resolve(window.umami.track(name, properties)).catch(
+        () => {},
+      );
+    } catch {
+      // Collection failures must not interrupt the action being measured.
+    }
     return;
   }
   if (pendingEvents.length < 100) pendingEvents.push({ name, properties });
@@ -84,7 +91,7 @@ function flushPendingEvents() {
   if (!tracker?.track) return;
   while (pendingEvents.length) {
     const event = pendingEvents.shift();
-    if (event) tracker.track(event.name, event.properties);
+    if (event) trackUmamiEvent(event.name, event.properties);
   }
 }
 
@@ -102,7 +109,10 @@ function areaFor(element: Element) {
   if (element.closest(".saved-shell")) return "saved_page";
   if (element.closest(".methodology-shell")) return "methodology_page";
   if (element.closest(".action-toast")) return "action_toast";
-  return "page";
+  return (
+    analyticsPath(window.location.pathname).split("/").filter(Boolean)[0] ??
+    "catalog"
+  );
 }
 
 function actionFor(element: Element) {
@@ -119,25 +129,27 @@ function actionFor(element: Element) {
   if (element.closest(".course-pagination")) return "pagination";
   if (element.matches('[role="tab"]')) return "tab_switch";
   if (element.matches('[role="option"]')) return "select_option";
+  if (element.matches('[role="combobox"]')) return "select_open";
+  if (element.matches('[role="menuitem"]')) return "menu_action";
   if (element.matches('[role="switch"]')) return "setting_toggle";
   if (element.matches('[role="button"]')) return "button_action";
-  if (element.matches('input[type="checkbox"], input[type="radio"]'))
+  if (
+    element.matches(
+      'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"]',
+    )
+  )
     return "selection_toggle";
   if (element.matches("[aria-pressed]")) return "favorite_toggle";
   if (element.matches("a[href]")) return "navigation";
-  if (element.matches("[aria-expanded]")) return "disclosure_toggle";
+  if (element.matches("[aria-expanded], summary")) return "disclosure_toggle";
   if (element.matches("button")) return "button_action";
   return "control_action";
 }
 
 function onClick(event: MouseEvent) {
-  if (
-    !(event.target instanceof Element) ||
-    event.target.closest("[data-telemetry-private], .rr-block")
-  )
-    return;
+  if (!(event.target instanceof Element)) return;
   const control = event.target.closest(
-    'button, a[href], input, select, [role="button"], [role="tab"], [role="option"], [role="switch"], [aria-expanded], [data-rmp-card], .course-card',
+    'button, a[href], input, select, summary, [role="button"], [role="tab"], [role="option"], [role="switch"], [role="combobox"], [role="checkbox"], [role="radio"], [role="menuitem"], [aria-expanded], [data-rmp-card], .course-card',
   );
   if (!control) return;
   const properties: EventProperties = {
@@ -146,10 +158,14 @@ function onClick(event: MouseEvent) {
     control:
       control.getAttribute("data-analytics-label") ??
       control.tagName.toLowerCase(),
-    path: window.location.pathname,
+    path: analyticsPath(window.location.pathname),
   };
   const selection = control.getAttribute("data-analytics-value");
-  if (selection !== null) properties.selection = selection;
+  if (
+    selection !== null &&
+    !control.closest("[data-telemetry-private], .rr-block")
+  )
+    properties.selection = selection;
   trackUmamiEvent("ui_interaction", properties);
 }
 
@@ -168,7 +184,7 @@ function onChange(event: Event) {
       (target.type === "checkbox" || target.type === "radio"
         ? target.type
         : target.tagName.toLowerCase()),
-    path: window.location.pathname,
+    path: analyticsPath(window.location.pathname),
   };
   if (
     target instanceof HTMLInputElement &&
@@ -180,7 +196,9 @@ function onChange(event: Event) {
 
 function onSubmit(event: SubmitEvent) {
   if (!(event.target instanceof HTMLFormElement)) return;
-  const search = event.target.matches(".search-bar");
+  const search =
+    event.target.matches(".search-bar") &&
+    !event.target.closest("[data-telemetry-private], .rr-block");
   const field = event.target.elements.namedItem("q");
   const normalizedSearch =
     search && field instanceof HTMLInputElement
@@ -190,13 +208,13 @@ function onSubmit(event: SubmitEvent) {
     trackUmamiEvent("course_search", {
       search_term: safeSearchTerm(normalizedSearch.searchTerm),
       search_type: normalizedSearch.searchType,
-      path: window.location.pathname,
+      path: analyticsPath(window.location.pathname),
     });
   }
   trackUmamiEvent("form_submit", {
     form: search ? "course_search" : "form",
     fields: event.target.elements.length,
-    path: window.location.pathname,
+    path: analyticsPath(window.location.pathname),
   });
 }
 
@@ -216,7 +234,7 @@ function onScroll(event: Event) {
     trackUmamiEvent("scroll_depth", {
       depth: threshold,
       area: areaFor(scroller),
-      path: window.location.pathname,
+      path: analyticsPath(window.location.pathname),
     });
   }
   scrollDepths.set(scroller, reported);

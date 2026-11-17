@@ -41,6 +41,7 @@ export function recordPageView(path: string) {
 export function telemetryAllowed() {
   if (
     typeof window === "undefined" ||
+    /^\/planning(?:\/|$)/.test(location.pathname) ||
     debugFlag("skipAnalytics") ||
     debugFlag("factory") ||
     navigator.doNotTrack === "1" ||
