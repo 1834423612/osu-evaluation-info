@@ -167,8 +167,17 @@ export function WorkspaceDialog({
             if (closeOnly) event.preventDefault();
           }}
           data-wide={wide || undefined}
+          data-slot="sheet-content"
           data-telemetry-private
         >
+          {mobile && (
+            <DrawerDismissHandle
+              label={
+                closeLabel === "关闭" ? "向下拖动关闭" : "Drag down to close"
+              }
+              onDismiss={() => change(false)}
+            />
+          )}
           <div className={styles.dialogHeading}>
             <Dialog.Title className={styles.dialogTitle}>{title}</Dialog.Title>
             <Dialog.Description className={styles.muted}>

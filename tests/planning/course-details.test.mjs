@@ -19,7 +19,7 @@ test("planning details reuse catalog sections, ratings, syllabus and seat watchi
     assert.match(source, new RegExp("<" + component));
   assert.match(read("planning/course-inspector.tsx"), /<CourseDetailTabs/);
 });
-test("close-only workspaces prevent outside and Escape dismissal on both device layouts", () => {
+test("planning workspaces guard outside dismissal and support deliberate mobile handle dismissal", () => {
   const source = read("ui/workspace-dialog.tsx");
   assert.equal(
     (source.match(/if \(closeOnly\) event.preventDefault\(\)/g) ?? []).length,
@@ -27,6 +27,9 @@ test("close-only workspaces prevent outside and Escape dismissal on both device 
   );
   assert.match(source, /if \(mobile && !closeOnly\)/);
   assert.match(source, /dismissible=\{!closeOnly\}/);
+  assert.match(source, /data-slot="sheet-content"/);
+  assert.match(source, /\{mobile && \(\s*<DrawerDismissHandle/);
+  assert.match(source, /onDismiss=\{\(\) => change\(false\)\}/);
   assert.match(
     read("planning/semester-board.tsx"),
     /<WorkspaceDialog\s+closeOnly/,

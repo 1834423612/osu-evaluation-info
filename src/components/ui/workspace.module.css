@@ -393,7 +393,7 @@
 
 .dialog :global([data-slot="drawer-handle"]) {
   width: 100%;
-  height: 28px;
+  height: 36px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
