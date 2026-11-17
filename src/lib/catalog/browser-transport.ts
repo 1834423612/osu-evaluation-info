@@ -175,7 +175,7 @@ export function createCatalogTransport(
     if (local.pathname === "/api/catalog/search") {
       const response = await fetcher(local.pathname + local.search, {
         ...init,
-        cache: "no-store",
+        cache: cacheBypassed() ? "no-store" : "default",
         signal: init.signal
           ? AbortSignal.any([init.signal, AbortSignal.timeout(30000)])
           : AbortSignal.timeout(30000),

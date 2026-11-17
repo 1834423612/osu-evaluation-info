@@ -9,6 +9,7 @@ import { UnsupportedSearchFilter } from "@/lib/search/filters";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 export async function GET(request: Request) {
+  const started = performance.now();
   try {
     const input = parseCatalogSearch(new URL(request.url).searchParams);
     if (!input.q?.trim())
@@ -24,8 +25,13 @@ export async function GET(request: Request) {
       ].includes(input.sort)
     )
       throw new CatalogInputError("Invalid search order.");
-    return Response.json(await searchPublishedCatalog(input), {
-      headers: { "Cache-Control": "private, no-store" },
+    const result = await searchPublishedCatalog(input);
+    return Response.json(result, {
+      headers: {
+        "Cache-Control":
+          "public, max-age=30, s-maxage=300, stale-while-revalidate=600",
+        "Server-Timing": `search;dur=${Math.round(performance.now() - started)}`,
+      },
     });
   } catch (error) {
     const status =
