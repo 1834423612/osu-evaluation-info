@@ -530,7 +530,9 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/simulation.test.mjs` 固定班次、避开时段、分段学期重叠、未知日期及已满班次提示。 `node --test tests/planning/simulation.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
+- `tests/planning/timetable.test.mjs` 逐次授课区分线上与线下，覆盖混合授课班次、未知地点、时间待定课程及周末时段。 `node --test tests/planning/timetable.test.mjs`. 仅使用合成输入，无外部服务或持久写入。
+
 - `tests/planning/requirement-catalog.test.mjs` 学业类别课程筛选、分页和严格属性匹配。 `node --test tests/planning/requirement-catalog.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
-- `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译及仅由关闭按钮退出的规划弹窗，跨响应式断点保留子组件状态。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+- `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译、防止点击外侧误关及手机下拉关闭手柄。规划弹窗跨响应式断点保留子组件状态。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 

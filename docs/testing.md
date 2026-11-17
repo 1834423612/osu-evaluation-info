@@ -537,7 +537,9 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 - `tests/planning/simulation.test.mjs` Fixed sections, blocked times, session overlap, unknown dates and closed-section warnings. `node --test tests/planning/simulation.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
+- `tests/planning/timetable.test.mjs` Per-meeting online/on-campus display, mixed-delivery sections, unknown locations, unscheduled meetings and weekend slots. `node --test tests/planning/timetable.test.mjs`. Synthetic inputs only. No external services or persistent writes.
+
 - `tests/planning/requirement-catalog.test.mjs` Eligible category filtering, pagination and strict attribute matching. `node --test tests/planning/requirement-catalog.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
-- `tests/planning/course-details.test.mjs` Shared course detail panels, translation and close-only planning dialogs that preserve child state across responsive breakpoints. `node --test tests/planning/course-details.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+- `tests/planning/course-details.test.mjs` Shared course detail panels, translation, outside-dismissal protection and mobile drag handles. Planning dialogs preserve child state across responsive breakpoints. `node --test tests/planning/course-details.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
