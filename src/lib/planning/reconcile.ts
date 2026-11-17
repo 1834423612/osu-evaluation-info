@@ -19,8 +19,22 @@ function merge(
   if (same(local, base)) return remote;
   if (same(remote, base) || same(local, remote)) return local;
   if (Array.isArray(local) && Array.isArray(remote)) {
-    const index = (values: unknown[]) =>
-      new Map(values.map((v) => [identity(v, field), v]));
+    const index = (values: unknown[]) => {
+      const result = new Map<string, unknown>();
+      for (const value of values) {
+        const key = identity(value, field);
+        const previous = result.get(key);
+        if (field === "semesters" && previous) {
+          const before = previous as Plan["semesters"][number];
+          const current = value as Plan["semesters"][number];
+          result.set(key, {
+            ...current,
+            courses: [...before.courses, ...current.courses],
+          });
+        } else result.set(key, value);
+      }
+      return result;
+    };
     const before = index(Array.isArray(base) ? base : []),
       left = index(local),
       right = index(remote);
@@ -76,9 +90,19 @@ export function reconcilePlans(
   const documents = new Set(result.documents.map((d) => d.id));
   result.programs = result.programs.filter((p) => documents.has(p.documentId));
   const programs = new Set(result.programs.map((p) => p.id));
-  result.semesters = result.semesters.filter(
-    (s) => !s.documentId || documents.has(s.documentId),
-  );
+  result.semesters = result.semesters
+    .filter((s) => !s.documentId || documents.has(s.documentId))
+    .flatMap((semester) => {
+      // Reconciliation combines matching containers, then respects the schema's row budget.
+      if (semester.courses.length <= 100) return [semester];
+      const chunks = [];
+      for (let offset = 0; offset < semester.courses.length; offset += 100)
+        chunks.push({
+          ...semester,
+          courses: semester.courses.slice(offset, offset + 100),
+        });
+      return chunks;
+    });
   result.requirements = result.requirements.filter((r) =>
     programs.has(r.programId),
   );
