@@ -44,6 +44,7 @@ export function placeCourse(
     protectedRecord ||
     !course ||
     course.evidenceRole === "option" ||
+    ["withdrawn", "dropped", "failed"].includes(course.status) ||
     course.status === "completed" ||
     course.status === "in-progress" ||
     semester?.creditOrigin === "transfer" ||
@@ -54,6 +55,7 @@ export function placeCourse(
     ...plan,
     reviewed: false,
     schedule: {
+      ...plan.schedule,
       terms: [
         ...new Set([...plan.schedule.terms, ...(term ? [term] : [])]),
       ].sort(termOrder),
@@ -69,6 +71,7 @@ export function semesterCredits(courses: PlanCourse[]) {
   const credits = new Map<string, Set<number | null>>();
   let placeholders = 0;
   for (const c of courses) {
+    if (["withdrawn", "dropped", "failed"].includes(c.status)) continue;
     if (c.kind === "placeholder") {
       placeholders++;
       continue;

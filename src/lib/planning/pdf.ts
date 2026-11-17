@@ -3,10 +3,10 @@ import type { Plan } from "./model";
 import { planningLines } from "./pdf-lines";
 export async function extractPlan(
   file: File,
-  source: Plan["source"] | "auto",
+  _source: Plan["source"] | "auto",
   signal?: AbortSignal,
   origin: Plan["pdfOrigin"] = "export",
-  auditMode: Plan["auditMode"] = "unknown",
+  _auditMode: Plan["auditMode"] = "unknown",
 ) {
   if (file.size > 20 * 1024 * 1024) throw Error("size");
   const data = new Uint8Array(await file.arrayBuffer());
@@ -42,26 +42,10 @@ export async function extractPlan(
         if (lines.length > 30000) throw Error("content");
       }
       const detected =
-        source === "auto" ? detectPlanLayout(lines, file.name) : source;
+        detectPlanLayout(lines);
       if (!detected) throw Error("layout");
-      const result = parsePlanLines(lines, detected, origin);
-      const mode =
-        auditMode !== "unknown"
-          ? auditMode
-          : /(?:^|[_ -])planned(?:[_ -]|$)/i.test(file.name)
-            ? "planned"
-            : /(?:^|[_ -])official(?:[_ -]|$)/i.test(file.name)
-              ? "official"
-              : null;
-      if (
-        mode &&
-        (auditMode !== "unknown" || result.plan.auditMode === "unknown")
-      ) {
-        result.plan.auditMode = mode;
-        result.plan.documents.forEach((d) => {
-          d.auditMode = mode;
-        });
-      }
+      const result = parsePlanLines(lines, detected, detected === "student-plan" ? "export" : origin);
+      // Caller choices guide download instructions. Report contents own their scope.
       return result;
     } finally {
       clearTimeout(timer);

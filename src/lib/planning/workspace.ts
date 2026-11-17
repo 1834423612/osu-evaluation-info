@@ -70,7 +70,7 @@ export function boardCourses(plan: Plan) {
       .map((r) => `${r.course.subject} ${r.course.number}`),
   );
   const resolved = new Map<string, PlanCourse["status"]>();
-  const rank = { unknown: 0, planned: 1, "in-progress": 2, completed: 3 };
+  const rank = { unknown: 0, withdrawn: 0, dropped: 0, failed: 0, planned: 1, "in-progress": 2, completed: 3 };
   for (const row of rows) {
     const key = `${row.course.subject} ${row.course.number}`;
     const status = row.term === "credit" ? "completed" : row.course.status;
@@ -86,7 +86,7 @@ export function boardCourses(plan: Plan) {
       (r) =>
         r.source?.source === "student-plan" ||
         r.source?.source === "manual" ||
-        (!placedCodes.has(`${r.course.subject} ${r.course.number}`) &&
+        ((!placedCodes.has(`${r.course.subject} ${r.course.number}`) || ["withdrawn", "dropped", "failed"].includes(r.course.status)) &&
           r.course.kind === "course" &&
           (r.term !== "unassigned" || !placedCodes.size)),
     )
@@ -94,7 +94,7 @@ export function boardCourses(plan: Plan) {
       const key =
         r.course.kind === "placeholder"
           ? `${r.course.title}|${r.term}`
-          : `${r.course.subject} ${r.course.number}`;
+          : `${r.course.subject} ${r.course.number}${["withdrawn", "dropped", "failed"].includes(r.course.status) ? "|" + r.term + "|" + r.course.status : ""}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -104,8 +104,7 @@ export function boardCourses(plan: Plan) {
       course: {
         ...row.course,
         status:
-          resolved.get(`${row.course.subject} ${row.course.number}`) ??
-          row.course.status,
+          ["withdrawn", "dropped", "failed"].includes(row.course.status) ? row.course.status : resolved.get(`${row.course.subject} ${row.course.number}`) ?? row.course.status,
       },
       protectedRecord: protectedCodes.has(
         `${row.course.subject} ${row.course.number}`,
@@ -123,6 +122,7 @@ export function addPlanningCourse(
 ) {
   const existing = boardCourses(plan).find(
     (r) =>
+      !["withdrawn", "dropped", "failed"].includes(r.course.status) &&
       r.course.kind === "course" &&
       r.course.subject === code.subject &&
       r.course.number === code.number,
@@ -152,6 +152,7 @@ export function addPlanningCourse(
     evidenceRole: "observation",
     credits: null,
     status: "planned",
+    repeated: boardCourses(plan).some((r) => r.course.subject === code.subject && r.course.number === code.number && ["withdrawn", "dropped", "failed"].includes(r.course.status)) || undefined,
     page: null,
   };
   const group = plan.semesters.findIndex(
@@ -186,4 +187,22 @@ export function addPlanningCourse(
       ].sort(termOrder),
     },
   });
+}
+
+export const planningCampuses = [
+  ["COL", "Columbus"], ["MNS", "Mansfield"], ["LMA", "Lima"],
+  ["MRN", "Marion"], ["NWK", "Newark"], ["WST", "Wooster"],
+] as const;
+
+export function semesterCampus(plan: Plan, term: string) {
+  return plan.schedule.campuses?.[term] ?? plan.semesters.find((s) => s.term?.replace(/ /g, "") === term && s.campus)?.campus ?? "COL";
+}
+
+export function removeEmptySemester(plan: Plan, term: string) {
+  if (boardCourses(plan).some((row) => row.term === term)) return plan;
+  const campuses = { ...plan.schedule.campuses };
+  delete campuses[term];
+  return planSchema.parse({ ...plan, schedule: { ...plan.schedule,
+    terms: plan.schedule.terms.filter((value) => value !== term), campuses },
+    semesters: plan.semesters.filter((s) => s.term?.replace(/ /g, "") !== term || s.courses.length > 0) });
 }

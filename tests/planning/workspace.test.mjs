@@ -6,6 +6,8 @@ import {
   boardCourses,
   nextSemester,
   currentSemester,
+  removeEmptySemester,
+  semesterCampus,
 } from "../../src/lib/planning/workspace.ts";
 import { placeCourse } from "../../src/lib/planning/schedule.ts";
 
@@ -63,4 +65,36 @@ test("Student Plan placement cannot hide protected audit observations", () => {
     placeCourse(plan, plan.semesters[0].courses[0].id, "Autumn2027"),
   );
   assert.throws(() => addPlanningCourse(plan, code, "Autumn2027", id));
+});
+
+
+test("empty summer removal preserves occupied terms and per-term campus through moves", () => {
+  let count = 0;
+  const id = () => "summer-" + ++count;
+  let plan = addPlanningCourse(emptyPlan(), { subject: "CSE", number: "2221" }, "Spring2027", id);
+  plan.schedule.terms.push("Summer2027");
+  plan.schedule.campuses = { Spring2027: "MNS", Summer2027: "COL" };
+  plan = removeEmptySemester(plan, "Summer2027");
+  assert.ok(!plan.schedule.terms.includes("Summer2027"));
+  assert.equal(plan.schedule.campuses.Summer2027, undefined);
+  assert.equal(semesterCampus(plan, "Spring2027"), "MNS");
+  const moved = placeCourse(plan, plan.semesters[0].courses[0].id, "Summer2027");
+  assert.equal(semesterCampus(moved, "Spring2027"), "MNS");
+  assert.equal(removeEmptySemester(moved, "Summer2027"), moved);
+});
+
+test("withdrawn attempt remains historical when planning a retake", () => {
+  let count = 0;
+  const id = () => "attempt-" + ++count;
+  const code = { subject: "MATH", number: "1131" };
+  const plan = addPlanningCourse(emptyPlan(), code, "Autumn2026", id);
+  plan.semesters[0].courses[0].status = "withdrawn";
+  assert.throws(() => placeCourse(plan, plan.semesters[0].courses[0].id, "Spring2027"));
+  const retake = addPlanningCourse(plan, code, "Spring2027", id);
+  const rows = boardCourses(retake);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].course.status, "withdrawn");
+  assert.equal(rows[0].term, "Autumn2026");
+  assert.equal(rows[1].course.status, "planned");
+  assert.equal(rows[1].course.repeated, true);
 });

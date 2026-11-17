@@ -5,7 +5,7 @@ import {
 // Optional local-only regression. Never log paths, content, errors or plan values.
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { parsePlanLines } from "../../src/lib/planning/parser.ts";
+import { parsePlanLines, detectPlanLayout } from "../../src/lib/planning/parser.ts";
 import {
   academicRoster,
   compareAcademicRoster,
@@ -101,7 +101,9 @@ for (const file of files) {
       group.pagesWithText += Number(pageLines.length > 0);
       lines.push(...pageLines);
     }
-    const { plan } = parsePlanLines(lines, type);
+    const detected = detectPlanLayout(lines);
+    if (!detected || detected !== type) throw Error("layout classification");
+    const { plan } = parsePlanLines(lines, detected);
     if (responseTree && type.includes("audit"))
       treeComparisons.push({
         type,

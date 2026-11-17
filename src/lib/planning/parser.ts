@@ -17,24 +17,15 @@ export type ParseResult = {
   plan: Plan;
   warnings: Array<"review" | "limited" | "empty" | "status" | "projects">;
 };
-/** Filenames are a transient layout hint only; they are never returned or saved. */
-export function detectPlanLayout(
-  lines: PdfLine[],
-  filename = "",
-): Plan["source"] | null {
-  if (/student[_ -]?plan/i.test(filename)) return "student-plan";
-  if (/expanded/i.test(filename)) return "expanded-audit";
-  if (/compact/i.test(filename)) return "compact-audit";
-  if (/standard/i.test(filename)) return "standard-audit";
-  const header = lines
-    .slice(0, 150)
-    .map((l) => l.text)
-    .join("\n");
-  if (/Course or Activity/i.test(header)) return "student-plan";
-  if (/Applied Version/i.test(header) && /Fulfill (?:all|any) of/i.test(header))
-    return "expanded-audit";
-  if (/AUDIT REPORT/i.test(header) && /[–—-]{2}/.test(header))
-    return "standard-audit";
+/** Layout is identified from report text and geometry. Names never determine content. */
+export function detectPlanLayout(lines: PdfLine[], _filename?: string): Plan["source"] | null {
+  const header = lines.slice(0, 400).map((line) => line.text).join("\n");
+  if (/Course or Activity|Student Plan/i.test(header)) return "student-plan";
+  if (/Applied Version/i.test(header) && /Fulfill (?:all|any)|at least \d+ (?:course|hour)/i.test(header)) return "expanded-audit";
+  if (/Milestones/i.test(header) && /Course\s+Term\s+Gr\b/i.test(header)) return "compact-audit";
+  if (/AUDIT REPORT/i.test(header)) {
+    return /[–—-]{2}|\b(?:CURRENTLY TAKING|TAKEN IN|PLANNED FOR|TRANSFERRED)\b/i.test(header) ? "standard-audit" : "compact-audit";
+  }
   return null;
 }
 /** Conservative candidate extraction, not a degree audit or graduation calculation. */
@@ -60,6 +51,7 @@ export function parsePlanLines(
     catalogs = new Set<string>();
   const modes = new Set<string>();
   let creditColumn: number | null = null;
+  const campuses: Record<string, NonNullable<Plan["semesters"][number]["campus"]>> = { Columbus: "COL", Mansfield: "MNS", Lima: "LMA", Marion: "MRN", Newark: "NWK", Wooster: "WST" };
   const conflictingCredits = new WeakSet<PlanCourse>();
   const conflictingStatuses = new WeakSet<PlanCourse>();
   for (const { text: raw, page, cells } of lines) {
@@ -123,6 +115,11 @@ export function parsePlanLines(
       creditColumn = null;
       continue;
     }
+    const campus = line.match(/^(?:Campus\s*[:·-]?\s*)?(Columbus|Mansfield|Lima|Marion|Newark|Wooster)$/i);
+    if (campus && semester.term && source === "student-plan") {
+      semester.campus = campuses[campus[1][0].toUpperCase() + campus[1].slice(1).toLowerCase()];
+      continue;
+    }
     // Audits repeat courses in requirement nodes. Keep candidates unassigned; never sum them.
     const throughIndex = line.search(/\bthrough\s+(?=[A-Z][A-Z&]+\s+\d{4})/);
     const courseText = throughIndex >= 0 ? line.slice(throughIndex) : line;
@@ -167,7 +164,10 @@ export function parsePlanLines(
     const earned =
       ["transfer", "exam"].includes(semester.creditOrigin ?? "") ||
       (/\b(?:KA|KB|KC|KD|EM)\b/.test(line) && !!observedTerm);
-    const status: PlanCourse["status"] = earned
+    const outcome = /\bwithdrawn\b|\bgrade\s*:?\s*W\b|\sW\s*$/i.test(line) ? "withdrawn"
+      : /\bdropped\b/i.test(line) ? "dropped"
+      : /\bfailed\b|\bgrade\s*:?\s*(?:F|E|EN)\b/i.test(line) ? "failed" : null;
+    const status: PlanCourse["status"] = outcome ?? (earned
       ? "completed"
       : /\bplanned\b/i.test(line) ||
           (source === "student-plan" && /\bplaceholder\b/i.test(line))
@@ -176,7 +176,7 @@ export function parsePlanLines(
           ? "in-progress"
           : /\bcompleted\b|\btaken in\b|\btransferred\b/i.test(line)
             ? "completed"
-            : "unknown";
+            : "unknown");
     const candidates = matches.length
       ? matches.map((m) => ({ subject: m[1], number: m[2] }))
       : [{ subject: null, number: null }];
@@ -213,7 +213,7 @@ export function parsePlanLines(
         kind: /\bplaceholder\b/i.test(line) ? "placeholder" : "course",
         evidenceRole:
           source === "student-plan" ||
-          earned ||
+          earned || !!outcome ||
           /\bthrough\b|\b(?:currently taking|taken in|transferred|in.progress|completed|planned|registered)\b/i.test(
             line,
           )
@@ -226,6 +226,7 @@ export function parsePlanLines(
               ? Number(credit[1])
               : null,
         status,
+        repeated: /\b(?:retake|repeat(?:ed)?)\b/i.test(line) || undefined,
         page,
       };
       const existing = semester.courses.find(
@@ -233,6 +234,8 @@ export function parsePlanLines(
           c.subject === course.subject &&
           c.number === course.number &&
           c.kind === course.kind &&
+          (c.evidenceRole !== "observation" || course.evidenceRole !== "observation" || (c.term ?? null) === (course.term ?? null)) &&
+          (![c.status, course.status].some(status => ["withdrawn", "dropped", "failed"].includes(status)) || c.status === course.status) &&
           course.subject !== null,
       );
       if (!existing) {

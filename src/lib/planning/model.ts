@@ -104,7 +104,8 @@ export const courseSchema = z
     kind: z.enum(["course", "placeholder"]),
     evidenceRole: z.enum(["observation", "option", "unknown"]).optional(),
     credits,
-    status: z.enum(["planned", "completed", "in-progress", "unknown"]),
+    status: z.enum(["planned", "completed", "in-progress", "unknown", "withdrawn", "dropped", "failed"]),
+    repeated: z.boolean().optional(),
     page: z.number().int().min(1).max(200).nullable(),
   })
   .strip();
@@ -113,6 +114,7 @@ const planObject = z
     schemaVersion: z.literal(2),
     schedule: z
       .object({
+        campuses: z.record(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/), z.enum(["COL", "MNS", "LMA", "MRN", "NWK", "WST"])).optional(),
         terms: z
           .array(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/))
           .max(24),
@@ -122,6 +124,7 @@ const planObject = z
       })
       .strip()
       .default({ terms: [], placements: [] }),
+    hiddenPrograms: z.array(z.string().regex(/^[A-Z][A-Z0-9-]{0,39}$/)).max(100).optional(),
     documents: z
       .array(
         z
@@ -170,6 +173,7 @@ const planObject = z
           .object({
             documentId: reference.optional(),
             term,
+            campus: z.enum(["COL", "MNS", "LMA", "MRN", "NWK", "WST"]).optional(),
             creditOrigin: z
               .enum(["institutional", "transfer", "exam", "unknown"])
               .optional(),

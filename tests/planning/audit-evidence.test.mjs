@@ -58,10 +58,10 @@ test("standard audit preserves explicit hierarchy and academic titles", () => {
   assert.doesNotMatch(JSON.stringify(plan), /remaining\)\)/);
 });
 
-test("layout hints never persist filenames and unknown layouts require a choice", () => {
+test("layout detection ignores filenames and rejects unrecognized contents", () => {
   assert.equal(
     detectPlanLayout([], "private_Planned-standard-all.pdf"),
-    "standard-audit",
+    null,
   );
   assert.equal(
     detectPlanLayout(lines("Course or Activity Hours Status")),

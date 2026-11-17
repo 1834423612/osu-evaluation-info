@@ -16,7 +16,9 @@ export function mergeSnapshots(current: Plan, incoming: Plan): Plan {
     catalogTerm:
       left.catalogTerm === right.catalogTerm ? left.catalogTerm : null,
     auditMode: left.auditMode === right.auditMode ? left.auditMode : "unknown",
+    hiddenPrograms: [...new Set([...(left.hiddenPrograms ?? []), ...(right.hiddenPrograms ?? [])])],
     schedule: {
+      campuses: { ...right.schedule.campuses, ...left.schedule.campuses },
       terms: [...new Set([...left.schedule.terms, ...right.schedule.terms])],
       placements: [
         ...left.schedule.placements,
