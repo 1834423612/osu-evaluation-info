@@ -292,6 +292,37 @@
   background: #fff5dc;
   border: 1px solid #e4c67f;
 }
+.root .compactToggle {
+  width: 100%;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.switchTrack {
+  display: inline-flex;
+  align-items: center;
+  width: 30px;
+  height: 18px;
+  padding: 2px;
+  background: var(--line);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.switchTrack i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  transition: transform 160ms ease;
+}
+.compactToggle[aria-checked="true"] .switchTrack {
+  background: var(--primary);
+}
+.compactToggle[aria-checked="true"] .switchTrack i {
+  transform: translateX(12px);
+}
 @media (max-width: 600px) {
   .week {
     grid-template-columns: repeat(2, minmax(0, 1fr));

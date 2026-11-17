@@ -283,16 +283,22 @@ export function SemesterSimulation({
           aria-label={t("Simulation settings", "模拟排课设置")}
         >
           <div className={styles.preferences}>
-            <label>
-              <input
-                type="checkbox"
-                checked={preferences.compact}
-                onChange={(e) =>
-                  preference({ ...preferences, compact: e.target.checked })
-                }
-              />
-              {t("Keep classes close together", "尽量连排，减少空档")}
-            </label>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={preferences.compact}
+              className={styles.compactToggle}
+              onClick={() =>
+                preference({ ...preferences, compact: !preferences.compact })
+              }
+            >
+              <span>
+                {t("Keep classes close together", "尽量连排，减少空档")}
+              </span>
+              <span className={styles.switchTrack} aria-hidden="true">
+                <i />
+              </span>
+            </button>
             <label>
               {t("Travel buffer", "课间缓冲")}
               <ChoiceSelect
@@ -520,7 +526,12 @@ export function SemesterSimulation({
                 data-conflict={output.conflicts.length > 0}
                 role="status"
               >
-                {output.conflicts.length ? (
+                {output.conflicts.length ||
+                output.unknown.length ||
+                output.incomplete.length ||
+                output.restricted.length ||
+                output.unavailable.length ||
+                loaded?.failed.length ? (
                   <AlertTriangle size={18} />
                 ) : (
                   <CheckCircle2 size={18} />
