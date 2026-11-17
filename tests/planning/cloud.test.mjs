@@ -96,10 +96,17 @@ test("planning database stores isolated backups, rejects stale edits, retries sa
       saveRequirementTemplates,
     } = await import("../../src/lib/planning/cloud.ts");
     const plan = sample();
+    plan.schedule.campuses = { Spring2027: "MNS", Autumn2027: "COL" };
     const first = await writePlanningBackup("account-a", 0, plan);
     assert.equal(first.version, 1);
     assert.equal((await readPlanningBackup("account-b")).plan, null);
     assert.equal((await writePlanningBackup("account-a", 0, plan)).version, 1);
+    const reordered = structuredClone(plan);
+    reordered.schedule.campuses = { Autumn2027: "COL", Spring2027: "MNS" };
+    assert.equal(
+      (await writePlanningBackup("account-a", 0, reordered)).version,
+      1,
+    );
     const changed = { ...plan, hiddenPrograms: ["SYNTHETIC-BA"] };
     await assert.rejects(
       writePlanningBackup("account-a", 0, changed),

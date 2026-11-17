@@ -45,14 +45,14 @@ export async function writePlanningBackup(
         "(account_id) VALUES($1) ON CONFLICT DO NOTHING",
       [accountId],
     );
-    await db.query(
-      "SELECT account_id FROM " +
+    const locked = await db.query(
+      "SELECT plan IS NOT DISTINCT FROM $2::jsonb AS same FROM " +
         table("planning_backup") +
         " WHERE account_id=$1 FOR UPDATE",
-      [accountId],
+      [accountId, plan === null ? null : JSON.stringify(plan)],
     );
     const current = await readPlanningBackup(accountId, db);
-    const same = JSON.stringify(current.plan) === JSON.stringify(plan);
+    const same = locked.rows[0].same === true;
     if (current.version !== base && !same)
       throw new UserDataError("planning_conflict", 409);
     if (!same)
