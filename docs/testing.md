@@ -8,7 +8,7 @@ Integration tests check components together, including SQL, transactions and rec
 
 ## Run the default checks
 
-The planning review regressions cover unsuccessful retakes, unrelated audit observations, repeated placeholders, JSONB key-order retries, and option-only generic templates. `tests/planning/import-profile.test.mjs` also extracts the synthetic browser PDF with PDF.js before automatic layout detection. The browser workspace script uses custom combobox options and checks the restored label after reload. Private HAR comparisons fail when course credits conflict. Analytics privacy tests cover planning pageviews, metadata allowlists, masked dialog portals, custom-select wiring and redacted share paths. Run these through `pnpm test`; browser and private-file scripts remain opt-in with their documented setup below.
+The planning review regressions cover unsuccessful retakes, unrelated audit observations, repeated placeholders, JSONB key-order retries, and option-only generic templates. `tests/planning/import-profile.test.mjs` also extracts the synthetic browser PDF with PDF.js before automatic layout detection. The browser workspace script uses custom combobox options and checks the restored label after reload. Private HAR comparisons fail when course credits conflict. Analytics privacy tests cover planning pageviews, metadata allowlists, masked dialog and private-select portals, custom-select wiring and redacted share paths. Run these through `pnpm test`; browser and private-file scripts remain opt-in with their documented setup below.
 
 Run commands from the repository root with Node.js 24+ and installed dependencies:
 
