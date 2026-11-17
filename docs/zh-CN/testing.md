@@ -523,3 +523,14 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 - `tests/planning/requirement-search.test.mjs` 验证准确 GE 属性筛选和受限课程族回退。运行 `node --test tests/planning/requirement-search.test.mjs`。离线合成数据，无网络或写入。
 
 - `tests/planning/cloud.test.mjs` 在内存 PGlite 中执行真实迁移，验证账户隔离、版本冲突、幂等重试、删除版本、通用模板脱敏和去重。运行 `node --test tests/planning/cloud.test.mjs`。仅合成数据，无网络、外部服务或持久写入。
+
+- `tests/planning/reconcile.test.mjs` 跨设备规划并发编辑、删除、请求期间修改及首次同步标识重映射。 `node --test tests/planning/reconcile.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/groups.test.mjs` 课程与学分配额、备选组、重复审计视图和重复导入。 `node --test tests/planning/groups.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/simulation.test.mjs` 固定班次、避开时段、分段学期重叠、未知日期及已满班次提示。 `node --test tests/planning/simulation.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/requirement-catalog.test.mjs` 学业类别课程筛选、分页和严格属性匹配。 `node --test tests/planning/requirement-catalog.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+
+- `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译及仅由关闭按钮退出的规划弹窗。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+

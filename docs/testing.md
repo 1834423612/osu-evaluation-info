@@ -530,3 +530,14 @@ Browser regression: open a new collection, search in both languages, filter cate
 - `tests/planning/requirement-search.test.mjs` checks exact GE attributes and bounded course-family fallback. Run `node --test tests/planning/requirement-search.test.mjs`. Offline synthetic inputs; no network or writes.
 
 - `tests/planning/cloud.test.mjs` validates account isolation, revision conflicts, idempotent retries, deletion revisions, generic template privacy and deduplication using the real migration in in-memory PGlite. Run `node --test tests/planning/cloud.test.mjs`. Synthetic data only, with no network, external service or persistent writes.
+
+- `tests/planning/reconcile.test.mjs` Concurrent plan changes, deletions, in-flight acknowledgements and identity remapping on first sync. `node --test tests/planning/reconcile.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/groups.test.mjs` Credit/course quotas, alternative groups, duplicate audit views and repeated imports. `node --test tests/planning/groups.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/simulation.test.mjs` Fixed sections, blocked times, session overlap, unknown dates and closed-section warnings. `node --test tests/planning/simulation.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/requirement-catalog.test.mjs` Eligible category filtering, pagination and strict attribute matching. `node --test tests/planning/requirement-catalog.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
+- `tests/planning/course-details.test.mjs` Shared course detail panels, translation and close-only planning dialogs. `node --test tests/planning/course-details.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+
