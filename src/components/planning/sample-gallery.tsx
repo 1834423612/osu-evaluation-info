@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -39,6 +40,7 @@ export function SampleGallery({
   const [samples, setSamples] = useState<Sample[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
+  const [college, setCollege] = useState("");
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -58,6 +60,16 @@ export function SampleGallery({
     return () => controller.abort();
   }, [attempt]);
   const selected = samples.find((sample) => sample.id === selectedId);
+  const years = selected
+    ? Array.from(new Set(selected.semesters.map((s) => s.label.split(":")[0])))
+    : [];
+  const visible = samples.filter(
+    (sample) =>
+      (!college || sample.college === college) &&
+      `${sample.program} ${sample.college} ${sample.specialization ?? ""}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
+  );
   return (
     <section className={styles.root}>
       <header className={styles.heading}>
@@ -131,40 +143,61 @@ export function SampleGallery({
               "来源总学分可能包含条件选项。添加前请核对先修要求、适用年份和 BDP 中尚未满足的要求。",
             )}
           </p>
-          <div className={styles.semesters}>
-            {selected.semesters.map((semester) => (
-              <section key={semester.label} className={styles.semester}>
-                <header>
-                  <h4>{semester.label}</h4>
-                  <span>
-                    {creditLabel(semester.credits)}{" "}
-                    {t("source credits", "原表学分")}
-                  </span>
-                </header>
-                <ul>
-                  {semester.entries.map((entry, index) => (
-                    <li key={index}>
-                      <p>{entry.evidence}</p>
-                      {entry.courses.length > 0 && (
-                        <div className={styles.choices}>
-                          {entry.courses.map((course) => (
-                            <button
-                              key={course.subject + course.number}
-                              onClick={() => addCourse(course)}
-                              aria-label={`${t("Add", "添加")} ${course.subject} ${course.number}`}
-                            >
-                              <Plus size={13} />
-                              {course.subject} {course.number}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </li>
+          {years.map((year) => (
+            <section className={styles.year} key={year}>
+              <h3>{year}</h3>
+              <div className={styles.semesters}>
+                {selected.semesters
+                  .filter((s) => s.label.split(":")[0] === year)
+                  .map((semester) => (
+                    <section key={semester.label} className={styles.semester}>
+                      <header>
+                        <h4>
+                          {semester.label
+                            .split(":")
+                            .slice(1)
+                            .join(":")
+                            .trim() || semester.label}
+                        </h4>
+                        <span>
+                          {creditLabel(semester.credits)}{" "}
+                          {t("source credits", "原表学分")}
+                        </span>
+                      </header>
+                      <ul>
+                        {semester.entries.map((entry, index) => (
+                          <li key={index}>
+                            <div className={styles.entryLine}>
+                              <p>
+                                {entry.evidence.replace(
+                                  /\s*[—–]\s*\d+(?:\.\d+)?\s+hours?$/i,
+                                  "",
+                                )}
+                              </p>
+                              <span>{creditLabel(entry.credits)}</span>
+                            </div>
+                            {entry.courses.length > 0 && (
+                              <div className={styles.choices}>
+                                {entry.courses.map((course) => (
+                                  <button
+                                    key={course.subject + course.number}
+                                    onClick={() => addCourse(course)}
+                                    aria-label={`${t("Add", "添加")} ${course.subject} ${course.number}`}
+                                  >
+                                    <Plus size={13} />
+                                    {course.subject} {course.number}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
                   ))}
-                </ul>
-              </section>
-            ))}
-          </div>
+              </div>
+            </section>
+          ))}
           <details className={styles.evidence}>
             <summary>
               {t("Source structure & version", "来源结构与版本")}
@@ -177,60 +210,69 @@ export function SampleGallery({
         </>
       ) : (
         <>
-          <label className={styles.search}>
-            <Search size={17} />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("Find a major or college", "搜索专业或学院")}
-              aria-label={t("Find a sample schedule", "查找示例课表")}
-            />
-          </label>
+          <div className={styles.filters}>
+            <label className={styles.search}>
+              <Search size={17} />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("Find a major or college", "搜索专业或学院")}
+                aria-label={t("Find a sample schedule", "查找示例课表")}
+              />
+            </label>
+            <ChoiceSelect
+              aria-label={t("College", "学院")}
+              value={college}
+              onValueChange={setCollege}
+            >
+              <option value="">{t("All colleges", "全部学院")}</option>
+              {Array.from(new Set(samples.map((s) => s.college)))
+                .sort()
+                .map((c) => (
+                  <option value={c} key={c}>
+                    {c}
+                  </option>
+                ))}
+            </ChoiceSelect>
+          </div>
+          {!visible.length && !!samples.length && (
+            <p className={styles.note}>
+              {t("No matching examples.", "没有符合条件的示例。")}
+            </p>
+          )}
           <div className={styles.samples}>
-            {samples
-              .filter((sample) =>
-                (
-                  sample.program +
-                  " " +
-                  sample.college +
-                  " " +
-                  (sample.specialization ?? "")
-                )
-                  .toLowerCase()
-                  .includes(query.trim().toLowerCase()),
-              )
-              .map((sample) => (
-                <button
-                  key={sample.id}
-                  className={styles.sample}
-                  onClick={() => setSelectedId(sample.id)}
-                >
-                  <span className={styles.college}>{sample.college}</span>
-                  <h3>{sample.program}</h3>
-                  {sample.specialization && <p>{sample.specialization}</p>}
+            {visible.map((sample) => (
+              <button
+                key={sample.id}
+                className={styles.sample}
+                onClick={() => setSelectedId(sample.id)}
+              >
+                <span className={styles.college}>{sample.college}</span>
+                <h3>{sample.program}</h3>
+                {sample.specialization && <p>{sample.specialization}</p>}
+                <p>
+                  {sample.academicYear} {sample.geSystem}{" "}
+                  {sample.scheduleScope === "major-sequence"
+                    ? t("Major sequence", "专业课顺序")
+                    : ""}
+                </p>
+                {sample.evidence.find((line) => /^Example \d/.test(line)) && (
                   <p>
-                    {sample.academicYear} {sample.geSystem}{" "}
-                    {sample.scheduleScope === "major-sequence"
-                      ? t("Major sequence", "专业课顺序")
-                      : ""}
+                    {sample.evidence.find((line) => /^Example \d/.test(line))}
                   </p>
-                  {sample.evidence.find((line) => /^Example \d/.test(line)) && (
-                    <p>
-                      {sample.evidence.find((line) => /^Example \d/.test(line))}
-                    </p>
-                  )}
-                  <footer>
-                    <span>
-                      <CalendarDays size={15} />
-                      {sample.semesters.length} {t("semesters", "个学期")}
-                    </span>
-                    <span>
-                      {t("View schedule", "查看课表")}
-                      <ArrowUpRight size={15} />
-                    </span>
-                  </footer>
-                </button>
-              ))}
+                )}
+                <footer>
+                  <span>
+                    <CalendarDays size={15} />
+                    {sample.semesters.length} {t("semesters", "个学期")}
+                  </span>
+                  <span>
+                    {t("View schedule", "查看课表")}
+                    <ArrowUpRight size={15} />
+                  </span>
+                </footer>
+              </button>
+            ))}
           </div>
           <p className={styles.note}>
             {t(
