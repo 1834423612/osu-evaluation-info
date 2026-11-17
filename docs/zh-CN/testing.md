@@ -528,7 +528,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/reconcile.test.mjs` 验证跨设备规划并发编辑、删除、请求期间修改及首次同步标识重映射，同时覆盖重复推荐生成的同学期容器与超过 100 门课程的合并。运行 `node --test tests/planning/reconcile.test.mjs`。仅使用合成输入与模拟请求，无外部服务或持久写入。
 
-- `tests/planning/groups.test.mjs` 课程与学分配额、备选组、重复审计视图和重复导入。 `node --test tests/planning/groups.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+- `tests/planning/groups.test.mjs` 课程与学分配额、备选组、已选备选课程跨学期移动或退回待安排区、重复审计视图和重复导入。 `node --test tests/planning/groups.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
 - `tests/planning/simulation.test.mjs` 固定班次、避开时段、分段学期重叠、未知日期及已满班次提示。 `node --test tests/planning/simulation.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 

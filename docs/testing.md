@@ -535,7 +535,7 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 - `tests/planning/reconcile.test.mjs` Concurrent plan changes, deletions, in-flight acknowledgements and identity remapping on first sync. It also checks repeated same-term recommendation containers and merges exceeding 100 courses. Run `node --test tests/planning/reconcile.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
-- `tests/planning/groups.test.mjs` Credit/course quotas, alternative groups, duplicate audit views and repeated imports. `node --test tests/planning/groups.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
+- `tests/planning/groups.test.mjs` Credit/course quotas, alternative groups, selected-course movement between semesters or back to the pending area, duplicate audit views and repeated imports. `node --test tests/planning/groups.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
 - `tests/planning/simulation.test.mjs` Fixed sections, blocked times, session overlap, unknown dates and closed-section warnings. `node --test tests/planning/simulation.test.mjs`. Synthetic inputs and mocked transports only. No external services or persistent writes.
 
