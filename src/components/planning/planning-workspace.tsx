@@ -1,5 +1,6 @@
 "use client";
 import { ChoiceSelect } from "@/components/ui/choice-select";
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -591,18 +592,17 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
           guard={false}
           closeOnly
         >
-          <p>
-            {backup?.programs.length ?? 0} {t("programs", "个专业")} ·{" "}
-            {backup?.semesters.reduce((n, s) => n + s.courses.length, 0) ?? 0}{" "}
-            {t("academic entries", "项学业记录")}
+          <p className={styles.backupSummary}>
+            {backup?.documents.length ?? 0} {t("reports", "份报告")} ·{" "}
+            {backup ? boardCourses(backup).length : 0}{" "}
+            {t("planning entries", "项规划课程与占位项")}
           </p>
           <div className={styles.globalActions}>
-            <button onClick={exportBackup}>
+            <Button variant="outline" onClick={exportBackup}>
               <Download size={16} />
               {t("Back up current plan", "备份当前规划")}
-            </button>
-            <button
-              className={styles.primary}
+            </Button>
+            <Button
               onClick={() => {
                 if (!backup) return;
                 update(() => backup);
@@ -612,7 +612,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               }}
             >
               {t("Restore this backup", "恢复此备份")}
-            </button>
+            </Button>
           </div>
         </WorkspaceDialog>
         <WorkspaceDialog
@@ -634,8 +634,8 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
           closeLabel={t("Cancel", "取消")}
           guard={false}
         >
-          <button
-            className={styles.danger}
+          <Button
+            variant="destructive"
             onClick={() => {
               guard.current.invalidate();
               setBusy(false);
@@ -644,7 +644,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
             }}
           >
             {t("Clear plan", "清除规划")}
-          </button>
+          </Button>
         </WorkspaceDialog>
         <AppFooter />
       </div>

@@ -74,6 +74,11 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.backupSummary {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
 .globalActions > span {
   display: flex;
   align-items: center;
