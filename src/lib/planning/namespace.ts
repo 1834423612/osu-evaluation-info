@@ -13,7 +13,8 @@ export function planningTable(
     | "source_asset"
     | "source_extraction"
     | "directory_snapshot"
-    | "template_seed",
+    | "template_seed"
+    | "catalog_release",
 ) {
   return `"${planningSchema()}"."${table}"`;
 }

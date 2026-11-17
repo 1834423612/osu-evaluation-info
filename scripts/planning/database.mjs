@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { publicCatalogSchema } from "../../src/lib/planning/public-catalog.ts";
 import { readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { Pool } from "pg";
@@ -8,9 +10,9 @@ import {
 import { curriculumSchema } from "../../src/lib/planning/curriculum.ts";
 const [action, file] = process.argv.slice(2);
 const schema = planningSchema();
-if (!["init", "import", "backup", "retention"].includes(action))
+if (!["init", "import", "publish", "backup", "retention"].includes(action))
   throw Error(
-    "Use init | import <candidate.json> | backup <file> | retention; writes require --apply",
+    "Use init | import <candidate.json> | publish | backup <file> | retention; writes require --apply",
   );
 if (!process.argv.includes("--apply")) {
   console.log(
@@ -24,17 +26,17 @@ if (!process.argv.includes("--apply")) {
   process.exit(0);
 }
 if (action === "retention") throw Error("No automatic deletion policy");
-if (!process.env.PLANNING_DATABASE_URL)
-  throw Error(
-    "PLANNING_DATABASE_URL required; course or identity database is never inferred",
-  );
+const connectionString =
+  process.env.PLANNING_DATABASE_URL || process.env.DATABASE_URL;
+if (!connectionString)
+  throw Error("Configure DATABASE_URL or PLANNING_DATABASE_URL");
 if (action === "backup") {
   if (!file || file.startsWith("--")) throw Error("Backup output required");
   const result = spawnSync(
     "pg_dump",
     ["--format=custom", "--schema=" + schema],
     {
-      env: { ...process.env, PGDATABASE: process.env.PLANNING_DATABASE_URL },
+      env: { ...process.env, PGDATABASE: connectionString },
       maxBuffer: 100 * 1024 * 1024,
     },
   );
@@ -43,7 +45,7 @@ if (action === "backup") {
   process.exit(0);
 }
 const pool = new Pool({
-  connectionString: process.env.PLANNING_DATABASE_URL,
+  connectionString,
   max: 1,
 });
 const client = await pool.connect().catch(() => {
@@ -59,6 +61,41 @@ try {
       )
     ).replaceAll("osu_planning", '"' + schema + '"');
     await client.query(sql);
+  } else if (action === "publish") {
+    const read = async (name) =>
+      JSON.parse(
+        await readFile(
+          new URL(`../../data/planning/${name}.json`, import.meta.url),
+          "utf8",
+        ),
+      );
+    const [directory, curricula, subjects, sources] = await Promise.all([
+      read("directory"),
+      read("curricula"),
+      read("subjects"),
+      read("sample-sources"),
+    ]);
+    const catalog = publicCatalogSchema.parse({
+      schemaVersion: 1,
+      directory,
+      curricula,
+      subjects: subjects.subjects,
+      sources: sources.sources,
+    });
+    const payload = JSON.stringify(catalog);
+    const id = createHash("sha256").update(payload).digest("hex");
+    await client.query(
+      `INSERT INTO ${planningTable("catalog_release")} (id,catalog) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+      [id, payload],
+    );
+    console.log(
+      JSON.stringify({
+        templates: catalog.curricula.length,
+        programs: catalog.directory.programs.length,
+        documents: catalog.directory.documents.length,
+        release: id,
+      }),
+    );
   } else {
     const candidate = curriculumSchema.parse(
       JSON.parse(await readFile(file, "utf8")),
@@ -95,8 +132,9 @@ try {
   }
   await client.query("COMMIT");
   console.log(JSON.stringify({ action, schema, committed: true }));
-} catch {
+} catch (error) {
   await client.query("ROLLBACK");
+  console.error(error.code ?? error.name);
   throw Error("Planning database action failed; transaction rolled back");
 } finally {
   client.release();

@@ -59,3 +59,65 @@ test("isolated embedded PostgreSQL enforces planning migration, references, appr
     await db.close();
   }
 });
+
+test("database catalog releases retain full templates and publish atomically", async () => {
+  const { publicCatalogSchema, readPublicCatalog } =
+    await import("../../src/lib/planning/public-catalog.ts");
+  const db = new PGlite();
+  const schema = planningSchema();
+  try {
+    const sql = (
+      await readFile(
+        new URL("../../db/schemas/planning.sql", import.meta.url),
+        "utf8",
+      )
+    ).replaceAll("osu_planning", schema);
+    await db.exec(sql);
+    await assert.rejects(readPublicCatalog(db), /not been published/);
+    const read = async (name) =>
+      JSON.parse(
+        await readFile(
+          new URL(`../../data/planning/${name}.json`, import.meta.url),
+          "utf8",
+        ),
+      );
+    const catalog = publicCatalogSchema.parse({
+      schemaVersion: 1,
+      directory: await read("directory"),
+      curricula: await read("curricula"),
+      subjects: (await read("subjects")).subjects,
+      sources: (await read("sample-sources")).sources,
+    });
+    const insert = `INSERT INTO ${schema}.catalog_release(id,catalog,published_at) VALUES($1,$2,$3) ON CONFLICT DO NOTHING`;
+    await db.query(insert, [
+      "a".repeat(64),
+      JSON.stringify(catalog),
+      "2026-01-01",
+    ]);
+    await db.query(insert, [
+      "a".repeat(64),
+      JSON.stringify(catalog),
+      "2026-01-01",
+    ]);
+    const stored = await readPublicCatalog(db);
+    assert.deepEqual(stored, catalog);
+    await db.exec("BEGIN");
+    await db.query(insert, [
+      "b".repeat(64),
+      JSON.stringify({ ...catalog, curricula: catalog.curricula.slice(0, 1) }),
+      "2026-02-01",
+    ]);
+    await db.exec("ROLLBACK");
+    assert.equal(
+      (await readPublicCatalog(db)).curricula.length,
+      catalog.curricula.length,
+    );
+    assert.equal(
+      (await db.query(`SELECT count(*)::int n FROM ${schema}.catalog_release`))
+        .rows[0].n,
+      1,
+    );
+  } finally {
+    await db.close();
+  }
+});

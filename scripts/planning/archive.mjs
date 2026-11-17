@@ -182,13 +182,11 @@ async function run() {
     db = new PGlite(resolve(values.local));
     await db.waitReady;
   } else {
-    if (!process.env.PLANNING_DATABASE_URL)
-      throw Error(
-        "PLANNING_DATABASE_URL required; no other database is inferred",
-      );
+    const connectionString = process.env.PLANNING_DATABASE_URL || process.env.DATABASE_URL;
+    if (!connectionString) throw Error("Configure DATABASE_URL or PLANNING_DATABASE_URL");
     const { Pool } = await import("pg");
     pool = new Pool({
-      connectionString: process.env.PLANNING_DATABASE_URL,
+      connectionString,
       max: 1,
     });
     db = await pool.connect();
@@ -263,6 +261,7 @@ async function run() {
         "curriculum_version",
         "directory_snapshot",
         "template_seed",
+        "catalog_release",
       ])
         result[table] = (
           await db.query(

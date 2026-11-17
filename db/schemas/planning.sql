@@ -66,3 +66,13 @@ ALTER TABLE osu_planning.curriculum_version
   ADD COLUMN IF NOT EXISTS publication_status text NOT NULL DEFAULT 'unknown' CHECK (publication_status IN ('draft','published','unknown') AND NOT (publication_status='draft' AND document_kind='requirements' AND review_status='approved')),
   ADD COLUMN IF NOT EXISTS plan_scope text NOT NULL DEFAULT 'unknown' CHECK (plan_scope IN ('single-program','multi-program','unknown')),
   ADD COLUMN IF NOT EXISTS academic_year text CHECK (academic_year IS NULL OR academic_year ~ '^20[0-9]{2}-20[0-9]{2}$');
+
+-- An immutable, atomically published public catalog includes complete templates,
+-- directory evidence, subject aliases and source metadata for reproducible reads.
+CREATE TABLE IF NOT EXISTS osu_planning.catalog_release (
+  id text PRIMARY KEY CHECK (id ~ '^[a-f0-9]{64}$'),
+  published_at timestamptz NOT NULL DEFAULT now(),
+  catalog jsonb NOT NULL CHECK (jsonb_typeof(catalog) = 'object')
+);
+CREATE INDEX IF NOT EXISTS catalog_release_published_idx
+  ON osu_planning.catalog_release (published_at DESC, id);
