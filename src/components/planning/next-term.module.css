@@ -232,6 +232,34 @@
 .root[data-compact="true"] .methods p {
   font-size: 11px;
 }
+.preferences {
+  margin: 12px 0 18px;
+}
+.preferences summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.courseLink {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.courseLink:hover {
+  color: var(--accent-foreground);
+  text-decoration: underline;
+}
+.courseTitle {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
 @media (max-width: 1000px) {
   .controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
