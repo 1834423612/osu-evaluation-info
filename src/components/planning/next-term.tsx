@@ -22,7 +22,11 @@ import { readRequirementCourses } from "@/lib/planning/requirement-catalog";
 import { requirementSearch } from "@/lib/planning/requirement-search";
 import { requirementProgress } from "@/lib/planning/snapshots";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
-import { nextSemester, currentSemester } from "@/lib/planning/workspace";
+import {
+  boardCourses,
+  nextSemester,
+  currentSemester,
+} from "@/lib/planning/workspace";
 
 export function NextTerm({
   plan,
@@ -174,12 +178,24 @@ export function NextTerm({
         catalogState.scope === catalogScope ? catalogState.credits : {},
     });
   } catch {}
-  const candidateCodes =
-    result?.candidates
-      .slice(0, 60)
-      .map((c) => c.subject + " " + c.number)
-      .sort()
-      .join(",") ?? "";
+  const candidateCodes = [
+    ...new Set([
+      ...(result?.candidates
+        .slice(0, 60)
+        .map((c) => c.subject + " " + c.number) ?? []),
+      ...boardCourses(plan)
+        .filter(
+          (row) =>
+            row.term === targetTerm &&
+            row.course.kind === "course" &&
+            row.course.subject &&
+            row.course.number,
+        )
+        .map((row) => row.course.subject + " " + row.course.number),
+    ]),
+  ]
+    .sort()
+    .join(",");
   useEffect(() => {
     if (!candidateCodes) return;
     const controller = new AbortController();
