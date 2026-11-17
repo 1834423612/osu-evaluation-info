@@ -511,7 +511,7 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 - `tests/planning/archive.integration.test.mjs`: Real PGlite raw-byte archive, hash verification, immutable parser revisions, Unicode compatibility, version collision rejection, rollback and backup restoration. `node --test tests/planning/archive.integration.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
 
-- `tests/planning/recommendation.test.mjs`: Workload/prefix caps, completed-course exclusion, rating shrinkage/request allowlist, pending public samples and source-preserving draft application. `node --test tests/planning/recommendation.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
+- `tests/planning/recommendation.test.mjs`: Workload/prefix caps, completed-course exclusion, rating shrinkage/request allowlist, pending public samples, source-preserving draft application, alternative selection on acceptance and mutually exclusive course bundles. `node --test tests/planning/recommendation.test.mjs`. Synthetic/public fixtures only; no external services, network or persistent writes (PGlite is in memory).
 
 - `tests/planning/test_inventory.py`: Official college index, title/version metadata and source-discovery boundaries. `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. Offline synthetic fixtures; no services or external writes.
 
