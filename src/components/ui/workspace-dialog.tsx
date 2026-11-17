@@ -102,7 +102,7 @@ export function WorkspaceDialog({
       {children}
     </div>
   );
-  if (mobile)
+  if (mobile && !closeOnly)
     return (
       <Drawer.Root
         open={open}
