@@ -11,6 +11,67 @@ import {
 } from "../../src/lib/planning/workspace.ts";
 import { placeCourse } from "../../src/lib/planning/schedule.ts";
 
+test("audit-only completed courses survive alongside unrelated planned courses", () => {
+  let count = 0;
+  const plan = addPlanningCourse(
+    emptyPlan(),
+    { subject: "CSE", number: "2221" },
+    "Spring2027",
+    () => "row-" + ++count,
+  );
+  plan.documents.push({
+    id: "audit",
+    source: "expanded-audit",
+    auditMode: "official",
+    pdfOrigin: "export",
+    catalogTerm: null,
+  });
+  plan.semesters.push({
+    documentId: "audit",
+    term: null,
+    reportedCredits: null,
+    courses: [
+      {
+        ...plan.semesters[0].courses[0],
+        id: "completed",
+        documentId: "audit",
+        subject: "MATH",
+        number: "1151",
+        status: "completed",
+      },
+    ],
+  });
+  assert.equal(boardCourses(plan).length, 2);
+  assert.equal(
+    boardCourses(plan).find((r) => r.course.id === "completed").protectedRecord,
+    true,
+  );
+});
+
+test("same-title requirement placeholders preserve every slot including legacy rows", () => {
+  let count = 0;
+  const plan = addPlanningCourse(
+    emptyPlan(),
+    { subject: "CSE", number: "2221" },
+    "Spring2027",
+    () => "slot-" + ++count,
+  );
+  const base = {
+    ...plan.semesters[0].courses[0],
+    subject: null,
+    number: null,
+    kind: "placeholder",
+    title: "Elective",
+  };
+  plan.semesters[0].courses = [
+    { ...base, id: "a" },
+    { ...base, id: "b" },
+    { ...base, id: undefined },
+    { ...base, id: undefined, title: undefined },
+  ];
+  assert.equal(boardCourses(plan).length, 4);
+});
+
 test("same-page add reuses course identities and preserves original semester evidence", () => {
   let count = 0;
   const id = () => "manual-" + ++count;
@@ -67,18 +128,26 @@ test("Student Plan placement cannot hide protected audit observations", () => {
   assert.throws(() => addPlanningCourse(plan, code, "Autumn2027", id));
 });
 
-
 test("empty summer removal preserves occupied terms and per-term campus through moves", () => {
   let count = 0;
   const id = () => "summer-" + ++count;
-  let plan = addPlanningCourse(emptyPlan(), { subject: "CSE", number: "2221" }, "Spring2027", id);
+  let plan = addPlanningCourse(
+    emptyPlan(),
+    { subject: "CSE", number: "2221" },
+    "Spring2027",
+    id,
+  );
   plan.schedule.terms.push("Summer2027");
   plan.schedule.campuses = { Spring2027: "MNS", Summer2027: "COL" };
   plan = removeEmptySemester(plan, "Summer2027");
   assert.ok(!plan.schedule.terms.includes("Summer2027"));
   assert.equal(plan.schedule.campuses.Summer2027, undefined);
   assert.equal(semesterCampus(plan, "Spring2027"), "MNS");
-  const moved = placeCourse(plan, plan.semesters[0].courses[0].id, "Summer2027");
+  const moved = placeCourse(
+    plan,
+    plan.semesters[0].courses[0].id,
+    "Summer2027",
+  );
   assert.equal(semesterCampus(moved, "Spring2027"), "MNS");
   assert.equal(removeEmptySemester(moved, "Summer2027"), moved);
 });
@@ -89,7 +158,9 @@ test("withdrawn attempt remains historical when planning a retake", () => {
   const code = { subject: "MATH", number: "1131" };
   const plan = addPlanningCourse(emptyPlan(), code, "Autumn2026", id);
   plan.semesters[0].courses[0].status = "withdrawn";
-  assert.throws(() => placeCourse(plan, plan.semesters[0].courses[0].id, "Spring2027"));
+  assert.throws(() =>
+    placeCourse(plan, plan.semesters[0].courses[0].id, "Spring2027"),
+  );
   const retake = addPlanningCourse(plan, code, "Spring2027", id);
   const rows = boardCourses(retake);
   assert.equal(rows.length, 2);

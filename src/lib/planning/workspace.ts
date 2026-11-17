@@ -118,14 +118,12 @@ export function boardCourses(plan: Plan) {
         r.source?.source === "manual" ||
         ((!placedCodes.has(`${r.course.subject} ${r.course.number}`) ||
           ["withdrawn", "dropped", "failed"].includes(r.course.status)) &&
-          r.course.kind === "course" &&
-          (r.term !== "unassigned" || !placedCodes.size)),
+          r.course.kind === "course"),
     )
     .filter((r) => {
-      const key =
-        r.course.kind === "placeholder"
-          ? `${r.course.title}|${r.term}`
-          : `${r.course.subject} ${r.course.number}${["withdrawn", "dropped", "failed"].includes(r.course.status) ? "|" + r.term + "|" + r.course.status : ""}`;
+      // Each placeholder is a separate requirement slot, including legacy rows without IDs.
+      if (r.course.kind === "placeholder") return true;
+      const key = `${r.course.subject} ${r.course.number}${["withdrawn", "dropped", "failed"].includes(r.course.status) ? "|" + r.term + "|" + r.course.status : ""}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
