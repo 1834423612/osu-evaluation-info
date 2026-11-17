@@ -2423,6 +2423,21 @@ html[data-debug-layout] [data-debug-tools] * {
 .course-facts-share > :first-child {
   margin-top: 0;
 }
+.catalog-campus-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 15px;
+  margin: 12px 0;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+.catalog-campus-context > svg { color: var(--primary); }
+.catalog-campus-context label { font-size: 13px; font-weight: 650; }
+.catalog-campus-context [role="combobox"] { width: auto; min-width: 180px; }
+.catalog-campus-context small { color: var(--muted); font-size: 12px; }
 @media (min-width: 1500px) {
   .header-inner {
     padding: 0 40px;
