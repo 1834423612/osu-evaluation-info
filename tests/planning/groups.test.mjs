@@ -13,6 +13,7 @@ import {
   boardCourses,
 } from "../../src/lib/planning/workspace.ts";
 import { replaceImportedReports } from "../../src/lib/planning/reimport.ts";
+import { placeCourse, scheduledTerm } from "../../src/lib/planning/schedule.ts";
 let ordinal = 0;
 const id = () => "id-" + ++ordinal;
 function fixture() {
@@ -108,6 +109,19 @@ test("alternatives contribute only their selected course to the board and simula
   assert.equal(boardCourses(p)[0].course.subject, "MUSIC");
   p = moveCourseGroup(p, p.schedule.groups[0].id, "Autumn2027");
   assert.equal(boardCourses(p)[0].term, "Autumn2027");
+  const selected = p.schedule.groups[0].selectedCourseId;
+  const moved = placeCourse(p, selected, "Spring2028");
+  assert.equal(moved.schedule.groups[0].term, "Spring2028");
+  assert.equal(boardCourses(moved)[0].term, "Spring2028");
+  assert.equal(scheduledTerm(moved, selected, null), "Spring2028");
+  assert.equal(p.schedule.groups[0].term, "Autumn2027");
+  const unassigned = placeCourse(moved, selected, null);
+  assert.equal(unassigned.schedule.groups[0].term, null);
+  assert.equal(boardCourses(unassigned)[0].term, "unassigned");
+  assert.equal(scheduledTerm(unassigned, selected, "Spring2027"), null);
+  unassigned.schedule.groups[0].selectedCourseId =
+    unassigned.schedule.groups[0].courseIds[0];
+  assert.equal(boardCourses(unassigned)[0].term, "unassigned");
   assert.ok(planSchema.safeParse(p).success);
 });
 test("repeated imports update requirements without multiplying reports or losing local choices", () => {

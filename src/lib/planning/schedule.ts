@@ -63,6 +63,11 @@ export function placeCourse(
         ...plan.schedule.placements.filter((p) => p.courseId !== courseId),
         { courseId, term },
       ],
+      groups: plan.schedule.groups?.map((group) =>
+        group.kind === "alternatives" && group.selectedCourseId === courseId
+          ? { ...group, term }
+          : group,
+      ),
     },
   });
 }
