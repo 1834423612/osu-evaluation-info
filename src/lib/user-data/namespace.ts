@@ -21,7 +21,9 @@ export function domainSchema(
     ? "analytics"
     : /^diagnostic_/.test(table)
       ? "diagnostics"
-      : "identity";
+      : table === "requirement_template"
+        ? "planning"
+        : "identity";
   return "osu_" + domain + (env.NODE_ENV === "production" ? "" : "_dev");
 }
 export function domainSchemas() {
@@ -34,6 +36,7 @@ export function domainSchemas() {
         "transfer",
         "product_event",
         "diagnostic_report",
+        "requirement_template",
       ].map((name) => domainSchema(name)),
     ),
   ];
@@ -41,7 +44,7 @@ export function domainSchemas() {
 export function domainSQL(sql: string) {
   return sql
     .replace(
-      /osu_(?:identity|analytics|diagnostics)\.(?:"([a-z_]+)"|([a-z_]+))/g,
+      /osu_(?:identity|analytics|diagnostics|planning)\.(?:"([a-z_]+)"|([a-z_]+))/g,
       (_, quoted: string, plain: string) => userDataTable(quoted ?? plain),
     )
     .replace(

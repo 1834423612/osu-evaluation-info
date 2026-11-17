@@ -43,6 +43,7 @@ import { PlanningCatalogProvider } from "./course-catalog";
 
 import { CourseInspector } from "./course-inspector";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
+import { CloudBackup } from "./cloud-backup";
 import { ImportGuide } from "./import-guide";
 import styles from "./planning.module.css";
 const SemesterBoard = dynamic(() =>
@@ -525,6 +526,7 @@ export function PlanningWorkspace() {
                   </p>
                 </div>
               </div>
+              <CloudBackup plan={plan} locale={locale} update={update} />
               <div className={styles.reportList}>
                 {plan.documents.map((document, i) => (
                   <article key={document.id}>
