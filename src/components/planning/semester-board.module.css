@@ -107,6 +107,9 @@
   font-size: 13px;
   color: var(--ink);
 }
+.root .filter input:focus-visible {
+  outline: 0;
+}
 .root .mobileTools {
   display: none;
 }
@@ -550,6 +553,9 @@
   color: var(--ink);
   font-size: 13px;
   padding: 6px 0;
+}
+.assistantBody .searchPanel form input:focus-visible {
+  outline: 0;
 }
 .searchPanel form button {
   background: var(--subtle-surface);
