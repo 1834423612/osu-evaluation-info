@@ -1,7 +1,7 @@
 import { planSchema, type Plan } from "./model.ts";
 import { requirementCoverage } from "./groups.ts";
 import { requirementProgress } from "./snapshots.ts";
-import { boardCourses } from "./workspace.ts";
+import { addPlanningCourse, boardCourses } from "./workspace.ts";
 import { programRequirements, requirementCodes } from "./programs.ts";
 import { termOrder } from "./schedule.ts";
 
@@ -258,6 +258,19 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   const covered = new Set(
     candidates.filter((c) => existing.has(c.key)).flatMap((c) => c.ruleIds),
   );
+  const codesById = new Map<string | undefined, string>(
+    plan.semesters.flatMap((semester) =>
+      semester.courses.map(
+        (course) => [course.id, `${course.subject} ${course.number}`] as const,
+      ),
+    ),
+  );
+  const alternativeCodes = (plan.schedule.groups ?? [])
+    .filter((group) => group.kind === "alternatives")
+    .map(
+      (group) =>
+        new Set(group.courseIds.map((courseId) => codesById.get(courseId))),
+    );
   let beam: State[] = [
     {
       items: [],
@@ -283,7 +296,18 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
     )
     .slice(0, 60)) {
     const next = [...beam];
+    const exclusiveGroups = alternativeCodes.filter((codes) =>
+      codes.has(candidate.key),
+    );
     for (const state of beam) {
+      if (
+        exclusiveGroups.some(
+          (codes) =>
+            state.items.some((item) => codes.has(item.key)) ||
+            [...existing.keys()].some((key) => codes.has(key)),
+        )
+      )
+        continue;
       const credits = state.credits + candidate.credits!,
         quant = state.quant + Number(quantitative.has(candidate.subject));
       if (
@@ -353,7 +377,7 @@ export function applyRecommendationBundle(
 ): Plan {
   if (!/^(Autumn|Spring|Summer)20\d{2}$/.test(term) || items.length > 24)
     throw Error("Invalid draft bundle");
-  const next = structuredClone(plan);
+  let next = structuredClone(plan);
   const document = next.documents.find((d) => d.source === "manual") ?? {
     id: id(),
     source: "manual" as const,
@@ -383,10 +407,12 @@ export function applyRecommendationBundle(
         (x) => x.status === "planned" && x.documentId === document.id,
       ) ?? existing.find((x) => x.status === "planned" && x.id);
     if (manual?.id) {
-      next.schedule.placements = next.schedule.placements.filter(
-        (p) => p.courseId !== manual.id,
+      next = addPlanningCourse(
+        next,
+        { subject: c.subject, number: c.number },
+        term,
+        id,
       );
-      next.schedule.placements.push({ courseId: manual.id, term });
     } else
       courses.push({
         id: id(),

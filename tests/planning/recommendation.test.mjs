@@ -11,6 +11,8 @@ import {
   sampleReferenceReader,
 } from "../../src/lib/planning/public-samples.ts";
 import { readFile } from "node:fs/promises";
+import { createAlternativeGroup } from "../../src/lib/planning/groups.ts";
+import { boardCourses } from "../../src/lib/planning/workspace.ts";
 const options = {
   programId: "p",
   currentTerm: "Autumn2026",
@@ -285,6 +287,75 @@ test("recommendation placement reuses imported planned courses", () => {
   assert.equal(next.semesters.flatMap((s) => s.courses).length, 4);
   assert.deepEqual(next.semesters, plan.semesters);
   assert.equal(next.schedule.placements.length, result.bundle.length);
+});
+
+test("accepting an existing alternative selects and moves it into the recommendation term", () => {
+  for (const selection of ["none", "same", "other"]) {
+    let ordinal = 0;
+    const nextId = () => `alternative-${++ordinal}`;
+    const original = fixture();
+    const candidate = original.semesters[0].courses.find(
+      (course) => course.id !== "m" && course.status === "planned",
+    );
+    assert.ok(candidate);
+    const plan = createAlternativeGroup(
+      original,
+      ["m", candidate.id],
+      "Autumn2027",
+      nextId,
+    );
+    plan.schedule.groups[0].selectedCourseId =
+      selection === "other" ? candidate.id : selection === "same" ? "m" : null;
+    const next = applyRecommendationBundle(
+      plan,
+      [{ subject: "MATH", number: "1151", credits: 5 }],
+      "Spring2028",
+      nextId,
+    );
+    assert.equal(next.schedule.groups[0].term, "Spring2028");
+    assert.equal(next.schedule.groups[0].selectedCourseId, "m");
+    assert.equal(
+      boardCourses(next).find((row) => row.course.id === "m").term,
+      "Spring2028",
+    );
+    assert.equal(
+      boardCourses(next).some((row) => row.course.id === candidate.id),
+      false,
+    );
+    assert.equal(
+      next.schedule.placements.find((row) => row.courseId === "m").term,
+      "Spring2028",
+    );
+    assert.deepEqual(next.semesters, plan.semesters);
+    assert.equal(plan.schedule.groups[0].term, "Autumn2027");
+  }
+});
+
+test("recommendation bundles select at most one course per alternative group", () => {
+  let ordinal = 0;
+  const plan = createAlternativeGroup(
+    fixture(),
+    ["m", "c"],
+    "Autumn2027",
+    () => `group-${++ordinal}`,
+  );
+  const choices = plan.schedule.groups[0].courseIds;
+  const codes = new Set(
+    plan.semesters
+      .flatMap((s) => s.courses)
+      .filter((c) => choices.includes(c.id))
+      .map((c) => `${c.subject} ${c.number}`),
+  );
+  const settings = { ...options, maxCredits: 18, maxQuantitative: 5 };
+  const recommendation = recommendCourses(plan, settings);
+  assert.equal(recommendation.bundle.filter((c) => codes.has(c.key)).length, 1);
+  plan.schedule.groups[0].selectedCourseId = "m";
+  plan.schedule.groups[0].term = options.targetTerm;
+  assert.equal(
+    recommendCourses(plan, settings).bundle.filter((c) => codes.has(c.key))
+      .length,
+    0,
+  );
 });
 
 test("conditional exclusions do not become sample course suggestions", () => {
