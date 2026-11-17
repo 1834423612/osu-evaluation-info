@@ -303,9 +303,9 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 | [tests/user-data/workspace.test.mjs](../../tests/user-data/workspace.test.mjs)                                 | Unit        | 本机快照写入、逐字段改动、修订确认和损坏数据处理                                                                                                                                         |
 | [tests/user-data/local.test.mjs](../../tests/user-data/local.test.mjs)                                         | Unit        | 导入、移除、撤销保留完整快照和中途改动                                                                                                                                                   |
 | [tests/user-data/exchange.test.mjs](../../tests/user-data/exchange.test.mjs)                                   | Unit        | 四类交换格式验证、上限、公开信息筛减和导入身份                                                                                                                                           |
-| [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                                           | Unit        | 固定来源验证、流式请求上限、开发环境命名空间隔离                                                                                                                                         |
+| [tests/user-data/auth.test.mjs](../../tests/user-data/auth.test.mjs)                                           | Unit        | 固定来源验证、Tailscale 网段边界与同源校验、流式请求上限、开发环境命名空间隔离                                                                                                                                         |
 | [tests/user-data/auth-errors.test.mjs](../../tests/user-data/auth-errors.test.mjs)                             | 单元        | 区分密码、验证码、来源、节流和通行密钥错误；不访问服务或写入数据                                                                                                                         |
-| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成        | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、条款确认、八位密码、模式内外键、学校验证码限次和一次性使用、回环来源与真实签名通行密钥的邮箱匹配；模拟邮件，结束后清理 |
+| [tests/user-data/auth-boundary.integration.test.mjs](../../tests/user-data/auth-boundary.integration.test.mjs) | 集成        | `USER_DATA_INTEGRATION=1`；PostgreSQL 临时模式；真实认证路由防护、条款确认、八位密码、模式内外键、学校验证码限次和一次性使用、回环及 Tailscale 登录、回调、会话和退出，以及真实签名通行密钥的邮箱匹配；模拟邮件，结束后清理 |
 | [tests/user-data/auth.integration.test.mjs](../../tests/user-data/auth.integration.test.mjs)                   | Integration | 真实验证码、密码、密钥、会话和恢复协议；注入邮件投递，使用临时认证表                                                                                                                     |
 | [tests/user-data/sharing.integration.test.mjs](../../tests/user-data/sharing.integration.test.mjs)             | Integration | 真实 SQL 验证凭据、过期、短码、归属、计数、并发上限和重试                                                                                                                                |
 | [tests/user-data/sharing.browser.mjs](../../tests/user-data/sharing.browser.mjs)                               | Browser     | 创建并撤销测试分享；部分转存、原地详情、重试和手机管理                                                                                                                                   |
@@ -532,5 +532,5 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/requirement-catalog.test.mjs` 学业类别课程筛选、分页和严格属性匹配。 `node --test tests/planning/requirement-catalog.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
-- `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译及仅由关闭按钮退出的规划弹窗。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+- `tests/planning/course-details.test.mjs` 共用课程详情面板、翻译及仅由关闭按钮退出的规划弹窗，跨响应式断点保留子组件状态。 `node --test tests/planning/course-details.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
