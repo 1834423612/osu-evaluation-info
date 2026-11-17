@@ -353,16 +353,29 @@
   border-radius: 10px;
   background: var(--surface);
 }
+.contextBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: end;
+}
+.contextBar [data-choice-select] {
+  min-height: 30px;
+  font-size: 11px;
+  padding: 4px 7px;
+  width: 100%;
+}
 .target {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   font-size: 11px;
   color: var(--muted);
 }
 .catalogOptions {
-  margin: 8px 0 14px;
+  margin: 0;
 }
 .catalogOptions [data-choice-select] {
   font-size: 11px;

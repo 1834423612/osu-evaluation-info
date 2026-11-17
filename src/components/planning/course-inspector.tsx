@@ -1,11 +1,5 @@
 "use client";
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  Plus,
-  RefreshCw,
-  GitBranch,
-} from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, GitBranch } from "lucide-react";
 import subjectVocabulary from "../../../data/planning/subjects.json";
 import type { Plan } from "@/lib/planning/model";
 import {
@@ -14,6 +8,7 @@ import {
   creditLabel,
   planningCredits,
 } from "@/lib/planning/course-catalog";
+import { CourseDetailTabs } from "./course-detail-tabs";
 import { CourseStatus } from "./course-status";
 import { boardCourses } from "@/lib/planning/workspace";
 import { usePlanningCourse } from "./course-catalog";
@@ -188,17 +183,10 @@ export function CourseInspector({
           <Plus size={16} />
           {t("Add to selected semester", "加入所选学期")}
         </button>
-        <a
-          href={
-            "/?" + new URLSearchParams({ q: `${code.subject} ${code.number}` })
-          }
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("Sections & evaluations", "班次与评价")}
-          <ArrowUpRight size={14} />
-        </a>
       </div>
+      {course && (
+        <CourseDetailTabs key={course.id} course={course} locale={locale} />
+      )}
     </div>
   );
 }

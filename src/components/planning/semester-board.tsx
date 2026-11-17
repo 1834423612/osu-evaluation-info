@@ -401,25 +401,27 @@ export function SemesterBoard({
   }
   const assistant = (
     <div className={styles.assistantBody}>
-      <label className={styles.target}>
-        {t("Add courses to", "添加课程到")}
-        <ChoiceSelect
-          value={targetTerm}
-          onValueChange={(value) => setTargetTerm(value)}
-        >
-          {terms.map((term) => (
-            <option key={term} value={term}>
-              {semesterLabel(term, locale)}
-            </option>
-          ))}
-        </ChoiceSelect>
-      </label>
-      <div className={styles.catalogOptions}>
-        <CatalogTermSelect
-          value={context.term}
-          onChange={onCatalogTermChange}
-          locale={locale}
-        />
+      <div className={styles.contextBar}>
+        <label className={styles.target}>
+          {t("Add courses to", "添加课程到")}
+          <ChoiceSelect
+            value={targetTerm}
+            onValueChange={(value) => setTargetTerm(value)}
+          >
+            {terms.map((term) => (
+              <option key={term} value={term}>
+                {semesterLabel(term, locale)}
+              </option>
+            ))}
+          </ChoiceSelect>
+        </label>
+        <div className={styles.catalogOptions}>
+          <CatalogTermSelect
+            value={context.term}
+            onChange={onCatalogTermChange}
+            locale={locale}
+          />
+        </div>
       </div>
       {selected ? (
         <CourseInspector
@@ -934,6 +936,7 @@ export function SemesterBoard({
             </div>
             {narrow ? (
               <WorkspaceDialog
+                closeOnly
                 open={drawer}
                 onOpenChange={setDrawer}
                 title={t("Course planning", "选课与要求")}

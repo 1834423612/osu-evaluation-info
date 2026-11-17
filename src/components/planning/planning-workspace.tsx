@@ -474,6 +474,7 @@ export function PlanningWorkspace() {
             />
           )}
           <WorkspaceDialog
+            closeOnly
             open={!!inspected}
             onOpenChange={(open) => {
               if (!open) setInspected(null);
