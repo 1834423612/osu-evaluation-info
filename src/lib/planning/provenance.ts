@@ -75,7 +75,12 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       .trim()
       .replace(/\s+/g, " ")
       .replace(/^\d{1,2}\s+(?=[A-Za-z])/, "");
-    if (/@|student\s*(?:name|id)|advisor|https?:/i.test(line)) continue;
+    if (
+      /@|(?:[a-z0-9-]+\.)+(?:edu|com|org)\/|student\s*(?:name|id)|advisor|https?:/i.test(
+        line,
+      )
+    )
+      continue;
     const heading = line.match(
       /^Program\s*:\s*([A-Z][A-Z0-9-]{0,39})(?:\s*\((declared|undeclared)\))?$/,
     );
@@ -83,6 +88,17 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
       program = makeProgram(heading[1]);
       if (heading[2])
         program.declaration = heading[2] as "declared" | "undeclared";
+      continue;
+    }
+    if (
+      (plan.source === "standard-audit" || plan.source === "compact-audit") &&
+      cells?.some((c) => (c.height ?? 0) >= 12) &&
+      /^(?:General World Language Requirement|Civic Literacy|Additional GE|Non-ASC|Courses Listed|General Graduation Requirements)/.test(
+        line,
+      )
+    ) {
+      program = makeProgram(null, true);
+      program.title = academicTitle(line);
       continue;
     }
     const academicCode = line.match(
@@ -96,7 +112,9 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         ? "CIS"
         : /^Information Systems(?:\s*-\s*BSBUSADM\s*-?)?$/i.test(line)
           ? "IS"
-          : /^(?:New |Legacy )?General Education\b/i.test(line)
+          : /^(?:New |Legacy )?General Education Requirements\s*(?:-.*)?$/.test(
+                line,
+              )
             ? "GE"
             : null);
     if (knownCode) {
@@ -226,7 +244,7 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     if (
       standard &&
       (dashes ||
-        /\(Courses:\s*\(/i.test(line) ||
+        /\((?:Courses|Milestones):\s*\(/i.test(line) ||
         /^(?:[A-Z][A-Z&]+ \d{4}|.+\(through )/.test(line)) &&
       !/^Courses:/i.test(line)
     ) {
@@ -250,16 +268,18 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
         title: academicTitle(
           line
             .replace(/^[–—-]+\s*/, "")
-            .split(/\s*\((?:through|Courses:|\d+(?:\.\d+)?\s*hours?)/i)[0]
+            .split(
+              /\s*\((?:through|Courses:|Milestones:|\d+(?:\.\d+)?\s*hours?)/i,
+            )[0]
             .replace(/\s+(?:Autumn|Spring|Summer)\s*['’]?\d{2,4}.*$/, ""),
         ),
-        reportedStatus: /\b\d+ remaining\b|\bremaining$/.test(line)
+        reportedStatus: /\b[1-9]\d* remaining\b|\bremaining$/.test(line)
           ? "remaining"
-          : /\bplanned\b|through placeholder/i.test(line)
+          : /\b[1-9]\d* planned\b|through placeholder|PLANNED FOR/i.test(line)
             ? "planned"
-            : /\bin progress\b/i.test(line)
+            : /\b[1-9]\d* in progress\b|\bcurrently taking\b/i.test(line)
               ? "in-progress"
-              : /\b\d+ taken\b|\b(?:KA|EM)$/.test(line)
+              : /\b[1-9]\d* taken\b|\b(?:KA|EM)$/.test(line)
                 ? "completed"
                 : undefined,
         category: categoryFor(line),
@@ -283,8 +303,8 @@ export function addProvenance(plan: Plan, lines: PdfLine[]): Plan {
     ) {
       previousAcademicLine = line;
     }
-    // Free-form prose is never stored. Only explicit numeric clauses and logical
-    // group markers become candidates, and every inferred hierarchy needs review.
+    // Text-only fallback retains numeric clauses with unresolved hierarchy.
+    // Geometry-backed report headings above establish hierarchy automatically.
     if (
       plan.source === "expanded-audit" &&
       !headingFonts.size &&

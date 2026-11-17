@@ -8,7 +8,7 @@ export function academicTitle(value: string): string | undefined {
   if (
     !title ||
     title.length > 400 ||
-    /@|https?:|\b\d{7,}\b|student\s*(?:id|name)|advisor|prepared\s+(?:by|for)|printed\s+by/i.test(
+    /@|https?:|(?:[a-z0-9-]+\.)+(?:edu|com|org)\/|\b\d{7,}\b|student\s*(?:id|name)|advisor|prepared\s+(?:by|for)|printed\s+by/i.test(
       title,
     )
   )

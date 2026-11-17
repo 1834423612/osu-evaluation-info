@@ -119,3 +119,42 @@ test("academic labels cannot retain identity headers or URL credentials", () => 
     /Private Person|example.test|private-token/,
   );
 });
+
+test("multiline program labels discard the advisor column and retain all program names", () => {
+  const plan = parsePlanLines(
+    lines(
+      "Programs: Synthetic Science - BA - Advisor: Private Person",
+      "SYNTHETIC-BA",
+      "Science & Exploration -",
+      "UGRD - Pre Major - SCIENCE-PRE",
+      "Autumn 2028",
+      "CSE 2998 Synthetic course (0010) 3 Planned",
+    ),
+    "student-plan",
+  ).plan;
+  assert.equal(plan.programs.length, 2);
+  assert.ok(
+    plan.programs.some(
+      (p) => p.title === "Synthetic Science - BA - SYNTHETIC-BA",
+    ),
+  );
+  assert.ok(
+    plan.programs.some((p) => p.title.startsWith("Science & Exploration")),
+  );
+  assert.doesNotMatch(serializePlan(plan), /Advisor|Private Person/);
+});
+test("zero remaining does not override earned status and GE body text cannot rename its program", () => {
+  const plan = parsePlanLines(
+    lines(
+      "New General Education Requirements - AU2028",
+      "Writing (Courses: (0 remaining, 1 taken))",
+      "general education requirements can be found online",
+    ),
+    "standard-audit",
+  ).plan;
+  assert.equal(plan.requirements[0].reportedStatus, "completed");
+  assert.equal(
+    plan.programs[0].title,
+    "New General Education Requirements - AU2028",
+  );
+});

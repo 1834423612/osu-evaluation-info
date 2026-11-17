@@ -222,3 +222,65 @@ export function compareAcademicEvidence(plan, evidence) {
     }
   return result;
 }
+/** Compare only academic requirement titles/edges, never HAR identity fields. */
+export function academicRequirementTree(responses) {
+  const titles = new Set(),
+    edges = new Set();
+  const normalize = (s) =>
+    typeof s === "string"
+      ? s
+          .toLowerCase()
+          .replace(/&/g, "and")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim()
+      : "";
+  const tree = (node, parent) => {
+    if (!node || typeof node !== "object") return;
+    const title = normalize(node.screen_name);
+    if (title) {
+      titles.add(title);
+      if (parent) edges.add(parent + "\n" + title);
+    }
+    const choices =
+      node.choices && typeof node.choices === "object"
+        ? Object.values(node.choices)
+        : [];
+    choices.forEach((child) => tree(child, title || parent));
+  };
+  const visit = (value) => {
+    if (!value || typeof value !== "object") return;
+    if (value.audit_reqs && typeof value.audit_reqs === "object")
+      for (const requirement of Object.values(value.audit_reqs))
+        for (const root of Object.values(requirement?.trees ?? {}))
+          tree(root, null);
+    for (const child of Object.values(value))
+      if (child && typeof child === "object") visit(child);
+  };
+  responses.forEach(visit);
+  return { titles, edges, normalize };
+}
+export function compareRequirementTree(plan, tree) {
+  const actual = new Map(
+    plan.requirements.map((r) => [r.id, tree.normalize(r.title)]),
+  );
+  const matched = new Set(
+    [...actual.values()].filter((t) => tree.titles.has(t)),
+  );
+  let comparableEdges = 0,
+    matchingEdges = 0;
+  for (const r of plan.requirements) {
+    const parent = actual.get(r.parentId),
+      child = actual.get(r.id);
+    if (matched.has(parent) && matched.has(child)) {
+      comparableEdges++;
+      matchingEdges += Number(tree.edges.has(parent + "\n" + child));
+    }
+  }
+  return {
+    pdfRequirements: plan.requirements.length,
+    harDistinctTitles: tree.titles.size,
+    matchingDistinctTitles: matched.size,
+    comparableEdges,
+    matchingEdges,
+  };
+}
