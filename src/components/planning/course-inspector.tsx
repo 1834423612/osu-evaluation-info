@@ -53,7 +53,10 @@ export function CourseInspector({
     );
   const rating = course?.evaluation?.primary;
   return (
-    <div className={styles.inspector}>
+    <div
+      className={styles.inspector}
+      data-analytics-area="planning_course_details"
+    >
       <button onClick={back} className={styles.back}>
         <ArrowLeft size={15} />
         {t("Back to choices", "返回选课")}

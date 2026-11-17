@@ -1,4 +1,5 @@
 "use client";
+import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -127,6 +128,17 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
       });
       if (!guard.current.current(token.generation)) return;
       setPlan(result.plan);
+      trackUmamiEvent("planning_import", {
+        area: "planning_reports",
+        operation: "pdf",
+        status: result.imported
+          ? result.failed
+            ? "partial"
+            : "success"
+          : "empty",
+        count: result.imported,
+        path: "/planning",
+      });
       if (result.imported) setTab("board");
       setMessage(
         result.imported
@@ -146,6 +158,13 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
             ),
       );
     } catch {
+      if (guard.current.current(token.generation))
+        trackUmamiEvent("planning_import", {
+          area: "planning_reports",
+          operation: "pdf",
+          status: "error",
+          path: "/planning",
+        });
       if (guard.current.current(token.generation))
         setMessage(
           t(
@@ -217,7 +236,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
   rows.forEach((r) => counts[r.course.status]++);
   return (
     <PlanningCatalogProvider campus="COL" term={catalogTerm}>
-      <div className={`${styles.page} rr-block`}>
+      <div className={`${styles.page} rr-block`} data-analytics-area="planning">
         <AppHeader active="planning" />
         <main className={styles.main}>
           <header className={styles.hero}>
@@ -240,12 +259,17 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
                     ? t("Saved on this device", "已自动保存到此设备")
                     : t("Private workspace", "私密工作区")}
               </span>
-              <button onClick={exportBackup} disabled={!ready}>
+              <button
+                data-analytics-action="planning_backup_export"
+                onClick={exportBackup}
+                disabled={!ready}
+              >
                 <Download size={16} />
                 {t("Export backup", "导出备份")}
               </button>
               <button
                 disabled={!ready || busy}
+                data-analytics-action="planning_backup_import"
                 onClick={() => backupInput.current?.click()}
               >
                 <FileUp size={16} />
@@ -253,6 +277,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               </button>
               <button
                 className={styles.primary}
+                data-analytics-action="planning_pdf_import"
                 disabled={busy}
                 onClick={() => {
                   profile.current = null;
@@ -343,6 +368,8 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               ).map((item) => (
                 <button
                   key={item.id}
+                  data-analytics-action="planning_view"
+                  data-analytics-label={item.id}
                   aria-current={tab === item.id ? "page" : undefined}
                   onClick={() => setTab(item.id)}
                 >

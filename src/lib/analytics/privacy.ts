@@ -1,4 +1,9 @@
 export const ANALYTICS_KEY = "course-atlas:analytics:v1";
+export function analyticsPath(path: string) {
+  return path
+    .split(/[?#]/)[0]
+    .replace(/^\/(share|transfer)\/[^/]+/, "/$1/[id]");
+}
 /** Runs before collectors; capability fragments never become replay navigation URLs. */
 export function captureLinkCapability() {
   const match = location.pathname.match(
@@ -66,7 +71,8 @@ export function analyticsBeforeSend(
   type: string,
   payload: Record<string, unknown>,
 ) {
-  if (/^\/planning(?:\/|$)/.test(location.pathname)) return false;
+  const planning = /^\/planning(?:\/|$)/.test(location.pathname);
+  if (planning && type === "error") return false;
   const w = window as Window & {
     __COURSE_ATLAS_DEBUG__?: { skipAnalytics?: boolean };
     __COURSE_ATLAS_UMAMI_STARTING__?: { waiting: number };
@@ -87,6 +93,38 @@ export function analyticsBeforeSend(
     /* Restricted storage does not break the application. */
   }
   if (!payload || typeof payload !== "object") return payload;
+  // Academic workspace events contain only static UI metadata, never imported data.
+  if (planning && payload.data && typeof payload.data === "object") {
+    const fields = new Set([
+      "action",
+      "area",
+      "control",
+      "path",
+      "form",
+      "fields",
+      "depth",
+      "checked",
+      "view",
+      "operation",
+      "status",
+      "count",
+    ]);
+    payload = {
+      ...payload,
+      data: Object.fromEntries(
+        Object.entries(payload.data).filter(
+          ([key, value]) =>
+            fields.has(key) &&
+            (typeof value === "number" ||
+              typeof value === "boolean" ||
+              (typeof value === "string" &&
+                (key === "path"
+                  ? /^\/planning(?:\/[a-z-]+)*$/.test(value)
+                  : /^[a-z][a-z0-9_-]{0,79}$/.test(value)))),
+        ),
+      ),
+    };
+  }
   const clean = (v: unknown, key = "", depth = 0): unknown => {
     if (
       depth > 5 ||
@@ -97,6 +135,10 @@ export function analyticsBeforeSend(
       if (["url", "referrer", "filename"].includes(key)) {
         try {
           const u = new URL(v, location.origin);
+          u.pathname = u.pathname.replace(
+            /^\/(share|transfer)\/[^/]+/,
+            "/$1/[id]",
+          );
           const params = new URLSearchParams();
           for (const [k, x] of u.searchParams)
             if (/^utm_(source|medium|campaign|term|content)$/i.test(k))
@@ -108,6 +150,10 @@ export function analyticsBeforeSend(
           return "";
         }
       }
+      if (key === "path")
+        return v
+          .split(/[?#]/)[0]
+          .replace(/^\/(share|transfer)\/[^/]+/, "/$1/[id]");
       return v
         .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, "[email]")
         .replace(

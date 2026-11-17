@@ -116,7 +116,8 @@ export function WorkspaceDialog({
         <Drawer.Portal>
           <Drawer.Overlay className={styles.overlay} />
           <Drawer.Content
-            className={styles.dialog}
+            className={`${styles.dialog} rr-block`}
+            data-analytics-area="workspace_dialog"
             onInteractOutside={(event) => {
               if (closeOnly) event.preventDefault();
             }}
@@ -159,7 +160,8 @@ export function WorkspaceDialog({
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content
-          className={styles.dialog}
+          className={`${styles.dialog} rr-block`}
+          data-analytics-area="workspace_dialog"
           onInteractOutside={(event) => {
             if (closeOnly) event.preventDefault();
           }}

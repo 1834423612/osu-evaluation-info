@@ -1,4 +1,5 @@
 "use client";
+import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
@@ -649,11 +650,17 @@ export function SemesterBoard({
       onDragEnd={({ active, over }) => {
         setDragged(null);
         if (over) move(String(active.id), String(over.id));
+        trackUmamiEvent("planning_drag", {
+          area: "planning_board",
+          status: over ? "dropped" : "cancelled",
+          path: "/planning",
+        });
       }}
     >
       <LayoutGroup>
         <section
           className={styles.root}
+          data-analytics-area="planning_board"
           aria-label={t("Semester planner", "学期规划看板")}
         >
           <div className={styles.heading}>

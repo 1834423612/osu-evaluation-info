@@ -235,7 +235,7 @@ export function SemesterSimulation({
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   return (
-    <div className={styles.root}>
+    <div className={styles.root} data-analytics-area="planning_simulation">
       <div className={styles.heading}>
         <CalendarClock size={20} />
         <strong>
@@ -396,6 +396,7 @@ export function SemesterSimulation({
           </section>
           <button
             className={styles.run}
+            data-analytics-action="planning_simulation_run"
             onClick={() => void run()}
             disabled={busy || !codes.length}
           >

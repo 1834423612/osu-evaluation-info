@@ -46,6 +46,7 @@ export function ImportGuide({
   return (
     <section
       className={styles.importGuide}
+      data-analytics-area="planning_reports"
       aria-label={t("Which PDFs to bring", "需要哪些 PDF")}
     >
       <h2>{t("Two reports to start", "通常从两份文件开始")}</h2>

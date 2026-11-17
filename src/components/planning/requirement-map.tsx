@@ -206,7 +206,11 @@ export function RequirementMap({
       });
   }
   return (
-    <section className={styles.root} data-compact={compact}>
+    <section
+      className={styles.root}
+      data-compact={compact}
+      data-analytics-area="planning_requirements"
+    >
       {!compact && (
         <div className={styles.heading}>
           <div>

@@ -132,7 +132,7 @@ function ScopedPlanningSearch({
     }
   }
   return (
-    <div className={styles.searchPanel}>
+    <div className={styles.searchPanel} data-analytics-area="planning_search">
       {requirementLabel && (
         <p className={styles.requirementFilter}>
           {t("Replacing requirement", "替换要求占位项")} · {requirementLabel}
@@ -153,7 +153,9 @@ function ScopedPlanningSearch({
           placeholder="CSE 2221"
           maxLength={120}
         />
-        <button disabled={searching}>{t("Search", "搜索")}</button>
+        <button data-analytics-action="planning_search" disabled={searching}>
+          {t("Search", "搜索")}
+        </button>
       </form>
       <p role="status">
         {searching ? t("Searching catalog…", "正在查询目录…") : message}
@@ -177,6 +179,7 @@ function ScopedPlanningSearch({
               {t("credits", "学分")}
             </span>
             <button
+              data-analytics-action="planning_course_add"
               disabled={unavailable.includes(`${c.subject} ${c.catalogNumber}`)}
               aria-label={`${t("Add", "添加")} ${c.subject} ${c.catalogNumber}`}
               onClick={() =>

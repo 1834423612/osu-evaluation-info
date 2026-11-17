@@ -16,6 +16,9 @@ import {
 } from "./select";
 import { cn } from "@/lib/utils";
 import styles from "./choice-select.module.css";
+import { useRef } from "react";
+import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
+import { analyticsPath } from "@/lib/analytics/privacy";
 
 type Props = Omit<
   ComponentProps<"button">,
@@ -43,11 +46,11 @@ export function ChoiceSelect({
   const encode = (value: string | number | readonly string[] | undefined) =>
     value == null ? undefined : String(value) || emptyValue;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
-  const bindTrigger = useCallback(
-    (node: HTMLButtonElement | null) =>
-      setPortal(node?.closest<HTMLElement>("[data-debug-tools]") ?? null),
-    [],
-  );
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const bindTrigger = useCallback((node: HTMLButtonElement | null) => {
+    trigger.current = node;
+    setPortal(node?.closest<HTMLElement>("[data-debug-tools]") ?? null);
+  }, []);
   const options = Children.toArray(children).filter(
     isValidElement<ComponentProps<"option">>,
   );
@@ -59,9 +62,18 @@ export function ChoiceSelect({
       disabled={disabled}
       value={value == null ? undefined : encode(value)}
       defaultValue={defaultValue == null ? undefined : encode(defaultValue)}
-      onValueChange={(value) =>
-        onValueChange?.(value === emptyValue ? "" : value)
-      }
+      onValueChange={(value) => {
+        onValueChange?.(value === emptyValue ? "" : value);
+        trackUmamiEvent("ui_interaction", {
+          action: "select_change",
+          control: "choice_select",
+          area:
+            trigger.current
+              ?.closest("[data-analytics-area]")
+              ?.getAttribute("data-analytics-area") ?? "selection",
+          path: analyticsPath(window.location.pathname),
+        });
+      }}
     >
       <SelectTrigger
         {...props}

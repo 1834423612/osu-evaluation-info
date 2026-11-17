@@ -28,7 +28,7 @@ export function PendingRequirements({ plan, locale, choose }: Props) {
   );
   if (!pending.length) return null;
   return (
-    <section className={styles.pending}>
+    <section className={styles.pending} data-analytics-area="planning_pending">
       <h3>
         <Layers size={17} />
         {t("Requirements to arrange", "待安排的学业要求")}
@@ -115,7 +115,7 @@ export function SemesterGroups({
     ...new Map(eligible.map((c) => [`${c.subject} ${c.number}`, c])).values(),
   ];
   return (
-    <div className={styles.groups}>
+    <div className={styles.groups} data-analytics-area="planning_groups">
       {groups
         .filter((g) => (g.term?.replace(/ /g, "") ?? "unassigned") === term)
         .map((g) => {

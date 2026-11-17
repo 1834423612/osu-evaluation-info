@@ -289,7 +289,11 @@ export function NextTerm({
     }
   }
   return (
-    <section className={styles.root} data-compact={compact}>
+    <section
+      className={styles.root}
+      data-compact={compact}
+      data-analytics-area="planning_recommendations"
+    >
       <div className={styles.heading}>
         <div>
           <h2>{t("Course recommendations", "课程推荐")}</h2>
@@ -589,7 +593,10 @@ export function NextTerm({
                   </li>
                 </ul>
                 <div className={styles.actions}>
-                  <button onClick={() => apply([c], targetTerm)}>
+                  <button
+                    data-analytics-action="planning_recommendation_apply"
+                    onClick={() => apply([c], targetTerm)}
+                  >
                     <Plus size={15} />
                     {t("Add draft", "加入草稿")}
                   </button>

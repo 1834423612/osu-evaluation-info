@@ -49,7 +49,7 @@ export function CloudBackup({
   }, [account]);
   const pending = JSON.stringify(state?.plan) !== JSON.stringify(state?.base);
   return (
-    <section className={styles.root}>
+    <section className={styles.root} data-analytics-area="planning_sync">
       <h2>
         <Cloud size={18} />
         {t("Account sync", "账号同步")}

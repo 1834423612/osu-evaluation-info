@@ -71,7 +71,7 @@ export function SampleGallery({
         .includes(query.trim().toLowerCase()),
   );
   return (
-    <section className={styles.root}>
+    <section className={styles.root} data-analytics-area="planning_examples">
       <header className={styles.heading}>
         <div>
           <h2>{t("Four-year sample schedules", "四年示例课表")}</h2>
