@@ -84,8 +84,8 @@ export function ImportGuide({
           </li>
           <li>
             {t(
-              "In Track Progress, select Official, then the audit print menu and Expanded (Beta). Include all required programs, expand the details, and save the browser print view as PDF with headers and footers off.",
-              "在 Track Progress 选择 Official，通过审计打印菜单选择 Expanded（Beta）。包含所需的全部项目、展开详情，再用浏览器打印保存 PDF，关闭页眉页脚。",
+              "In Track Progress, select Official, then the audit print menu and Expanded (Beta). Select Include all constraints, include the required programs, and save the browser print view as PDF with headers and footers off.",
+              "在 Track Progress 选择 Official，通过审计打印菜单选择 Expanded（Beta）。勾选 Include all constraints，包含所需的全部项目，再用浏览器打印保存 PDF，关闭页眉页脚。",
             )}
           </li>
           <li>
@@ -97,8 +97,8 @@ export function ImportGuide({
         </ol>
         <p>
           {t(
-            "Standard provides an outline when Expanded is unavailable. Compact and repeated exports from another tab add little detail. The provided Expanded sample contains Official details; its Planned-only programs need a separate Planned export.",
-            "Expanded 不可用时可用 Standard 获取概览。Compact 和另一入口的重复文件可省去。本次附件中的 Expanded 包含 Official 详情，标注仅在 Planned 可见的专业需要另外导出。",
+            "Standard provides an outline when Expanded is unavailable. Compact and repeated exports from another tab add little detail. Programs marked Planned-only require a Planned export.",
+            "Expanded 不可用时可用 Standard 获取概览。Compact 和另一入口的重复文件可省去。标注仅在 Planned 可见的专业需要另外导出 Planned。",
           )}
         </p>
         <a
@@ -120,8 +120,8 @@ export function ImportGuide({
       {coverage.unlabelled && (
         <p role="status">
           {t(
-            "Confirm Official or Planned for the unlabelled audit in source review.",
-            "请在来源核对中确认未标明视图的审计文件属于 Official 还是 Planned。",
+            "This report does not identify its view. It remains separate from explicitly labelled Official and Planned reports.",
+            "此报告未标明视图，将单独保留，不会覆盖已标明 Official 或 Planned 的报告。",
           )}
         </p>
       )}

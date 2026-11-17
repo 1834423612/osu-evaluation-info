@@ -13,7 +13,7 @@
   background: var(--surface);
   color: var(--ink);
   padding: 8px 11px;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 .root button:disabled,
@@ -31,7 +31,7 @@
   border-radius: 7px;
   min-height: 40px;
   padding: 9px;
-  font-size: 13px;
+  font-size: 14px;
   min-width: 0;
   max-width: 100%;
 }
@@ -56,18 +56,12 @@
 }
 .heading p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   margin: 0;
   line-height: 1.6;
 }
 .heading > button {
   flex-shrink: 0;
-}
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 350px;
-  gap: 24px;
-  align-items: start;
 }
 .planner {
   min-width: 0;
@@ -135,19 +129,6 @@
 .root .mobileTools {
   display: none;
 }
-.board {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  align-items: start;
-}
-.column {
-  padding: 18px 14px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--secondary);
-  min-width: 0;
-}
 .column[data-selected="true"] {
   border-color: var(--accent-border);
 }
@@ -211,22 +192,11 @@
   display: grid;
   gap: 10px;
 }
-.card {
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface);
-  box-shadow: 0 2px 3px #29252a04;
-  min-width: 0;
-}
 .card[draggable="true"] {
   cursor: grab;
 }
 .card:focus-within {
   border-color: var(--accent-border);
-}
-.card[data-placeholder="true"] {
-  border-style: dashed;
 }
 .cardTop {
   display: flex;
@@ -258,18 +228,6 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.courseTitle {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 5px 0 12px;
-  overflow-wrap: anywhere;
-}
-.cardFooter {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 .status {
   display: inline-flex;
   align-items: center;
@@ -277,12 +235,6 @@
   font-size: 10px;
   color: var(--muted);
   flex-shrink: 0;
-}
-.status[data-status="completed"] {
-  color: var(--positive);
-}
-.status[data-status="in-progress"] {
-  color: #8a631d;
 }
 .root .cardFooter select {
   margin-left: auto;
@@ -343,23 +295,15 @@
   margin: 16px 0 6px;
 }
 .empty p {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   line-height: 1.7;
   margin: 0 0 16px;
 }
-.assistant {
-  position: sticky;
-  top: 90px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-  overflow: hidden;
-}
 .assistantBody {
   min-width: 0;
   padding: 18px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .assistant > .assistantBody {
   max-height: calc(100dvh - 112px);
@@ -375,15 +319,6 @@
 }
 .target select {
   width: 100%;
-}
-.assistantTabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 3px;
-  background: var(--secondary);
-  padding: 4px;
-  border-radius: 8px;
-  margin: 18px 0;
 }
 .assistantBody .assistantTabs button {
   padding: 7px 3px;
@@ -491,7 +426,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0 0 8px;
 }
@@ -558,7 +493,7 @@
   margin: 18px 0;
 }
 .message {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--positive);
   line-height: 1.7;
 }
@@ -570,7 +505,7 @@
   margin-top: 18px;
 }
 .creditRecords summary {
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 .creditGrid {
@@ -590,20 +525,161 @@
 .column[data-unassigned="true"] .loadBar {
   display: none;
 }
+
+.layout {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(350px, 32%);
+  gap: 24px;
+}
+.board {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+  display: block;
+}
+.academicYear {
+  margin-bottom: 28px;
+}
+.yearHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.yearHeading h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+}
+.yearHeading > span {
+  padding: 4px 9px;
+  color: var(--accent-foreground);
+  background: var(--accent-soft);
+  font-size: 11px;
+  border-radius: 5px;
+}
+.yearTerms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  border-left: 2px solid var(--line);
+  padding-left: 18px;
+  align-items: start;
+}
+.column {
+  border: 1px solid var(--line);
+  min-width: 0;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 18px 12px 12px;
+}
+.root .summer {
+  min-height: 150px;
+  border: 2px dashed var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+.root .addYear {
+  margin: 0 0 25px;
+}
+.card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 2px 3px #29252a04;
+  min-width: 0;
+  border-radius: 5px;
+  padding: 12px;
+}
+.card[data-placeholder="true"] {
+  border-style: dashed;
+  border: 2px dashed var(--line);
+  box-shadow: none;
+}
+.card .courseCode {
+  padding: 0;
+  min-height: 24px;
+  font-size: 14px;
+  text-align: left;
+  justify-content: flex-start;
+  border: 0;
+  background: transparent;
+}
+.courseTitle {
+  color: var(--muted);
+  margin: 5px 0 12px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.cardFooter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.cardFooter select {
+  max-width: 130px;
+  font-size: 10px;
+  min-height: 28px;
+  padding: 4px;
+}
+.status[data-status="completed"] {
+  color: var(--positive);
+}
+.status[data-status="in-progress"] {
+  color: #b75b18;
+  background: #fff2e6;
+}
+.status[data-status="planned"] {
+  color: #946515;
+  background: #fff7df;
+}
+.assistant {
+  border: 1px solid var(--line);
+  overflow: hidden;
+  position: sticky;
+  top: 90px;
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
+  border-radius: 9px;
+  background: var(--surface);
+}
+.assistantTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  padding: 4px;
+  border-radius: 8px;
+  margin: 18px 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+.requirementFilter {
+  border-left: 3px solid var(--primary);
+  padding: 10px;
+  background: var(--secondary);
+  font-size: 12px;
+}
 @media (min-width: 1500px) {
   .board {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (max-width: 1050px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .root .mobileTools {
     display: inline-flex;
   }
   .assistantBody {
     padding: 0;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .yearTerms {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (max-width: 600px) {
@@ -651,5 +727,41 @@
   .assistantBody .assistantTabs button {
     min-height: 42px;
     font-size: 12px;
+  }
+}
+@media (min-width: 1051px) and (max-width: 1450px) {
+  .yearTerms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .root .summer {
+    min-height: 60px;
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 700px) {
+  .yearTerms {
+    grid-template-columns: 1fr;
+    padding-left: 12px;
+    gap: 12px;
+  }
+  .root .summer {
+    min-height: 64px;
+  }
+  .card {
+    padding: 14px;
+  }
+  .courseTitle {
+    font-size: 14px;
+  }
+  .card .courseCode {
+    font-size: 14px;
+  }
+  .cardFooter select {
+    font-size: 12px;
+    min-height: 36px;
+    max-width: 160px;
+  }
+  .yearHeading h3 {
+    font-size: 18px;
   }
 }

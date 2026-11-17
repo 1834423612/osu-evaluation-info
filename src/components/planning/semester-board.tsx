@@ -55,6 +55,7 @@ function CourseCard({
   inspect,
   loaded,
   remove,
+  choose,
 }: {
   row: BoardCourse;
   locale: Locale;
@@ -63,10 +64,14 @@ function CourseCard({
   inspect: (code: { subject: string; number: string }) => void;
   loaded: (key: string, detail: PlanningCourseDetail) => void;
   remove: (id: string) => void;
+  choose: (row: BoardCourse) => void;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const c = row.course;
-  const lookup = usePlanningCourse(c.subject, c.number);
+  const lookup = usePlanningCourse(
+    c.kind === "placeholder" ? null : c.subject,
+    c.kind === "placeholder" ? null : c.number,
+  );
   const context = usePlanningCatalog();
   const key = catalogKey({
     subject: c.subject ?? "",
@@ -100,10 +105,19 @@ function CourseCard({
       <div className={styles.cardTop}>
         <button
           className={styles.courseCode}
-          disabled={!c.subject || !c.number}
-          onClick={() => inspect({ subject: c.subject!, number: c.number! })}
+          disabled={c.kind !== "placeholder" && (!c.subject || !c.number)}
+          onClick={() =>
+            c.kind === "placeholder"
+              ? choose(row)
+              : inspect({ subject: c.subject!, number: c.number! })
+          }
         >
-          <b>{c.subject ?? t("Requirement", "要求")}</b> {c.number}
+          <b>
+            {c.kind === "placeholder"
+              ? (c.subject ? `${c.subject} ${c.number} ` : "") +
+                (c.title ?? t("Choose a course", "选择课程"))
+              : `${c.subject} ${c.number}`}
+          </b>
         </button>
         <span
           className={styles.creditPill}
@@ -118,14 +132,21 @@ function CourseCard({
           {credits.range ? " " + t("cr", "学分") : ""}
         </span>
       </div>
-      <p className={styles.courseTitle}>
-        {lookup.detail?.course.title ??
-          (c.kind === "placeholder"
-            ? t("Choose a course for this requirement", "为此要求选择一门课")
-            : lookup.status === "loading"
+      {c.kind !== "placeholder" && (
+        <p className={styles.courseTitle}>
+          {lookup.detail?.course.title ??
+            c.title ??
+            (lookup.status === "loading"
               ? t("Loading course details…", "正在查询课程详情…")
               : t("Open course details", "查看课程详情"))}
-      </p>
+        </p>
+      )}
+      {(c.section || c.session) && (
+        <small className={styles.courseTitle}>
+          {c.section && `${t("Section", "班次")} ${c.section}`}
+          {c.session && ` · Session ${c.session}`}
+        </small>
+      )}
       <div className={styles.cardFooter}>
         <span className={styles.status} data-status={c.status}>
           {locked ? <Check size={12} /> : <GripVertical size={12} />}
@@ -160,9 +181,9 @@ function CourseCard({
             ))}
           </select>
         )}
-        {row.source?.source === "manual" && c.id && (
+        {!locked && c.id && (
           <button
-            aria-label={`${t("Remove", "移除")} ${c.subject} ${c.number}`}
+            aria-label={`${t("Remove", "移除")} ${c.title ?? `${c.subject} ${c.number}`}`}
             onClick={() => remove(c.id!)}
           >
             <X size={13} />
@@ -201,6 +222,8 @@ export function SemesterBoard({
     number: string;
   } | null>(null);
   const [filter, setFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [replacing, setReplacing] = useState<BoardCourse | null>(null);
   const [details, setDetails] = useState<Record<string, PlanningCourseDetail>>(
     {},
   );
@@ -211,12 +234,27 @@ export function SemesterBoard({
   const [message, setMessage] = useState("");
   const all = boardCourses(plan);
   const rows = all.filter((r) =>
-    `${r.course.subject ?? ""} ${r.course.number ?? ""}`
+    `${r.course.subject ?? ""} ${r.course.number ?? ""} ${r.course.title ?? ""}`
       .toLowerCase()
       .includes(filter.trim().toLowerCase()),
   );
+  const startYear = Math.min(
+    new Date().getFullYear(),
+    ...all
+      .filter((r) => !["credit", "unassigned"].includes(r.term))
+      .map(
+        (r) =>
+          Number(r.term.slice(-4)) -
+          Number(r.term.startsWith("Spring") || r.term.startsWith("Summer")),
+      ),
+  );
+  const defaultTerms = Array.from({ length: 4 }, (_, i) => [
+    `Autumn${startYear + i}`,
+    `Spring${startYear + i + 1}`,
+  ]).flat();
   const terms = [
     ...new Set([
+      ...defaultTerms,
       ...plan.schedule.terms,
       ...all
         .filter((r) => !["credit", "unassigned"].includes(r.term))
@@ -238,7 +276,13 @@ export function SemesterBoard({
   function add(code: { subject: string; number: string }) {
     try {
       const next = addPlanningCourse(plan, code, targetTerm, browserUuid);
+      if (replacing?.course.id)
+        next.semesters = next.semesters.map((s) => ({
+          ...s,
+          courses: s.courses.filter((c) => c.id !== replacing.course.id),
+        }));
       update(() => next);
+      setReplacing(null);
       setMessage(
         `${code.subject} ${code.number} · ${semesterLabel(targetTerm, locale)} · ${t("Added", "已加入")}`,
       );
@@ -251,6 +295,41 @@ export function SemesterBoard({
       );
     }
   }
+  function choose(row: BoardCourse) {
+    setReplacing(row);
+    if (!["unassigned", "credit"].includes(row.term)) setTargetTerm(row.term);
+    setSearchQuery(
+      row.course.subject
+        ? `${row.course.subject} ${row.course.number}`
+        : (row.course.title ?? ""),
+    );
+    setSelected(null);
+    setPanel("search");
+    setDrawer(true);
+  }
+  const academicYears = [
+    ...new Set(
+      terms.map(
+        (term) =>
+          Number(term.slice(-4)) -
+          Number(term.startsWith("Spring") || term.startsWith("Summer")),
+      ),
+    ),
+  ].sort();
+  const yearGroups = [
+    ...(rows.some((r) => r.term === "unassigned")
+      ? [{ year: 0, terms: ["unassigned"] }]
+      : []),
+    ...academicYears.map((year) => ({
+      year,
+      terms: terms.filter(
+        (term) =>
+          Number(term.slice(-4)) -
+            Number(term.startsWith("Spring") || term.startsWith("Summer")) ===
+          year,
+      ),
+    })),
+  ];
   function move(id: string, term: string) {
     try {
       const next = placeCourse(plan, id, term === "unassigned" ? null : term);
@@ -308,7 +387,7 @@ export function SemesterBoard({
               [
                 {
                   id: "requirements",
-                  title: t("Requirements", "学业要求"),
+                  title: t("Remaining", "剩余要求"),
                   Icon: GitBranch,
                 },
                 { id: "search", title: t("Search", "搜索课程"), Icon: Search },
@@ -336,11 +415,18 @@ export function SemesterBoard({
               addCourse={add}
               onReview={onReview}
               inspectCourse={inspect}
+              searchRequirement={(title) => {
+                setSearchQuery(title);
+                setReplacing(null);
+                setPanel("search");
+              }}
               compact
+              remainingOnly
             />
           )}
           {panel === "suggestions" && (
             <NextTerm
+              inspect={inspect}
               plan={plan}
               locale={locale}
               onReview={onReview}
@@ -358,8 +444,17 @@ export function SemesterBoard({
           )}
           {panel === "search" && (
             <PlanningSearch
-              key={context.campus + "|" + context.term}
+              key={context.campus + "|" + context.term + "|" + searchQuery}
               locale={locale}
+              initialQuery={searchQuery}
+              unavailable={all
+                .filter(
+                  (r) =>
+                    r.course.status === "completed" ||
+                    r.course.status === "in-progress",
+                )
+                .map((r) => `${r.course.subject} ${r.course.number}`)}
+              requirementLabel={replacing?.course.title}
               inspect={inspect}
               add={add}
             />
@@ -390,6 +485,8 @@ export function SemesterBoard({
           className={styles.primary}
           onClick={() => {
             setSelected(null);
+            setReplacing(null);
+            setSearchQuery("");
             setPanel("search");
             setDrawer(true);
           }}
@@ -511,168 +608,264 @@ export function SemesterBoard({
             </div>
           )}
           <div className={styles.board}>
-            {[
-              ...(rows.some((r) => r.term === "unassigned")
-                ? ["unassigned"]
-                : []),
-              ...terms,
-            ].map((term) => {
-              const group = rows.filter((r) => r.term === term);
-              const ranges = new Map<string, Set<string>>();
-              group.forEach((r, index) => {
-                const code =
-                  r.course.subject && r.course.number
-                    ? `${r.course.subject} ${r.course.number}`
-                    : `placeholder-${index}`;
-                const range = planningCredits(
-                  r.course,
-                  details[
-                    catalogKey({
-                      subject: r.course.subject ?? "",
-                      number: r.course.number ?? "",
-                      term: context.term,
-                      campus: context.campus,
-                    })
-                  ],
-                ).range;
-                const values = ranges.get(code) ?? new Set<string>();
-                values.add(JSON.stringify(range));
-                ranges.set(code, values);
-              });
-              let min = 0,
-                max = 0,
-                pending = 0;
-              for (const values of ranges.values()) {
-                const range =
-                  values.size === 1
-                    ? (JSON.parse([...values][0]) as {
-                        min: number;
-                        max: number;
-                      } | null)
-                    : null;
-                if (range) {
-                  min += range.min;
-                  max += range.max;
-                } else pending++;
-              }
-              return (
-                <section
-                  key={term}
-                  className={styles.column}
-                  data-selected={targetTerm === term}
-                  data-unassigned={term === "unassigned"}
-                  aria-label={semesterLabel(term, locale)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    move(e.dataTransfer.getData("text/plain"), term);
-                  }}
-                >
-                  <header className={styles.columnHead}>
-                    <div>
-                      <h3>{semesterLabel(term, locale)}</h3>
-                      <p>
-                        {group.length} {t("courses", "门课程")}
-                      </p>
-                    </div>
-                    <span
-                      className={styles.termCredits}
-                      data-over={min > ceiling}
-                    >
-                      {creditLabel({ min, max })}
-                      <small>
-                        {pending
-                          ? t("known credits", "已知学分")
-                          : t("credits", "学分")}
-                      </small>
-                    </span>
-                  </header>
-                  <div className={styles.loadBar} aria-hidden="true">
-                    <span
-                      style={{
-                        width: `${Math.min(100, (min / Math.max(1, ceiling)) * 100)}%`,
-                      }}
-                      data-over={min > ceiling}
-                    />
-                  </div>
-                  {pending > 0 && (
-                    <small className={styles.pending}>
-                      {pending} {t("credit values pending", "项学分待补充")}
-                    </small>
-                  )}
-                  {min > ceiling && (
-                    <small className={styles.pending}>
-                      {t("Above your credit ceiling", "超过你的学分上限")}
-                    </small>
-                  )}
-                  <div className={styles.columnCourses}>
-                    {group.map((row, i) => (
-                      <CourseCard
-                        key={row.course.id ?? i}
-                        row={row}
-                        locale={locale}
-                        terms={terms}
-                        move={move}
-                        inspect={inspect}
-                        loaded={loaded}
-                        remove={remove}
-                      />
-                    ))}
-                    {!group.length && (
-                      <div className={styles.dropHint}>
-                        {t("Drop courses here", "拖入课程到此学期")}
-                      </div>
-                    )}
-                  </div>
-                  {term !== "unassigned" && (
+            {yearGroups.map(({ year, terms: yearTerms }) => (
+              <section className={styles.academicYear} key={year}>
+                <header className={styles.yearHeading}>
+                  <h3>
+                    {year ? `${year} – ${year + 1}` : t("To arrange", "待安排")}
+                  </h3>
+                  <span>
+                    {rows.filter((r) => yearTerms.includes(r.term)).length}{" "}
+                    {t("courses", "门课程")}
+                  </span>
+                </header>
+                <div className={styles.yearTerms}>
+                  {yearTerms.map((term) => {
+                    const group = rows.filter((r) => r.term === term);
+                    const ranges = new Map<string, Set<string>>();
+                    group.forEach((r, index) => {
+                      const code =
+                        r.course.subject && r.course.number
+                          ? `${r.course.subject} ${r.course.number}`
+                          : `placeholder-${index}`;
+                      const range = planningCredits(
+                        r.course,
+                        details[
+                          catalogKey({
+                            subject: r.course.subject ?? "",
+                            number: r.course.number ?? "",
+                            term: context.term,
+                            campus: context.campus,
+                          })
+                        ],
+                      ).range;
+                      const values = ranges.get(code) ?? new Set<string>();
+                      values.add(JSON.stringify(range));
+                      ranges.set(code, values);
+                    });
+                    let min = 0,
+                      max = 0,
+                      pending = 0;
+                    for (const values of ranges.values()) {
+                      const range =
+                        values.size === 1
+                          ? (JSON.parse([...values][0]) as {
+                              min: number;
+                              max: number;
+                            } | null)
+                          : null;
+                      if (range) {
+                        min += range.min;
+                        max += range.max;
+                      } else pending++;
+                    }
+                    const original = plan.semesters.find(
+                      (s) =>
+                        s.term?.replace(/ /g, "") === term &&
+                        plan.documents.some(
+                          (d) =>
+                            d.id === s.documentId &&
+                            d.source === "student-plan",
+                        ),
+                    );
+                    return (
+                      <section
+                        key={term}
+                        className={styles.column}
+                        data-selected={targetTerm === term}
+                        data-unassigned={term === "unassigned"}
+                        aria-label={semesterLabel(term, locale)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          move(e.dataTransfer.getData("text/plain"), term);
+                        }}
+                      >
+                        <header className={styles.columnHead}>
+                          <div>
+                            <h3>{semesterLabel(term, locale)}</h3>
+                            <p>
+                              {group.length} {t("courses", "门课程")}
+                            </p>
+                          </div>
+                          <span
+                            className={styles.termCredits}
+                            data-over={min > ceiling}
+                          >
+                            {creditLabel({ min, max })}
+                            <small>
+                              {pending
+                                ? t("known credits", "已知学分")
+                                : t("credits", "学分")}
+                            </small>
+                          </span>
+                        </header>
+                        <div className={styles.loadBar} aria-hidden="true">
+                          <span
+                            style={{
+                              width: `${Math.min(100, (min / Math.max(1, ceiling)) * 100)}%`,
+                            }}
+                            data-over={min > ceiling}
+                          />
+                        </div>
+                        {pending > 0 && original?.reportedCredits != null && (
+                          <small className={styles.pending}>
+                            {t("BDP export total", "BDP 导出时合计")} ·{" "}
+                            {original.reportedCredits} {t("credits", "学分")}
+                          </small>
+                        )}
+                        {pending > 0 && (
+                          <small className={styles.pending}>
+                            {pending}{" "}
+                            {t("credit values pending", "项学分待补充")}
+                          </small>
+                        )}
+                        {min > ceiling && (
+                          <small className={styles.pending}>
+                            {t("Above your credit ceiling", "超过你的学分上限")}
+                          </small>
+                        )}
+                        <div className={styles.columnCourses}>
+                          {group.map((row, i) => (
+                            <CourseCard
+                              key={row.course.id ?? i}
+                              row={row}
+                              locale={locale}
+                              terms={terms}
+                              move={move}
+                              inspect={inspect}
+                              loaded={loaded}
+                              remove={remove}
+                              choose={choose}
+                            />
+                          ))}
+                          {!group.length && (
+                            <div className={styles.dropHint}>
+                              {t("Drop courses here", "拖入课程到此学期")}
+                            </div>
+                          )}
+                        </div>
+                        {term !== "unassigned" && (
+                          <button
+                            className={styles.addHere}
+                            onClick={() => {
+                              if (term !== "unassigned") setTargetTerm(term);
+                              setSelected(null);
+                              setPanel("search");
+                              setReplacing(null);
+                              setSearchQuery("");
+                              setDrawer(true);
+                            }}
+                          >
+                            <Plus size={15} />
+                            {t("Add a course", "添加课程")}
+                          </button>
+                        )}
+                      </section>
+                    );
+                  })}
+                  {!!year && !yearTerms.includes(`Summer${year + 1}`) && (
                     <button
-                      className={styles.addHere}
+                      className={styles.summer}
+                      disabled={terms.length >= 24}
                       onClick={() => {
-                        if (term !== "unassigned") setTargetTerm(term);
-                        setSelected(null);
+                        const term = `Summer${year + 1}`;
+                        update((p) => ({
+                          ...p,
+                          schedule: {
+                            ...p.schedule,
+                            terms: [...new Set([...p.schedule.terms, term])],
+                          },
+                        }));
+                        setTargetTerm(term);
                         setPanel("search");
+                        setSelected(null);
+                        setReplacing(null);
+                        setSearchQuery("");
                         setDrawer(true);
                       }}
                     >
-                      <Plus size={15} />
-                      {t("Add a course", "添加课程")}
+                      + {semesterLabel(`Summer${year + 1}`, locale)}
                     </button>
                   )}
-                </section>
-              );
-            })}
+                </div>
+              </section>
+            ))}
           </div>
-          {rows.some((r) => r.term === "credit") && (
-            <details className={styles.creditRecords}>
-              <summary>
-                {t("Transfer and exam records", "转学与考试记录")} ·{" "}
-                {rows.filter((r) => r.term === "credit").length}
-              </summary>
-              <div className={styles.creditGrid}>
-                {rows
-                  .filter((r) => r.term === "credit")
-                  .map((row, i) => (
-                    <CourseCard
-                      key={row.course.id ?? i}
-                      row={row}
-                      locale={locale}
-                      terms={terms}
-                      move={move}
-                      inspect={inspect}
-                      loaded={loaded}
-                      remove={remove}
-                    />
-                  ))}
-              </div>
-            </details>
+          <button
+            className={styles.addYear}
+            disabled={terms.length >= 22}
+            onClick={() => {
+              const year = academicYears.at(-1)! + 1;
+              update((p) => ({
+                ...p,
+                schedule: {
+                  ...p.schedule,
+                  terms: [
+                    ...new Set([
+                      ...p.schedule.terms,
+                      ...terms,
+                      `Autumn${year}`,
+                      `Spring${year + 1}`,
+                    ]),
+                  ],
+                },
+              }));
+            }}
+          >
+            {t("+ Add academic year", "+ 添加学年")}
+          </button>
+          {(["transfer", "exam"] as const).map(
+            (origin) =>
+              rows.some(
+                (r) =>
+                  r.term === "credit" && r.semester.creditOrigin === origin,
+              ) && (
+                <details key={origin} className={styles.creditRecords}>
+                  <summary>
+                    {origin === "transfer"
+                      ? t("Transfer credits", "转学学分")
+                      : t("Exam credits", "考试学分")}{" "}
+                    ·{" "}
+                    {
+                      rows.filter(
+                        (r) =>
+                          r.term === "credit" &&
+                          r.semester.creditOrigin === origin,
+                      ).length
+                    }
+                  </summary>
+                  <div className={styles.creditGrid}>
+                    {rows
+                      .filter(
+                        (r) =>
+                          r.term === "credit" &&
+                          r.semester.creditOrigin === origin,
+                      )
+                      .map((row, i) => (
+                        <CourseCard
+                          key={row.course.id ?? i}
+                          row={row}
+                          locale={locale}
+                          terms={terms}
+                          move={move}
+                          inspect={inspect}
+                          loaded={loaded}
+                          remove={remove}
+                          choose={choose}
+                        />
+                      ))}
+                  </div>
+                </details>
+              ),
           )}
           <p className={styles.helper}>
             {t(
-              "Credit totals are planning estimates from the selected catalog. Original imported credits remain in source review.",
-              "学分汇总采用所选目录的规划估算。原始导入学分保留在来源核对中。",
+              "Credit totals are planning estimates from the selected catalog. Imported records retain their original credit values.",
+              "学分汇总采用所选目录的规划估算。原始导入记录保留其学分值。",
             )}
           </p>
           <p role="status" aria-live="polite" className={styles.message}>

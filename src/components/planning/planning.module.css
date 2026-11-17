@@ -66,43 +66,11 @@
   background: var(--surface);
   color: var(--ink);
 }
-.main {
-  max-width: 1540px;
-  margin: auto;
-  padding: 30px 40px 20px;
-}
-.hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: 24px;
-  padding: 0 0 24px;
-}
-.hero h1 {
-  font-size: clamp(28px, 3vw, 36px);
-  letter-spacing: -0.035em;
-  line-height: 1.2;
-  margin: 0 0 10px;
-  font-weight: 700;
-}
 .hero p {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.7;
   margin: 0;
-}
-.globalActions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: end;
-  gap: 8px;
-  max-width: 440px;
-}
-.globalActions > span {
-  color: var(--muted);
-  font-size: 11px;
-  margin-right: 5px;
 }
 .globalActions > button {
   display: inline-flex;
@@ -316,12 +284,6 @@
   background: var(--line);
   margin: 24px 0;
 }
-.notice {
-  background: var(--subtle-surface);
-  border-left: 3px solid var(--accent-border);
-  padding: 12px;
-  border-radius: 4px;
-}
 .meta {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -507,6 +469,208 @@
   cursor: pointer;
   background: var(--subtle-surface);
 }
+
+/* Full-width academic workspace, using the site's shared palette. */
+.main {
+  margin: auto;
+  max-width: 1920px;
+  padding: 28px 32px 48px;
+}
+.eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent-foreground);
+  margin-bottom: 8px;
+}
+.globalActions {
+  justify-content: end;
+  max-width: 440px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.globalActions > span {
+  margin-right: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.workspaceNav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+.workspaceNav > div {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.main .workspaceNav button[aria-current] {
+  border-bottom-color: var(--primary);
+  color: var(--ink);
+  font-weight: 650;
+}
+.catalogCompact select {
+  width: auto;
+  flex: 1;
+  max-width: 170px;
+  font-size: 12px;
+}
+.programNames small {
+  margin-left: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.progressTrack span[data-status="completed"],
+.progressLegend [data-status="completed"] i {
+  background: var(--positive);
+}
+.progressTrack span[data-status="in-progress"],
+.progressLegend [data-status="in-progress"] i {
+  background: #e77929;
+}
+.progressTrack span[data-status="planned"],
+.progressLegend [data-status="planned"] i {
+  background: #eeb34d;
+}
+.progressLegend {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+.progressLegend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.progressLegend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.notice {
+  border-left: 3px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--secondary);
+  font-size: 13px;
+}
+.importPage {
+  max-width: 1100px;
+  margin: auto;
+}
+.privacy {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.privacy h2 {
+  font-size: 17px;
+  margin: 0 0 8px;
+}
+.privacy p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0;
+}
+.reportList {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.reportList article {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--surface);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.reportList article > div {
+  flex: 1;
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+}
+.reportList span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.main .workspaceNav button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 16px 18px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.workspaceNav .catalogCompact {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 24px;
+  padding: 0 0 24px;
+  margin-bottom: 20px;
+  padding-bottom: 0;
+}
+.hero h1 {
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  font-weight: 700;
+  font-size: 26px;
+}
+.overview {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 24px;
+  padding: 18px 22px;
+}
+.programNames {
+  flex-direction: column;
+  font-weight: 600;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  font-size: 13px;
+}
+.progressTrack {
+  display: flex;
+  height: 7px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--line);
+  margin: 22px 0 12px;
+  margin-top: 16px;
+}
 @media (max-width: 760px) {
   .importChoices {
     grid-template-columns: 1fr;
@@ -514,23 +678,6 @@
   .importGuide {
     padding: 18px;
   }
-}
-@media (max-width: 1100px) {
-  .workspace {
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 16px;
-  }
-  .course {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .meta {
-    grid-template-columns: 1fr;
-  }
-  .sources {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 760px) {
   .main {
     padding: 24px 16px;
   }
@@ -562,6 +709,21 @@
   .semesterHeading .field {
     width: 100%;
     max-width: none;
+  }
+}
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .course {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .meta {
+    grid-template-columns: 1fr;
+  }
+  .sources {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 540px) {
@@ -625,5 +787,54 @@
   }
   .catalogBar > span {
     flex-basis: 100%;
+  }
+}
+@media (max-width: 900px) {
+  .main {
+    padding: 20px 16px 32px;
+  }
+  .workspaceNav {
+    flex-direction: column;
+    padding-bottom: 12px;
+    gap: 6px;
+  }
+  .main .workspaceNav button {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+  .globalActions > span {
+    width: 100%;
+  }
+}
+@media (max-width: 580px) {
+  .hero {
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 0;
+  }
+  .hero h1 {
+    font-size: 26px;
+  }
+  .workspaceNav > div:first-child {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .main .workspaceNav button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .main .workspaceNav button svg {
+    display: none;
+  }
+  .overview {
+    padding: 18px;
+  }
+}
+@media (max-width: 700px) {
+  .programNames {
+    grid-template-columns: 1fr;
+  }
+  .workspaceNav .catalogCompact {
+    flex-wrap: nowrap;
   }
 }

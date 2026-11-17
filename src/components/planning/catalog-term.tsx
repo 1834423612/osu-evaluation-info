@@ -27,7 +27,11 @@ export function CatalogTermSelect({
     return () => controller.abort();
   }, []);
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)}>
+    <select
+      aria-label={text(locale, "Catalog term", "课程目录学期")}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
       <option value="">
         {text(locale, "Latest available", "最新可用学期")}
       </option>
