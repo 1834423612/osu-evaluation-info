@@ -24,7 +24,10 @@ export const documentSchema = z
     publicationStatus: z.enum(["draft", "published", "unknown"]),
     courseReferences: z.array(code).max(1000),
     pageCount: z.number().int().min(1).max(100).nullable(),
-    extractionStatus: z.enum(["references", "unstructured"]),
+    extractionStatus: z.enum(["references", "unstructured", "unsupported"]),
+    extractionIssue: z
+      .enum(["page-limit", "line-limit", "parse-failed"])
+      .optional(),
     reviewStatus: z.literal("pending"),
   })
   .strict();
@@ -76,10 +79,7 @@ export type PublicDocument = z.infer<typeof documentSchema>;
 export type DocumentSummary = Omit<PublicDocument, "courseReferences"> & {
   courseCount: number;
 };
-export type DirectoryResponse = Omit<
-  CurriculumDirectory,
-  "documents" | "pending"
-> & { documents: DocumentSummary[]; total: number; page: number };
+export type DirectoryResponse = ReturnType<typeof queryDirectory>;
 export function queryDirectory(
   directory: CurriculumDirectory,
   input: URLSearchParams,
@@ -89,7 +89,11 @@ export function queryDirectory(
   const year = input.get("year") ?? "";
   const ge = input.get("ge") ?? "";
   const kind = input.get("kind") ?? "";
+  const college = input.get("college") ?? "";
+  const version = input.get("version") ?? "";
   const page = Number(input.get("page") ?? "1");
+  if (version && !/^(AU|SP|SU)20\d{2}$/.test(version))
+    throw Error("Invalid version");
   if (
     q.length > 100 ||
     program.length > 16 ||
@@ -116,9 +120,23 @@ export function queryDirectory(
           .toLowerCase()
           .includes(q)) &&
       (!program || d.programIds.includes(program)) &&
+      (!college ||
+        d.programIds.some((id) =>
+          directory.programs.some((p) => p.id === id && p.college === college),
+        )) &&
       (!year || d.academicYears.includes(year)) &&
+      (!version ||
+        d.effectiveTerms.includes(version) ||
+        d.appliedVersions.includes(version)) &&
       (!ge || d.geSystems.includes(ge as "GEN" | "GEL")) &&
       (!kind || d.documentKind === kind),
+  );
+  const priority = { "sample-plan": 0, requirements: 1, source: 2 };
+  docs.sort(
+    (a, b) =>
+      priority[a.documentKind] - priority[b.documentKind] ||
+      Number(!a.courseReferences.length) - Number(!b.courseReferences.length) ||
+      a.title.localeCompare(b.title),
   );
   return {
     ...directory,
@@ -130,6 +148,19 @@ export function queryDirectory(
         courseCount: courseReferences.length,
       })),
     total: docs.length,
+    years: [...new Set(directory.documents.flatMap((d) => d.academicYears))]
+      .sort()
+      .reverse(),
+    versions: [
+      ...new Set(
+        directory.documents.flatMap((d) => [
+          ...d.effectiveTerms,
+          ...d.appliedVersions,
+        ]),
+      ),
+    ]
+      .sort()
+      .reverse(),
     page,
   };
 }

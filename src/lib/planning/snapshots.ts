@@ -16,6 +16,16 @@ export function mergeSnapshots(current: Plan, incoming: Plan): Plan {
     catalogTerm:
       left.catalogTerm === right.catalogTerm ? left.catalogTerm : null,
     auditMode: left.auditMode === right.auditMode ? left.auditMode : "unknown",
+    schedule: {
+      terms: [...new Set([...left.schedule.terms, ...right.schedule.terms])],
+      placements: [
+        ...left.schedule.placements,
+        ...right.schedule.placements.map((p) => ({
+          ...p,
+          courseId: id(p.courseId),
+        })),
+      ],
+    },
     documents: [
       ...left.documents,
       ...right.documents.map((d) => ({ ...d, id: id(d.id) })),
@@ -75,6 +85,12 @@ export function removeSnapshot(plan: Plan, documentId: string): Plan {
   return planSchema.parse({
     ...plan,
     reviewed: false,
+    schedule: {
+      ...plan.schedule,
+      placements: plan.schedule.placements.filter(
+        (p) => !removedCourses.has(p.courseId),
+      ),
+    },
     documents: plan.documents.filter((d) => d.id !== documentId),
     programs: plan.programs.filter((p) => p.documentId !== documentId),
     requirements: plan.requirements.filter((r) => r.documentId !== documentId),
@@ -230,6 +246,12 @@ export function pruneAllocations(plan: Plan): Plan {
     allocations: plan.allocations.filter(
       (a) => courses.has(a.courseId) && requirements.has(a.requirementId),
     ),
+    schedule: {
+      ...plan.schedule,
+      placements: plan.schedule.placements.filter((p) =>
+        courses.has(p.courseId),
+      ),
+    },
   };
 }
 export function removeRequirement(plan: Plan, id: string): Plan {

@@ -3,7 +3,7 @@ import { addProvenance } from "./provenance.ts";
 export type PdfLine = {
   text: string;
   page: number;
-  cells?: Array<{ x: number; text: string }>;
+  cells?: Array<{ x: number; text: string; width?: number }>;
 };
 export type ParseResult = {
   plan: Plan;

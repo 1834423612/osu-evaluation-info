@@ -11,6 +11,11 @@ export const publicUrl = z
       ) &&
       !u.username &&
       !u.password &&
+      !u.hash &&
+      !/(?:^|\.)(?:degreeplanner|webauth|idp|shibboleth|buckeyelink)\./.test(
+        u.hostname,
+      ) &&
+      !/\/(?:user|login|logout|wp-admin)(?:\/|$)/i.test(u.pathname) &&
       (!u.search ||
         (u.pathname.endsWith(".pdf") &&
           [...u.searchParams].length === 1 &&

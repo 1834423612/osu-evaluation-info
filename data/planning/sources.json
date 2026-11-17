@@ -3,6 +3,177 @@
   "coverage": "partial",
   "sources": [
     {
+      "id": "aerospace-curriculum",
+      "title": "Aerospace Engineering curriculum",
+      "titleZh": "航空航天工程培养方案",
+      "url": "https://mae.osu.edu/undergraduate-aerospace-engineering/aerospace-engineering-curriculum",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "aviation-curriculum",
+      "title": "Aviation curriculum",
+      "titleZh": "航空培养方案",
+      "url": "https://aviation.osu.edu/majors/bachelor-science-aviation",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "bme-curriculum",
+      "title": "Biomedical Engineering curriculum sheets",
+      "titleZh": "生物医学工程培养方案",
+      "url": "https://bme.osu.edu/bme-sample-curriculum-sheets",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "chemical-curriculum",
+      "title": "Chemical Engineering curriculum",
+      "titleZh": "化学工程培养方案",
+      "url": "https://cbe.osu.edu/undergraduate/curriculum",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "civil-curriculum",
+      "title": "Civil Engineering curriculum",
+      "titleZh": "土木工程培养方案",
+      "url": "https://ceg.osu.edu/civil-engineering-curriculum",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "cse-curriculum",
+      "title": "Computer Science and Engineering curriculum",
+      "titleZh": "计算机科学与工程培养方案",
+      "url": "https://cse.osu.edu/sites/default/files/2023-03/CSE-Curriculum-Sheet-New-GE-IND-sample-schedule-with-GE-FINAL-1.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "ece-computer",
+      "title": "Electrical and Computer Engineering: Computer Engineering",
+      "titleZh": "电子与计算机工程：计算机工程方向",
+      "url": "https://www.advising.engineering.osu.edu/media/document/2026-05-27/2026-2027-ce-bingo-sheet-5-28-26.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "ece-electrical",
+      "title": "Electrical and Computer Engineering: Electrical Engineering",
+      "titleZh": "电子与计算机工程：电子工程方向",
+      "url": "https://www.advising.engineering.osu.edu/media/document/2026-05-27/2026-2027-ee-bingo-sheet-5-18-26.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "engineering-physics",
+      "title": "Engineering Physics curriculum",
+      "titleZh": "工程物理培养方案",
+      "url": "https://www.advising.engineering.osu.edu/media/document/2026-10-19/eng_phy_curriculum_sheet_26_27_math1151.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "environmental-curriculum",
+      "title": "Environmental Engineering curriculum",
+      "titleZh": "环境工程培养方案",
+      "url": "https://ceg.osu.edu/environmental-engineering-curriculum",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "fabe-food",
+      "title": "Food, Agricultural and Biological Engineering: Food Engineering",
+      "titleZh": "食品农业与生物工程：食品工程方向",
+      "url": "https://www.advising.engineering.osu.edu/media/document/2026-07-27/fabe-food-engineering-curriculum-sheet-2026-2027.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "ise-curriculum",
+      "title": "Industrial and Systems Engineering curriculum",
+      "titleZh": "工业与系统工程培养方案",
+      "url": "https://ise.osu.edu/undergraduate-program/curriculum-ise-elective-tracks-bsms-information",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "materials-curriculum",
+      "title": "Materials Science and Engineering curriculum",
+      "titleZh": "材料科学与工程培养方案",
+      "url": "https://www.advising.engineering.osu.edu/media/document/2026-10-19/00-mse-2026-2027-gen-curriculum-sheet_0.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "mechanical-curriculum",
+      "title": "Mechanical Engineering curriculum",
+      "titleZh": "机械工程培养方案",
+      "url": "https://mae.osu.edu/undergraduate-mechanical-engineering/mechanical-engineering-curriculum",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "welding-curriculum",
+      "title": "Welding Engineering curriculum",
+      "titleZh": "焊接工程培养方案",
+      "url": "https://www.advising.engineering.osu.edu/media/document/2026-10-19/00-we-26-27-updated-curriculum-sheet-curriculum-change_0.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "architecture-curriculum",
+      "title": "Architecture curriculum",
+      "titleZh": "建筑学培养方案",
+      "url": "https://knowlton.osu.edu/sites/default/files/2022-07/curriculum_22-23_BSArch_1.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "city-planning-curriculum",
+      "title": "City and Regional Planning curriculum",
+      "titleZh": "城市与区域规划培养方案",
+      "url": "https://knowlton.osu.edu/sites/default/files/2022-08/curriculum_22-23_BSCRP.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "landscape-curriculum",
+      "title": "Landscape Architecture curriculum",
+      "titleZh": "景观建筑培养方案",
+      "url": "https://knowlton.osu.edu/sites/default/files/2022-07/curriculum_22-23_BSLA_1.pdf",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
+      "id": "pharmacy-curriculum",
+      "title": "Pharmaceutical Sciences curriculum",
+      "titleZh": "药学培养方案",
+      "url": "https://pharmacy.osu.edu/education/undergraduate-programs/bachelor-science-pharmaceutical-sciences-bsps/bsps-curriculum",
+      "validatedAt": "2026-11-16",
+      "status": "discovered",
+      "reviewStatus": "pending"
+    },
+    {
       "titleZh": "全部专业、学位与校区",
       "reviewStatus": "pending",
       "id": "program-index",

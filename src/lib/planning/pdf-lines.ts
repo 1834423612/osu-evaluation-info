@@ -1,11 +1,14 @@
 import type { PdfLine } from "./parser.ts";
-type Item = { str: string; transform: number[] };
+type Item = { str: string; transform: number[]; width?: number };
 /** Preserve table cells in memory; never persist text or coordinates in a plan. */
 export function planningLines(
   items: readonly unknown[],
   page: number,
 ): PdfLine[] {
-  const rows = new Map<number, Array<{ x: number; text: string }>>();
+  const rows = new Map<
+    number,
+    Array<{ x: number; text: string; width?: number }>
+  >();
   for (const value of items) {
     if (
       !value ||
@@ -18,7 +21,7 @@ export function planningLines(
     if (!item.str.trim()) continue;
     const y = Math.round(item.transform[5] / 3) * 3;
     const row = rows.get(y) ?? [];
-    row.push({ x: item.transform[4], text: item.str });
+    row.push({ x: item.transform[4], text: item.str, width: item.width });
     rows.set(y, row);
   }
   return [...rows]

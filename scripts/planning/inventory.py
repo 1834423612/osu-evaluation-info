@@ -8,6 +8,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from sync import atomic_json, official_url
+from course_codes import course_codes
 
 INDEX = 'https://undergrad.osu.edu/majors-and-academics/majors-by-college'
 CODE = re.compile(r'\b([A-Z][A-Z&]{1,11})\s+(\d{4}(?:\.\d{1,2})?[A-Z]?)\b')
@@ -83,25 +84,35 @@ def program_inventory(data):
     return list({r['id']: r for r in result}.values())
 
 
+def ge_systems(title, text):
+    patterns = [
+        ('GEN', r'(?:^|[\W_])GEN(?:$|[\W_])|\bNew[\s_-]+(?:GE|General Education)\b|\bGeneral Education[\s_-]+New\b'),
+        ('GEL', r'(?:^|[\W_])GEL(?:$|[\W_])|\bLegacy[\s_-]+(?:GE|General Education)\b|\bGeneral Education[\s_-]+Legacy\b'),
+    ]
+    explicit = [code for code, pattern in patterns if re.search(pattern, title, re.I)]
+    return explicit or [code for code, pattern in patterns if re.search(pattern, text, re.I)]
+
+
 def document_metadata(record, blocks, label=''):
     title = next((b['text'] for b in blocks if b['kind'] == 'h1'), label)
     title = title[:240] or unquote(urlsplit(record['url']).path.rsplit('/', 1)[-1])[:240]
     text = '\n'.join(b['text'] for b in blocks)
     heading = '\n'.join(b['text'] for b in blocks if b['kind'] in ('h1', 'h2', 'h3'))
-    years = sorted(set(re.findall(r'\b(20\d{2})\s*[-–/]\s*(20\d{2}|\d{2})\b', title + '\n' + heading + '\n' + unquote(record['url']))))
+    years = sorted(set(re.findall(r'\b(20\d{2})\s*[-–/]\s*(20\d{2}|\d{2})\b', title + '\n' + heading + '\n' + (text[:1500] if record.get('contentType') == 'application/pdf' else '') + '\n' + unquote(record['url']))))
     academic_years = sorted(set(a + '-' + (b if len(b) == 4 else a[:2] + b) for a, b in years if int(b[-2:]) == (int(a) + 1) % 100))
     terms = sorted(set(m[0].upper() + m[1] for m in re.findall(r'\bEffective(?:\s+Term)?\s*:?\s*(AU|SP|SU)\s*[\x27’]?\s*(20\d{2}|\d{2})\b', text, re.I)))
     terms = [t[:2] + ('20' + t[2:] if len(t) == 4 else t[2:]) for t in terms]
-    applied = sorted(set(re.findall(r'\bApplied Version\s*:?\s*((?:AU|SP|SU)20\d{2})\b', text, re.I)))
-    codes = sorted(set((m[1], m[2]) for m in CODE.finditer(text) if m[1] not in ('AU', 'SP', 'SU')))
+    applied = sorted(set(value.upper() for value in re.findall(r'\bApplied Version\s*:?\s*((?:AU|SP|SU)20\d{2})\b', text, re.I)))
+    codes = course_codes(text)
     kind = ('sample-plan' if re.search(r'\b(?:sample|four[- ]year|4[- ]year)\b', title + ('\n' + text[:500] if record.get('contentType') == 'application/pdf' else ''), re.I)
             else 'requirements' if re.search(r'requirement|curriculum sheet', title, re.I) and codes else 'source')
     return {'title': title, 'documentKind': kind, 'academicYears': academic_years,
             'effectiveTerms': terms, 'appliedVersions': applied,
-            'geSystems': [v for v, pattern in [('GEN', r'\bGEN\b|General Education.{0,5}New'), ('GEL', r'\bGEL\b|General Education.{0,5}Legacy')] if re.search(pattern, text, re.I)],
+            'geSystems': ge_systems(title, text),
             'publicationStatus': 'draft' if re.search(r'\bdraft\b', title, re.I) else 'unknown',
             'courseReferences': [{'subject': s, 'number': n} for s, n in codes[:1000]],
-            'pageCount': record.get('pageCount'), 'extractionStatus': 'references' if codes else 'unstructured'}
+            'pageCount': record.get('pageCount'), 'extractionStatus': 'unsupported' if record.get('extractionIssue') else 'references' if codes else 'unstructured',
+            **({'extractionIssue':record['extractionIssue']} if record.get('extractionIssue') else {})}
 
 
 def build(cache):
@@ -112,7 +123,8 @@ def build(cache):
     programs = program_inventory((cache / index['sha256']).read_bytes())
     if len(programs) < 100:
         raise ValueError('Program index layout changed; refusing an incomplete replacement')
-    labels = {}
+    seeds = json.loads((Path(__file__).parents[2] / 'data/planning/sources.json').read_text(encoding='utf-8-sig'))
+    labels = {official_url(source['url']): [source['title']] for source in seeds['sources']}
     for parent in state['sources'].values():
         for link in parent.get('links', []):
             labels.setdefault(link['url'], []).append(link['label'])
@@ -133,16 +145,20 @@ def build(cache):
                 extracted = cache / 'extracted' / (version['sha256'] + '.json')
                 evidence = json.loads(extracted.read_text(encoding='utf-8')) if extracted.is_file() else {}
                 blocks = evidence.get('blocks', [])
-                version = {**version, 'pageCount': evidence.get('pageCount')}
+                version = {**version, 'pageCount': evidence.get('pageCount'), 'extractionIssue':evidence.get('reason') if evidence.get('status')=='unsupported' else None}
             metadata = document_metadata(version, blocks, next(iter(labels.get(url, [])), ''))
             identity = hashlib.sha256((url + '\n' + version['sha256']).encode()).hexdigest()[:24]
             matches = []
             context = normalize(metadata['title'] + ' ' + ' '.join(labels.get(url, [])))
             for program in programs:
-                name = normalize(program['name']).split(' (')[0]
-                if len(name) >= 8 and re.search(r'(?:^| )' + re.escape(name) + r'(?: |$)', context):
+                name = normalize(program['name'].split('(')[0])
+                title_name = normalize(metadata['title'])
+                department = normalize(urlsplit(url).hostname.split('.')[0])
+                full_name = len(name) >= 8 and re.search(r'(?:^| )' + re.escape(name) + r'(?: |$)', context)
+                short_name = len(name) >= 3 and (department == name or title_name == name or re.match(re.escape(name) + r' (?:major|requirements|curriculum|degree|ba |bs |sample)', title_name))
+                if full_name or short_name:
                     matches.append(program['id'])
-            documents[identity] = {'id': identity, 'url': url, 'resolvedUrl': version.get('resolvedUrl', url),
+            documents[identity] = {'id': identity, 'url': url, 'resolvedUrl': official_url(version.get('resolvedUrl', url)),
                                    'sha256': version['sha256'], 'fetchedAt': version['fetchedAt'], 'mediaType': version['contentType'],
                                    'programIds': matches, 'reviewStatus': 'pending', **metadata}
         if record.get('status') == 'pending':
@@ -157,7 +173,7 @@ def build(cache):
             'counts': {'indexEntries': len(programs), 'downloadedVersions': len(resources),
                        'withCourseReferences': sum(bool(d['courseReferences']) for d in resources),
                        'programsWithReferences': sum(bool(p['documentIds']) for p in programs),
-                       'blockedOrFailed': len(pending), 'unvisited': len(set(state['discovered']) - state['sources'].keys()), 'approved': 0}}
+                       'blockedOrFailed': len(pending), 'unvisited': len(set(state['discovered']) - state['sources'].keys()), 'unsupportedExtractions':sum(d['extractionStatus']=='unsupported' for d in resources), 'approved': 0}}
 
 
 if __name__ == '__main__':

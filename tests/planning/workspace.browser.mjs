@@ -101,13 +101,11 @@ try {
         await page.getByRole("button", { name: "Light", exact: true }).click();
     }
   }
-  await page
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "synthetic-second.pdf",
-      mimeType: "application/pdf",
-      buffer: syntheticPdf(),
-    });
+  await page.locator("input[type=file]").setInputFiles({
+    name: "synthetic-second.pdf",
+    mimeType: "application/pdf",
+    buffer: syntheticPdf(),
+  });
   await page.getByLabel("Show source", { exact: true }).waitFor();
   assert.equal(await page.getByLabel("Subject", { exact: true }).count(), 4);
   assert.equal(
@@ -129,11 +127,19 @@ try {
     "2111",
   );
   await page.getByLabel("Show source", { exact: true }).selectOption("");
-  await page.getByRole("tab", { name: "Official curriculum sources" }).click();
-  await page.getByText(/0 human-approved structured plans/).waitFor();
-  assert.equal(
-    await page.getByRole("link", { name: "Open official source" }).count(),
-    12,
+  await page
+    .getByRole("tab", { name: "Official curricula", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Find your curriculum.", exact: true })
+    .waitFor();
+  await page
+    .getByRole("combobox", { name: "College or school", exact: true })
+    .waitFor();
+  assert.ok(
+    (await page
+      .getByRole("button", { name: "View document", exact: true })
+      .count()) <= 24,
   );
   await page.evaluate(() => {
     localStorage.setItem("course-atlas:locale:v1", "zh");

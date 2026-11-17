@@ -97,6 +97,17 @@ export const courseSchema = z
 const planObject = z
   .object({
     schemaVersion: z.literal(2),
+    schedule: z
+      .object({
+        terms: z
+          .array(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/))
+          .max(24),
+        placements: z
+          .array(z.object({ courseId: reference, term }).strip())
+          .max(1000),
+      })
+      .strip()
+      .default({ terms: [], placements: [] }),
     documents: z
       .array(
         z
@@ -188,6 +199,18 @@ export const planSchema = z
       courseIds.size !== courses.length
     )
       issue();
+    if (
+      new Set(plan.schedule.terms).size !== plan.schedule.terms.length ||
+      new Set(plan.schedule.placements.map((p) => p.courseId)).size !==
+        plan.schedule.placements.length
+    )
+      issue();
+    for (const p of plan.schedule.placements)
+      if (
+        !courseIds.has(p.courseId) ||
+        (p.term && !plan.schedule.terms.includes(p.term.replace(/ /g, "")))
+      )
+        issue();
     for (const p of plan.programs) if (!documents.has(p.documentId)) issue();
     for (const s of plan.semesters) {
       if (
@@ -226,6 +249,7 @@ export type PlanCourse = z.infer<typeof courseSchema>;
 export function emptyPlan(): Plan {
   return {
     schemaVersion: 2,
+    schedule: { terms: [], placements: [] },
     documents: [],
     programs: [],
     requirements: [],
