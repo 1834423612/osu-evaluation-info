@@ -32,7 +32,11 @@ const categories: [RegExp, string][] = [
   ],
 ];
 export function requirementSearch(title: string) {
-  const value = title.replace(/^Placeholder:\s*/i, "").trim();
+  const value = title
+    .replace(/^Placeholder:\s*/i, "")
+    .replace(/^Theme:\s*/i, "")
+    .split(/\s+[–—-]\s+|\s*\(/)[0]
+    .trim();
   return categories.find(([pattern]) => pattern.test(value))?.[1] ?? null;
 }
 export function courseFamilyQueries(

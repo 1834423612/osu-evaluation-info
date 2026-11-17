@@ -13,6 +13,15 @@ import {
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./next-term.module.css";
 import { usePlanningCatalog } from "./course-catalog";
+import {
+  planningPrograms,
+  programRequirements,
+  requirementCodes,
+} from "@/lib/planning/programs";
+import { readRequirementCourses } from "@/lib/planning/requirement-catalog";
+import { requirementSearch } from "@/lib/planning/requirement-search";
+import { requirementProgress } from "@/lib/planning/snapshots";
+import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import { nextSemester, currentSemester } from "@/lib/planning/workspace";
 
 export function NextTerm({
@@ -36,24 +45,7 @@ export function NextTerm({
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const [programId, setProgramId] = useState("");
-  const programs = Array.from(
-    new Map(
-      plan.programs
-        .filter((p) =>
-          plan.requirements.some(
-            (r) => r.programId === p.id && r.alternatives.length > 0,
-          ),
-        )
-        .map((p) => [
-          [
-            p.code ?? p.title,
-            p.appliedVersion,
-            plan.documents.find((d) => d.id === p.documentId)?.auditMode,
-          ].join("|"),
-          p,
-        ]),
-    ).values(),
-  );
+  const programs = planningPrograms(plan);
   const major = (p: Plan["programs"][number]) =>
     /-(BA|BS|MN)$/.test(p.code ?? "");
   const program =
@@ -112,6 +104,58 @@ export function NextTerm({
     // Language changes do not restart public fetches.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const categoryRules = programRequirements(plan, program?.id ?? "").filter(
+    (r) =>
+      !requirementCodes(r).length &&
+      requirementSearch(r.title ?? "") &&
+      requirementProgress(plan, r.id).state !== "satisfied",
+  );
+  const categoriesKey = JSON.stringify(
+    categoryRules.map((r) => [r.id, r.title]),
+  );
+  const candidateScope = catalogScope + "|" + categoriesKey;
+  const [categoryState, setCategoryState] = useState<{
+    scope: string;
+    rules: Record<string, { subject: string; number: string }[]>;
+  }>({ scope: "", rules: {} });
+  useEffect(() => {
+    const rows = JSON.parse(categoriesKey) as [string, string][];
+    if (!rows.length) return;
+    const controller = new AbortController();
+    const titles = [...new Set(rows.map(([, title]) => title))];
+    Promise.allSettled(
+      titles.map(
+        async (title) =>
+          [
+            title,
+            await readRequirementCourses(
+              title,
+              catalog,
+              fetchCatalogResource,
+              controller.signal,
+            ),
+          ] as const,
+      ),
+    ).then((responses) => {
+      if (controller.signal.aborted) return;
+      const results = new Map(
+        responses.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])),
+      );
+      setCategoryState({
+        scope: candidateScope,
+        rules: Object.fromEntries(
+          rows.map(([id, title]) => [
+            id,
+            (results.get(title)?.courses ?? []).map((c) => ({
+              subject: c.subject,
+              number: c.catalogNumber,
+            })),
+          ]),
+        ),
+      });
+    });
+    return () => controller.abort();
+  }, [categoriesKey, candidateScope, catalog]);
   let result: ReturnType<typeof recommendCourses> | null = null;
   try {
     result = recommendCourses(plan, {
@@ -124,6 +168,8 @@ export function NextTerm({
       sample: samples.find((s) => s.id === sampleId),
       sampleYear,
       ratings,
+      requirementCandidates:
+        categoryState.scope === candidateScope ? categoryState.rules : {},
       catalogCredits:
         catalogState.scope === catalogScope ? catalogState.credits : {},
     });

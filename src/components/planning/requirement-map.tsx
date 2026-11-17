@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Plus, GitBranch } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
 import { requirementProgress } from "@/lib/planning/snapshots";
+import { planningPrograms, requirementCodes } from "@/lib/planning/programs";
 import { boardCourses } from "@/lib/planning/workspace";
 import { text, type Locale } from "@/lib/i18n";
+import { RequirementChoices } from "./requirement-choices";
 import { CourseStatus } from "./course-status";
 import styles from "./requirement-map.module.css";
 export function RequirementMap({
@@ -14,7 +16,6 @@ export function RequirementMap({
   addCourse,
   onReview,
   inspectCourse,
-  searchRequirement,
   compact = false,
   remainingOnly = false,
 }: {
@@ -44,17 +45,8 @@ export function RequirementMap({
     "official";
   const [remaining, setRemaining] = useState(remainingOnly);
   const documents = new Map(plan.documents.map((d) => [d.id, d]));
-  const programs = Array.from(
-    new Map(
-      plan.programs
-        .filter(
-          (p) =>
-            !plan.hiddenPrograms?.includes(p.code ?? "") &&
-            plan.requirements.some((r) => r.programId === p.id) &&
-            documents.get(p.documentId)?.auditMode === mode,
-        )
-        .map((p) => [p.code ?? p.title ?? p.id, p]),
-    ).values(),
+  const programs = planningPrograms(plan).filter(
+    (p) => documents.get(p.documentId)?.auditMode === mode,
   );
   const activePrograms = selected
     ? programs.filter((p) => p.id === selected)
@@ -103,6 +95,7 @@ export function RequirementMap({
               unresolved: "remaining",
             } as const
           )[progress.state];
+        const alternatives = requirementCodes(r);
         const children = rules.filter((c) => c.parentId === r.id);
         const constraint =
           r.kind === "all"
@@ -126,8 +119,8 @@ export function RequirementMap({
                 <span className={styles.nodeTitle}>
                   <strong>
                     {r.title ??
-                      (r.alternatives.length
-                        ? r.alternatives
+                      (alternatives.length
+                        ? alternatives
                             .map((c) => `${c.subject} ${c.number}`)
                             .join(" / ")
                         : t("Degree requirement", "学业要求"))}
@@ -138,9 +131,9 @@ export function RequirementMap({
                   ›
                 </span>
               </summary>
-              {!!r.alternatives.length && (
+              {!!alternatives.length && (
                 <div className={styles.courseRows}>
-                  {r.alternatives.map((c) => {
+                  {alternatives.map((c) => {
                     const key = `${c.subject} ${c.number}`,
                       fact = facts.get(key),
                       locked =
@@ -182,19 +175,18 @@ export function RequirementMap({
               {children.length > 0 && (
                 <ol>{branch(r.id, programId, depth + 1)}</ol>
               )}
-              {!children.length && !r.alternatives.length && (
-                <div className={styles.ruleNote}>
-                  {t(
-                    "Choose a course with this requirement's attributes in the course search.",
-                    "通过课程搜索选择符合此项要求属性的课程。",
-                  )}
-                  {searchRequirement && r.title && (
-                    <button onClick={() => searchRequirement(r.title!)}>
-                      <Plus size={14} />
-                      {t("Find courses", "选择课程")}
-                    </button>
-                  )}
-                </div>
+              {!children.length && !alternatives.length && r.title && (
+                <RequirementChoices
+                  title={r.title}
+                  locale={locale}
+                  unavailable={[...facts]
+                    .filter(([, c]) =>
+                      ["completed", "in-progress"].includes(c.status),
+                    )
+                    .map(([code]) => code)}
+                  add={addCourse}
+                  inspect={inspectCourse}
+                />
               )}
             </details>
           </li>
