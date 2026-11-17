@@ -41,6 +41,7 @@ export function genericRequirementTemplates(input: unknown) {
               .map((course) => ({
                 subject: course.subject,
                 number: course.number,
+                evidenceRole: "option" as const,
               })),
           })),
         },

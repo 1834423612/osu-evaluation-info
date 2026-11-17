@@ -28,6 +28,17 @@ test("generic templates omit observed and legacy-unverified course alternatives"
   const encoded = JSON.stringify(genericRequirementTemplates(plan));
   assert.doesNotMatch(encoded, /2999|3999|Synthetic private/);
   assert.match(encoded, /2998/);
+  const intermediate = structuredClone(plan);
+  intermediate.allocations = [];
+  intermediate.semesters = [];
+  const template = genericRequirementTemplates(plan)[0];
+  intermediate.requirements = template.requirements.map((rule) => ({
+    ...rule,
+    documentId: plan.documents[0].id,
+    programId: plan.programs[0].id,
+    page: null,
+  }));
+  assert.deepEqual(genericRequirementTemplates(intermediate), [template]);
 });
 test("generic trees preserve requirements while removing all student observations and identifiers", () => {
   const plan = sample();
