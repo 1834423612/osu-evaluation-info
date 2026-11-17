@@ -1,6 +1,7 @@
 import { planSchema, type Plan } from "./model.ts";
 import { requirementProgress } from "./snapshots.ts";
 import { boardCourses } from "./workspace.ts";
+import { programRequirements, requirementCodes } from "./programs.ts";
 import { termOrder } from "./schedule.ts";
 
 export type SampleCourse = {
@@ -48,6 +49,7 @@ export type RecommendationOptions = {
   quantitativeSubjects: string[];
   maxQuantitative: number;
   ratings?: Record<string, Rating>;
+  requirementCandidates?: Record<string, { subject: string; number: string }[]>;
   catalogCredits?: Record<string, { min: number; max: number }>;
 };
 
@@ -104,9 +106,7 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
     }
     return candidate;
   };
-  for (const rule of plan.requirements.filter(
-    (r) => r.programId === options.programId,
-  )) {
+  for (const rule of programRequirements(plan, options.programId)) {
     let satisfied = requirementProgress(plan, rule.id).state === "satisfied";
     let parent = rule.parentId;
     const seen = new Set<string>();
@@ -116,7 +116,10 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
       parent = plan.requirements.find((r) => r.id === parent)?.parentId ?? null;
     }
     if (satisfied) continue;
-    for (const code of rule.alternatives) {
+    for (const code of [
+      ...requirementCodes(rule),
+      ...(options.requirementCandidates?.[rule.id] ?? []),
+    ]) {
       const candidate = get(code.subject, code.number);
       if (rule.hierarchyReviewed) candidate.ruleIds.push(rule.id);
       else candidate.unreviewed = true;
@@ -147,7 +150,7 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
         sampleCredits.get(candidate.key)?.size === 1 ? course.credits : null;
   }
   for (const [key, facts] of observations)
-    if (facts.some((c) => c.status === "planned")) {
+    if (!options.programId && facts.some((c) => c.status === "planned")) {
       const [subject, number] = key.split(" ");
       get(subject, number);
     }

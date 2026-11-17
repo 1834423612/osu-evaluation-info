@@ -112,6 +112,11 @@ function fixture() {
       ],
     },
   ];
+  plan.requirements.push({
+    ...plan.requirements[0],
+    id: "stat",
+    alternatives: [{ subject: "STAT", number: "3201" }],
+  });
   return planSchema.parse(plan);
 }
 test("recommendation respects quantitative and credit caps, excludes completed and unknown-credit packs", () => {
@@ -133,7 +138,7 @@ test("recommendation respects quantitative and credit caps, excludes completed a
   const satisfied = recommendCourses(plan, options).candidates.find(
     (c) => c.subject === "MATH",
   );
-  assert.equal(satisfied.ruleIds.length, 0);
+  assert.equal(satisfied, undefined);
 });
 test("ratings stay separate by instrument, shrink small samples and whitelist requests", () => {
   const result = recommendCourses(fixture(), {
@@ -330,5 +335,42 @@ test("summer terms do not shift subsequent sample-year matching", () => {
   assert.equal(
     result.candidates.find((c) => c.key === "ARTSSCI 1100").sampleMatch,
     false,
+  );
+});
+
+test("same-program requirements remain available across report IDs without unrelated planned courses", () => {
+  const plan = fixture();
+  plan.documents.push({
+    ...plan.documents[0],
+    id: "d2",
+    source: "expanded-audit",
+  });
+  plan.programs.push({ ...plan.programs[0], id: "p2", documentId: "d2" });
+  plan.requirements.push({
+    ...plan.requirements[0],
+    id: "r2",
+    programId: "p2",
+    documentId: "d2",
+    alternatives: [{ subject: "CSE", number: "2221" }],
+  });
+  plan.semesters[0].courses.push({
+    id: "unrelated",
+    documentId: "d",
+    subject: "BIOLOGY",
+    number: "1113",
+    kind: "course",
+    status: "planned",
+    evidenceRole: "observation",
+    credits: 4,
+    page: 1,
+  });
+  const result = recommendCourses(plan, options);
+  assert.ok(result.candidates.some((c) => c.key === "CSE 2221"));
+  assert.ok(!result.candidates.some((c) => c.key === "BIOLOGY 1113"));
+  plan.programs[1].appliedVersion = "AU2017";
+  assert.ok(
+    !recommendCourses(plan, options).candidates.some(
+      (c) => c.key === "CSE 2221",
+    ),
   );
 });
