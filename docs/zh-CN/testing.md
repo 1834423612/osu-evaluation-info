@@ -478,7 +478,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 ## 学期规划
 
-- `tests/planning/model.test.mjs`: 白名单、审核门槛、存储失败和课程链接. `node --test tests/planning/model.test.mjs`. 不连接服务、不写外部数据。
+- `tests/planning/model.test.mjs`: 白名单、本地序列化、存储失败和课程链接. `node --test tests/planning/model.test.mjs`. 不连接服务、不写外部数据。
 - `tests/planning/parser.test.mjs`: 合成版式、未知学分、占位项、冲突版本及打印顺序. `node --test tests/planning/parser.test.mjs`. 不连接服务、不写外部数据。
 - `tests/planning/curriculum.test.mjs`: 官方候选、独立域和导入验证. `node --test tests/planning/curriculum.test.mjs`. 不连接服务、不写外部数据。
 - `tests/planning/test_sync.py`: 公开 URL 限制和未知布局。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线，无数据库或网络写入。
@@ -506,7 +506,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/test_inventory.py`: 官方学院索引、标题/版本元数据和发现边界。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
 
-- `tests/planning/test_public_layouts.py`: 官方前缀别名、严格八学期网格/PDF 列、居中年级、替代和未知学分。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
+- `tests/planning/test_public_layouts.py`: 官方前缀别名、HTML 年级双列、可选暑期、音乐/工程/护理/建筑/公共卫生 PDF、换行学分、替代课和页脚排除。 `python3 -m unittest discover -s tests/planning -p 'test_*.py'`. 离线合成 fixture；无服务或外部写入。
 
 - `tests/planning/directory.test.mjs`: 学院/专业覆盖、有界分页、明确要求学期分面及公开元数据最小化。仅合成/公开输入，无外部网络、数据库或写入。 `node --test tests/planning/directory.test.mjs`.
 
@@ -517,3 +517,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 - `tests/planning/workspace.test.mjs` 验证课程位置复用、跨来源修读保护和学期默认值。运行 `node --test tests/planning/workspace.test.mjs`，仅合成输入，无网络或写入。
 
 - `tests/test_planning_samples.py` 验证已检查的 CSE 表格与 Earth Sciences 选择组。运行 `python3 -m unittest discover -s tests -p test_planning_samples.py`，离线执行，无服务或写入。
+
+- `tests/planning/automatic-import.test.mjs` 验证跨报告修读状态优先级、完整学业标题、自动保存及元数据隐私。运行 `node --test tests/planning/automatic-import.test.mjs`。仅合成数据，无网络或持久化写入。
+
+- `tests/planning/requirement-search.test.mjs` 验证准确 GE 属性筛选和受限课程族回退。运行 `node --test tests/planning/requirement-search.test.mjs`。离线合成数据，无网络或写入。
