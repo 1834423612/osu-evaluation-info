@@ -11,7 +11,7 @@ export class UserDataError extends Error {
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || !authOrigins().includes(origin))
+  if (!origin || !authOrigins(process.env, request).includes(origin))
     throw new UserDataError("origin", 403);
   const type = request.headers.get("content-type") ?? "";
   if (!type.toLowerCase().startsWith("application/json"))

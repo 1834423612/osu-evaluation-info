@@ -24,7 +24,7 @@ export function createAuth(
     baseURL,
     secret: process.env.BETTER_AUTH_SECRET!,
     database: getAuthPool(),
-    trustedOrigins: authOrigins(),
+    trustedOrigins: (request) => authOrigins(process.env, request),
     user: { modelName: prefix + "user" },
     session: {
       modelName: prefix + "session",

@@ -72,10 +72,15 @@ test(
     async function request(
       path,
       body,
-      { origin = "http://localhost:3000", headers = {}, cookie = "" } = {},
+      {
+        origin = "http://localhost:3000",
+        headers = {},
+        cookie = "",
+        target = origin,
+      } = {},
     ) {
       const response = await handleAuthRequest(
-        new Request(origin + "/api/auth" + path, {
+        new Request(target + "/api/auth" + path, {
           method: body ? "POST" : "GET",
           headers: {
             origin,
@@ -257,6 +262,50 @@ test(
           {
             origin: "https://evil.example",
             headers: { "x-forwarded-host": "localhost:3000" },
+          },
+        )
+      ).status,
+      403,
+    );
+
+    const tailnetOrigin = "http://100.106.78.98:3000";
+    const tailnetLogin = await request(
+      "/sign-in/email",
+      { email, password, callbackURL: tailnetOrigin + "/planning" },
+      {
+        origin: tailnetOrigin,
+        target: "http://0.0.0.0:3000",
+        headers: { host: "100.106.78.98:3000" },
+      },
+    );
+    assert.equal(tailnetLogin.status, 200);
+    assert.equal(tailnetLogin.data.url, tailnetOrigin + "/planning");
+    assert.ok(tailnetLogin.cookie.includes("waho.session_token="));
+    const tailnetSession = await request("/get-session", null, {
+      origin: tailnetOrigin,
+      cookie: tailnetLogin.cookie,
+    });
+    assert.equal(tailnetSession.data.user.id, login.data.user.id);
+    assert.equal(
+      (
+        await request(
+          "/sign-out",
+          {},
+          {
+            origin: tailnetOrigin,
+            cookie: tailnetLogin.cookie,
+          },
+        )
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await request(
+          "/sign-in/email",
+          { email, password },
+          {
+            origin: "http://100.128.0.1:3000",
           },
         )
       ).status,
