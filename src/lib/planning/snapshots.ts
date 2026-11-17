@@ -18,6 +18,8 @@ export function mergeSnapshots(current: Plan, incoming: Plan): Plan {
     auditMode: left.auditMode === right.auditMode ? left.auditMode : "unknown",
     hiddenPrograms: [...new Set([...(left.hiddenPrograms ?? []), ...(right.hiddenPrograms ?? [])])],
     schedule: {
+      sectionChoices: { ...right.schedule.sectionChoices, ...left.schedule.sectionChoices },
+      simulationPreferences: { ...right.schedule.simulationPreferences, ...left.schedule.simulationPreferences },
       campuses: { ...right.schedule.campuses, ...left.schedule.campuses },
       terms: [...new Set([...left.schedule.terms, ...right.schedule.terms])],
       placements: [

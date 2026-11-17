@@ -202,7 +202,11 @@ export function removeEmptySemester(plan: Plan, term: string) {
   if (boardCourses(plan).some((row) => row.term === term)) return plan;
   const campuses = { ...plan.schedule.campuses };
   delete campuses[term];
+  const sectionChoices={...plan.schedule.sectionChoices};
+  const simulationPreferences={...plan.schedule.simulationPreferences};
+  delete sectionChoices[term];
+  delete simulationPreferences[term];
   return planSchema.parse({ ...plan, schedule: { ...plan.schedule,
-    terms: plan.schedule.terms.filter((value) => value !== term), campuses },
+    terms: plan.schedule.terms.filter((value) => value !== term), campuses, sectionChoices, simulationPreferences },
     semesters: plan.semesters.filter((s) => s.term?.replace(/ /g, "") !== term || s.courses.length > 0) });
 }

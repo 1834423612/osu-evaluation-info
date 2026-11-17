@@ -114,6 +114,11 @@ const planObject = z
     schemaVersion: z.literal(2),
     schedule: z
       .object({
+        sectionChoices: z.record(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/), z.record(z.string().max(30), z.array(z.string().regex(/^[a-zA-Z0-9-]{1,80}$/)).max(12))).optional(),
+        simulationPreferences: z.record(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/), z.object({
+          compact: z.boolean(), buffer: z.number().int().min(0).max(120),
+          blocked: z.array(z.object({ days: z.array(z.number().int().min(0).max(6)).min(1).max(7), start: z.number().int().min(0).max(1439), end: z.number().int().min(1).max(1440) }).refine((b) => b.start < b.end)).max(30),
+        })).optional(),
         campuses: z.record(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/), z.enum(["COL", "MNS", "LMA", "MRN", "NWK", "WST"])).optional(),
         terms: z
           .array(z.string().regex(/^(?:Autumn|Spring|Summer)20\d{2}$/))

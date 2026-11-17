@@ -20,6 +20,8 @@ import dynamic from "next/dynamic";
 import {
   Plus,
   CalendarDays,
+  CalendarClock,
+  MapPin,
   GripVertical,
   Search,
   GitBranch,
@@ -59,6 +61,9 @@ import { PlanningSearch } from "./planning-search";
 import styles from "./semester-board.module.css";
 const RequirementMap = dynamic(() =>
   import("./requirement-map").then((m) => m.RequirementMap),
+);
+const SemesterSimulation = dynamic(() =>
+  import("./semester-simulation").then((m) => m.SemesterSimulation),
 );
 const NextTerm = dynamic(() => import("./next-term").then((m) => m.NextTerm));
 const subscribeNarrow = (notify: () => void) => {
@@ -256,6 +261,7 @@ export function SemesterBoard({
   const t = (en: string, zh: string) => text(locale, en, zh);
   const context = usePlanningCatalog();
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
+  const [simulationTerm, setSimulationTerm] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [panel, setPanel] = useState<"requirements" | "search" | "suggestions">(
     "requirements",
@@ -704,6 +710,7 @@ export function SemesterBoard({
                             </header>
                             {term !== "unassigned" && (
                               <div className={styles.termOptions}>
+                                <MapPin size={15} aria-hidden="true" />
                                 <ChoiceSelect
                                   aria-label={`${semesterLabel(term, locale)} ${t("campus", "校区")}`}
                                   value={semesterCampus(plan, term)}
@@ -747,6 +754,15 @@ export function SemesterBoard({
                                     </button>
                                   )}
                               </div>
+                            )}
+                            {term !== "unassigned" && (
+                              <button
+                                className={styles.simulate}
+                                onClick={() => setSimulationTerm(term)}
+                              >
+                                <CalendarClock size={14} />
+                                {t("Simulate schedule", "模拟排课")}
+                              </button>
                             )}
                             <div className={styles.loadBar} aria-hidden="true">
                               <span
@@ -934,6 +950,31 @@ export function SemesterBoard({
                 {message}
               </p>
             </div>
+            <WorkspaceDialog
+              closeOnly
+              guard={false}
+              wide
+              open={simulationTerm !== null}
+              onOpenChange={(open) => {
+                if (!open) setSimulationTerm(null);
+              }}
+              title={t("Schedule simulation", "模拟排课")}
+              description={t(
+                "Sections, time preferences and conflicts",
+                "班次、时间偏好与冲突",
+              )}
+              closeLabel={t("Close", "关闭")}
+            >
+              {simulationTerm && (
+                <SemesterSimulation
+                  key={simulationTerm}
+                  plan={plan}
+                  term={simulationTerm}
+                  locale={locale}
+                  update={update}
+                />
+              )}
+            </WorkspaceDialog>
             {narrow ? (
               <WorkspaceDialog
                 closeOnly

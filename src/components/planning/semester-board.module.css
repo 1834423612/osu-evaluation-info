@@ -621,6 +621,33 @@
 .searchPanel > p[role="status"]:empty {
   display: none;
 }
+.simulate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+}
+.simulate:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+}
+.termOptions {
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border-radius: 7px;
+  color: var(--accent);
+}
+.termOptions > svg {
+  flex-shrink: 0;
+}
 @media (min-width: 1500px) {
   .yearTerms {
     grid-template-columns: repeat(3, minmax(0, 1fr));
