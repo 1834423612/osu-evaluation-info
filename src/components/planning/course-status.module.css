@@ -1,0 +1,46 @@
+.badge {
+  --status-color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  flex-shrink: 0;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--status-color) 9%, var(--surface));
+  color: var(--status-color);
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 18px;
+}
+.badge[data-status="completed"] {
+  --status-color: var(--positive, #18866b);
+}
+.badge[data-status="in-progress"] {
+  --status-color: #c56819;
+}
+.badge[data-status="planned"] {
+  --status-color: #326cb3;
+}
+.badge[data-status="placeholder"] {
+  --status-color: #946c12;
+}
+.badge[data-status="withdrawn"] {
+  --status-color: #b54e68;
+}
+.badge[data-status="dropped"] {
+  --status-color: #7b6385;
+}
+.badge[data-status="failed"] {
+  --status-color: var(--primary);
+}
+.badge[data-status="repeated"] {
+  --status-color: #7d56b7;
+}
+.badge[data-status="remaining"] {
+  --status-color: var(--accent-foreground);
+}
+.badge[data-icon-only="true"] {
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--status-color) 45%, transparent);
+}

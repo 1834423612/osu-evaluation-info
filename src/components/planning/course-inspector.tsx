@@ -14,6 +14,8 @@ import {
   creditLabel,
   planningCredits,
 } from "@/lib/planning/course-catalog";
+import { CourseStatus } from "./course-status";
+import { boardCourses } from "@/lib/planning/workspace";
 import { usePlanningCourse } from "./course-catalog";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./semester-board.module.css";
@@ -108,29 +110,34 @@ export function CourseInspector({
         {references.length > 0 && (
           <ul>
             {references.map((c) => {
-              const recorded = plan.semesters
-                .flatMap((s) => s.courses)
-                .filter(
-                  (row) =>
-                    row.subject === c.subject &&
-                    row.number === c.number &&
-                    row.evidenceRole === "observation",
-                );
-              const complete =
-                recorded.length > 0 &&
-                recorded.some((row) => row.status === "completed");
+              const recorded = boardCourses(plan).filter(
+                (row) =>
+                  row.course.subject === c.subject &&
+                  row.course.number === c.number,
+              );
+              const status = [
+                "completed",
+                "in-progress",
+                "planned",
+                "withdrawn",
+                "dropped",
+                "failed",
+                "unknown",
+              ].find((status) =>
+                recorded.some((row) => row.course.status === status),
+              ) as
+                | Plan["semesters"][number]["courses"][number]["status"]
+                | undefined;
+
               return (
                 <li key={c.subject + c.number}>
                   <button onClick={() => inspect(c)}>
                     {c.subject} {c.number}
                   </button>
-                  <span>
-                    {complete
-                      ? t("Completed record", "已有完成记录")
-                      : recorded.length
-                        ? t("In your records", "已有课程记录")
-                        : t("Check your plan", "需核对规划")}
-                  </span>
+                  <CourseStatus
+                    status={status ?? "remaining"}
+                    locale={locale}
+                  />
                 </li>
               );
             })}
@@ -155,15 +162,7 @@ export function CourseInspector({
               {t("Source", "来源")}{" "}
               {plan.documents.findIndex((d) => d.id === c.documentId) + 1} ·{" "}
               {t("Original credits", "原始学分")} {c.credits ?? "—"} ·{" "}
-              {t(
-                c.status,
-                {
-                  completed: "已完成",
-                  planned: "计划",
-                  "in-progress": "进行中",
-                  unknown: "待核对",
-                }[c.status],
-              )}
+              <CourseStatus status={c.status} locale={locale} />
             </p>
           ))}
         </details>

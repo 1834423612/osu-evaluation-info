@@ -5,474 +5,322 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 .heading h2 {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 7px;
   letter-spacing: -0.025em;
-  margin: 8px 0;
 }
 .heading p {
-  color: var(--muted);
   font-size: 13px;
-  line-height: 1.7;
-  max-width: 700px;
+  color: var(--muted);
+  margin: 0;
 }
 .heading > svg {
-  color: var(--accent-foreground);
-  flex-shrink: 0;
+  color: var(--muted);
 }
-.eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--accent-foreground);
-  font-weight: 750;
+.viewModes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--subtle-surface);
+  border-radius: 8px;
+  width: fit-content;
+  margin-bottom: 16px;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.root .viewModes button {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.root .viewModes button[aria-pressed="true"] {
+  color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 1px 3px #0000000d;
 }
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: end;
-  gap: 18px;
-  padding: 20px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
-.toolbar > label:first-child {
+.toolbar label {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   font-size: 11px;
   color: var(--muted);
+  min-width: 0;
   flex: 1;
-  min-width: 200px;
+  max-width: 600px;
 }
-.check {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  min-height: 42px;
-  font-size: 12px;
+.toolbar [data-choice-select] {
+  max-width: 100%;
+  text-align: left;
 }
-.check input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary);
+.root .check {
+  border: 1px solid var(--line);
+  font-size: 11px;
 }
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 20px 0;
-}
-.legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: var(--muted);
-}
-.legend i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--muted);
-}
-.legend [data-state="satisfied"] i {
-  background: var(--positive);
-}
-.legend [data-state="planned"] i {
-  background: var(--accent-foreground);
-}
-.legend [data-state="insufficient"] i {
-  background: var(--ink);
+.root .check[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  color: var(--primary);
 }
 .program {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  align-items: center;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  border-radius: 12px;
-  padding: 18px 20px;
-  margin-bottom: 24px;
+  padding: 14px 0 18px;
 }
 .program h3 {
-  font-size: 16px;
-  font-weight: 700;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 650;
 }
-.program > span {
-  color: var(--muted);
+.program span {
+  display: inline-block;
   font-size: 11px;
+  color: var(--muted);
+  margin-right: 14px;
 }
 .tree {
   list-style: none;
-  padding-left: 0;
+  margin: 0;
+  padding: 0;
 }
 .tree ol {
   list-style: none;
-  margin: 0 0 0 18px;
-  padding: 8px 0 0 22px;
+  margin: 0;
+  padding: 0;
+  margin-left: 12px;
+  padding-left: 24px;
   border-left: 1px solid var(--line);
 }
 .tree li {
   position: relative;
-  margin-bottom: 14px;
-  min-width: 0;
+  padding-top: 8px;
 }
 .tree ol > li::before {
   content: "";
   position: absolute;
-  width: 22px;
-  height: 20px;
+  left: -25px;
+  top: 8px;
+  width: 24px;
+  height: 22px;
+  border-left: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  left: -23px;
-  top: 6px;
+  border-bottom-left-radius: 12px;
 }
-.node {
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: 10px;
-  overflow: hidden;
+.tree ol > li:last-child::after {
+  content: "";
+  position: absolute;
+  top: 31px;
+  bottom: 0;
+  left: -25px;
+  width: 1px;
+  background: var(--canvas);
 }
 .node > summary {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 16px;
-  cursor: pointer;
   list-style: none;
-}
-.node > summary::after {
-  content: "+";
-  color: var(--muted);
-  font-size: 16px;
-  margin-left: 2px;
-}
-.node[open] > summary::after {
-  content: "−";
-}
-.icon {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  background: var(--secondary);
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  flex-shrink: 0;
-}
-.node[data-state="satisfied"] .icon {
-  background: var(--positive-soft);
-  color: var(--positive);
-  border-color: var(--positive-border);
-}
-.node[data-state="planned"] .icon {
-  background: var(--accent-soft);
-  color: var(--accent-foreground);
-  border-color: var(--accent-border);
-}
-.nodeTitle {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
-.state {
-  margin-left: auto;
-  font-size: 10px;
-  color: var(--muted);
-  text-align: right;
-}
-.nodeBody {
-  padding: 0 16px 16px 58px;
-}
-.facts {
-  display: grid;
-  gap: 5px;
-  font-size: 10px;
-  color: var(--muted);
-  margin-bottom: 14px;
-}
-.nodeBody > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 12px;
-}
-.choices {
-  font-size: 11px;
-}
-.choices > summary {
-  cursor: pointer;
-  padding: 8px 0;
-}
-.codes {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.codes > div {
-  display: inline-flex;
   align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 9px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  overflow: hidden;
+  border-radius: 5px;
+  background: var(--subtle-surface);
+  min-height: 46px;
 }
-.codes a {
-  padding: 7px 9px;
-  font-size: 11px;
-}
-.codes b {
-  font-size: 10px;
-  color: var(--accent-foreground);
-}
-.codes button {
-  border: 0;
-  border-left: 1px solid var(--line);
-  border-radius: 0;
-}
-.empty {
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: 12px;
-  border: 1px dashed var(--line);
-  border-radius: 14px;
-  padding: 44px 20px;
-}
-.empty > svg {
-  color: var(--accent-foreground);
-}
-.empty h3 {
-  font-size: 18px;
-  font-weight: 650;
-}
-.empty p {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.8;
-}
-.note {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.8;
-  margin-top: 26px;
-}
-
-.root[data-compact="true"] .heading {
-  margin: 0 0 16px;
-}
-.root[data-compact="true"] .heading h2 {
-  font-size: 17px;
-}
-.root[data-compact="true"] .heading > svg {
+.node > summary::-webkit-details-marker {
   display: none;
 }
-.root[data-compact="true"] .heading p {
-  font-size: 12px;
+.node > summary:hover {
+  background: color-mix(in srgb, var(--primary) 3%, var(--subtle-surface));
 }
-.root[data-compact="true"] .toolbar {
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 8px;
-}
-.root[data-compact="true"] .toolbar > label:first-child {
-  min-width: 0;
-  width: 100%;
-}
-.root[data-compact="true"] .toolbar select {
-  width: 100%;
-  font-size: 12px;
-}
-.root[data-compact="true"] .legend {
-  gap: 8px;
-  padding: 14px 0;
-}
-.root[data-compact="true"] .node > summary {
-  padding: 10px;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-.root[data-compact="true"] .icon {
-  width: 24px;
-  height: 24px;
-}
-.root[data-compact="true"] .nodeTitle {
-  max-width: calc(100% - 48px);
-}
-.root[data-compact="true"] .nodeBody {
-  padding: 0 10px 12px;
-}
-.root[data-compact="true"] .tree ol {
-  margin-left: 5px;
-  padding-left: 9px;
-}
-.root[data-compact="true"] .tree ol > li::before {
-  width: 9px;
-  left: -10px;
-}
-.root[data-compact="true"] .empty {
-  padding: 24px 12px;
-}
-.root[data-compact="true"] .empty h3 {
-  font-size: 15px;
-}
-.root[data-compact="true"] .note {
-  font-size: 11px;
-}
-
-.viewModes {
+.nodeTitle {
   display: flex;
-  margin-bottom: 16px;
-}
-.viewModes button {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   flex: 1;
-  border: 1px solid var(--line);
-  padding: 12px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-.viewModes button[aria-pressed="true"] {
-  color: var(--accent-foreground);
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-.node summary {
-  padding: 16px;
 }
 .nodeTitle strong {
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
   overflow-wrap: anywhere;
-  font-size: 14px;
-  line-height: 1.6;
 }
 .nodeTitle > span {
   font-size: 10px;
-  color: var(--muted);
-  display: inline-block;
-  width: fit-content;
-  padding: 3px 8px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  margin-top: 6px;
+  padding: 2px 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 400;
+}
+.chevron {
+  color: var(--muted);
+  font-size: 20px;
+  transition: transform 0.15s;
+}
+.node[open] > summary .chevron {
+  transform: rotate(90deg);
 }
 .courseRows {
-  margin: 10px 12px 12px 40px;
+  border-left: 1px solid var(--line);
+  margin-left: 12px;
+  padding: 8px 0 0 24px;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 .courseRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 13px;
+  gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 5px;
   background: var(--surface);
+  border-radius: 5px;
+  padding: 8px 12px;
+  min-width: 0;
 }
-.courseRow > button:first-of-type {
+.root .courseRow button:first-of-type {
   flex: 1;
-  display: grid;
-  gap: 5px;
-  padding: 0;
+  min-width: 0;
+  justify-content: start;
   text-align: left;
-  border: 0;
-  background: transparent;
-  font-size: 13px;
-  color: var(--ink);
+  flex-wrap: wrap;
+  padding: 0;
+  gap: 7px;
 }
-.courseRow > button:disabled {
-  opacity: 1;
+.courseRow b {
+  font-size: 12px;
+  font-weight: 500;
 }
-.courseRow span,
-.courseRow small {
+.courseRow button span {
   font-size: 12px;
   color: var(--muted);
 }
-.courseStatus[data-status="completed"] {
-  color: var(--positive);
-}
-.courseStatus[data-status="in-progress"] {
-  color: #d66a24;
+.courseRow small {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
 }
 .ruleNote {
   font-size: 12px;
   color: var(--muted);
+  padding: 12px 12px 12px 36px;
   line-height: 1.6;
-  padding: 0 20px 14px;
 }
-.root[data-compact="true"] .node summary {
-  padding: 12px 9px;
+.ruleNote button {
+  margin: 5px 0;
+}
+.note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 22px 0 0;
+  line-height: 1.7;
+}
+.empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+}
+.empty svg {
+  margin: auto;
+}
+.empty h3 {
+  color: var(--ink);
+  font-size: 15px;
+}
+.empty p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.root[data-compact="true"] .viewModes {
+  width: 100%;
+}
+.root[data-compact="true"] .viewModes button {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 10px;
+}
+.root[data-compact="true"] .toolbar {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.root[data-compact="true"] .program {
+  padding: 12px 0;
+}
+.root[data-compact="true"] .program h3 {
+  font-size: 12px;
+}
+.root[data-compact="true"] .tree ol {
+  padding-left: 12px;
+  margin-left: 10px;
+}
+.root[data-compact="true"] .tree ol > li::before {
+  left: -13px;
+  width: 12px;
+}
+.root[data-compact="true"] .tree ol > li:last-child::after {
+  left: -13px;
+  background: var(--surface);
+}
+.root[data-compact="true"] .node > summary {
+  padding: 8px;
+  gap: 7px;
 }
 .root[data-compact="true"] .nodeTitle strong {
   font-size: 12px;
 }
 .root[data-compact="true"] .courseRows {
-  margin-left: 12px;
+  padding-left: 12px;
+  margin-left: 10px;
 }
-.root[data-compact="true"] .state {
-  width: 100%;
-  margin-left: 30px;
-  text-align: left;
-  display: none;
+.root[data-compact="true"] .courseRow {
+  padding: 7px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
-.root[data-compact="true"] .program h3 {
-  font-size: 13px;
-}
-@media (max-width: 640px) {
-  .toolbar {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-  }
-  .toolbar > label:first-child {
-    min-width: 0;
-  }
+@media (max-width: 600px) {
   .tree ol {
-    margin-left: 6px;
-    padding-left: 10px;
+    padding-left: 12px;
+    margin-left: 10px;
   }
   .tree ol > li::before {
-    width: 10px;
-    left: -11px;
+    left: -13px;
+    width: 12px;
   }
-  .tree ol ol ol {
-    margin-left: 0;
-    padding-left: 6px;
+  .tree ol > li:last-child::after {
+    left: -13px;
   }
   .node > summary {
-    padding: 12px;
-    gap: 8px;
-    flex-wrap: wrap;
+    padding: 8px;
+    gap: 7px;
   }
-  .state {
-    width: 100%;
-    margin-left: 38px;
-    text-align: left;
-  }
-  .nodeBody {
-    padding: 0 12px 12px;
-  }
-}
-@media (max-width: 700px) {
-  .courseRows {
-    margin-left: 12px;
+  .nodeTitle {
+    gap: 5px;
   }
   .nodeTitle strong {
-    font-size: 13px;
+    font-size: 12px;
+  }
+  .courseRows {
+    padding-left: 12px;
   }
   .courseRow {
     flex-wrap: wrap;
+    padding: 8px;
   }
-  .state {
-    display: none;
+  .courseRow small {
+    margin-left: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
   }
 }

@@ -1,10 +1,12 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useState } from "react";
-import { Check, Clock3, CircleDashed, Plus, GitBranch } from "lucide-react";
+import { Plus, GitBranch } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
 import { requirementProgress } from "@/lib/planning/snapshots";
 import { boardCourses } from "@/lib/planning/workspace";
 import { text, type Locale } from "@/lib/i18n";
+import { CourseStatus } from "./course-status";
 import styles from "./requirement-map.module.css";
 export function RequirementMap({
   plan,
@@ -47,24 +49,47 @@ export function RequirementMap({
       plan.programs
         .filter(
           (p) =>
+            !plan.hiddenPrograms?.includes(p.code ?? "") &&
             plan.requirements.some((r) => r.programId === p.id) &&
             documents.get(p.documentId)?.auditMode === mode,
         )
         .map((p) => [p.code ?? p.title ?? p.id, p]),
     ).values(),
   );
-  const program = programs.find((p) => p.id === selected) ?? programs[0];
-  const rules = plan.requirements.filter((r) => r.programId === program?.id);
+  const activePrograms = selected
+    ? programs.filter((p) => p.id === selected)
+    : programs;
+  const rules = plan.requirements.filter((r) =>
+    activePrograms.some((p) => p.id === r.programId),
+  );
   const roster = boardCourses(plan),
+    statusPriority = {
+      completed: 7,
+      "in-progress": 6,
+      planned: 5,
+      repeated: 4,
+      unknown: 3,
+      failed: 2,
+      withdrawn: 1,
+      dropped: 0,
+    },
     facts = new Map(
       roster
-        .filter((r) => r.course.subject)
+        .filter((r) => r.course.subject && r.course.kind !== "placeholder")
+        .sort(
+          (a, b) =>
+            statusPriority[a.course.status] - statusPriority[b.course.status],
+        )
         .map((r) => [`${r.course.subject} ${r.course.number}`, r.course]),
     );
-  function branch(parentId: string | null, depth = 0): React.ReactNode {
+  function branch(
+    parentId: string | null,
+    programId: string,
+    depth = 0,
+  ): React.ReactNode {
     if (depth > 24) return null;
     return rules
-      .filter((r) => r.parentId === parentId)
+      .filter((r) => r.parentId === parentId && r.programId === programId)
       .map((r) => {
         const progress = requirementProgress(plan, r.id);
         if (remaining && progress.state === "satisfied") return null;
@@ -78,18 +103,6 @@ export function RequirementMap({
               unresolved: "remaining",
             } as const
           )[progress.state];
-        const Icon =
-          status === "completed"
-            ? Check
-            : status === "in-progress" || status === "planned"
-              ? Clock3
-              : CircleDashed;
-        const label = {
-          completed: t("Completed", "已完成"),
-          "in-progress": t("In progress", "正在修读"),
-          planned: t("Planned", "已安排"),
-          remaining: t("Remaining", "待完成"),
-        }[status];
         const children = rules.filter((c) => c.parentId === r.id);
         const constraint =
           r.kind === "all"
@@ -105,13 +118,11 @@ export function RequirementMap({
           <li key={r.id}>
             <details
               className={styles.node}
-              open={depth < 1}
-              data-state={progress.state}
+              open={depth < 2}
+              data-state={status}
             >
               <summary>
-                <span className={styles.icon}>
-                  <Icon size={18} />
-                </span>
+                <CourseStatus status={status} locale={locale} iconOnly />
                 <span className={styles.nodeTitle}>
                   <strong>
                     {r.title ??
@@ -123,7 +134,9 @@ export function RequirementMap({
                   </strong>
                   {constraint && <span>{constraint}</span>}
                 </span>
-                <span className={styles.state}>{label}</span>
+                <span className={styles.chevron} aria-hidden="true">
+                  ›
+                </span>
               </summary>
               {!!r.alternatives.length && (
                 <div className={styles.courseRows}>
@@ -135,18 +148,11 @@ export function RequirementMap({
                         fact?.status === "in-progress";
                     return (
                       <div className={styles.courseRow} key={key}>
-                        <span
-                          className={styles.courseStatus}
-                          data-status={fact?.status}
-                        >
-                          {fact?.status === "completed" ? (
-                            <Check size={16} />
-                          ) : fact?.status === "in-progress" ? (
-                            <Clock3 size={16} />
-                          ) : (
-                            <CircleDashed size={16} />
-                          )}
-                        </span>
+                        <CourseStatus
+                          status={fact?.status ?? "remaining"}
+                          locale={locale}
+                          iconOnly
+                        />
                         <button
                           onClick={() => inspectCourse?.(c)}
                           disabled={!inspectCourse}
@@ -173,7 +179,9 @@ export function RequirementMap({
                   })}
                 </div>
               )}
-              {children.length > 0 && <ol>{branch(r.id, depth + 1)}</ol>}
+              {children.length > 0 && (
+                <ol>{branch(r.id, programId, depth + 1)}</ol>
+              )}
               {!children.length && !r.alternatives.length && (
                 <div className={styles.ruleNote}>
                   {t(
@@ -230,9 +238,9 @@ export function RequirementMap({
               }}
             >
               {value === "official"
-                ? t("Official", "Official · 正式专业")
+                ? t("Official", "Official · 正式要求")
                 : value === "planned"
-                  ? t("Planned", "Planned · 目标专业")
+                  ? t("Planned", "Planned · 规划要求")
                   : t("Other reports", "其他报告")}
             </button>
           ))}
@@ -240,44 +248,44 @@ export function RequirementMap({
       <div className={styles.toolbar}>
         <label>
           {t("Program", "专业")}
-          <select
-            value={program?.id ?? ""}
-            onChange={(e) => setSelected(e.target.value)}
+          <ChoiceSelect
+            value={selected}
+            onValueChange={(value) => setSelected(value)}
           >
-            {!program && (
-              <option value="">
-                {t("No report for this view", "尚未导入此视图报告")}
-              </option>
-            )}
+            <option value="">{t("All programs", "全部专业要求")}</option>
             {programs.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title ?? p.code ?? t("Program", "专业")}
               </option>
             ))}
-          </select>
+          </ChoiceSelect>
         </label>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={remaining}
-            onChange={(e) => setRemaining(e.target.checked)}
-          />
+        <button
+          className={styles.check}
+          aria-pressed={remaining}
+          onClick={() => setRemaining(!remaining)}
+        >
           {t("Hide completed", "隐藏已完成")}
-        </label>
+        </button>
       </div>
-      {program && (
-        <div className={styles.program}>
-          <h3>{program.title ?? program.code}</h3>
-          {program.appliedVersion && (
-            <span>Applied Version: {program.appliedVersion}</span>
-          )}
-          {program.catalogTerm && (
-            <span>Catalog Term: {program.catalogTerm}</span>
-          )}
-        </div>
-      )}
       {rules.length ? (
-        <ol className={styles.tree}>{branch(null)}</ol>
+        activePrograms.map((program) => (
+          <div key={program.id}>
+            <div className={styles.program}>
+              <h3>{program.title ?? program.code}</h3>
+              {program.declaration === "undeclared" && (
+                <span>{t("Not declared", "目标专业 · 未正式注册")}</span>
+              )}
+              {program.appliedVersion && (
+                <span>Applied Version {program.appliedVersion}</span>
+              )}
+              {program.catalogTerm && (
+                <span>Catalog Term {program.catalogTerm}</span>
+              )}
+            </div>
+            <ol className={styles.tree}>{branch(null, program.id)}</ol>
+          </div>
+        ))
       ) : (
         <div className={styles.empty}>
           <GitBranch size={32} />
