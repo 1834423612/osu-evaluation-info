@@ -12,37 +12,56 @@ import {
 import { usePlanningCatalog } from "./course-catalog";
 import styles from "./semester-board.module.css";
 
-export function PlanningSearch({
-  locale,
-  inspect,
-  add,
-  initialQuery = "",
-  requirementLabel,
-  unavailable = [],
-}: {
+type PlanningSearchProps = {
   locale: Locale;
   unavailable?: string[];
   initialQuery?: string;
   requirementLabel?: string;
   inspect: (code: { subject: string; number: string }) => void;
   add: (code: { subject: string; number: string }) => void;
+};
+
+export function PlanningSearch(props: PlanningSearchProps) {
+  const context = usePlanningCatalog();
+  const [query, setQuery] = useState(
+    requirementSearch(props.initialQuery ?? "")
+      ? ""
+      : (props.initialQuery ?? ""),
+  );
+  return (
+    <ScopedPlanningSearch
+      {...props}
+      key={context.campus + "|" + context.term}
+      query={query}
+      setQuery={setQuery}
+    />
+  );
+}
+
+function ScopedPlanningSearch({
+  locale,
+  inspect,
+  add,
+  initialQuery = "",
+  requirementLabel,
+  unavailable = [],
+  query,
+  setQuery,
+}: PlanningSearchProps & {
+  query: string;
+  setQuery: (query: string) => void;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const context = usePlanningCatalog();
   const category = requirementSearch(initialQuery);
-  const [query, setQuery] = useState(category ? "" : initialQuery);
   const [results, setResults] = useState<CatalogCourse[]>([]);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState("");
   const request = useRef<AbortController | null>(null);
-  useEffect(
-    () => () => request.current?.abort(),
-    [context.campus, context.term],
-  );
   useEffect(() => {
-    if (initialQuery) void search();
+    if (query.trim() || category) void search();
     return () => request.current?.abort();
-    // A changed initial query remounts this panel; typing is submitted explicitly.
+    // Each catalog scope remounts results and retries the preserved query.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   async function search() {
