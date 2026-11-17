@@ -1,4 +1,5 @@
 "use client";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -9,6 +10,7 @@ import {
   GitBranch,
   BookOpen,
   Check,
+  EyeOff,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
@@ -38,7 +40,7 @@ import {
 } from "@/lib/planning/workspace";
 import { browserUuid } from "@/lib/uuid";
 import { PlanningCatalogProvider } from "./course-catalog";
-import { CatalogTermSelect } from "./catalog-term";
+
 import { CourseInspector } from "./course-inspector";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { ImportGuide } from "./import-guide";
@@ -59,8 +61,8 @@ export function PlanningWorkspace() {
   const [tab, setTab] = useState<"board" | "map" | "official" | "import">(
     "board",
   );
-  const [campus, setCampus] = useState("COL"),
-    [catalogTerm, setCatalogTerm] = useState("");
+  const [catalogTerm, setCatalogTerm] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
   const [ready, setReady] = useState(false),
     [saved, setSaved] = useState("");
   const [busy, setBusy] = useState(false),
@@ -207,10 +209,18 @@ export function PlanningWorkspace() {
     }
   }
   const rows = boardCourses(plan),
-    counts = { completed: 0, "in-progress": 0, planned: 0, unknown: 0 };
+    counts = {
+      completed: 0,
+      "in-progress": 0,
+      planned: 0,
+      unknown: 0,
+      withdrawn: 0,
+      dropped: 0,
+      failed: 0,
+    };
   rows.forEach((r) => counts[r.course.status]++);
   return (
-    <PlanningCatalogProvider campus={campus} term={catalogTerm}>
+    <PlanningCatalogProvider campus="COL" term={catalogTerm}>
       <div className={`${styles.page} rr-block`}>
         <AppHeader active="planning" />
         <main className={styles.main}>
@@ -330,31 +340,6 @@ export function PlanningWorkspace() {
                 </button>
               ))}
             </div>
-            <div className={styles.catalogCompact}>
-              <select
-                aria-label={t("Campus", "校区")}
-                value={campus}
-                onChange={(e) => setCampus(e.target.value)}
-              >
-                {[
-                  ["COL", "Columbus"],
-                  ["MNS", "Mansfield"],
-                  ["LMA", "Lima"],
-                  ["MRN", "Marion"],
-                  ["NWK", "Newark"],
-                  ["WST", "Wooster"],
-                ].map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <CatalogTermSelect
-                value={catalogTerm}
-                onChange={setCatalogTerm}
-                locale={locale}
-              />
-            </div>
           </nav>
           {!!rows.length && tab === "board" && (
             <section
@@ -363,27 +348,82 @@ export function PlanningWorkspace() {
             >
               <div className={styles.programNames}>
                 {Array.from(
-                  new Map(
-                    [...plan.programs.filter((p) => p.code)]
-                      .sort(
-                        (a, b) =>
-                          (a.title?.length ?? 0) - (b.title?.length ?? 0),
-                      )
-                      .filter(
-                        (p) =>
-                          p.code &&
-                          plan.requirements.some((r) => r.programId === p.id),
-                      )
-                      .map((p) => [p.code, p]),
-                  ).values(),
+                  plan.programs
+                    .filter((p) => p.code)
+                    .reduce((programs, program) => {
+                      const previous = programs.get(program.code!);
+                      programs.set(program.code!, {
+                        ...program,
+                        appliedVersion:
+                          program.appliedVersion ??
+                          previous?.appliedVersion ??
+                          null,
+                        catalogTerm:
+                          program.catalogTerm ?? previous?.catalogTerm ?? null,
+                        declaration:
+                          program.declaration === "unknown"
+                            ? (previous?.declaration ?? "unknown")
+                            : program.declaration,
+                      });
+                      return programs;
+                    }, new Map<string, Plan["programs"][number]>())
+                    .values(),
                 )
-                  .slice(0, 4)
+                  .filter((p) => !plan.hiddenPrograms?.includes(p.code!))
                   .map((p) => (
-                    <span key={p.code}>
-                      {p.title ?? p.code}
-                      <small>{p.appliedVersion}</small>
-                    </span>
+                    <div key={p.code} className={styles.programLine}>
+                      <BookOpen size={16} />
+                      <span>
+                        <strong>{p.title ?? p.code}</strong>
+                        {p.appliedVersion && (
+                          <small>Applied Version {p.appliedVersion}</small>
+                        )}
+                      </span>
+                      {p.declaration === "undeclared" && (
+                        <span className={styles.targetBadge}>
+                          {t("Not declared", "目标专业 · 未正式注册")}
+                        </span>
+                      )}
+                      <button
+                        aria-label={`${t("Hide program", "隐藏专业")} ${p.title ?? p.code}`}
+                        onClick={() =>
+                          update((current) => ({
+                            ...current,
+                            hiddenPrograms: [
+                              ...(current.hiddenPrograms ?? []),
+                              p.code!,
+                            ],
+                          }))
+                        }
+                      >
+                        <EyeOff size={14} />
+                      </button>
+                    </div>
                   ))}
+                {!!plan.hiddenPrograms?.length && (
+                  <ChoiceSelect
+                    aria-label={t("Show hidden programs", "显示已隐藏专业")}
+                    value=""
+                    onValueChange={(code) =>
+                      update((current) => ({
+                        ...current,
+                        hiddenPrograms: current.hiddenPrograms?.filter(
+                          (c) => c !== code,
+                        ),
+                      }))
+                    }
+                  >
+                    <option value="">
+                      {t("Show hidden program…", "恢复显示专业…")}
+                    </option>
+                    {plan.hiddenPrograms.map((code) => (
+                      <option key={code} value={code}>
+                        {plan.programs.find((p) => p.code === code)?.title ??
+                          code}
+                      </option>
+                    ))}
+                  </ChoiceSelect>
+                )}
               </div>
               <div className={styles.progressTrack}>
                 {(
@@ -419,6 +459,7 @@ export function PlanningWorkspace() {
               plan={plan}
               locale={locale}
               update={update}
+              onCatalogTermChange={setCatalogTerm}
               onReview={() => setTab("import")}
             />
           )}
@@ -478,8 +519,8 @@ export function PlanningWorkspace() {
                   </h2>
                   <p>
                     {t(
-                      "Reports are read locally. Names, student identifiers, email addresses and raw PDFs are not saved. Academic records stay in your browser; backups contain the structured plan.",
-                      "报告在本地读取。姓名、学号、邮箱和原始 PDF 不会保存。学业记录保存在浏览器内，备份仅包含结构化规划。",
+                      "Reports are read locally. Names, student identifiers, email addresses and raw PDFs are removed from the saved plan. The structured plan stays on this device until you choose to back it up to your account.",
+                      "报告在本地读取，保存时移除姓名、学号、邮箱和原始 PDF。结构化规划默认保存在此设备，可自行备份到账号。",
                     )}
                   </p>
                 </div>
@@ -514,30 +555,38 @@ export function PlanningWorkspace() {
                 ))}
               </div>
               {!!plan.documents.length && (
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        t(
-                          "Clear the plan saved on this device? Export a backup first if needed.",
-                          "清除此设备上的规划？如需保留，请先导出备份。",
-                        ),
-                      )
-                    ) {
-                      guard.current.invalidate();
-                      setBusy(false);
-                      localStorage.removeItem(PLAN_STORAGE_KEY);
-                      setPlan(emptyPlan());
-                      setSaved("");
-                    }
-                  }}
-                >
+                <button onClick={() => setConfirmClear(true)}>
                   {t("Clear local plan", "清除本地规划")}
                 </button>
               )}
             </div>
           )}
         </main>
+        <WorkspaceDialog
+          open={confirmClear}
+          onOpenChange={setConfirmClear}
+          title={t("Clear local plan?", "清除本地规划？")}
+          description={t(
+            "Export a backup first if you want to keep this plan.",
+            "如需保留，请先导出备份。",
+          )}
+          closeLabel={t("Cancel", "取消")}
+          guard={false}
+        >
+          <button
+            className={styles.danger}
+            onClick={() => {
+              guard.current.invalidate();
+              setBusy(false);
+              localStorage.removeItem(PLAN_STORAGE_KEY);
+              setPlan(emptyPlan());
+              setSaved("");
+              setConfirmClear(false);
+            }}
+          >
+            {t("Clear plan", "清除规划")}
+          </button>
+        </WorkspaceDialog>
         <AppFooter />
       </div>
     </PlanningCatalogProvider>

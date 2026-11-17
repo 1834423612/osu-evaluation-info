@@ -21,7 +21,11 @@ export function PlanningCatalogProvider({
   term: string;
   children: React.ReactNode;
 }) {
-  const [reader] = useState(() => createPlanningCatalog(fetchCatalogResource));
+  const parent = useContext(CatalogContext);
+  const [localReader] = useState(() =>
+    createPlanningCatalog(fetchCatalogResource),
+  );
+  const reader = parent?.reader ?? localReader;
   const value = useMemo(
     () => ({ reader, campus, term }),
     [reader, campus, term],

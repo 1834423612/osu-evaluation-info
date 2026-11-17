@@ -126,23 +126,15 @@ export function PlanningSearch({
           void search();
         }}
       >
-        <label>
-          {t("Course code or keyword", "课号或关键词")}
-          <div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="CSE 2221"
-              maxLength={120}
-            />
-            <button
-              disabled={searching}
-              aria-label={t("Search courses", "搜索课程")}
-            >
-              <Search size={17} />
-            </button>
-          </div>
-        </label>
+        <Search size={16} aria-hidden="true" />
+        <input
+          aria-label={t("Course code or keyword", "课号或关键词")}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="CSE 2221"
+          maxLength={120}
+        />
+        <button disabled={searching}>{t("Search", "搜索")}</button>
       </form>
       <p role="status">
         {searching ? t("Searching catalog…", "正在查询目录…") : message}
