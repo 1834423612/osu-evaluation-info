@@ -102,7 +102,11 @@ export function parsePlanLines(
       creditColumn = null;
       continue;
     }
-    if (/^Official(?: Audit)?$/i.test(line)) modes.add("official");
+    if (
+      /^Official(?: Audit)?$/i.test(line) ||
+      /Only available in Planned View/i.test(line)
+    )
+      modes.add("official");
     if (/^Planned Audit$/i.test(line)) modes.add("planned");
     const term = line.match(
       /^(Autumn|Spring|Summer)\s*(20\d{2})(?:\s*[-–:]?\s*(\d+(?:\.\d+)?)\s*(?:h(?:ours?)?|credits?)(?:\s+attempted)?)?$/i,

@@ -52,5 +52,19 @@ test("not-declared and Planned-only headers retain academic codes without inferr
     plan.programs.find((p) => p.code === "GE").declaration,
     "unknown",
   );
-  assert.equal(plan.auditMode, "unknown");
+  assert.equal(plan.auditMode, "official");
+});
+
+test("Planned-only program notices identify an Official export", () => {
+  const result = parsePlanLines(
+    [
+      {
+        text: "Computer Science - CSE-BS Only available in Planned View",
+        page: 1,
+      },
+    ],
+    "expanded-audit",
+  );
+  assert.equal(result.plan.auditMode, "official");
+  assert.equal(result.plan.documents[0].auditMode, "official");
 });
