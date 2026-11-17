@@ -5,10 +5,34 @@ import {
   importCoverage,
 } from "../../src/lib/planning/import-profile.ts";
 import { emptyPlan } from "../../src/lib/planning/model.ts";
+import { syntheticPdf } from "./synthetic-pdf.mjs";
+import { planningLines } from "../../src/lib/planning/pdf-lines.ts";
 import {
   parsePlanLines,
   detectPlanLayout,
 } from "../../src/lib/planning/parser.ts";
+
+test("browser regression PDF is automatically classified from its extracted contents", async () => {
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const task = getDocument({
+    data: new Uint8Array(syntheticPdf()),
+    verbosity: 0,
+  });
+  try {
+    const pdf = await task.promise;
+    const page = await pdf.getPage(1);
+    const lines = planningLines((await page.getTextContent()).items, 1);
+    assert.equal(detectPlanLayout(lines), "student-plan");
+    const { plan } = parsePlanLines(lines, detectPlanLayout(lines));
+    assert.ok(
+      plan.semesters.some((s) =>
+        s.courses.some((c) => c.subject === "CSE" && c.number === "2111"),
+      ),
+    );
+  } finally {
+    await task.destroy();
+  }
+});
 
 test("recommended reports keep explicit view separate from PDF layout", () => {
   assert.deepEqual(importProfile("official"), {

@@ -5,7 +5,10 @@ import {
 // Optional local-only regression. Never log paths, content, errors or plan values.
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { parsePlanLines, detectPlanLayout } from "../../src/lib/planning/parser.ts";
+import {
+  parsePlanLines,
+  detectPlanLayout,
+} from "../../src/lib/planning/parser.ts";
 import {
   academicRoster,
   compareAcademicRoster,
@@ -168,6 +171,7 @@ console.log(
 );
 if (
   Object.values(groups).some((g) => g.failures) ||
+  comparisons.some((comparison) => comparison.conflictingCredits > 0) ||
   treeComparisons.some((c) => c.comparableEdges !== c.matchingEdges)
 )
   process.exitCode = 1;

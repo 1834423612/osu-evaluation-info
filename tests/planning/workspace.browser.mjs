@@ -45,7 +45,8 @@ try {
   await page.getByRole("button", { name: "CSE 2111", exact: true }).waitFor();
   await page
     .getByRole("combobox", { name: "Move CSE 2111", exact: true })
-    .selectOption({ label: "Autumn 2027" });
+    .click();
+  await page.getByRole("option", { name: "Autumn 2027", exact: true }).click();
   await page.getByText("Saved on this device", { exact: true }).waitFor();
   await page.reload();
   await page
@@ -54,8 +55,8 @@ try {
   assert.equal(
     await page
       .getByRole("combobox", { name: "Move CSE 2111", exact: true })
-      .inputValue(),
-    "Autumn2027",
+      .innerText(),
+    "Autumn 2027",
   );
   const saved = await page.evaluate(() =>
     localStorage.getItem("course-atlas:private-planning:v1"),

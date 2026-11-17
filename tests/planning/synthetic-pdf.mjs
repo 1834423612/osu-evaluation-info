@@ -1,6 +1,7 @@
 // A generated synthetic text PDF. No student attachment is used.
 export function syntheticPdf() {
   const lines = [
+    "Student Plan",
     "Student Name: Synthetic Private",
     "Spring 2027 13h",
     "CSE 2111 3h Planned",
