@@ -1,11 +1,11 @@
 {
   "title": "Privacy notice",
-  "intro": "Collection, purposes, access and choices. Effective November 15, 2026.",
+  "intro": "Collection, purposes, access and choices. Effective November 16, 2026.",
   "sections": [
     {
       "title": "Accounts and public identity",
       "paragraphs": [
-        "We store your nickname, email, password hash if set, verification state and terms acknowledgment. Optional institutional verification stores the verified mailbox and time. We do not obtain university passwords or private student records.",
+        "We store your nickname, email, password hash if set, verification state and terms acknowledgment. Optional institutional verification stores the verified mailbox and time. University passwords are not collected. Academic planning data is handled as described below.",
         "Public contribution responses do not include raw private account records. Identity fields are private by default where publishing is offered. Only fields you deliberately enable may appear publicly. Public visibility preferences do not erase private operational records."
       ]
     },
@@ -14,6 +14,14 @@
       "paragraphs": [
         "Favorites, collections, history and preferences may be stored in your browser. Enabled cloud sync stores account favorites and collection metadata on the server. Signed-out browser workspaces and share-management records are separate from account workspaces.",
         "Exports and public or capability-link sharing reveal the items you choose. Recipients may save them. Protect backups, recovery files, private links and transfer approvals; we cannot control copies recipients have already made."
+      ]
+    },
+    {
+      "title": "Academic planning",
+      "paragraphs": [
+        "BDP reports are parsed locally. Saved plans exclude names, email addresses, student IDs, grades, filenames and raw PDF content. Course combinations can still be identifying. Browser plans and downloaded backups are unencrypted private data.",
+        "If you choose cloud backup, the structured plan is stored privately under your verified account. Merge or delete it in Reports. Deleted plans retain a revision marker while the account exists to prevent stale-device restoration. Account maintenance removes orphaned private backups. Database backups may retain older copies until their retention expires.",
+        "A separate contribution action stores program versions and generic requirements after removing personal progress, placements, source identifiers and unmatched-course lists. Templates remain independent of your account and are marked as user-submitted reference material."
       ]
     },
     {
@@ -41,7 +49,7 @@
     {
       "title": "Your choices and requests",
       "paragraphs": [
-        "Public browsing and local favorites do not require registration. Cloud sync, sharing, optional analytics and public identity choices are separate. Never enter sensitive student information on this site.",
+        "Public browsing and local favorites do not require registration. Cloud sync, sharing, optional analytics and public identity choices are separate. Academic report import and structured backup use the separate controls described above.",
         "Contact the maintainer through kjch.net for access, correction or deletion requests. Proportionate proof of account control may be needed. Rights depend on applicable law; copies made by others and legally required records may be outside our deletion control."
       ]
     }

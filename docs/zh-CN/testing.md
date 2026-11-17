@@ -521,3 +521,5 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 - `tests/planning/automatic-import.test.mjs` 验证跨报告修读状态优先级、完整学业标题、自动保存及元数据隐私。运行 `node --test tests/planning/automatic-import.test.mjs`。仅合成数据，无网络或持久化写入。
 
 - `tests/planning/requirement-search.test.mjs` 验证准确 GE 属性筛选和受限课程族回退。运行 `node --test tests/planning/requirement-search.test.mjs`。离线合成数据，无网络或写入。
+
+- `tests/planning/cloud.test.mjs` 在内存 PGlite 中执行真实迁移，验证账户隔离、版本冲突、幂等重试、删除版本、通用模板脱敏和去重。运行 `node --test tests/planning/cloud.test.mjs`。仅合成数据，无网络、外部服务或持久写入。

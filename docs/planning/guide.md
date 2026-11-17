@@ -12,7 +12,7 @@ Open **Your space → Schedule planning** at `/planning`. The workspace has Plan
 
 The supplied 11 PDFs were compared on 2026-11-16. Their Expanded pair contains the Official audit; intended majors marked “Only available in Planned View” need another report. For this attachment set, Student Plan + Official Expanded + Planned Standard is the useful interim combination. Planned Expanded is preferable for the intended majors' full conditions.
 
-Choose several files with the main import button. Content and transient filename hints identify layouts and report views. The Reports page also has three report-specific import buttons for unlabelled files. Unknown views remain separate instead of being silently treated as Official or Planned. Declaration, report view, Applied Version, Catalog Term and publication year are separate fields.
+Choose several files with the main import button. Document content identifies PDF type and Official/Planned view. Filenames and the selected upload card do not override that evidence. Each report card includes its export and print instructions. An unlabelled audit containing full requirements for an explicitly undeclared target is classified as Planned. Other unidentified views stay separate. Declaration, report view, Applied Version and Catalog Term retain independent fields.
 
 Up to 12 files and 60 MB per batch are supported. Each text PDF is limited to 20 MB, 100 pages, 30,000 lines and 60 seconds; JSON backups to 4 MB. Encrypted PDFs and scans are unsupported. A failed file is reported without discarding successfully parsed files; cancellation or a late result cannot overwrite a newer edit.
 
@@ -23,6 +23,8 @@ The board groups Autumn/Spring and optional Summer by academic year. Drag course
 Positive completed/current attendance evidence protects courses across reports. An audit option is not proof of attendance. Student Plan determines semester placement; later edits use separate placement overrides. The Progress tree shows full academic titles, nested requirements, alternatives, numeric constraints and the BDP status reported at export. Course details and prerequisite references open beside the plan or in a dialog. Changes here do not recompute the official BDP audit.
 
 Course cards query the existing anonymous catalog for titles, credits and prerequisites in the selected campus/term. Only public course identifiers and catalog context are sent. Duplicate reads share a bounded queue/cache. Imported historical credits remain unchanged. Variable ranges stay ranges; unresolved credits use a pending label. Original BDP semester totals are labelled separately from current planning estimates. GE placeholders use exact catalog attributes; an ambiguous course family offers actual catalog variants instead of inventing a course number.
+
+Program headers label undeclared targets and support hiding and restoring them. Each semester has a custom campus selector with imported defaults and saved overrides. Empty summer terms can be removed. Movement supports pointer and keyboard dragging, reduced motion and a custom move selector. Progress, planned courses, placeholders, withdrawals, drops, failures and retakes have distinct icons and colors. Withdrawn, dropped and failed attempts do not contribute to semester credit totals.
 
 ## Recommendations
 
@@ -38,7 +40,13 @@ PDF.js runs in a bundled local worker. Names, student identifiers, email address
 
 The worker is destroyed, line references cleared and any still-owned input buffer wiped. JavaScript strings, garbage collection and browser-internal copies prevent a guarantee of secure memory erasure. Original files in Downloads are not deleted.
 
-The version-2 model upgrades version-1 backups on read. Local key `course-atlas:private-planning:v1` is separate from favorites, account sync and public exchanges. Browser storage is unencrypted and may fail or be cleared; save failures are shown. Use **Backup** to download `course-atlas-plan.json`. Raw PDFs are never uploaded. Planning suppresses first-party replay/analytics content, though normal resource/account requests can occur. There is no private-plan cloud sync or public contribution endpoint. Requirements-only seed utilities remain operator tools, with an explicit review gate; they do not publish private plans.
+The version-2 model upgrades version-1 backups on read. Local key `course-atlas:private-planning:v1` is separate from favorites. Browser storage is unencrypted and save failures are shown. **Backup** downloads `course-atlas-plan.json`. Reports offers explicit private cloud backup for verified accounts and a separate requirements contribution action for institutional-email-verified accounts. Raw PDFs are processed locally. Planning suppresses first-party replay and analytics content.
+
+`GET/PUT /api/planning/backup` isolates records by account. Row locks and monotonic revision checks protect competing devices. Identical retries are idempotent. Refresh and merge conflicting cloud data before saving. Delete clears the plan and retains its revision while the account exists to prevent stale-device restoration. Local edits remain available independently.
+
+`POST /api/planning/templates` retains program/version metadata, requirement hierarchy, numeric constraints and course alternatives. It removes student observations, source IDs, progress, placements and unmatched-course lists. Hashes deduplicate submissions. Records are marked `user-submitted-bdp` for future reference, separate from reviewed official samples.
+
+Run `pnpm user-data:migrate --apply` against the configured account-data database to install `20261116_planning.sql`. Private records use `osu_identity(_dev).planning_backup` and generic trees use `osu_planning(_dev).requirement_template`. Existing user-data backups include both schemas. Account maintenance removes orphaned private backups. Generic templates are retained independently.
 
 ## Public sample coverage
 

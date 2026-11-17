@@ -528,3 +528,5 @@ Browser regression: open a new collection, search in both languages, filter cate
 - `tests/planning/automatic-import.test.mjs` checks cross-report attendance precedence, full academic titles, automatic serialization and metadata privacy. Run `node --test tests/planning/automatic-import.test.mjs`. Synthetic inputs only; no network or persistent writes.
 
 - `tests/planning/requirement-search.test.mjs` checks exact GE attributes and bounded course-family fallback. Run `node --test tests/planning/requirement-search.test.mjs`. Offline synthetic inputs; no network or writes.
+
+- `tests/planning/cloud.test.mjs` validates account isolation, revision conflicts, idempotent retries, deletion revisions, generic template privacy and deduplication using the real migration in in-memory PGlite. Run `node --test tests/planning/cloud.test.mjs`. Synthetic data only, with no network, external service or persistent writes.
