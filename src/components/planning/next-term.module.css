@@ -234,9 +234,31 @@
 }
 .preferences summary {
   cursor: pointer;
-  padding: 10px 0;
-  font-size: 14px;
-  color: var(--muted);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--surface);
+}
+.preferences summary::-webkit-details-marker {
+  display: none;
+}
+.preferences summary::after {
+  content: "+";
+}
+.preferences[open] summary::after {
+  content: "−";
+}
+.preferences[open] .controls {
+  margin-top: 8px;
+}
+.notice button {
+  display: flex;
+  margin-top: 10px;
 }
 .courseLink {
   border: 0;

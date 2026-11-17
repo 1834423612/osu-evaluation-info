@@ -36,7 +36,7 @@ export function ImportGuide({
     },
     {
       id: "planned",
-      title: "Planned · Expanded",
+      title: "Planned · Standard / Expanded",
       detail: t(
         "Optional. Requirements for your intended programs.",
         "按需添加，包含目标专业的详细要求。",
@@ -74,15 +74,15 @@ export function ImportGuide({
                       "在 Plan your Path 使用计划的打印／导出按钮。可关闭个人资料、笔记和活动。",
                     )
                   : t(
-                      `In Track Progress, select ${item.id === "official" ? "Official" : "Planned"}, then Expanded (Beta) in the audit print menu. Enable Include all constraints and the required programs. Save as PDF with browser headers and footers off.`,
-                      `在 Track Progress 选择 ${item.id === "official" ? "Official" : "Planned"}，在审计打印菜单选择 Expanded（Beta）。勾选 Include all constraints 和所需专业。保存 PDF 时关闭浏览器页眉页脚。`,
+                      `In Track Progress, select ${item.id === "official" ? "Official" : "Planned"}, then Standard or Expanded (Beta) in the audit print menu. Enable Include all constraints and the required programs. Save as PDF with browser headers and footers off.`,
+                      `在 Track Progress 选择 ${item.id === "official" ? "Official" : "Planned"}，在审计打印菜单选择 Standard 或 Expanded（Beta）。勾选 Include all constraints 和所需专业。保存 PDF 时关闭浏览器页眉页脚。`,
                     )}
               </p>
               {item.id !== "student" && (
                 <p>
                   {t(
-                    "Standard supplies an outline when Expanded is unavailable. Confirm the intended program appears in the preview.",
-                    "Expanded 不可用时可用 Standard 获取概览。请确认预览中包含对应专业。",
+                    "For intended programs, Standard with all requirements includes the full outline. In Expanded, expand each target program before printing and check that its course requirements appear in the preview.",
+                    "目标专业可使用包含全部要求的 Standard。使用 Expanded 时先展开各目标专业，确认打印预览中实际包含其课程要求。",
                   )}
                 </p>
               )}

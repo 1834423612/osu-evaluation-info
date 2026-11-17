@@ -310,6 +310,22 @@ export function NextTerm({
           </ChoiceSelect>
         </label>
       </div>
+      {program &&
+        !programRequirements(plan, program.id).some(
+          (r) =>
+            !/^unmatched courses$/i.test(r.title ?? "") &&
+            (requirementCodes(r).length || requirementSearch(r.title ?? "")),
+        ) && (
+          <p className={styles.notice}>
+            {t(
+              "This report contains the program heading only. Import Planned Standard with all requirements, or expand the program in Planned Expanded before printing.",
+              "这份报告只包含专业标题。请补充含全部要求的 Planned Standard，或在 Planned Expanded 中展开此专业后打印。",
+            )}
+            <button onClick={onReview}>
+              {t("Import program requirements", "导入专业要求")}
+            </button>
+          </p>
+        )}
       <details className={styles.preferences}>
         <summary>
           {t("Semester, workload and ratings", "调整学期、负担与评分")}

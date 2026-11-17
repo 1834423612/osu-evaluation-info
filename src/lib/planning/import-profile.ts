@@ -23,7 +23,16 @@ export function importCoverage(plan: Plan) {
   return {
     student: has("student-plan"),
     official: has("expanded-audit", "official"),
-    planned: has("expanded-audit", "planned"),
+    planned: plan.programs.some(
+      (p) =>
+        plan.documents.some(
+          (d) => d.id === p.documentId && d.auditMode === "planned",
+        ) &&
+        plan.requirements.some(
+          (r) =>
+            r.programId === p.id && !/^unmatched courses$/i.test(r.title ?? ""),
+        ),
+    ),
     outlineOnly: plan.documents.some((d) =>
       ["standard-audit", "compact-audit"].includes(d.source),
     ),
