@@ -52,16 +52,19 @@ export function PendingRequirements({ plan, locale, choose }: Props) {
                     onClick={() => choose(r.id)}
                   >
                     <strong>
-                      {r.title ??
+                      {r.title?.split(/\s+[–—-]\s+Choose/i)[0] ??
                         r.alternatives
                           .map((c) => `${c.subject} ${c.number}`)
                           .join(" / ")}
                     </strong>
                     <small>
-                      {coverage.minimumCourses > 0 &&
-                        `${coverage.count}/${coverage.minimumCourses} ${t("courses", "门课程")}`}
+                      {r.kind === "any" &&
+                      plan.requirements.some((child) => child.parentId === r.id)
+                        ? t("Choose one course pathway", "选择一组课程方案")
+                        : coverage.minimumCourses > 0 &&
+                          `${coverage.count}/${coverage.minimumCourses} ${t("courses", "门课程")}`}
                       {coverage.minimumCredits > 0 &&
-                        ` · ${coverage.credits}/${coverage.minimumCredits} ${t("credits", "学分")}`}
+                        `${coverage.minimumCourses > 0 ? " · " : ""}${coverage.credits}/${coverage.minimumCredits} ${t("credits", "学分")}`}
                     </small>
                     <span>
                       <Plus size={12} />
@@ -154,7 +157,7 @@ export function SemesterGroups({
                   {coverage.minimumCourses > 0 &&
                     `${coverage.count}/${coverage.minimumCourses} ${t("courses", "门课程")}`}
                   {coverage.minimumCredits > 0 &&
-                    ` · ${coverage.credits}/${coverage.minimumCredits} ${t("credits", "学分")}`}
+                    `${coverage.minimumCourses > 0 ? " · " : ""}${coverage.credits}/${coverage.minimumCredits} ${t("credits", "学分")}`}
                   {coverage.fulfilled && <Check size={13} />}
                 </small>
               )}

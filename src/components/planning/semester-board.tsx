@@ -565,10 +565,24 @@ export function SemesterBoard({
             );
             if (!rule) return null;
             const codes = requirementCodes(rule);
+            const choices = plan.requirements.filter(
+              (child) => child.parentId === rule.id,
+            );
             return (
               <section className={styles.searchPanel}>
                 <strong>{rule.title}</strong>
-                {codes.length ? (
+                {rule.kind === "any" && choices.length ? (
+                  choices.map((child) => (
+                    <button
+                      key={child.id}
+                      className={styles.searchResult}
+                      onClick={() => setActiveRequirement(child.id)}
+                    >
+                      <span>{child.title}</span>
+                      <Plus size={14} />
+                    </button>
+                  ))
+                ) : codes.length ? (
                   codes.map((code) => (
                     <div
                       key={`${code.subject} ${code.number}`}

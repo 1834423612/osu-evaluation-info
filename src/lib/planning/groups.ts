@@ -5,28 +5,73 @@ import { placeCourse } from "./schedule.ts";
 import { addPlanningCourse } from "./workspace.ts";
 export type CourseGroup = NonNullable<Plan["schedule"]["groups"]>[number];
 export function actionableRequirements(plan: Plan) {
-  const programs = new Set(planningPrograms(plan).map((p) => p.id));
-  return plan.requirements.filter(
+  const selected = new Map<string, string>();
+  for (const program of planningPrograms(plan)) {
+    const key = `${program.code ?? program.title}|${program.appliedVersion ?? ""}`;
+    const previous = selected.get(key);
+    const score = (id: string) =>
+      plan.requirements.filter((r) => r.programId === id).length;
+    if (!previous || score(program.id) > score(previous))
+      selected.set(key, program.id);
+  }
+  const programs = new Set(selected.values());
+  const candidates = plan.requirements.filter(
     (r) =>
       programs.has(r.programId) &&
-      !plan.requirements.some((child) => child.parentId === r.id) &&
       (requirementCodes(r).length ||
         requirementSearch(r.title ?? "") ||
         r.minimumCourses ||
-        r.minimumCredits) &&
+        r.minimumCredits ||
+        r.kind === "any") &&
       !/GPA|residency|total degree hours|unmatched/i.test(r.title ?? ""),
   );
+  const ids = new Set(candidates.map((r) => r.id));
+  const byId = new Map(plan.requirements.map((r) => [r.id, r]));
+  return candidates.filter((r) => {
+    let parent = r.parentId;
+    while (parent) {
+      if (ids.has(parent)) return false;
+      parent = byId.get(parent)?.parentId ?? null;
+    }
+    return true;
+  });
 }
-export function requirementCoverage(plan: Plan, requirementId: string) {
+export function requirementCoverage(
+  plan: Plan,
+  requirementId: string,
+): {
+  count: number;
+  credits: number;
+  minimumCourses: number;
+  minimumCredits: number;
+  fulfilled: boolean;
+  courses: Plan["semesters"][number]["courses"];
+} {
   const rule = plan.requirements.find((r) => r.id === requirementId);
   const group = plan.schedule.groups?.find(
     (g) => g.requirementId === requirementId,
   );
+  const descendantIds = new Set([requirementId]);
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const child of plan.requirements) {
+      if (
+        child.parentId &&
+        descendantIds.has(child.parentId) &&
+        !descendantIds.has(child.id)
+      ) {
+        descendantIds.add(child.id);
+        changed = true;
+      }
+    }
+  }
   const ids = new Set([
     ...plan.allocations
-      .filter((a) => a.requirementId === requirementId && a.confirmed)
+      .filter((a) => descendantIds.has(a.requirementId) && a.confirmed)
       .map((a) => a.courseId),
-    ...(group?.courseIds ?? []),
+    ...(plan.schedule.groups ?? [])
+      .filter((g) => g.requirementId && descendantIds.has(g.requirementId))
+      .flatMap((g) => g.courseIds),
   ]);
   const courses = [
     ...new Map(
@@ -48,6 +93,13 @@ export function requirementCoverage(plan: Plan, requirementId: string) {
     (sum, c) => sum + (group?.credits?.[c.id!] ?? c.credits ?? 0),
     0,
   );
+  const children = plan.requirements.filter(
+    (r) => r.parentId === requirementId,
+  );
+  const alternativeSatisfied: boolean | null =
+    rule?.kind === "any" && children.length > 0
+      ? children.some((child) => requirementCoverage(plan, child.id).fulfilled)
+      : null;
   const count = rule?.minimumCourses ?? (rule?.minimumCredits ? 0 : 1);
   return {
     count: courses.length,
@@ -56,7 +108,8 @@ export function requirementCoverage(plan: Plan, requirementId: string) {
     minimumCredits: rule?.minimumCredits ?? 0,
     fulfilled:
       rule?.reportedStatus === "completed" ||
-      (courses.length >= count && credits >= (rule?.minimumCredits ?? 0)),
+      (alternativeSatisfied ??
+        (courses.length >= count && credits >= (rule?.minimumCredits ?? 0))),
     courses,
   };
 }
