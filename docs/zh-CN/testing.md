@@ -547,4 +547,5 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/calendar/security.test.mjs` 验证保留地址、无效协议、跨午夜事件拆分和过量旧重复规则。运行 `node --test tests/calendar/security.test.mjs`。离线合成输入，无网络或持久写入。
 - `tests/calendar/sharing.test.mjs` 验证稳定订阅、实时修改、来源地址隐私、撤销、刷新租约、失败保留、永久收藏链接及手动更新数字码。运行 `node --test tests/calendar/sharing.test.mjs`。内存 PGlite 迁移和模拟来源，无网络或外部数据库写入。
-- `tests/development/accounts.test.mjs` 验证加密、自动拉取、三方冲突、过期预览、手动生产合并、撤销和原子回滚。运行 `node --test tests/development/accounts.test.mjs`。内存 PGlite 与模拟生产传输，不访问或写入真实生产账号。
+- `tests/development/accounts.test.mjs` 验证加密、自动拉取、三方冲突、过期预览、手动生产合并、多轮合并保留生产端独有修改、撤销和原子回滚。运行 `node --test tests/development/accounts.test.mjs`。内存 PGlite 与模拟生产传输，不访问或写入真实生产账号。
+- `tests/user-data/share-selection.test.mjs` 验证按分类选择的初始状态、部分成员关系、重叠分类隐私、去重计数及还原选择后的草稿指纹。运行 `node --test tests/user-data/share-selection.test.mjs`。仅内存合成收藏，不使用服务或网络，不做持久写入。
