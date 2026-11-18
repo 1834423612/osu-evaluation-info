@@ -6,7 +6,15 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { OtpInput } from "@/components/account/otp-input";
 import flow from "@/components/personal/exchange.module.css";
-import { Share2, Copy } from "lucide-react";
+import {
+  Share2,
+  Copy,
+  FolderOpen,
+  Clock3,
+  UserRound,
+  ChevronRight,
+  Library,
+} from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { EmptyResult } from "@/components/brand/empty-result";
@@ -30,6 +38,7 @@ import {
   ensureActorSession,
 } from "@/lib/saved/share-links";
 import styles from "@/components/ui/workspace.module.css";
+import gallery from "./shared-gallery.module.css";
 const SharedCourseCard = dynamic(
   () => import("@/components/catalog/course-card").then((m) => m.CourseCard),
   { ssr: false },
@@ -122,16 +131,57 @@ export function SharedPage({ id }: { id?: string }) {
   return (
     <>
       <AppHeader active="saved" />
-      <main className={styles.shell}>
-        <div className={styles.heading}>
-          <div>
-            <h1>{text(locale, "Shared collection", "分享的收藏")}</h1>
-            <p>
-              {id
-                ? text(locale, "Choose what to save", "选择需要转存的项目")
-                : text(locale, "Open a public share code", "打开公开分享码")}
-            </p>
-          </div>
+      <main className={gallery.page} data-telemetry-private>
+        <nav
+          className={gallery.breadcrumb}
+          aria-label={text(locale, "Breadcrumb", "当前位置")}
+        >
+          <a href="/saved">{text(locale, "Saved items", "我的收藏")}</a>
+          <ChevronRight size={12} />
+          <span>{text(locale, "Shared collection", "分享清单")}</span>
+        </nav>
+        <div className={snapshot ? gallery.hero : styles.heading}>
+          {snapshot ? (
+            <div className={gallery.heroIdentity}>
+              <span className={gallery.heroIcon}>
+                <FolderOpen size={28} />
+              </span>
+              <div>
+                <span className={gallery.eyebrow}>
+                  {text(locale, "SHARED COLLECTION", "分享的收藏清单")}
+                </span>
+                <h1>{snapshot.title}</h1>
+                <div className={gallery.meta}>
+                  <span>
+                    <Library size={12} />
+                    {snapshot.items.length} {text(locale, "items", "项内容")} ·{" "}
+                    {snapshot.collections?.length ?? 0}{" "}
+                    {text(locale, "folders", "个分类")}
+                  </span>
+                  {snapshot.author?.nickname ? (
+                    <span>
+                      <UserRound size={12} />
+                      {snapshot.author.nickname}
+                    </span>
+                  ) : null}
+                  <span>
+                    <Clock3 size={12} />
+                    {text(locale, "Expires ", "有效期至 ")}
+                    {sharingDate(expiry, locale)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h1>{text(locale, "Shared collection", "分享的收藏")}</h1>
+              <p>
+                {id
+                  ? text(locale, "Choose what to save", "选择需要转存的项目")
+                  : text(locale, "Open a public share code", "打开公开分享码")}
+              </p>
+            </div>
+          )}
           {id && snapshot && (capability || isPublic) ? (
             <Button
               variant="outline"
@@ -210,16 +260,8 @@ export function SharedPage({ id }: { id?: string }) {
           </EmptyResult>
         ) : snapshot ? (
           <>
-            <p className={styles.muted}>
-              {text(locale, "Expires", "到期")} · {sharingDate(expiry, locale)}
-            </p>
-            {snapshot.author?.nickname && (
-              <p>
-                {text(locale, "Shared by", "分享者")} ·{" "}
-                {snapshot.author.nickname}
-              </p>
-            )}
             <CollectionImport
+              key={id}
               snapshot={snapshot}
               locale={locale}
               renderItem={(item) =>
@@ -262,15 +304,7 @@ export function SharedPage({ id }: { id?: string }) {
                         .join(" · ")}
                     </p>
                   </div>
-                ) : item.kind === "instructor" ? (
-                  <p>
-                    {item.payload.courses
-                      .map((course) => course.label)
-                      .join(" · ")}
-                  </p>
-                ) : (
-                  <p>{item.payload.course.title}</p>
-                )
+                ) : null
               }
               onOpen={openItem}
               onImported={(keys) => {
