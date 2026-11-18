@@ -9,6 +9,8 @@
 - [测试说明](testing.md)
 - [账号、收藏与分享](user-data.md)
 - [开发工具与本地数据](development-tools.md)
+- [开发账号关联](development-account.md)
+- [日历、订阅与保存的课表组](planning/calendars.md)
 - [按需翻译与调度](translation.md)
 - [翻译节点状态与管理](translation-operations.md)
 

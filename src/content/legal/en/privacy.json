@@ -25,6 +25,14 @@
       ]
     },
     {
+      "title": "Calendars and development accounts",
+      "paragraphs": [
+        "Calendars, event text and private subscription URLs synchronize with your structured plan. The application server can read this data; it is not end-to-end encrypted. Remote source URLs may contain access credentials and are used only to refresh your subscribed events. Failed refreshes retain the last successful events.",
+        "Calendar sharing publishes the chosen calendars and event categories to anyone holding the link. Public nickname is optional. Private source subscription URLs and private account identifiers are excluded. Links may expire or remain active until revoked. Recipient copies and exported files cannot be recalled. Native calendar clients control their own refresh frequency.",
+        "Optional development account pairing copies private favorites, folders, plans and calendars between your verified production and development accounts. Production pulls occur automatically; writing development changes back requires an explicit conflict-free preview and merge. Production stores a credential digest; development stores a server-decryptable AES-256-GCM copy. Pairing expires after 30 days and can be revoked. Domain backups may retain older copies according to their retention."
+      ]
+    },
+    {
       "title": "Operational and diagnostic data",
       "paragraphs": [
         "Requests and security-sensitive actions may record account identifiers, time, sessions, IP, UA, browser/OS, device-model hints, screen and viewport, language, time zone and available device capabilities. Model hints can be missing or imprecise and are not hardware serial numbers. IP-based location is approximate.",
