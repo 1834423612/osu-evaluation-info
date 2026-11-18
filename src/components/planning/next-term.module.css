@@ -232,11 +232,12 @@
 .preferences {
   margin: 12px 0 18px;
 }
-.preferences summary {
+.preferences > button {
   cursor: pointer;
   padding: 10px 12px;
   display: flex;
   justify-content: space-between;
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
   list-style: none;
@@ -244,16 +245,16 @@
   color: var(--ink);
   background: var(--surface);
 }
-.preferences summary::-webkit-details-marker {
+.preferences > button::-webkit-details-marker {
   display: none;
 }
-.preferences summary::after {
+.preferences > button::after {
   content: "+";
 }
-.preferences[open] summary::after {
+.preferences > button[aria-expanded="true"]::after {
   content: "−";
 }
-.preferences[open] .controls {
+.preferences .controls {
   margin-top: 8px;
 }
 .notice button {
@@ -285,6 +286,21 @@
 }
 .root[data-compact="true"] .cardTop h3 {
   font-size: 14px;
+}
+.prefixes {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.prefixes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  font-size: 11px;
+  border-radius: 6px;
+  background: var(--subtle-surface);
+  color: var(--ink);
 }
 @media (max-width: 1000px) {
   .controls {
