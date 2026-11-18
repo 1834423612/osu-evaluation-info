@@ -240,3 +240,53 @@ export function moveCourseGroup(plan: Plan, id: string, term: string | null) {
     },
   };
 }
+
+/** Removing a member keeps its course and restores its individual placement. */
+export function editAlternativeGroup(
+  plan: Plan,
+  groupId: string,
+  courseId: string,
+  include: boolean,
+) {
+  const group = plan.schedule.groups?.find(
+    (item) => item.id === groupId && item.kind === "alternatives",
+  );
+  if (!group) throw Error("Missing alternative group");
+  const course = plan.semesters
+    .flatMap((semester) => semester.courses)
+    .find((item) => item.id === courseId);
+  if (
+    include &&
+    (!course ||
+      course.status !== "planned" ||
+      course.kind !== "course" ||
+      plan.schedule.groups?.some(
+        (item) => item.id !== groupId && item.courseIds.includes(courseId),
+      ))
+  )
+    throw Error("Course unavailable for this group");
+  const next =
+    !include && course?.status === "planned"
+      ? placeCourse(plan, courseId, group.term)
+      : plan;
+  return planSchema.parse({
+    ...next,
+    schedule: {
+      ...next.schedule,
+      groups: next.schedule.groups?.map((item) =>
+        item.id === groupId
+          ? {
+              ...item,
+              courseIds: include
+                ? [...new Set([...item.courseIds, courseId])]
+                : item.courseIds.filter((id) => id !== courseId),
+              selectedCourseId:
+                !include && item.selectedCourseId === courseId
+                  ? null
+                  : item.selectedCourseId,
+            }
+          : item,
+      ),
+    },
+  });
+}

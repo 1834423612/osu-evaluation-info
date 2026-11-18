@@ -7,6 +7,7 @@ import {
   requirementCoverage,
   createAlternativeGroup,
   moveCourseGroup,
+  editAlternativeGroup,
 } from "@/lib/planning/groups";
 import { planningPrograms } from "@/lib/planning/programs";
 import { boardCourses, semesterLabel } from "@/lib/planning/workspace";
@@ -166,30 +167,41 @@ export function SemesterGroups({
                   const c = courses.find((c) => c.id === id);
                   if (!c) return null;
                   return g.kind === "alternatives" ? (
-                    <button
-                      key={id}
-                      aria-pressed={g.selectedCourseId === id}
-                      onClick={() =>
-                        update((p) => ({
-                          ...p,
-                          schedule: {
-                            ...p.schedule,
-                            groups: p.schedule.groups?.map((row) =>
-                              row.id === g.id
-                                ? {
-                                    ...row,
-                                    selectedCourseId:
-                                      row.selectedCourseId === id ? null : id,
-                                  }
-                                : row,
-                            ),
-                          },
-                        }))
-                      }
-                    >
-                      {g.selectedCourseId === id && <Check size={12} />}{" "}
-                      {c.subject} {c.number}
-                    </button>
+                    <span key={id} className={styles.member}>
+                      <button
+                        aria-pressed={g.selectedCourseId === id}
+                        onClick={() =>
+                          update((p) => ({
+                            ...p,
+                            schedule: {
+                              ...p.schedule,
+                              groups: p.schedule.groups?.map((row) =>
+                                row.id === g.id
+                                  ? {
+                                      ...row,
+                                      selectedCourseId:
+                                        row.selectedCourseId === id ? null : id,
+                                    }
+                                  : row,
+                              ),
+                            },
+                          }))
+                        }
+                      >
+                        {g.selectedCourseId === id && <Check size={12} />}{" "}
+                        {c.subject} {c.number}
+                      </button>
+                      <button
+                        aria-label={`${t("Move out of group", "移出备选组")} ${c.subject} ${c.number}`}
+                        onClick={() =>
+                          update((p) =>
+                            editAlternativeGroup(p, g.id, id, false),
+                          )
+                        }
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
                   ) : (
                     <span key={id}>
                       {c.subject} {c.number}
@@ -197,6 +209,35 @@ export function SemesterGroups({
                   );
                 })}
               </div>
+              {g.kind === "alternatives" && (
+                <ChoiceSelect
+                  aria-label={t("Add alternative course", "添加备选课程")}
+                  value=""
+                  onValueChange={(courseId) => {
+                    if (courseId)
+                      update((p) =>
+                        editAlternativeGroup(p, g.id, courseId, true),
+                      );
+                  }}
+                >
+                  <option value="">
+                    {t("Add a planned course…", "添加已有计划课程…")}
+                  </option>
+                  {courses
+                    .filter(
+                      (course) =>
+                        course.id &&
+                        course.status === "planned" &&
+                        course.kind === "course" &&
+                        !used.has(course.id),
+                    )
+                    .map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.subject} {course.number} · {course.title}
+                      </option>
+                    ))}
+                </ChoiceSelect>
+              )}
               {g.requirementId && !coverage?.fulfilled && (
                 <button onClick={() => choose(g.requirementId!, term)}>
                   <Plus size={13} />

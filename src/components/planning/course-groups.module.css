@@ -104,6 +104,17 @@
   flex-wrap: wrap;
   gap: 5px;
 }
+.group .member {
+  display: inline-flex;
+  padding: 0;
+  align-items: center;
+  gap: 2px;
+  background: color-mix(in srgb, #a99add 12%, var(--surface));
+}
+.member > button {
+  border: 0;
+  background: transparent;
+}
 .group > div span {
   background: var(--subtle-surface);
   border-radius: 4px;
