@@ -1,4 +1,5 @@
 import { invalidatePopularFavorites } from "./statistics.ts";
+import type { PoolClient } from "pg";
 import { getDatabasePool } from "../db.ts";
 import { userDataTable as table } from "./namespace.ts";
 import { privateDigest, checkBudget } from "./rate-limit.ts";
@@ -18,6 +19,7 @@ function record(row: Stored): SyncRecord {
 export async function exchangeSync(
   accountId: string,
   input: unknown,
+  connection?: PoolClient,
 ): Promise<SyncResponse> {
   if (!accountId || accountId.length > 100)
     throw new UserDataError("unauthorized", 401);
@@ -28,10 +30,10 @@ export async function exchangeSync(
   )
     throw new UserDataError("duplicate_operation", 400);
   await checkBudget("sync", accountId, 60, 120);
-  const db = await getDatabasePool().connect(),
+  const db = connection ?? (await getDatabasePool().connect()),
     owner = "u:" + accountId;
   try {
-    await db.query("BEGIN");
+    if (!connection) await db.query("BEGIN");
     await db.query(
       "INSERT INTO " +
         table("sync_state") +
@@ -141,7 +143,7 @@ export async function exchangeSync(
     for (const row of rows)
       if (row.item && itemKey(row.item) !== row.key)
         throw new UserDataError("invalid_state", 503);
-    await db.query("COMMIT");
+    if (!connection) await db.query("COMMIT");
     if (sequence > Number(state.sequence)) invalidatePopularFavorites();
     return {
       accountId,
@@ -152,9 +154,9 @@ export async function exchangeSync(
       receipts,
     };
   } catch (error) {
-    await db.query("ROLLBACK");
+    if (!connection) await db.query("ROLLBACK");
     throw error;
   } finally {
-    db.release();
+    if (!connection) db.release();
   }
 }
