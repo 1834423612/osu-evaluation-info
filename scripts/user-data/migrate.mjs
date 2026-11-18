@@ -18,6 +18,10 @@ const files = [
   "20261114_diagnostics.sql",
   "20261114_statistics.sql",
   "20261116_planning.sql",
+  "20261117_calendars.sql",
+  "20261117_sharing_permanent.sql",
+  "20261117_development_links.sql",
+  "20261117_calendar_refresh.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),
