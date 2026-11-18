@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { authClient } from "@/lib/auth/client";
+import { useDevelopmentAccount } from "@/lib/development/client";
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import {
@@ -17,12 +18,15 @@ import {
   ArrowRightLeft,
   Link as LinkIcon,
   TrendingUp,
+  Bookmark,
+  CalendarDays,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./resources-menu.module.css";
 
 type Page =
+  | "calendar"
   | "planning"
   | "explore"
   | "saved"
@@ -36,6 +40,13 @@ type Page =
   | "share"
   | "popular"
   | "diagnostics";
+type NavigationItem = {
+  page: Page;
+  href: Route;
+  Icon: typeof Search;
+  title: string;
+  detail: string;
+};
 function NavigationMenu({
   locale,
   page,
@@ -44,11 +55,13 @@ function NavigationMenu({
 }: {
   locale: Locale;
   page?: Page;
-  group: "explore" | "guides" | "personal";
+  group: "explore" | "guides" | "personal" | "saved";
   status?: ReactNode;
 }) {
   const { data: session } = authClient.useSession();
+  const development = useDevelopmentAccount(session?.user.id);
   const exploring = group === "explore",
+    saved = group === "saved",
     personal = group === "personal",
     primary = group !== "guides";
   const items: {
@@ -104,64 +117,92 @@ function NavigationMenu({
           ),
         },
       ]
-    : personal
-      ? [
-          {
-            page: "planning",
-            href: "/planning",
-            Icon: BookOpen,
-            title: text(locale, "Schedule planning", "学期规划"),
-            detail: text(
-              locale,
-              "Private plans and official curricula",
-              "私有规划与官方培养方案",
-            ),
-          },
-          {
-            page: "account",
-            href: "/account",
-            Icon: UserRound,
-            title: text(locale, "Account & devices", "账号与设备"),
-            detail: text(
-              locale,
-              "Sign in, devices and cloud favorites",
-              "登录、设备与云端收藏",
-            ),
-          },
-          {
-            page: "history",
-            href: "/history",
-            Icon: History,
-            title: text(locale, "Recent activity", "最近记录"),
-            detail: text(
-              locale,
-              "Searches and viewed courses",
-              "搜索与浏览过的课程",
-            ),
-          },
-          {
-            page: "share",
-            href: "/share",
-            Icon: LinkIcon,
-            title: text(locale, "Open a share code", "打开分享码"),
-            detail: text(
-              locale,
-              "Preview and save a shared collection",
-              "预览并转存收藏清单",
-            ),
-          },
-          {
-            page: "transfer",
-            href: "/transfer",
-            Icon: ArrowRightLeft,
-            title: text(locale, "Temporary transfer", "临时转存"),
-            detail: text(
-              locale,
-              "Send, receive and manage device transfers",
-              "发送、接收与管理设备转存",
-            ),
-          },
-        ]
+    : personal || saved
+      ? (
+          [
+            {
+              page: "saved" as Page,
+              href: "/saved" as Route,
+              Icon: Bookmark,
+              title: text(locale, "My saved items", "我的收藏"),
+              detail: text(
+                locale,
+                "Courses, sections, teachers and syllabi",
+                "课程、班次、教授与大纲",
+              ),
+            },
+            {
+              page: "calendar" as Page,
+              href: "/calendar" as Route,
+              Icon: CalendarDays,
+              title: text(locale, "My calendars", "我的日程"),
+              detail: text(
+                locale,
+                "Schedules, assignments and calendar feeds",
+                "课程表、作业与日历订阅",
+              ),
+            },
+            {
+              page: "planning",
+              href: "/planning",
+              Icon: BookOpen,
+              title: text(locale, "Schedule planning", "学期规划"),
+              detail: text(
+                locale,
+                "Private plans and official curricula",
+                "私有规划与官方培养方案",
+              ),
+            },
+            {
+              page: "account",
+              href: "/account",
+              Icon: UserRound,
+              title: text(locale, "Account & devices", "账号与设备"),
+              detail: text(
+                locale,
+                "Sign in, devices and cloud favorites",
+                "登录、设备与云端收藏",
+              ),
+            },
+            {
+              page: "history",
+              href: "/history",
+              Icon: History,
+              title: text(locale, "Recent activity", "最近记录"),
+              detail: text(
+                locale,
+                "Searches and viewed courses",
+                "搜索与浏览过的课程",
+              ),
+            },
+            {
+              page: "share",
+              href: "/share",
+              Icon: LinkIcon,
+              title: text(locale, "Open a share code", "打开分享码"),
+              detail: text(
+                locale,
+                "Preview and save a shared collection",
+                "预览并转存收藏清单",
+              ),
+            },
+            {
+              page: "transfer",
+              href: "/transfer",
+              Icon: ArrowRightLeft,
+              title: text(locale, "Temporary transfer", "临时转存"),
+              detail: text(
+                locale,
+                "Send, receive and manage device transfers",
+                "发送、接收与管理设备转存",
+              ),
+            },
+          ] satisfies NavigationItem[]
+        ).filter((item) =>
+          saved
+            ? ["saved", "share", "transfer"].includes(item.page)
+            : !["saved", "share", "transfer", "account"].includes(item.page),
+        )
       : [
           {
             page: "reference",
@@ -197,16 +238,20 @@ function NavigationMenu({
             ),
           },
         ];
-  const selected = items.some((item) => item.page === page);
-  const Icon = personal
-    ? UserRound
-    : exploring
-      ? page === "rmp"
-        ? MessageSquare
-        : page === "updates"
-          ? History
-          : Search
-      : BookOpen;
+  const selected =
+    items.some((item) => item.page === page) ||
+    (personal && page === "account");
+  const Icon = saved
+    ? Bookmark
+    : personal
+      ? UserRound
+      : exploring
+        ? page === "rmp"
+          ? MessageSquare
+          : page === "updates"
+            ? History
+            : Search
+        : BookOpen;
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
@@ -216,42 +261,51 @@ function NavigationMenu({
         aria-current={selected ? "true" : undefined}
         aria-label={text(
           locale,
-          personal
-            ? "My account and tools"
-            : exploring
-              ? "Courses and teachers"
-              : "Guides and data",
-          personal
-            ? "账号与个人工具"
-            : exploring
-              ? "课程与教师"
-              : "课程说明与数据方法",
+          saved
+            ? "Saved and sharing"
+            : personal
+              ? "My account and tools"
+              : exploring
+                ? "Courses and teachers"
+                : "Guides and data",
+          saved
+            ? "收藏与分享"
+            : personal
+              ? "账号与个人工具"
+              : exploring
+                ? "课程与教师"
+                : "课程说明与数据方法",
         )}
       >
         <Icon size={15} aria-hidden="true" />
         <span>
-          {personal
-            ? text(locale, "My space", "我的")
-            : exploring
-              ? text(
-                  locale,
-                  page === "updates"
-                    ? "Updates"
-                    : page === "rmp"
-                      ? "Teachers"
-                      : page === "popular"
-                        ? "Discover"
-                        : "Courses",
-                  page === "updates"
-                    ? "课程更新"
-                    : page === "rmp"
-                      ? "RMP 教师库"
-                      : page === "popular"
-                        ? "发现好课"
-                        : "课程探索",
-                )
-              : text(locale, "Guides & data", "课程说明与数据")}
+          {saved
+            ? text(locale, "Saved", "收藏")
+            : personal
+              ? text(locale, "My space", "我的")
+              : exploring
+                ? text(
+                    locale,
+                    page === "updates"
+                      ? "Updates"
+                      : page === "rmp"
+                        ? "Teachers"
+                        : page === "popular"
+                          ? "Discover"
+                          : "Courses",
+                    page === "updates"
+                      ? "课程更新"
+                      : page === "rmp"
+                        ? "RMP 教师库"
+                        : page === "popular"
+                          ? "发现好课"
+                          : "课程探索",
+                  )
+                : text(locale, "Guides & data", "课程说明与数据")}
         </span>
+        {personal && development.development && (
+          <span className={styles.devBadge}>{text(locale, "DEV", "开发")}</span>
+        )}
         {status}
         <ChevronDown size={12} aria-hidden="true" />
       </DropdownMenu.Trigger>
@@ -263,27 +317,30 @@ function NavigationMenu({
           collisionPadding={10}
         >
           {personal ? (
-            <DropdownMenu.Label className={styles.menuProfile}>
-              <UserRound size={19} />
-              <span>
-                <b>
-                  {session?.user.name ?? text(locale, "Your space", "我的空间")}
-                </b>
-                <small>
-                  {session
-                    ? text(
-                        locale,
-                        "Account, security and personal tools",
-                        "账号、安全与个人工具",
-                      )
-                    : text(
-                        locale,
-                        "Sign in to sync your favorites",
-                        "登录后同步你的收藏",
-                      )}
-                </small>
-              </span>
-            </DropdownMenu.Label>
+            <DropdownMenu.Item asChild>
+              <Link
+                href="/account"
+                className={styles.menuProfile}
+                data-telemetry-private
+              >
+                <UserRound size={19} />
+                <span>
+                  <b>
+                    {session?.user.name ??
+                      text(locale, "Your space", "我的空间")}
+                  </b>
+                  <small>
+                    {session
+                      ? session.user.email
+                      : text(
+                          locale,
+                          "Sign in to sync your favorites",
+                          "登录后同步你的收藏",
+                        )}
+                  </small>
+                </span>
+              </Link>
+            </DropdownMenu.Item>
           ) : null}
           {items.map((item) => (
             <DropdownMenu.Item asChild key={item.page}>
@@ -324,6 +381,24 @@ function NavigationMenu({
 }
 export function ExploreMenu({ locale, page }: { locale: Locale; page?: Page }) {
   return <NavigationMenu locale={locale} page={page} group="explore" />;
+}
+export function SavedMenu({
+  locale,
+  page,
+  count,
+}: {
+  locale: Locale;
+  page?: Page;
+  count: number;
+}) {
+  return (
+    <NavigationMenu
+      locale={locale}
+      page={page}
+      group="saved"
+      status={<span className="nav-count">{count}</span>}
+    />
+  );
 }
 export function ResourcesMenu({
   locale,

@@ -3,8 +3,13 @@ import Link from "next/link";
 import { PageShare } from "@/components/sharing/page-share";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Languages, Bookmark } from "lucide-react";
-import { ResourcesMenu, ExploreMenu, PersonalMenu } from "./resources-menu";
+import { Languages } from "lucide-react";
+import {
+  ResourcesMenu,
+  ExploreMenu,
+  PersonalMenu,
+  SavedMenu,
+} from "./resources-menu";
 import resourceStyles from "./resources-menu.module.css";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
@@ -29,6 +34,7 @@ export function AppHeader({
 }: {
   active?:
     | "planning"
+    | "calendar"
     | "explore"
     | "saved"
     | "methodology"
@@ -53,31 +59,33 @@ export function AppHeader({
   const updates = savedSyllabi.filter(syllabusHasUpdate).length;
   const pathname = usePathname();
   const current =
-    pathname === "/diagnostics"
-      ? "diagnostics"
-      : pathname === "/popular"
-        ? "popular"
-        : pathname === "/"
-          ? "explore"
-          : pathname === "/history"
-            ? "history"
-            : pathname === "/saved"
-              ? "saved"
-              : pathname.startsWith("/share")
-                ? "share"
-                : pathname.startsWith("/transfer")
-                  ? "transfer"
-                  : pathname === "/account"
-                    ? "account"
-                    : pathname === "/reference"
-                      ? "reference"
-                      : pathname === "/methodology"
-                        ? "methodology"
-                        : pathname === "/rmp" || pathname.startsWith("/rmp/")
-                          ? "rmp"
-                          : pathname === "/updates"
-                            ? "updates"
-                            : active;
+    pathname === "/calendar"
+      ? "calendar"
+      : pathname === "/diagnostics"
+        ? "diagnostics"
+        : pathname === "/popular"
+          ? "popular"
+          : pathname === "/"
+            ? "explore"
+            : pathname === "/history"
+              ? "history"
+              : pathname === "/saved"
+                ? "saved"
+                : pathname.startsWith("/share")
+                  ? "share"
+                  : pathname.startsWith("/transfer")
+                    ? "transfer"
+                    : pathname === "/account"
+                      ? "account"
+                      : pathname === "/reference"
+                        ? "reference"
+                        : pathname === "/methodology"
+                          ? "methodology"
+                          : pathname === "/rmp" || pathname.startsWith("/rmp/")
+                            ? "rmp"
+                            : pathname === "/updates"
+                              ? "updates"
+                              : active;
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
     const title = localizedDocumentTitle(locale, pathname);
@@ -129,21 +137,7 @@ export function AppHeader({
             aria-label={text(locale, "Main navigation", "主导航")}
           >
             <ExploreMenu locale={locale} page={current} />
-            <Link
-              href="/saved"
-              className={resourceStyles.savedLink}
-              aria-label={text(
-                locale,
-                `Saved ${savedCount}`,
-                `收藏 ${savedCount}`,
-              )}
-              data-active={current === "saved"}
-              aria-current={current === "saved" ? "page" : undefined}
-            >
-              <Bookmark size={15} />
-              <span>{text(locale, "Saved", "收藏")}</span>
-              <span className="nav-count">{savedCount}</span>
-            </Link>
+            <SavedMenu locale={locale} page={current} count={savedCount} />
             <PersonalMenu
               locale={locale}
               page={current}
