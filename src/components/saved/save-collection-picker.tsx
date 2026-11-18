@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Popover } from "radix-ui";
-import { FolderPlus, Check } from "lucide-react";
+import { FolderPlus, Check, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useDraftGuard } from "@/components/forms/draft-guard";
@@ -180,16 +180,30 @@ export function SaveCollectionPicker() {
             {text(locale, "Saved to favorites", "已加入收藏")}
           </strong>
           <p>{item?.title}</p>
-          <label className={styles.option}>
-            <input type="checkbox" checked disabled />
-            {text(locale, "All favorites", "全部收藏")}
-          </label>
+          <div className={styles.heading}>
+            <span>
+              <FolderOpen size={14} />
+              {text(locale, "Save in folders", "添加到分类")}
+            </span>
+            <small>
+              {text(
+                locale,
+                `${chosen.size} selected`,
+                `已选 ${chosen.size} 个`,
+              )}
+            </small>
+          </div>
           <div className={styles.groups}>
             {groups.map((group) => (
-              <label className={styles.option} key={group.id}>
+              <label
+                className={styles.option}
+                key={group.id}
+                data-selected={chosen.has(group.id) || undefined}
+              >
                 <input
                   type="checkbox"
                   checked={chosen.has(group.id)}
+                  disabled={busy}
                   onChange={() =>
                     setChosen((old) => {
                       const next = new Set(old);
@@ -200,15 +214,30 @@ export function SaveCollectionPicker() {
                   }
                 />
                 <CollectionIcon icon={group.icon} />
-                <span title={group.name}>{group.name}</span>
-                <small>{group.members.length}</small>
+                <span title={group.name}>
+                  <b>{group.name}</b>
+                  {group.tags.length ? <em>{group.tags.join(" · ")}</em> : null}
+                </span>
+                <small>
+                  {group.members.length} {text(locale, "items", "项")}
+                </small>
               </label>
             ))}
+            {!groups.length ? (
+              <small className={styles.empty}>
+                {text(
+                  locale,
+                  "Create a folder below to organize this item.",
+                  "在下方新建分类，整理这条收藏。",
+                )}
+              </small>
+            ) : null}
           </div>
           <label className={styles.newGroup}>
             <FolderPlus size={15} />
             <input
               value={name}
+              disabled={busy}
               onChange={(e) => setName(e.target.value)}
               maxLength={60}
               placeholder={text(
@@ -220,7 +249,9 @@ export function SaveCollectionPicker() {
             />
           </label>
           <Button size="sm" disabled={busy} onClick={() => void save()}>
-            {text(locale, "Done", "完成")}
+            {chosen.size || name.trim()
+              ? text(locale, "Save folders", "保存分类")
+              : text(locale, "Keep unfiled", "暂不分类")}
           </Button>
           {notice ? <small role="status">{notice}</small> : null}
           <Popover.Arrow className={styles.arrow} />

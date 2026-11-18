@@ -1,7 +1,7 @@
 .picker {
   z-index: 9200;
   pointer-events: auto;
-  width: min(300px, calc(100vw - 24px));
+  width: min(340px, calc(100vw - 24px));
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 16px;
@@ -28,8 +28,19 @@
   align-items: center;
   gap: 9px;
   font-size: 12px;
-  padding: 9px 2px;
+  padding: 10px;
   min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+  transition:
+    background 160ms,
+    border-color 160ms;
+}
+.option:hover,
+.option[data-selected] {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--line));
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
 .option input {
   width: 16px;
@@ -43,6 +54,38 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.option b {
+  font-weight: 550;
+}
+.option em {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--muted);
+  font-style: normal;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  font-size: 12px;
+}
+.heading > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.heading small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.empty {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 12px 0;
+}
 .option small {
   font-size: 10px;
   margin-left: auto;
@@ -50,9 +93,11 @@
   flex-shrink: 0;
 }
 .groups {
-  max-height: 200px;
+  display: grid;
+  gap: 6px;
+  max-height: min(32dvh, 250px);
   overflow: auto;
-  border-block: 1px solid var(--line);
+  padding: 1px 4px 1px 1px;
 }
 .newGroup {
   display: flex;
@@ -82,4 +127,9 @@
 }
 .arrow {
   fill: var(--surface);
+}
+@media (prefers-reduced-motion: reduce) {
+  .option {
+    transition: none;
+  }
 }
