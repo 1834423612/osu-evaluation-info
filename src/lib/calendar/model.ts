@@ -41,7 +41,7 @@ export const calendarSchema = z
       .enum(["calendar", "book", "graduation", "star"])
       .default("calendar"),
     color: z.enum(["rose", "blue", "mint", "violet", "amber"]).default("blue"),
-    kind: z.enum(["simulation", "personal", "feed", "combined"]),
+    kind: z.enum(["simulation", "personal", "feed", "combined", "official"]),
     term: z.string().max(20).optional(),
     campus: z.string().max(8).optional(),
     fingerprint: z.string().max(10000).optional(),
@@ -60,6 +60,18 @@ export const calendarSchema = z
   .strip();
 export type CalendarEvent = z.infer<typeof calendarEventSchema>;
 export type UserCalendar = z.infer<typeof calendarSchema>;
+/** Missing sources must not consume a combined calendar's selection capacity. */
+export function availableSourceIds(
+  calendar: UserCalendar,
+  calendars: UserCalendar[],
+) {
+  const available = new Set(
+    calendars
+      .filter((source) => source.id !== calendar.id)
+      .map((source) => source.id),
+  );
+  return [...new Set(calendar.sourceIds)].filter((id) => available.has(id));
+}
 /** Apply remote source data to the current calendar, preserving in-flight edits. */
 export function applyCalendarRefresh(
   current: UserCalendar,

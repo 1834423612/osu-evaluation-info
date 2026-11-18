@@ -530,7 +530,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/groups.test.mjs` 课程与学分配额、备选组、已选备选课程跨学期移动或退回待安排区、重复审计视图和重复导入。 `node --test tests/planning/groups.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
-- `tests/planning/simulation.test.mjs` 固定班次、避开时段、分段学期重叠、未知日期及已满班次提示。 `node --test tests/planning/simulation.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
+- `tests/planning/simulation.test.mjs` 学分与待安排区域的课程缓存、固定班次、避开时段、分段学期重叠、未知日期及已满班次提示。 `node --test tests/planning/simulation.test.mjs`. 仅使用合成输入与模拟请求，无外部服务或持久写入。
 
 - `tests/planning/timetable.test.mjs` 逐次授课区分线上与线下，覆盖混合授课班次、未知地点、时间待定课程及周末时段。 `node --test tests/planning/timetable.test.mjs`. 仅使用合成输入，无外部服务或持久写入。
 
@@ -542,10 +542,10 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 `tests/catalog/detail-refresh.test.mjs` 覆盖收藏卡片的自动补全入口。`tests/catalog/change-budgets.test.mjs` 同时验证查询超时后的回滚与缩小批次重试。规划数据库集成测试通过内存 PGlite 和仓库公开样例验证不可变目录版本、重复发布、完整模板往返和事务回滚。这些测试均通过 `pnpm test` 运行，无需网络服务，不写外部数据库。
 
-- `tests/calendar/ical.test.mjs` 验证有限 ICS 重复事件、排除日期、稳定标识、全天日历、UTF-8 折行、假期停课和夏令时换算。运行 `node --test tests/calendar/ical.test.mjs`。仅合成样例，无外部服务或持久写入。
+- `tests/calendar/ical.test.mjs` 验证有限 ICS 重复事件、排除日期、稳定标识、全天日历、UTF-8 折行、假期停课、夏令时换算及官方来源分区与稳定标识、东部时区的今天和跨月边界、全天事件排他结束及失效来源替换容量。运行 `node --test tests/calendar/ical.test.mjs`。仅合成样例，无外部服务或持久写入。
 - `tests/planning/eligibility.test.mjs` 验证同学期的计划先修课不能解锁后续课程，以及年级限制维持待核对状态。运行 `node --test tests/planning/eligibility.test.mjs`。离线合成输入，无写入。
 
 - `tests/calendar/security.test.mjs` 验证保留地址、无效协议、跨午夜事件拆分和过量旧重复规则。运行 `node --test tests/calendar/security.test.mjs`。离线合成输入，无网络或持久写入。
-- `tests/calendar/sharing.test.mjs` 验证稳定订阅、实时修改、来源地址隐私、撤销、刷新租约、失败保留、永久收藏链接及手动更新数字码。运行 `node --test tests/calendar/sharing.test.mjs`。内存 PGlite 迁移和模拟来源，无网络或外部数据库写入。
+- `tests/calendar/sharing.test.mjs` 验证稳定订阅、实时修改、来源地址隐私、撤销、刷新租约、失败保留、实时官方来源引用与叠加去重、永久收藏链接及手动更新数字码。运行 `node --test tests/calendar/sharing.test.mjs`。内存 PGlite 迁移和模拟来源，无网络或外部数据库写入。
 - `tests/development/accounts.test.mjs` 验证加密、自动拉取、三方冲突、过期预览、手动生产合并、多轮合并保留生产端独有修改、撤销和原子回滚。运行 `node --test tests/development/accounts.test.mjs`。内存 PGlite 与模拟生产传输，不访问或写入真实生产账号。
 - `tests/user-data/share-selection.test.mjs` 验证按分类选择的初始状态、部分成员关系、重叠分类隐私、去重计数及还原选择后的草稿指纹。运行 `node --test tests/user-data/share-selection.test.mjs`。仅内存合成收藏，不使用服务或网络，不做持久写入。

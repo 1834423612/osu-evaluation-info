@@ -10,7 +10,18 @@ import { browserUuid } from "@/lib/uuid";
 import gallery from "./shared-gallery.module.css";
 import type { Route } from "next";
 import Link from "next/link";
-import { Check, ExternalLink } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  FolderOpen,
+  Search,
+  BookOpen,
+  Users,
+  CalendarDays,
+  FileText,
+  Cloud,
+  HardDrive,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { text, type Locale } from "@/lib/i18n";
 import {
@@ -42,8 +53,10 @@ export function CollectionImport({
   renderItem?: (item: SavedSnapshot["items"][number]) => ReactNode;
 }) {
   const { data: session } = authClient.useSession();
+  const accountReady = !!session?.user && !!savedScope();
   const [kind, setKind] = useState("all"),
     [folder, setFolder] = useState("all"),
+    [query, setQuery] = useState(""),
     [copyFolders, setCopyFolders] = useState(true);
   const [imported, setImported] = useState(false);
   const [folderIds] = useState(
@@ -74,8 +87,10 @@ export function CollectionImport({
   async function save() {
     setBusy(true);
     try {
+      const scope = savedScope();
       const chosen = snapshot.items.filter((x) => selected.has(itemKey(x)));
       const outcome = await withSavedMutation(() => {
+        if (scope !== savedScope()) throw Error("account_changed");
         const result = importLocalItems(chosen, mode);
         if (copyFolders && snapshot.collections?.length) {
           const keys = new Set(readLocalItems().map(itemKey));
@@ -119,184 +134,346 @@ export function CollectionImport({
       setBusy(false);
     }
   }
+  const filtered = snapshot.items.filter(
+    (item) =>
+      (kind === "all" || item.kind === kind) &&
+      (folder === "all" ||
+        snapshot.collections
+          ?.find((collection) => collection.id === folder)
+          ?.members.includes(itemKey(item))) &&
+      `${itemTitle(item)} ${itemContext(item)}`
+        .toLocaleLowerCase()
+        .includes(query.trim().toLocaleLowerCase()),
+  );
+  const changeSelection = (next: Set<string>) => {
+    setSelected(next);
+    setImported(false);
+  };
   return (
-    <section className={styles.panel}>
-      <p className={styles.notice}>
-        {text(
-          locale,
-          savedScope()
-            ? "Save to the current account workspace."
-            : session
-              ? "Save in this browser workspace; cloud sync is not active here."
-              : "You are signed out. These items will be saved in this browser only.",
-          savedScope()
-            ? "保存至当前账号的收藏空间。"
-            : session
-              ? "保存至当前浏览器空间，此处尚未启用账号同步。"
-              : "当前未登录，所选内容只会保存在此浏览器。",
-        )}
-      </p>
-      <div className={styles.heading}>
-        <div>
-          <h2>{snapshot.title}</h2>
-          <small className={styles.muted}>
-            {snapshot.items.length} {text(locale, "items", "项")}
-          </small>
+    <section
+      className={gallery.workspace}
+      data-compact={!renderItem || undefined}
+      data-telemetry-private
+    >
+      {!renderItem ? (
+        <h2 className={gallery.compactTitle}>{snapshot.title}</h2>
+      ) : null}
+      <aside
+        className={gallery.sidebar}
+        aria-label={text(locale, "Shared folders", "分享的分类")}
+      >
+        <h2>
+          <FolderOpen size={15} />
+          {text(locale, "Folders", "分类目录")}
+        </h2>
+        <button
+          className={gallery.folderButton}
+          aria-pressed={folder === "all"}
+          onClick={() => {
+            setFolder("all");
+            setLimit(40);
+          }}
+        >
+          <FolderOpen size={17} />
+          <span>{text(locale, "All contents", "全部内容")}</span>
+          <small>{snapshot.items.length}</small>
+        </button>
+        {(snapshot.collections ?? []).map((collection) => (
+          <button
+            key={collection.id}
+            className={gallery.folderButton}
+            aria-pressed={folder === collection.id}
+            onClick={() => {
+              setFolder(collection.id);
+              setLimit(40);
+            }}
+          >
+            <CollectionIcon icon={collection.icon} size={17} />
+            <span>
+              <strong>{collection.name}</strong>
+              {collection.tags.length ? (
+                <em>{collection.tags.join(" · ")}</em>
+              ) : null}
+            </span>
+            <small>{collection.members.length}</small>
+          </button>
+        ))}
+        {!!snapshot.collections?.length ? (
+          <label className={gallery.keepFolders}>
+            <input
+              type="checkbox"
+              checked={copyFolders}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                setCopyFolders(event.target.checked);
+                setImported(false);
+              }}
+            />
+            <span>
+              {text(locale, "Keep folder organization", "保留分类结构")}
+              <small>
+                {text(
+                  locale,
+                  "Copy folder names, icons and tags with your selection.",
+                  "转存所选内容时保留分类名称、图标与标签。",
+                )}
+              </small>
+            </span>
+          </label>
+        ) : null}
+        <div className={gallery.destination}>
+          {accountReady ? <Cloud size={15} /> : <HardDrive size={15} />}
+          <span>
+            {accountReady
+              ? text(locale, "Save to your account", "转存至当前账号")
+              : text(locale, "Save in this browser", "转存至此浏览器")}
+            <small>
+              {accountReady
+                ? text(
+                    locale,
+                    "Cross-device updates require account sync to be enabled.",
+                    "开启账号同步后可在其他设备获取。",
+                  )
+                : text(
+                    locale,
+                    "Sign in to sync across devices.",
+                    "登录后可跨设备同步。",
+                  )}
+            </small>
+          </span>
         </div>
-        <div className={styles.tools}>
+      </aside>
+      <div className={gallery.main}>
+        <div className={gallery.browseHeading}>
+          <div>
+            <h2>
+              {folder === "all"
+                ? text(locale, "Shared contents", "分享内容")
+                : snapshot.collections?.find(
+                    (collection) => collection.id === folder,
+                  )?.name}
+            </h2>
+            <p>
+              {filtered.length} {text(locale, "items in this view", "项内容")} ·{" "}
+              {text(locale, "Preview before copying", "可先预览，再转存")}
+            </p>
+          </div>
+          <label className={gallery.search}>
+            <Search size={15} />
+            <input
+              name="shared-search"
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setLimit(40);
+              }}
+              placeholder={text(
+                locale,
+                "Find a course or teacher…",
+                "查找课程或教师…",
+              )}
+              aria-label={text(
+                locale,
+                "Search shared contents",
+                "搜索分享内容",
+              )}
+            />
+          </label>
+        </div>
+        <div
+          className={gallery.filters}
+          aria-label={text(locale, "Content types", "内容类型")}
+        >
+          {["all", "course", "section", "instructor", "syllabus"].map(
+            (value) => {
+              const Icon =
+                value === "course"
+                  ? BookOpen
+                  : value === "section"
+                    ? CalendarDays
+                    : value === "instructor"
+                      ? Users
+                      : value === "syllabus"
+                        ? FileText
+                        : FolderOpen;
+              return (
+                <button
+                  key={value}
+                  aria-pressed={kind === value}
+                  onClick={() => {
+                    setKind(value);
+                    setLimit(40);
+                  }}
+                >
+                  <Icon size={14} />
+                  {value === "all"
+                    ? text(locale, "All", "全部")
+                    : itemKindName(
+                        value as SavedSnapshot["items"][number]["kind"],
+                        locale,
+                      )}
+                  <small>
+                    {
+                      snapshot.items.filter(
+                        (item) => value === "all" || item.kind === value,
+                      ).length
+                    }
+                  </small>
+                </button>
+              );
+            },
+          )}
+        </div>
+        <div className={gallery.selectionBar}>
           <SelectionCheckbox
-            keys={snapshot.items.map(itemKey)}
+            keys={filtered.map(itemKey)}
             selected={selected}
-            onChange={setSelected}
-            label={text(locale, "Select all", "全选")}
+            onChange={changeSelection}
+            label={text(locale, "Select this view", "全选当前列表")}
             disabled={disabled || busy}
           />
+          <span aria-live="polite">
+            {selected.size} {text(locale, "selected", "项已选")}
+          </span>
           <Button
             disabled={disabled || !selected.size || busy}
             onClick={() => void save()}
           >
             <Check size={14} />
-            {text(locale, "Save selected", "转存所选")} ({selected.size})
+            {busy
+              ? text(locale, "Saving…", "正在转存…")
+              : text(locale, "Save selected", "转存所选")}{" "}
+            · {selected.size}
           </Button>
         </div>
-      </div>
-      {result ? (
-        <p className={styles.notice} role="status">
-          {result}
-        </p>
-      ) : null}
-      {renderItem && (
-        <div className={gallery.filters}>
-          {["all", "course", "section", "instructor", "syllabus"].map(
-            (value) => (
-              <button
-                key={value}
-                aria-pressed={kind === value}
-                onClick={() => setKind(value)}
-              >
-                {value === "all"
-                  ? text(locale, "All", "全部")
-                  : itemKindName(
-                      value as SavedSnapshot["items"][number]["kind"],
-                      locale,
-                    )}{" "}
-                ·{" "}
-                {
-                  snapshot.items.filter(
-                    (item) => value === "all" || item.kind === value,
-                  ).length
-                }
-              </button>
-            ),
-          )}
-        </div>
-      )}
-      {!!snapshot.collections?.length && (
-        <>
-          <div className={gallery.filters}>
-            <button
-              aria-pressed={folder === "all"}
-              onClick={() => setFolder("all")}
-            >
-              {text(locale, "All folders", "全部文件夹")}
-            </button>
-            {snapshot.collections.map((collection) => (
-              <button
-                key={collection.id}
-                aria-pressed={folder === collection.id}
-                onClick={() => setFolder(collection.id)}
-              >
-                <CollectionIcon icon={collection.icon} size={14} />
-                {collection.name}
-                {collection.tags.map((tag) => (
-                  <small key={tag}>{tag}</small>
-                ))}
-              </button>
-            ))}
-          </div>
-          <label className={styles.pick}>
-            <input
-              type="checkbox"
-              className={styles.checkbox}
-              checked={copyFolders}
-              onChange={(e) => setCopyFolders(e.target.checked)}
-            />
-            {text(
-              locale,
-              "Also copy folder styles and selected membership",
-              "同时转存文件夹样式及所选项目分组",
-            )}
-          </label>
-        </>
-      )}
-      <ul className={renderItem ? gallery.grid : styles.list}>
-        {snapshot.items
-          .filter(
-            (item) =>
-              (kind === "all" || item.kind === kind) &&
-              (folder === "all" ||
-                snapshot.collections
-                  ?.find((collection) => collection.id === folder)
-                  ?.members.includes(itemKey(item))),
-          )
-          .slice(0, limit)
-          .map((item) => {
+        {result ? (
+          <p className={gallery.result} role="status">
+            {result}
+          </p>
+        ) : null}
+        <ul className={gallery.grid}>
+          {filtered.slice(0, limit).map((item) => {
             const key = itemKey(item),
-              href = itemHref(item);
+              href = itemHref(item),
+              content = renderItem?.(item),
+              courseCard = !!renderItem && item.kind === "course";
             return (
-              <li key={key} className={renderItem ? gallery.item : styles.row}>
-                <label className={styles.pick}>
-                  <input
-                    className={styles.checkbox}
-                    type="checkbox"
-                    disabled={disabled || busy}
-                    checked={selected.has(key)}
-                    onChange={() =>
-                      setSelected((current) => {
-                        const next = new Set(current);
+              <li
+                key={key}
+                className={courseCard ? gallery.courseItem : gallery.item}
+                data-selected={selected.has(key) || undefined}
+              >
+                {courseCard ? (
+                  <label
+                    className={gallery.courseSelect}
+                    title={text(locale, "Select ", "选择 ") + itemTitle(item)}
+                  >
+                    <input
+                      className={styles.checkbox}
+                      type="checkbox"
+                      disabled={disabled || busy}
+                      checked={selected.has(key)}
+                      aria-label={
+                        text(locale, "Select ", "选择 ") + itemTitle(item)
+                      }
+                      onChange={() => {
+                        const next = new Set(selected);
                         if (next.has(key)) next.delete(key);
                         else next.add(key);
-                        return next;
-                      })
+                        changeSelection(next);
+                      }}
+                    />
+                  </label>
+                ) : (
+                  <div className={gallery.itemHeading}>
+                    <label>
+                      <input
+                        className={styles.checkbox}
+                        type="checkbox"
+                        disabled={disabled || busy}
+                        checked={selected.has(key)}
+                        onChange={() => {
+                          const next = new Set(selected);
+                          if (next.has(key)) next.delete(key);
+                          else next.add(key);
+                          changeSelection(next);
+                        }}
+                      />
+                      <span>
+                        <strong>{itemTitle(item)}</strong>
+                        <small>{itemContext(item)}</small>
+                      </span>
+                    </label>
+                    <span className={gallery.kind}>
+                      {itemKindName(item.kind, locale)}
+                    </span>
+                    {onOpen && href ? (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={
+                          text(locale, "Preview ", "预览 ") + itemTitle(item)
+                        }
+                        onClick={() => onOpen(item)}
+                      >
+                        <ExternalLink size={15} />
+                      </Button>
+                    ) : href ? (
+                      <Link
+                        href={href as Route}
+                        aria-label={text(locale, "Open item", "打开项目")}
+                      >
+                        <ExternalLink size={15} />
+                      </Link>
+                    ) : null}
+                  </div>
+                )}
+                {content ? (
+                  <div
+                    className={
+                      courseCard ? gallery.courseContent : gallery.itemBody
                     }
-                  />
-                  <span>
-                    <strong>{itemTitle(item)}</strong>
-                    <small>
-                      {itemKindName(item.kind, locale)} · {itemContext(item)}
-                      {existing.has(key)
-                        ? " · " + text(locale, "Already saved", "已收藏")
-                        : ""}
-                    </small>
+                  >
+                    {content}
+                  </div>
+                ) : null}
+                {existing.has(key) ? (
+                  <span className={gallery.already}>
+                    <Check size={11} />
+                    {text(
+                      locale,
+                      "Already in your favorites",
+                      "已在你的收藏中",
+                    )}
                   </span>
-                </label>
-                {renderItem?.(item)}
-                {onOpen && href ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={text(locale, "Open item", "打开项目")}
-                    onClick={() => onOpen(item)}
-                  >
-                    <ExternalLink size={15} />
-                  </Button>
-                ) : href ? (
-                  <Link
-                    href={href as Route}
-                    aria-label={text(locale, "Open item", "打开项目")}
-                  >
-                    <ExternalLink size={15} />
-                  </Link>
                 ) : null}
               </li>
             );
           })}
-      </ul>
-      {limit < snapshot.items.length ? (
-        <Button variant="outline" onClick={() => setLimit((x) => x + 40)}>
-          {text(locale, "Show more", "显示更多")}
-        </Button>
-      ) : null}
+        </ul>
+        {!filtered.length ? (
+          <div className={gallery.empty}>
+            <Search size={24} />
+            <h3>{text(locale, "No matching items", "没有匹配的内容")}</h3>
+            <p>
+              {text(
+                locale,
+                "Try another category or search term.",
+                "可切换分类或修改搜索内容。",
+              )}
+            </p>
+          </div>
+        ) : null}
+        {limit < filtered.length ? (
+          <Button
+            variant="outline"
+            onClick={() => setLimit((value) => value + 40)}
+          >
+            {text(locale, "Show more", "显示更多")}
+          </Button>
+        ) : null}
+      </div>
     </section>
   );
 }

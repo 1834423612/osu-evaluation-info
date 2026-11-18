@@ -275,6 +275,109 @@
   font-size: 12px;
   color: var(--muted);
 }
+.sourceStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 10px;
+  font-size: 11px;
+}
+.sourceStatus > svg {
+  color: #398675;
+  flex-shrink: 0;
+}
+.sourceStatus small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.sourceStatus a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--primary);
+  text-decoration: none;
+}
+.officialBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #398675;
+  background: color-mix(in srgb, #398675 7%, var(--surface));
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+.createOptions {
+  display: grid;
+  gap: 10px;
+}
+.createOptions button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.createOptions button:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--line));
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+.createOptions button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.createOptions button > svg:first-child {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.createOptions button > svg:last-child {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.createOptions strong {
+  display: block;
+  font-size: 14px;
+}
+.createOptions small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.officialDetail {
+  display: grid;
+  gap: 14px;
+  font-size: 13px;
+}
+.officialDetail > span,
+.officialDetail > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.officialDetail p {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.officialDetail a {
+  color: var(--primary);
+  font-size: 12px;
+  text-decoration: none;
+}
 .toolbar > [role="combobox"] {
   width: 145px;
   flex: 0 0 145px;
@@ -293,6 +396,7 @@
   .sidebar {
     position: static;
     display: flex;
+    align-items: flex-start;
     overflow-x: auto;
     padding-bottom: 5px;
   }

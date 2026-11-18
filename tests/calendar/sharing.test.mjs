@@ -44,6 +44,56 @@ test("calendar feeds stay current without exposing private sources, revoke old t
       await import("../../src/lib/planning/cloud.ts");
     const { publishCalendar, publicCalendar } =
       await import("../../src/lib/calendar/sharing.ts");
+    const official = {
+      id: "holiday",
+      date: "2027-01-18",
+      end: "2027-01-18",
+      title: "Official holiday",
+      kind: "holiday",
+      noClasses: true,
+      categories: [],
+    };
+    await query(
+      "INSERT INTO osu_planning_dev.academic_calendar(data) VALUES($1)",
+      [JSON.stringify(official)],
+    );
+    const officialPlan = emptyPlan();
+    officialPlan.schedule.calendars = [
+      calendarSchema.parse({
+        id: "combined",
+        title: "With official dates",
+        kind: "combined",
+        sourceIds: ["osu-official-holidays"],
+        includeAcademic: true,
+        range: { start: "2027-01-01", end: "2027-02-01" },
+        events: [],
+        updatedAt: "2027-01-01",
+      }),
+    ];
+    await writePlanningBackup("official-owner", 0, officialPlan);
+    const officialLink = await publishCalendar("official-owner", {
+      calendarIds: ["combined"],
+      categories: ["holiday"],
+      nickname: "",
+      expiresIn: 0,
+    });
+    const officialShared = await publicCalendar(
+      officialLink.id,
+      officialLink.token,
+    );
+    assert.equal(
+      officialShared.calendars[0].events.length,
+      1,
+      "overlay and reference do not duplicate the same date",
+    );
+    await query("UPDATE osu_planning_dev.academic_calendar SET data=$1", [
+      JSON.stringify({ ...official, title: "Updated official date" }),
+    ]);
+    assert.equal(
+      (await publicCalendar(officialLink.id, officialLink.token)).calendars[0]
+        .events[0].title,
+      "Updated official date",
+    );
     const plan = emptyPlan();
     plan.schedule.calendars = [
       calendarSchema.parse({

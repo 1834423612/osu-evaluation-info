@@ -4,6 +4,8 @@ import { parseCalendar, exportCalendar } from "../../src/lib/calendar/ical.ts";
 import {
   normalizeAcademicEntries,
   isNoClassDate,
+  officialCalendars,
+  OFFICIAL_CALENDAR_IDS,
 } from "../../src/lib/calendar/academic.ts";
 import {
   calendarFromSimulation,
@@ -15,10 +17,96 @@ import {
   calendarEventSchema,
   combinedEvents,
   applyCalendarRefresh,
+  availableSourceIds,
 } from "../../src/lib/calendar/model.ts";
+import { newYorkDate, eventInDateRange } from "../../src/lib/calendar/dates.ts";
 const envelope = (events) =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
 const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+
+test("Today and range boundaries use Eastern dates and exclusive all-day ends", () => {
+  assert.equal(newYorkDate(new Date("2026-12-01T01:00:00Z")), "2026-11-30");
+  assert.equal(newYorkDate(new Date("2027-07-01T02:00:00Z")), "2027-06-30");
+  const event = calendarEventSchema.parse({
+    id: "holiday",
+    title: "January holiday",
+    start: "2027-01-31",
+    end: "2027-02-01",
+    allDay: true,
+    category: "holiday",
+  });
+  assert.equal(eventInDateRange(event, "2027-02-01", "2027-02-28"), false);
+  assert.equal(eventInDateRange(event, "2027-01-01", "2027-01-31"), true);
+  const meeting = {
+    ...event,
+    allDay: false,
+    start: "2027-02-01T15:00:00Z",
+    end: "2027-02-01T16:00:00Z",
+  };
+  assert.equal(eventInDateRange(meeting, "2027-02-01", "2027-02-28"), true);
+});
+
+test("missing combined sources do not consume replacement capacity", () => {
+  const calendar = calendarSchema.parse({
+    id: "combined",
+    title: "Combined",
+    kind: "combined",
+    events: [],
+    updatedAt: "",
+    sourceIds: Array.from({ length: 30 }, (_, i) => "missing-" + i),
+  });
+  const source = { ...calendar, id: "available", sourceIds: [] };
+  assert.deepEqual(availableSourceIds(calendar, [calendar, source]), []);
+  assert.deepEqual(
+    availableSourceIds(
+      {
+        ...calendar,
+        sourceIds: ["combined", "available", "available", "missing"],
+      },
+      [calendar, source],
+    ),
+    ["available"],
+  );
+});
+
+test("default official calendars partition shared dates and retain stable source identities", () => {
+  const days = ["term", "exam", "holiday", "deadline"].map((kind, index) => ({
+    id: String(index),
+    date: "2027-01-18",
+    end: "2027-01-18",
+    title: kind,
+    categories: [],
+    noClasses: kind === "holiday",
+    kind,
+  }));
+  const defaults = officialCalendars(days);
+  assert.deepEqual(
+    defaults.map((calendar) => calendar.id),
+    OFFICIAL_CALENDAR_IDS,
+  );
+  assert.deepEqual(
+    defaults.map((calendar) => calendar.events.length),
+    [2, 1, 1],
+  );
+  assert.ok(
+    defaults.every((calendar) => calendarSchema.safeParse(calendar).success),
+  );
+  assert.equal(defaults[1].events[0].end, "2027-01-19");
+  assert.match(defaults[1].events[0].url, /^https:\/\/registrar.osu.edu\//);
+  assert.deepEqual(
+    officialCalendars([], "zh").map((calendar) => calendar.id),
+    OFFICIAL_CALENDAR_IDS,
+  );
+  const combined = calendarSchema.parse({
+    id: "combined",
+    title: "My dates",
+    kind: "combined",
+    sourceIds: [...OFFICIAL_CALENDAR_IDS],
+    events: [],
+    updatedAt: "2027-01-01",
+  });
+  assert.equal(combinedEvents([...defaults, combined], combined).length, 4);
+});
 
 test("a remote refresh preserves settings saved while its request was pending", () => {
   const original = calendarSchema.parse({

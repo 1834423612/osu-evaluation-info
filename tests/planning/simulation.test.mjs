@@ -4,6 +4,7 @@ import {
   simulateSchedule,
   simulationDiagnostics,
   semesterCatalogCode,
+  sessionSectionsForTerm,
 } from "../../src/lib/planning/simulation.ts";
 import { emptyPlan, planSchema } from "../../src/lib/planning/model.ts";
 import { mergeSnapshots } from "../../src/lib/planning/snapshots.ts";
@@ -26,6 +27,24 @@ test("semester codes use OSU Spring, Summer and Autumn identifiers", () => {
   assert.equal(semesterCatalogCode("Summer2027"), "1274");
   assert.throws(() => semesterCatalogCode("unassigned"));
 });
+test("cached course details do not treat credit or unassigned planner buckets as semesters", () => {
+  const cached = {
+    ...course("2111", [section("0010", "09:00", "10:00")]),
+    termCode: "1272",
+  };
+  for (const bucket of [
+    "credit",
+    "unassigned",
+    "Transfer Credits",
+    "Exam Credits",
+    "",
+  ])
+    assert.deepEqual(sessionSectionsForTerm(cached, bucket), []);
+  assert.equal(sessionSectionsForTerm(cached, "Spring2027").length, 1);
+  assert.deepEqual(sessionSectionsForTerm(cached, "Autumn2026"), []);
+  assert.deepEqual(sessionSectionsForTerm(cached, "Spring2027", "missing"), []);
+});
+
 test("simulation fills an unselected section around fixed classes", () => {
   const result = simulateSchedule(
     [

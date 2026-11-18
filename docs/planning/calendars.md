@@ -4,6 +4,10 @@ English · [简体中文](../zh-CN/planning/calendars.md)
 
 ## Use
 
+Three official sources appear automatically: **Terms & exams**, **Holidays & breaks**, and **Registration deadlines**. They read the shared academic-calendar database, rather than copying events into each account. Open a source for a month, week or agenda view; select a date for its complete title and Registrar link. The source bar shows the latest successful collection time, and offers retry when dates cannot load. These sources are read-only and can be referenced by a combined calendar.
+
+**New calendar** starts with a choice between a personal calendar, a live subscription and a combined calendar. The settings form previews the name, icon and color before saving. An empty new calendar does not count as an unfinished edit until its settings change.
+
 Save a semester simulation as a separate group, or replace a selected saved group. Course changes mark the original group stale; they do not silently replace its sections. Open **My calendars** to rename it, edit individual events, choose its icon/color, view a week or agenda, and export ICS. Each calendar has a miniature preview. The mobile grid keeps all seven weekday headings on one row. Times use America/New_York, including daylight saving.
 
 Import ICS files locally, subscribe to an HTTPS/webcal ICS URL after sign-in, or combine existing calendars. A combined calendar refers to its sources; source changes appear in the combined view. Subscribed events are read-only; create an editable copy before changing them. Imports are limited to 2 MB and 3,000 expanded events; unsupported or excessive recurrence fails explicitly. A workspace supports 40 calendars. Browser storage limits may be lower; export a backup if saving reports a storage error.
