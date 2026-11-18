@@ -49,7 +49,10 @@ export function shareLink(
     (capability ? "#k=" + encodeURIComponent(capability) : "")
   );
 }
-export function linkCapability(family: "share" | "transfer", id: string) {
+export function linkCapability(
+  family: "share" | "transfer" | "calendar",
+  id: string,
+) {
   if (typeof window === "undefined") return undefined;
   const first = (
     window as Window & {

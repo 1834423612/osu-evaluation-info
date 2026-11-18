@@ -9,7 +9,12 @@ export function captureLinkCapability() {
   const match = location.pathname.match(
     /^\/(share|transfer)\/([a-f0-9-]{36})\/?$/i,
   );
-  if (!match || !location.hash) return;
+  const calendarId = /^\/calendar\/shared\/?$/.test(location.pathname)
+    ? new URLSearchParams(location.search).get("id")
+    : null;
+  const family = calendarId ? "calendar" : match?.[1];
+  const id = calendarId ?? match?.[2];
+  if (!family || !id || !/^[a-f0-9-]{36}$/i.test(id) || !location.hash) return;
   const capability = new URLSearchParams(location.hash.slice(1)).get("k");
   if (!capability || !/^[A-Za-z0-9_-]{43}$/.test(capability)) return;
   (
@@ -20,10 +25,10 @@ export function captureLinkCapability() {
         capability: string;
       };
     }
-  ).__WAHO_LINK_CAPABILITY__ = { family: match[1], id: match[2], capability };
+  ).__WAHO_LINK_CAPABILITY__ = { family, id, capability };
   try {
     sessionStorage.setItem(
-      "course-atlas:capability:" + match[1] + ":" + match[2],
+      "course-atlas:capability:" + family + ":" + id,
       capability,
     );
   } catch {}

@@ -11,6 +11,7 @@ import {
 import { usePlanningWorkspace } from "@/components/planning/use-planning-workspace";
 import { calendarSchema, type UserCalendar } from "@/lib/calendar/model";
 import { browserUuid } from "@/lib/uuid";
+import { linkCapability } from "@/lib/saved/share-links";
 import { CalendarPreview } from "./calendar-preview";
 import { CalendarWeek } from "./calendar-week";
 import styles from "./calendar.module.css";
@@ -44,8 +45,8 @@ export function SharedCalendar() {
   useEffect(() => {
     const c = new AbortController(),
       url = new URL(location.href),
-      token = new URLSearchParams(url.hash.slice(1)).get("k"),
-      id = url.searchParams.get("id");
+      id = url.searchParams.get("id"),
+      token = id ? linkCapability("calendar", id) : undefined;
     if (!token || !id) {
       queueMicrotask(() => setMessage(t("Calendar unavailable", "日历不可用")));
       return;
