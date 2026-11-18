@@ -14,10 +14,49 @@ import {
   calendarSchema,
   calendarEventSchema,
   combinedEvents,
+  applyCalendarRefresh,
 } from "../../src/lib/calendar/model.ts";
 const envelope = (events) =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
 const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+
+test("a remote refresh preserves settings saved while its request was pending", () => {
+  const original = calendarSchema.parse({
+    id: "feed",
+    title: "Original",
+    kind: "feed",
+    feedUrl: "https://example.edu/calendar.ics",
+    events: [],
+    updatedAt: "2027-01-01",
+  });
+  const edited = {
+    ...original,
+    title: "Renamed",
+    includeAcademic: false,
+    active: false,
+    range: { start: "2027-02-01", end: "2027-03-01" },
+    icon: "star",
+    color: "mint",
+  };
+  const incoming = {
+    ...original,
+    refreshedAt: "2027-01-02",
+    updatedAt: "2027-01-02",
+    events: [{ id: "new", title: "New source event" }],
+  };
+  const result = applyCalendarRefresh(edited, incoming);
+  assert.deepEqual(
+    {
+      ...result,
+      events: [],
+      refreshedAt: undefined,
+      updatedAt: edited.updatedAt,
+    },
+    { ...edited, refreshedAt: undefined },
+  );
+  assert.deepEqual(result.events, incoming.events);
+  assert.equal(result.refreshedAt, incoming.refreshedAt);
+});
 test("IANA time zones without VTIMEZONE preserve local time across DST", async () => {
   const events = await parseCalendar(
     envelope(

@@ -40,6 +40,7 @@ import { CalendarEventEditor } from "./event-editor";
 import {
   calendarSchema,
   combinedEvents,
+  applyCalendarRefresh,
   type UserCalendar,
   type CalendarEvent,
 } from "@/lib/calendar/model";
@@ -206,17 +207,7 @@ export function CalendarWorkspace() {
               ...(p.schedule.calendars ?? []).filter(
                 (item) => item.id !== calendar.id,
               ),
-              {
-                ...calendar,
-                ...(live
-                  ? {
-                      title: live.title,
-                      description: live.description,
-                      icon: live.icon,
-                      color: live.color,
-                    }
-                  : {}),
-              },
+              live ? applyCalendarRefresh(live, calendar) : calendar,
             ],
           },
         };

@@ -60,6 +60,18 @@ export const calendarSchema = z
   .strip();
 export type CalendarEvent = z.infer<typeof calendarEventSchema>;
 export type UserCalendar = z.infer<typeof calendarSchema>;
+/** Apply remote source data to the current calendar, preserving in-flight edits. */
+export function applyCalendarRefresh(
+  current: UserCalendar,
+  source: UserCalendar,
+): UserCalendar {
+  return {
+    ...current,
+    events: source.events,
+    refreshedAt: source.refreshedAt,
+    updatedAt: source.updatedAt,
+  };
+}
 export function combinedEvents(
   calendars: UserCalendar[],
   selected: UserCalendar,
