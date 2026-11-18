@@ -34,6 +34,10 @@
 .root h3 {
   font-size: 15px;
 }
+.root [data-state="active"][role="tabpanel"] {
+  padding: 14px;
+  min-width: 0;
+}
 .root :global(.rating-source-tabs) {
   min-width: 0;
 }

@@ -6,9 +6,14 @@ export async function readRequirementCourses(
   fetcher: typeof fetch,
   signal: AbortSignal,
   cursor?: string,
+  browse?: { subject?: string; category?: string },
 ) {
-  const category = requirementSearch(title);
-  if (!category)
+  const inferred = requirementSearch(title);
+  const category = inferred || browse?.category;
+  const subject = browse?.subject?.toUpperCase();
+  if (subject && !/^[A-Z][A-Z&-]{0,19}$/.test(subject))
+    throw Error("Invalid subject");
+  if (!category && !subject)
     return {
       courses: [] as CatalogCourse[],
       nextCursor: null as string | null,
@@ -17,7 +22,8 @@ export async function readRequirementCourses(
   const params = new URLSearchParams({
     campus: scope.campus.toLowerCase(),
     term: scope.term,
-    "gen-categories": category,
+    ...(category ? { "gen-categories": category } : {}),
+    ...(subject ? { subject } : {}),
     limit: "24",
     exactPreview: "1",
   });
@@ -26,12 +32,17 @@ export async function readRequirementCourses(
   if (!response.ok) throw Error("Catalog unavailable");
   const data = await response.json();
   // A relaxed upstream result must still carry the requested academic attribute.
-  const courses = (data.courses ?? []).filter((c: CatalogCourse) =>
-    c.attributes?.some((a) => a.toLowerCase().includes(category.toLowerCase())),
+  const courses = (data.courses ?? []).filter(
+    (c: CatalogCourse) =>
+      (!subject || c.subject.toUpperCase() === subject) &&
+      (!category ||
+        c.attributes?.some((a) =>
+          a.toLowerCase().includes(category.toLowerCase()),
+        )),
   );
   return {
     courses: courses as CatalogCourse[],
     nextCursor: data.nextCursor ?? null,
-    mapped: true,
+    mapped: !!inferred,
   };
 }

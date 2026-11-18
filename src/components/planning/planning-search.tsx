@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Info } from "lucide-react";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { creditLabel } from "@/lib/planning/course-catalog";
@@ -169,7 +169,8 @@ function ScopedPlanningSearch({
             }
           >
             <strong>
-              {c.subject} {c.catalogNumber}
+              {c.subject} {c.catalogNumber}{" "}
+              <Info size={12} aria-hidden="true" />
             </strong>
             <span>{c.title}</span>
           </button>
