@@ -58,6 +58,7 @@ import {
   isOfficialCalendar,
 } from "@/lib/calendar/academic";
 import { browserUuid } from "@/lib/uuid";
+import { newYorkDate, eventInDateRange } from "@/lib/calendar/dates";
 import styles from "./calendar.module.css";
 const dateString = (date: Date) => date.toISOString().slice(0, 10);
 function monday(date: string) {
@@ -92,7 +93,7 @@ export function CalendarWorkspace() {
   const [selectedId, setSelectedId] = useState("");
   const selected = calendars.find((c) => c.id === selectedId) ?? calendars[0];
   const officialSelected = !!selected && isOfficialCalendar(selected.id);
-  const [week, setWeek] = useState(() => monday(dateString(new Date())));
+  const [week, setWeek] = useState(() => monday(newYorkDate()));
   const [view, setView] = useState("week");
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(() => Date.now());
@@ -290,11 +291,11 @@ export function CalendarWorkspace() {
     if (isOfficialCalendar(selected.id)) {
       queueMicrotask(() => {
         setView("month");
-        setWeek(dateString(new Date()));
+        setWeek(newYorkDate());
       });
       return;
     }
-    const today = dateString(new Date()),
+    const today = newYorkDate(),
       all = combinedEvents(calendars, selected);
     queueMicrotask(() => setView("week"));
     if (
@@ -339,10 +340,8 @@ export function CalendarWorkspace() {
       [...events, ...officialEvents].map((event) => [event.id, event]),
     ).values(),
   ];
-  const visible = allEvents.filter(
-    (event) =>
-      event.start.slice(0, 10) <= rangeEnd &&
-      event.end.slice(0, 10) >= rangeStart,
+  const visible = allEvents.filter((event) =>
+    eventInDateRange(event, rangeStart, rangeEnd),
   );
   function navigate(offset: number) {
     setWeek(
@@ -529,7 +528,7 @@ export function CalendarWorkspace() {
                 data-color={c.color}
                 onClick={() => {
                   setSelectedId(c.id);
-                  const today = dateString(new Date());
+                  const today = newYorkDate();
                   const all = combinedEvents(calendars, c);
                   const next =
                     all.find((event) => event.end.slice(0, 10) >= today) ??
@@ -667,8 +666,8 @@ export function CalendarWorkspace() {
                       onClick={() =>
                         setWeek(
                           officialSelected
-                            ? dateString(new Date())
-                            : monday(dateString(new Date())),
+                            ? newYorkDate()
+                            : monday(newYorkDate()),
                         )
                       }
                     >

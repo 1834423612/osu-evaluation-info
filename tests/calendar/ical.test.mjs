@@ -18,9 +18,32 @@ import {
   combinedEvents,
   applyCalendarRefresh,
 } from "../../src/lib/calendar/model.ts";
+import { newYorkDate, eventInDateRange } from "../../src/lib/calendar/dates.ts";
 const envelope = (events) =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
 const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+
+test("Today and range boundaries use Eastern dates and exclusive all-day ends", () => {
+  assert.equal(newYorkDate(new Date("2026-12-01T01:00:00Z")), "2026-11-30");
+  assert.equal(newYorkDate(new Date("2027-07-01T02:00:00Z")), "2027-06-30");
+  const event = calendarEventSchema.parse({
+    id: "holiday",
+    title: "January holiday",
+    start: "2027-01-31",
+    end: "2027-02-01",
+    allDay: true,
+    category: "holiday",
+  });
+  assert.equal(eventInDateRange(event, "2027-02-01", "2027-02-28"), false);
+  assert.equal(eventInDateRange(event, "2027-01-01", "2027-01-31"), true);
+  const meeting = {
+    ...event,
+    allDay: false,
+    start: "2027-02-01T15:00:00Z",
+    end: "2027-02-01T16:00:00Z",
+  };
+  assert.equal(eventInDateRange(meeting, "2027-02-01", "2027-02-28"), true);
+});
 
 test("default official calendars partition shared dates and retain stable source identities", () => {
   const days = ["term", "exam", "holiday", "deadline"].map((kind, index) => ({

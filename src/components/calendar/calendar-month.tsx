@@ -1,6 +1,7 @@
 "use client";
 import type { CalendarEvent } from "@/lib/calendar/model";
 import type { Locale } from "@/lib/i18n";
+import { newYorkDate } from "@/lib/calendar/dates";
 import styles from "./calendar-month.module.css";
 
 export function CalendarMonth({
@@ -20,9 +21,7 @@ export function CalendarMonth({
   const days = Array.from({ length: 42 }, (_, index) =>
     new Date(+first + index * 86400000).toISOString().slice(0, 10),
   );
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-  }).format(new Date());
+  const today = newYorkDate();
   return (
     <div className={styles.month}>
       <div className={styles.head}>
