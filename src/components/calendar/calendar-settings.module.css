@@ -48,9 +48,19 @@
   padding: 9px 12px;
   font: inherit;
 }
-.form button:hover {
+.form button:not(.primary):not(.swatch):hover {
   background: var(--subtle-surface);
   border-color: color-mix(in srgb, var(--primary) 40%, var(--line));
+}
+.form .primary:hover {
+  background: color-mix(in srgb, var(--primary) 90%, #000);
+  color: #fff;
+}
+.form .swatch:hover {
+  background: var(--calendar-tone);
+  color: #fff;
+  border-color: var(--surface);
+  filter: brightness(0.95);
 }
 .form :is(button, input, textarea):focus-visible {
   outline: 2px solid var(--primary);
