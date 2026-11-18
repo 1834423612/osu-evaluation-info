@@ -542,7 +542,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 `tests/catalog/detail-refresh.test.mjs` 覆盖收藏卡片的自动补全入口。`tests/catalog/change-budgets.test.mjs` 同时验证查询超时后的回滚与缩小批次重试。规划数据库集成测试通过内存 PGlite 和仓库公开样例验证不可变目录版本、重复发布、完整模板往返和事务回滚。这些测试均通过 `pnpm test` 运行，无需网络服务，不写外部数据库。
 
-- `tests/calendar/ical.test.mjs` 验证有限 ICS 重复事件、排除日期、稳定标识、全天日历、UTF-8 折行、假期停课、夏令时换算及官方来源分区与稳定标识。运行 `node --test tests/calendar/ical.test.mjs`。仅合成样例，无外部服务或持久写入。
+- `tests/calendar/ical.test.mjs` 验证有限 ICS 重复事件、排除日期、稳定标识、全天日历、UTF-8 折行、假期停课、夏令时换算及官方来源分区与稳定标识、东部时区的今天和跨月边界、全天事件排他结束及失效来源替换容量。运行 `node --test tests/calendar/ical.test.mjs`。仅合成样例，无外部服务或持久写入。
 - `tests/planning/eligibility.test.mjs` 验证同学期的计划先修课不能解锁后续课程，以及年级限制维持待核对状态。运行 `node --test tests/planning/eligibility.test.mjs`。离线合成输入，无写入。
 
 - `tests/calendar/security.test.mjs` 验证保留地址、无效协议、跨午夜事件拆分和过量旧重复规则。运行 `node --test tests/calendar/security.test.mjs`。离线合成输入，无网络或持久写入。
