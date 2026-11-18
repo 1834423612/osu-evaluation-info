@@ -231,8 +231,8 @@ export function CollectionImport({
               {accountReady
                 ? text(
                     locale,
-                    "Syncs with your saved items.",
-                    "随账号收藏同步。",
+                    "Cross-device updates require account sync to be enabled.",
+                    "开启账号同步后可在其他设备获取。",
                   )
                 : text(
                     locale,
