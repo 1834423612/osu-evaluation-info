@@ -327,7 +327,7 @@ export async function pushProductionMerge(accountId: string, preview: string) {
   if (proposed.conflicts.length) throw new UserDataError("merge_conflict", 409);
   if (preview !== proposed.preview)
     throw new UserDataError("preview_outdated", 409);
-  const result = await remote(decrypt(proposed.current.token_cipher), {
+  await remote(decrypt(proposed.current.token_cipher), {
     expected: {
       planningVersion: proposed.expected.planningVersion,
       cursor: proposed.expected.cursor,
@@ -335,8 +335,11 @@ export async function pushProductionMerge(accountId: string, preview: string) {
     next: proposed.value,
   });
   await getDatabasePool().query(
-    `UPDATE ${table("development_link")} SET base=$2,conflicts='[]',updated_at=now() WHERE account_id=$1 AND token_cipher=$3`,
-    [accountId, JSON.stringify(result), proposed.current.token_cipher],
+    // Keep the common ancestor until pull reconciles the merged result with
+    // the latest local state. Advancing only base would turn stale local fields
+    // into new edits and revert production-only changes on the next push.
+    `UPDATE ${table("development_link")} SET pulled_at='1970-01-01',updated_at=now() WHERE account_id=$1 AND token_cipher=$2`,
+    [accountId, proposed.current.token_cipher],
   );
   return { merged: true };
 }

@@ -176,6 +176,24 @@ test("paired accounts pull without automatic production writes, reject stale/con
       (await readAccountSnapshot("production")).planning.reviewed,
       true,
     );
+    // Production's independent pdfOrigin edit must reach development before
+    // it can become the merge base; repeated pulls/pushes must not revert it.
+    await pullDevelopment("development");
+    dev = await readAccountSnapshot("development");
+    assert.equal(dev.planning.pdfOrigin, "browser-print");
+    assert.equal(dev.planning.reviewed, true);
+    const nextPush = await previewProductionMerge("development");
+    assert.deepEqual(nextPush.conflicts, []);
+    await pushProductionMerge("development", nextPush.preview);
+    assert.equal(
+      (await readAccountSnapshot("production")).planning.pdfOrigin,
+      "browser-print",
+    );
+    await pullDevelopment("development");
+    assert.equal(
+      (await readAccountSnapshot("development")).planning.pdfOrigin,
+      "browser-print",
+    );
     offline = true;
     const before = await readAccountSnapshot("development");
     await assert.rejects(pullDevelopment("development", true));
