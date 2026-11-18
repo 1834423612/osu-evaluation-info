@@ -14,7 +14,8 @@ export function planningTable(
     | "source_extraction"
     | "directory_snapshot"
     | "template_seed"
-    | "catalog_release",
+    | "catalog_release"
+    | "academic_calendar",
 ) {
   return `"${planningSchema()}"."${table}"`;
 }

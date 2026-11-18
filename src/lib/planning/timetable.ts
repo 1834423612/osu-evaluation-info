@@ -33,6 +33,20 @@ export function timetableMeetings(choices: SimulationChoice[]) {
         key: choice.key,
         section: section.section,
         component: section.component,
+        startDate: meeting?.startDate?.slice(0, 10) ?? null,
+        endDate: meeting?.endDate?.slice(0, 10) ?? null,
+        session: section.session,
+        sessionDates: section.meetings
+          .map((m) =>
+            [m.startDate?.slice(0, 10), m.endDate?.slice(0, 10)]
+              .filter(Boolean)
+              .join(" – "),
+          )
+          .filter(Boolean)
+          .join(" · "),
+        selfPaced:
+          /^(?:Distance Learning|DL)$/i.test(section.instructionMode) &&
+          !section.meetings.some((m) => meetingSlots([m]).length),
         delivery: meetingDelivery(meeting, section.instructionMode),
         location: meeting?.location?.trim() || null,
         slots: meeting ? meetingSlots([meeting]) : [],

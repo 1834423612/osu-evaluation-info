@@ -28,6 +28,16 @@ import { usePlanningCatalog } from "./course-catalog";
 import styles from "./semester-simulation.module.css";
 import { SimulationTimetable } from "./simulation-timetable";
 import { meetingDelivery } from "@/lib/planning/timetable";
+import {
+  calendarFromSimulation,
+  semesterFingerprint,
+} from "@/lib/calendar/schedules";
+import { CalendarPreview } from "@/components/calendar/calendar-preview";
+import { CalendarWeek } from "@/components/calendar/calendar-week";
+import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
+import type { UserCalendar } from "@/lib/calendar/model";
+import type { AcademicDay } from "@/lib/calendar/academic";
+import { browserUuid } from "@/lib/uuid";
 type Result = ReturnType<typeof simulateSchedule>;
 const timeLabel = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -37,11 +47,13 @@ export function SemesterSimulation({
   term,
   locale,
   update,
+  persist,
 }: {
   plan: Plan;
   term: string;
   locale: Locale;
   update: (fn: (p: Plan) => Plan) => void;
+  persist: () => Promise<boolean>;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const context = usePlanningCatalog();
@@ -66,6 +78,22 @@ export function SemesterSimulation({
     failed: string[];
   } | null>(null);
   const [view, setView] = useState("settings");
+  const [replaceId, setReplaceId] = useState("");
+  const [preview, setPreview] = useState<UserCalendar | null>(null);
+  const savedGroups = (plan.schedule.calendars ?? []).filter(
+    (calendar) => calendar.kind === "simulation" && calendar.term === term,
+  );
+  const [academicDays, setAcademicDays] = useState<AcademicDay[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/calendar/academic", { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (!controller.signal.aborted) setAcademicDays(data.days);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [result, setResult] = useState<{
@@ -467,7 +495,7 @@ export function SemesterSimulation({
                             {s.meetings
                               .map(
                                 (m) =>
-                                  `${m.days.map((d) => days[d]).join("/")} ${m.startTime && m.endTime ? `${m.startTime}–${m.endTime}` : t("Time TBA", "时间待定")} · ${{ online: t("Online", "线上"), "in-person": t("In person", "线下"), unknown: t("Mode TBA", "方式待定") }[meetingDelivery(m, s.instructionMode)]}`,
+                                  `${m.days.map((d) => days[d]).join("/")} ${m.startTime && m.endTime ? `${m.startTime}–${m.endTime}` : /distance learning|^DL$/i.test(s.instructionMode) ? t("Self-paced online", "线上自主学习") : t("Time TBA", "时间待定")} · ${{ online: t("Online", "线上"), "in-person": t("In person", "线下"), unknown: t("Mode TBA", "方式待定") }[meetingDelivery(m, s.instructionMode)]} · ${s.session}`,
                               )
                               .join(" · ")}
                           </option>
@@ -582,43 +610,145 @@ export function SemesterSimulation({
                 </small>
               )}
               <SimulationTimetable
+                academic={academicDays}
                 choices={output.choices}
                 courses={loaded?.courses ?? []}
                 conflicted={conflicted}
                 locale={locale}
               />
+              <ChoiceSelect
+                aria-label={t("Save destination", "课表保存位置")}
+                value={replaceId}
+                onValueChange={setReplaceId}
+              >
+                <option value="">
+                  {t("Save as a new group", "保存为新的课表组")}
+                </option>
+                {savedGroups.map((calendar) => (
+                  <option key={calendar.id} value={calendar.id}>
+                    {t("Replace", "替换")} · {calendar.title}
+                  </option>
+                ))}
+              </ChoiceSelect>
               <button
                 className={styles.run}
                 disabled={
                   !output.choices.length ||
                   output.conflicts.length > 0 ||
+                  (!replaceId &&
+                    (plan.schedule.calendars?.length ?? 0) >= 40) ||
                   !!loaded?.failed.length ||
                   !!output.unavailable.length
                 }
-                onClick={() =>
-                  update((p) => ({
-                    ...p,
-                    schedule: {
-                      ...p.schedule,
-                      sectionChoices: {
-                        ...p.schedule.sectionChoices,
-                        [term]: Object.fromEntries(
-                          output.choices.map((c) => [
-                            c.key,
-                            c.sections.map((s) => s.classNumber),
-                          ]),
-                        ),
+                onClick={async () => {
+                  const id = replaceId || browserUuid();
+                  update((p) => {
+                    const previous = p.schedule.calendars?.find(
+                      (calendar) => calendar.id === id,
+                    );
+                    const generated = calendarFromSimulation(
+                      p,
+                      term,
+                      output.choices,
+                      academicDays,
+                      id,
+                    );
+                    const calendar = {
+                      ...generated,
+                      title:
+                        previous?.title ??
+                        `${semesterLabel(term, locale)} · ${output.choices.length}${t(" courses", " 门课程")} · ${t("Simulation", "模拟课表")}`,
+                      description:
+                        previous?.description || generated.description,
+                      icon: previous?.icon ?? generated.icon,
+                      color: previous?.color ?? generated.color,
+                    };
+                    return {
+                      ...p,
+                      schedule: {
+                        ...p.schedule,
+                        calendars: [
+                          ...(p.schedule.calendars ?? []).filter(
+                            (calendar) => calendar.id !== id,
+                          ),
+                          calendar,
+                        ],
                       },
-                    },
-                  }))
-                }
+                    };
+                  });
+                  setReplaceId(id);
+                  setMessage(
+                    (await persist())
+                      ? t("Schedule group saved", "课表组已保存")
+                      : t(
+                          "Could not save. Export a backup to keep your changes.",
+                          "保存失败，请导出备份保留修改。",
+                        ),
+                  );
+                }}
               >
-                {t("Use these sections", "采用这组班次")}
+                {t("Save this schedule group", "保存这组课表")}
               </button>
+              <a href="/calendar">{t("Open my calendars", "打开我的日程")}</a>
             </>
           )}
         </section>
       </div>
+      {!!savedGroups.length && (
+        <section className={styles.savedGroups}>
+          <h3>{t("Saved schedule groups", "已保存课表组")}</h3>
+          <div>
+            {savedGroups.map((calendar) => (
+              <button key={calendar.id} onClick={() => setPreview(calendar)}>
+                <strong>{calendar.title}</strong>
+                <CalendarPreview events={calendar.events} />
+                <small>
+                  {calendar.fingerprint !== semesterFingerprint(plan, term)
+                    ? t(
+                        "Out of date · regenerate to replace",
+                        "已过期 · 请重新生成替换",
+                      )
+                    : t("Preview schedule", "预览课表")}
+                </small>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      <WorkspaceDialog
+        open={!!preview}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null);
+        }}
+        title={preview?.title ?? ""}
+        description={t("Saved schedule preview", "已保存课表预览")}
+        closeLabel={t("Close", "关闭")}
+        guard={false}
+      >
+        {preview && (
+          <>
+            <CalendarWeek
+              events={preview.events}
+              dates={(() => {
+                const first =
+                  preview.events[0]?.start.slice(0, 10) ??
+                  new Date().toISOString().slice(0, 10);
+                const monday = new Date(first + "T12:00:00Z");
+                monday.setUTCDate(
+                  monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7),
+                );
+                return Array.from({ length: 7 }, (_, i) =>
+                  new Date(+monday + i * 86400000).toISOString().slice(0, 10),
+                );
+              })()}
+              locale={locale}
+            />
+            <a href="/calendar">
+              {t("Edit in my calendars", "前往我的日程编辑")}
+            </a>
+          </>
+        )}
+      </WorkspaceDialog>
     </div>
   );
 }

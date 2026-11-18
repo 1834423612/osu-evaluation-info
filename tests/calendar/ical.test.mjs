@@ -1,0 +1,150 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { parseCalendar, exportCalendar } from "../../src/lib/calendar/ical.ts";
+import {
+  normalizeAcademicEntries,
+  isNoClassDate,
+} from "../../src/lib/calendar/academic.ts";
+import {
+  calendarFromSimulation,
+  newYorkTime,
+} from "../../src/lib/calendar/schedules.ts";
+import { emptyPlan } from "../../src/lib/planning/model.ts";
+import {
+  calendarSchema,
+  calendarEventSchema,
+  combinedEvents,
+} from "../../src/lib/calendar/model.ts";
+const envelope = (events) =>
+  `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
+const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+test("IANA time zones without VTIMEZONE preserve local time across DST", async () => {
+  const events = await parseCalendar(
+    envelope(
+      "BEGIN:VEVENT\r\nUID:dst\r\nDTSTART;TZID=America/New_York:20270307T100000\r\nDTEND;TZID=America/New_York:20270307T110000\r\nRRULE:FREQ=WEEKLY;COUNT=2\r\nSUMMARY:DST\r\nEND:VEVENT",
+    ),
+    ...bounds,
+  );
+  assert.equal(events[0].start, "2027-03-07T15:00:00.000Z");
+  assert.equal(events[1].start, "2027-03-14T14:00:00.000Z");
+});
+test("invalid dates and negative durations are rejected, combined calendars retain distinct event identities", () => {
+  const event = {
+    id: "same",
+    title: "Synthetic",
+    start: "2027-02-28",
+    end: "2027-03-01",
+    allDay: true,
+    category: "event",
+    description: "",
+    location: "",
+  };
+  assert.equal(
+    calendarEventSchema.safeParse({ ...event, start: "2027-02-30" }).success,
+    false,
+  );
+  assert.equal(
+    calendarEventSchema.safeParse({ ...event, end: "2027-02-01" }).success,
+    false,
+  );
+  const make = (id) =>
+    calendarSchema.parse({
+      id,
+      title: id,
+      kind: "personal",
+      events: [event],
+      updatedAt: "2027-01-01",
+    });
+  const a = make("a"),
+    b = make("b"),
+    parent = { ...make("c"), events: [], sourceIds: ["a", "b"] };
+  const merged = combinedEvents([a, b, parent], parent);
+  assert.equal(merged.length, 2);
+  assert.equal(new Set(merged.map((e) => e.id)).size, 2);
+});
+test("ICS recurrence excludes exceptions, preserves dates and stable identities", async () => {
+  const event =
+    "BEGIN:VEVENT\r\nUID:synthetic-weekly\r\nDTSTART:20270111T150000Z\r\nDTEND:20270111T160000Z\r\nRRULE:FREQ=WEEKLY;COUNT=3\r\nEXDATE:20270118T150000Z\r\nSUMMARY:Weekly class\r\nEND:VEVENT";
+  const events = await parseCalendar(envelope(event), ...bounds);
+  assert.equal(events.length, 2);
+  assert.equal(events[1].start, "2027-01-25T15:00:00.000Z");
+  const again = await parseCalendar(envelope(event), ...bounds);
+  assert.deepEqual(again, events);
+  assert.equal(
+    (
+      await parseCalendar(
+        exportCalendar("Calendar", events, "synthetic"),
+        ...bounds,
+      )
+    ).length,
+    2,
+  );
+});
+test("all-day duplicate VALUE parameters and folded UTF-8 titles round trip", async () => {
+  const events = await parseCalendar(
+    envelope(
+      "BEGIN:VEVENT\r\nUID:due\r\nDTSTART;VALUE=DATE;VALUE=DATE:20270202\r\nSUMMARY:作业截止\r\nEND:VEVENT",
+    ),
+    ...bounds,
+  );
+  assert.equal(events[0].allDay, true);
+  assert.equal(events[0].start, "2027-02-02");
+  events[0].title = "日历课程".repeat(50);
+  const exported = exportCalendar("日程", events, "synthetic");
+  assert.ok(
+    exported.split("\r\n").every((line) => Buffer.byteLength(line) <= 75),
+  );
+  assert.equal(
+    (await parseCalendar(exported, ...bounds))[0].title,
+    events[0].title,
+  );
+});
+test("academic dates distinguish closures from no-class days and suppress class occurrences", () => {
+  const days = normalizeAcademicEntries([
+    {
+      ID: 1,
+      DateTime: "2027-01-18T12:00:00Z",
+      EndDateTime: "0001-01-01T00:00:00",
+      Title: "Martin Luther King Jr. Day; no classes, offices closed",
+      Type: ["Holidays"],
+    },
+  ]);
+  assert.equal(isNoClassDate("2027-01-18", days), true);
+  const plan = emptyPlan();
+  const calendar = calendarFromSimulation(
+    plan,
+    "Spring2027",
+    [
+      {
+        key: "TEST 1000",
+        sections: [
+          {
+            classNumber: "1",
+            section: "0010",
+            component: "LEC",
+            session: "Regular Academic Term",
+            instructionMode: "In Person",
+            meetings: [
+              {
+                days: [0],
+                startTime: "10:00",
+                endTime: "11:00",
+                startDate: "2027-01-11",
+                endDate: "2027-01-25",
+                location: "Room",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    days,
+    "synthetic",
+  );
+  assert.equal(calendar.events.length, 2);
+  assert.ok(
+    !calendar.events.some((event) => event.start.startsWith("2027-01-18")),
+  );
+  assert.equal(newYorkTime("2027-01-11", 600), "2027-01-11T15:00:00.000Z");
+  assert.equal(newYorkTime("2027-04-12", 600), "2027-04-12T14:00:00.000Z");
+});

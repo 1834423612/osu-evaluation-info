@@ -71,7 +71,7 @@ export function analyticsBeforeSend(
   type: string,
   payload: Record<string, unknown>,
 ) {
-  const planning = /^\/planning(?:\/|$)/.test(location.pathname);
+  const planning = /^\/(?:planning|calendar)(?:\/|$)/.test(location.pathname);
   if (planning && type === "error") return false;
   const w = window as Window & {
     __COURSE_ATLAS_DEBUG__?: { skipAnalytics?: boolean };
@@ -119,7 +119,7 @@ export function analyticsBeforeSend(
               typeof value === "boolean" ||
               (typeof value === "string" &&
                 (key === "path"
-                  ? /^\/planning(?:\/[a-z-]+)*$/.test(value)
+                  ? /^\/(?:planning|calendar)(?:\/[a-z-]+)*$/.test(value)
                   : /^[a-z][a-z0-9_-]{0,79}$/.test(value)))),
         ),
       ),

@@ -33,12 +33,13 @@ export async function writePlanningBackup(
   accountId: string,
   base: number,
   input: unknown | null,
+  connection?: PoolClient,
 ) {
   await checkBudget("planning-backup", accountId, 60, 30);
   const plan = input === null ? null : planSchema.parse(input);
-  const db = await getDatabasePool().connect();
+  const db = connection ?? (await getDatabasePool().connect());
   try {
-    await db.query("BEGIN");
+    if (!connection) await db.query("BEGIN");
     await db.query(
       "INSERT INTO " +
         table("planning_backup") +
@@ -62,14 +63,31 @@ export async function writePlanningBackup(
           " SET plan=$2::jsonb,version=version+1,updated_at=now() WHERE account_id=$1",
         [accountId, plan === null ? null : JSON.stringify(plan)],
       );
+    // Keep independently addressable calendars in the same transaction as the backup.
+    const calendars = plan?.schedule.calendars ?? [];
+    await db.query(
+      "DELETE FROM " +
+        table("calendar") +
+        " WHERE owner_id=$1 AND NOT(id=ANY($2::text[]))",
+      [accountId, calendars.map((calendar) => calendar.id)],
+    );
+    for (const calendar of calendars)
+      await db.query(
+        "INSERT INTO " +
+          table("calendar") +
+          "(owner_id,id,data) VALUES($1,$2,$3::jsonb) ON CONFLICT(owner_id,id) DO UPDATE SET data=excluded.data,updated_at=now() WHERE " +
+          table("calendar") +
+          ".data IS DISTINCT FROM excluded.data",
+        [accountId, calendar.id, JSON.stringify(calendar)],
+      );
     const result = await readPlanningBackup(accountId, db);
-    await db.query("COMMIT");
+    if (!connection) await db.query("COMMIT");
     return result;
   } catch (error) {
-    await db.query("ROLLBACK");
+    if (!connection) await db.query("ROLLBACK");
     throw error;
   } finally {
-    db.release();
+    if (!connection) db.release();
   }
 }
 

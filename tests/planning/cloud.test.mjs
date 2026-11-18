@@ -106,6 +106,17 @@ test("planning database stores isolated backups, rejects stale edits, retries sa
       writePlanningBackup,
       saveRequirementTemplates,
     } = await import("../../src/lib/planning/cloud.ts");
+    await db.exec(
+      domainSQL(
+        await readFile(
+          new URL(
+            "../../db/migrations/20261117_calendars.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      ),
+    );
     const plan = sample();
     plan.schedule.campuses = { Spring2027: "MNS", Autumn2027: "COL" };
     const first = await writePlanningBackup("account-a", 0, plan);

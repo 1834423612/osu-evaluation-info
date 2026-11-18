@@ -1,0 +1,197 @@
+.week {
+  min-width: 0;
+  --rail: 43px;
+  --columns: var(--rail) repeat(7, minmax(0, 1fr));
+}
+.week > :is(.head, .allDay, .grid) {
+  display: grid;
+  grid-template-columns: var(--columns);
+}
+.head {
+  border: 1px solid var(--line);
+  border-radius: 10px 10px 0 0;
+  background: var(--subtle-surface);
+}
+.head strong {
+  text-align: center;
+  padding: 9px 2px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.head small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.zone {
+  font-size: 10px;
+  align-self: center;
+  text-align: center;
+  color: var(--muted);
+}
+.allDay {
+  border: 1px solid var(--line);
+  border-top: 0;
+  padding: 5px 0;
+}
+.allDay > span {
+  font-size: 9px;
+  color: var(--muted);
+  padding: 4px;
+}
+.allDay > div {
+  min-width: 0;
+  padding: 0 2px;
+}
+.banner {
+  background: color-mix(in srgb, #d3a34e 13%, var(--surface));
+  border-left: 2px solid #b78d40;
+  border-radius: 3px;
+  font-size: 9px;
+  padding: 3px;
+  margin: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.grid {
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  position: relative;
+  margin-top: 8px;
+}
+.banner[data-category="assignment"] {
+  background: color-mix(in srgb, #b39ad3 15%, var(--surface));
+  border-left-color: #9070b4;
+}
+.banner[data-category="exam"] {
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  border-left-color: var(--primary);
+}
+.times {
+  position: relative;
+  color: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.times span {
+  position: absolute;
+  right: 5px;
+  transform: translateY(-50%);
+}
+.column {
+  position: relative;
+  border-left: 1px solid var(--line);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 47px,
+    color-mix(in srgb, var(--line) 65%, transparent) 47px,
+    color-mix(in srgb, var(--line) 65%, transparent) 48px
+  );
+}
+.column[data-holiday="true"] {
+  background-color: color-mix(in srgb, #d3a34e 5%, var(--surface));
+}
+.week .event {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid
+    color-mix(in srgb, var(--event-color, #4784bb) 40%, var(--line));
+  border-left: 3px solid var(--event-color, #4784bb);
+  border-radius: 5px;
+  background: color-mix(
+    in srgb,
+    var(--event-color, #4784bb) 12%,
+    var(--surface)
+  );
+  color: var(--ink);
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 18px;
+}
+.event:hover {
+  z-index: 2;
+  filter: brightness(0.97);
+  box-shadow: 0 3px 10px #0001;
+}
+.event:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  z-index: 3;
+}
+.event strong {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.event span {
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.event small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.event[data-online="true"] {
+  border-left-style: dashed;
+}
+.event[data-category="assignment"] {
+  border-left-color: #9070b4;
+  background: color-mix(in srgb, #b39ad3 15%, var(--surface));
+}
+.event[data-category="exam"] {
+  border-left-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+}
+.caption {
+  color: var(--muted);
+  font-size: 10px;
+  margin: 10px 0 0;
+}
+@media (max-width: 600px) {
+  .week {
+    --rail: 30px;
+  }
+  .head strong {
+    font-size: 10px;
+  }
+  .head small {
+    font-size: 9px;
+  }
+  .week .event {
+    padding: 3px 2px;
+    gap: 2px;
+    border-left-width: 2px;
+  }
+  .event strong {
+    font-size: 9px;
+    overflow-wrap: anywhere;
+  }
+  .event span {
+    font-size: 8px;
+    display: block;
+  }
+  .event span svg,
+  .event small {
+    display: none;
+  }
+  .times {
+    font-size: 8px;
+  }
+  .times span {
+    right: 3px;
+  }
+}

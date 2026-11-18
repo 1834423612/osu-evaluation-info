@@ -92,6 +92,7 @@ function normalizeSection(
     waitlistTotal: null,
     session: str(input.sessionDescription),
     sessionCode: str(input.sessionCode),
+    holidaySchedule: str(input.holidaySchedule),
     instructors: [...instructors.values()],
     meetings,
     courseId: str(input.courseId) || str(course.courseId),
