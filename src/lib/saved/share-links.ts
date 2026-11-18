@@ -6,7 +6,7 @@ export type LocalShare = {
   url: string;
   management: string;
   title: string;
-  expiresAt: string;
+  expiresAt: string | null;
 };
 const shareKey = () =>
   "course-atlas:share-links:v2:" +
@@ -80,7 +80,8 @@ export async function copyLink(value: string) {
     return false;
   }
 }
-export function sharingDate(value: string, locale: "en" | "zh") {
+export function sharingDate(value: string | null, locale: "en" | "zh") {
+  if (!value) return locale === "zh" ? "长期有效，直到撤销" : "Until revoked";
   return new Date(value).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
     year: "numeric",
     month: "short",

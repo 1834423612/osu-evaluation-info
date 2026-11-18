@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createLocalSnapshot } from "@/lib/saved/local";
+import { readCollections } from "@/lib/saved/collections";
 import { itemKey, type SavedSnapshot } from "@/lib/saved/exchange";
 import {
   rememberShare,
@@ -28,7 +29,7 @@ type Created = {
   capability: string | null;
   management: string;
   code: string | null;
-  expiresAt: string;
+  expiresAt: string | null;
 };
 export function ShareCollection({
   locale,
@@ -42,6 +43,8 @@ export function ShareCollection({
   title?: string;
 }) {
   const [picked, setPicked] = useState(new Set<string>());
+  const [includeFolders, setIncludeFolders] = useState(false),
+    [showAuthor, setShowAuthor] = useState(false);
   const [requestId, setRequestId] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [open, setOpen] = useState(false),
@@ -67,6 +70,8 @@ export function ShareCollection({
       setSnapshot(next);
       setRequestId(browserRequestId());
       setAttempted(false);
+      setIncludeFolders(false);
+      setShowAuthor(false);
       setVisibility("link");
       setCreated(null);
       setNotice("");
@@ -91,10 +96,23 @@ export function ShareCollection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          showAuthor,
           snapshot: snapshot
             ? {
                 ...snapshot,
                 items: snapshot.items.filter((x) => picked.has(itemKey(x))),
+                ...(includeFolders
+                  ? {
+                      collections: readCollections()
+                        .map((collection) => ({
+                          ...collection,
+                          members: collection.members.filter((key) =>
+                            picked.has(key),
+                          ),
+                        }))
+                        .filter((collection) => collection.members.length),
+                    }
+                  : {}),
               }
             : null,
           requestId,
@@ -102,7 +120,8 @@ export function ShareCollection({
           expiresIn: Number(expiry),
         }),
       });
-      if (!response.ok) throw Error();
+      if (!response.ok)
+        throw Error((await response.json()).error ?? "unavailable");
       const data: Created = await response.json();
       setCreated(data);
       rememberShare({
@@ -112,12 +131,18 @@ export function ShareCollection({
         title: snapshot!.title,
         expiresAt: data.expiresAt,
       });
-    } catch {
+    } catch (error) {
       setNotice(
         text(
           locale,
-          "Sharing is unavailable or the limit was reached. Local export remains available.",
-          "分享服务暂不可用或已达上限，仍可导出本地文件。",
+          error instanceof Error &&
+            ["institution_required", "unauthorized"].includes(error.message)
+            ? "Sign in and verify your school email to share permanent links, folders or your nickname."
+            : "Sharing is unavailable or the limit was reached. Local export remains available.",
+          error instanceof Error &&
+            ["institution_required", "unauthorized"].includes(error.message)
+            ? "分享长期链接、文件夹或昵称前，请先登录并验证学校邮箱。"
+            : "分享服务暂不可用或已达上限，仍可导出本地文件。",
         ),
       );
     } finally {
@@ -227,6 +252,7 @@ export function ShareCollection({
                     ["86400", "24 hours", "24 小时"],
                     ["604800", "7 days", "7 天"],
                     ["2592000", "30 days", "30 天"],
+                    ["0", "Until revoked", "长期有效，直到撤销"],
                   ].map(([value, en, zh]) => (
                     <SelectItem key={value} value={value}>
                       {text(locale, en, zh)}
@@ -235,6 +261,34 @@ export function ShareCollection({
                 </SelectContent>
               </Select>
             </div>
+            <label className={styles.pick}>
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={includeFolders}
+                disabled={attempted}
+                onChange={(e) => setIncludeFolders(e.target.checked)}
+              />
+              <span>
+                {text(
+                  locale,
+                  "Include folder names, icons and tags for selected items (including partial folders)",
+                  "同时分享所选项目的文件夹名称、图标与标签（含部分选中的文件夹）",
+                )}
+              </span>
+            </label>
+            <label className={styles.pick}>
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={showAuthor}
+                disabled={attempted}
+                onChange={(e) => setShowAuthor(e.target.checked)}
+              />
+              <span>
+                {text(locale, "Show my account nickname", "显示我的账号昵称")}
+              </span>
+            </label>
             <Button
               disabled={busy || !snapshot?.title.trim() || !picked.size}
               onClick={() => void create()}

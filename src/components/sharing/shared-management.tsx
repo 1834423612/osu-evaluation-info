@@ -17,7 +17,7 @@ type Row = {
   id: string;
   title: string;
   visibility: "public" | "link";
-  expires_at: string;
+  expires_at: string | null;
   revoked_at: string | null;
   code: string | null;
   code_expires_at: string | null;
@@ -163,7 +163,9 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
   }
   const visibleRows = rows.filter(
     (row) =>
-      filter === "all" || (!row.revoked_at && Date.parse(row.expires_at) > now),
+      filter === "all" ||
+      (!row.revoked_at &&
+        (!row.expires_at || Date.parse(row.expires_at) > now)),
   );
   return (
     <>
@@ -273,7 +275,9 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
                     rows.filter(
                       (row) =>
                         value === "all" ||
-                        (!row.revoked_at && Date.parse(row.expires_at) > now),
+                        (!row.revoked_at &&
+                          (!row.expires_at ||
+                            Date.parse(row.expires_at) > now)),
                     ).length
                   }
                 </Button>
@@ -291,7 +295,8 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
               <ul className={styles.list}>
                 {visibleRows.map((row) => {
                   const active =
-                    !row.revoked_at && Date.parse(row.expires_at) > now;
+                    !row.revoked_at &&
+                    (!row.expires_at || Date.parse(row.expires_at) > now);
                   return (
                     <li
                       className={styles.shareRow}
@@ -354,6 +359,59 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
                             {text(locale, "Replace link", "更换链接")}
                           </Button>
                         ) : null}
+                        {row.visibility === "public" &&
+                          active &&
+                          (!row.code_expires_at ||
+                            Date.parse(row.code_expires_at) <= now) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={busy}
+                              onClick={async () => {
+                                setBusy(true);
+                                try {
+                                  const response = await fetch(
+                                    "/api/shares/" + row.id,
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        action: "renew-code",
+                                        management: readShareLinks().find(
+                                          (link) => link.id === row.id,
+                                        )?.management,
+                                      }),
+                                    },
+                                  );
+                                  if (!response.ok) throw Error();
+                                  const data = await response.json();
+                                  setNotice(
+                                    text(locale, "New code: ", "新分享码：") +
+                                      data.code,
+                                  );
+                                  await load(false);
+                                } catch {
+                                  setNotice(
+                                    text(
+                                      locale,
+                                      "Could not renew code",
+                                      "分享码生成失败",
+                                    ),
+                                  );
+                                } finally {
+                                  setBusy(false);
+                                }
+                              }}
+                            >
+                              {text(
+                                locale,
+                                "Generate a new code",
+                                "生成新的分享码",
+                              )}
+                            </Button>
+                          )}
                         <Button
                           variant="ghost"
                           size="sm"
