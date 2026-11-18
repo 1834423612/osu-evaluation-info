@@ -11,6 +11,9 @@ import { reconcilePlans } from "@/lib/planning/reconcile";
 /** Keep a local editing base so incoming sync never overwrites a newer draft. */
 export function usePlanningWorkspace(account: string | null) {
   const [plan, renderPlan] = useState<Plan>(emptyPlan);
+  const [loadedAccount, setLoadedAccount] = useState<string | null | undefined>(
+    undefined,
+  );
   const [ready, setReady] = useState(false);
   const [saved, setSaved] = useState("");
   const [storageError, setStorageError] = useState(false);
@@ -21,17 +24,24 @@ export function usePlanningWorkspace(account: string | null) {
     active: false,
     writing: false,
   });
-  const flush = useRef<() => Promise<void>>(async () => {});
+  const flush = useRef<() => Promise<boolean>>(async () => false);
   useEffect(() => {
-    const draft = editor.current;
-    draft.active = true;
+    const draft = {
+      plan: emptyPlan() as Plan | null,
+      base: null as Plan | null,
+      loaded: false,
+      active: true,
+      writing: false,
+    };
+    editor.current = draft;
+    let pending: Promise<boolean> | null = null;
     const publish = () => {
       if (!draft.active) return;
       renderPlan(draft.plan ?? emptyPlan());
       setSaved(JSON.stringify(draft.base ?? emptyPlan()));
     };
-    flush.current = async () => {
-      if (!draft.loaded || draft.writing) return;
+    const write = async () => {
+      if (!draft.loaded) return false;
       draft.writing = true;
       try {
         while (JSON.stringify(draft.plan) !== JSON.stringify(draft.base)) {
@@ -42,11 +52,20 @@ export function usePlanningWorkspace(account: string | null) {
           publish();
         }
         if (draft.active) setStorageError(false);
+        return true;
       } catch {
         if (draft.active) setStorageError(true);
+        return false;
       } finally {
         draft.writing = false;
       }
+    };
+    flush.current = () => {
+      if (pending) return pending;
+      pending = write().finally(() => {
+        pending = null;
+      });
+      return pending;
     };
     const receive = () => {
       try {
@@ -59,11 +78,13 @@ export function usePlanningWorkspace(account: string | null) {
         publish();
         if (draft.active) {
           setReady(true);
+          setLoadedAccount(account);
           setStorageError(false);
         }
       } catch {
         if (draft.active) {
           setReady(true);
+          setLoadedAccount(account);
           setStorageError(true);
         }
       }
@@ -93,5 +114,12 @@ export function usePlanningWorkspace(account: string | null) {
     renderPlan(draft.plan);
     void flush.current();
   }
-  return { plan, setPlan, ready, saved, storageError };
+  return {
+    plan: loadedAccount === account ? plan : emptyPlan(),
+    setPlan,
+    ready: loadedAccount === account && ready,
+    saved,
+    storageError,
+    persist: () => flush.current(),
+  };
 }
