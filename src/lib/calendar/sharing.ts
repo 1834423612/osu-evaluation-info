@@ -7,7 +7,12 @@ import { UserDataError } from "../user-data/http.ts";
 import { readPlanningBackup } from "../planning/cloud.ts";
 import { combinedEvents, calendarSchema } from "./model.ts";
 import { planningTable } from "../planning/namespace.ts";
-import { academicForCalendar, academicDaySchema } from "./academic.ts";
+import {
+  academicForCalendar,
+  academicDaySchema,
+  officialCalendars,
+  isOfficialCalendar,
+} from "./academic.ts";
 import { refreshStoredFeeds } from "./refresh.ts";
 export const calendarLinkInput = z.object({
   calendarIds: z.array(z.string().min(1).max(100)).min(1).max(30),
@@ -123,14 +128,17 @@ export async function publicCalendar(id: string, provided: string) {
   const selected = all.filter((calendar) =>
     row.calendar_ids.includes(calendar.id),
   );
-  const academic = selected.some((calendar) => calendar.includeAcademic)
-    ? await getDatabasePool().query(
-        `SELECT data FROM ${planningTable("academic_calendar")}`,
-      )
-    : { rows: [] };
+  const academic =
+    selected.some((calendar) => calendar.includeAcademic) ||
+    all.some((calendar) => calendar.sourceIds.some(isOfficialCalendar))
+      ? await getDatabasePool().query(
+          `SELECT data FROM ${planningTable("academic_calendar")}`,
+        )
+      : { rows: [] };
   const days = academic.rows.map((record) =>
     academicDaySchema.parse(record.data),
   );
+  const sources = [...all, ...officialCalendars(days)];
   return {
     id,
     author: row.author,
@@ -143,8 +151,12 @@ export async function publicCalendar(id: string, provided: string) {
       color: c.color,
       includeAcademic: false,
       events: [
-        ...combinedEvents(all, c),
-        ...academicForCalendar(c, combinedEvents(all, c), days),
+        ...new Map(
+          [
+            ...combinedEvents(sources, c),
+            ...academicForCalendar(c, combinedEvents(sources, c), days),
+          ].map((event) => [event.id, event]),
+        ).values(),
       ].filter((e) => row.categories.includes(e.category)),
     })),
   };

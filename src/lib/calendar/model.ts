@@ -41,7 +41,7 @@ export const calendarSchema = z
       .enum(["calendar", "book", "graduation", "star"])
       .default("calendar"),
     color: z.enum(["rose", "blue", "mint", "violet", "amber"]).default("blue"),
-    kind: z.enum(["simulation", "personal", "feed", "combined"]),
+    kind: z.enum(["simulation", "personal", "feed", "combined", "official"]),
     term: z.string().max(20).optional(),
     campus: z.string().max(8).optional(),
     fingerprint: z.string().max(10000).optional(),

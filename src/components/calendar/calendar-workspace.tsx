@@ -22,6 +22,8 @@ import {
   BookOpen,
   GraduationCap,
   Star,
+  ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 import { usePreferences } from "@/hooks/use-preferences";
 import {
@@ -36,6 +38,8 @@ import { ChoiceSelect } from "@/components/ui/choice-select";
 import { CalendarPreview } from "./calendar-preview";
 import { CalendarShare } from "./calendar-share";
 import { CalendarWeek } from "./calendar-week";
+import { CalendarMonth } from "./calendar-month";
+import { CalendarSettings } from "./calendar-settings";
 import { CalendarEventEditor } from "./event-editor";
 import {
   calendarSchema,
@@ -47,7 +51,12 @@ import {
 import { parseCalendar, exportCalendar } from "@/lib/calendar/ical";
 import { semesterFingerprint } from "@/lib/calendar/schedules";
 import type { AcademicDay } from "@/lib/calendar/academic";
-import { academicEvents, academicForCalendar } from "@/lib/calendar/academic";
+import {
+  academicEvents,
+  academicForCalendar,
+  officialCalendars,
+  isOfficialCalendar,
+} from "@/lib/calendar/academic";
 import { browserUuid } from "@/lib/uuid";
 import styles from "./calendar.module.css";
 const dateString = (date: Date) => date.toISOString().slice(0, 10);
@@ -68,12 +77,21 @@ export function CalendarWorkspace() {
   );
   const { plan, setPlan, ready, storageError, persist } =
     usePlanningWorkspace(account);
-  const calendars = useMemo(
+  const [academic, setAcademic] = useState<AcademicDay[]>([]);
+  const [academicStatus, setAcademicStatus] = useState("loading");
+  const [academicUpdated, setAcademicUpdated] = useState<string | null>(null);
+  const [academicRetry, setAcademicRetry] = useState(0);
+  const privateCalendars = useMemo(
     () => plan.schedule.calendars ?? [],
     [plan.schedule.calendars],
   );
+  const calendars = useMemo(
+    () => [...privateCalendars, ...officialCalendars(academic, locale)],
+    [privateCalendars, academic, locale],
+  );
   const [selectedId, setSelectedId] = useState("");
   const selected = calendars.find((c) => c.id === selectedId) ?? calendars[0];
+  const officialSelected = !!selected && isOfficialCalendar(selected.id);
   const [week, setWeek] = useState(() => monday(dateString(new Date())));
   const [view, setView] = useState("week");
   const [message, setMessage] = useState("");
@@ -83,11 +101,15 @@ export function CalendarWorkspace() {
     return () => clearInterval(timer);
   }, []);
   const [editor, setEditor] = useState<UserCalendar | null>(null);
+  const [editorBaseline, setEditorBaseline] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [officialEvent, setOfficialEvent] = useState<CalendarEvent | null>(
+    null,
+  );
   const [feed, setFeed] = useState(false),
     [feedUrl, setFeedUrl] = useState("");
   const [eventEditor, setEventEditor] = useState<CalendarEvent | null>(null);
   const [eventDirty, setEventDirty] = useState(false);
-  const [academic, setAcademic] = useState<AcademicDay[]>([]);
   const upload = useRef<HTMLInputElement>(null);
   const busy = useRef(false);
   useEffect(() => {
@@ -95,11 +117,17 @@ export function CalendarWorkspace() {
     fetch("/api/calendar/academic", { signal: c.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        if (!c.signal.aborted) setAcademic(d.days);
+        if (!c.signal.aborted) {
+          setAcademic(d.days);
+          setAcademicUpdated(d.fetchedAt);
+          setAcademicStatus(d.days?.length ? "ready" : "empty");
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!c.signal.aborted) setAcademicStatus("error");
+      });
     return () => c.abort();
-  }, []);
+  }, [academicRetry]);
   function save(calendar: UserCalendar) {
     try {
       const value = calendarSchema.parse({
@@ -137,7 +165,7 @@ export function CalendarWorkspace() {
   }
   function editEvent(event: CalendarEvent) {
     if (event.id.startsWith("official-")) {
-      setMessage(event.title + " · OSU University Registrar");
+      setOfficialEvent(event);
       return;
     }
     const owner = calendars.find((calendar) =>
@@ -159,15 +187,19 @@ export function CalendarWorkspace() {
     }
   }
   function create(kind: UserCalendar["kind"] = "personal") {
-    setEditor(
-      calendarSchema.parse({
-        id: browserUuid(),
-        kind,
-        title: t("My calendar", "我的日程"),
-        events: [],
-        updatedAt: new Date().toISOString(),
-      }),
-    );
+    const draft = calendarSchema.parse({
+      id: browserUuid(),
+      kind,
+      title:
+        kind === "combined"
+          ? t("Combined calendar", "组合日历")
+          : t("My calendar", "我的日程"),
+      events: [],
+      updatedAt: new Date().toISOString(),
+    });
+    setCreating(false);
+    setEditorBaseline(JSON.stringify(draft));
+    setEditor(draft);
   }
   async function remote(url: string, existing?: UserCalendar) {
     if (busy.current) return;
@@ -255,8 +287,16 @@ export function CalendarWorkspace() {
     const key = account + "|" + (selected?.id ?? "");
     if (!ready || !selected || initialCalendar.current === key) return;
     initialCalendar.current = key;
+    if (isOfficialCalendar(selected.id)) {
+      queueMicrotask(() => {
+        setView("month");
+        setWeek(dateString(new Date()));
+      });
+      return;
+    }
     const today = dateString(new Date()),
       all = combinedEvents(calendars, selected);
+    queueMicrotask(() => setView("week"));
     if (
       !all.some(
         (event) =>
@@ -265,11 +305,13 @@ export function CalendarWorkspace() {
     ) {
       const first =
         all.find((event) => event.end.slice(0, 10) >= today) ?? all.at(-1);
-      if (first)
-        queueMicrotask(() => setWeek(monday(first.start.slice(0, 10))));
+      queueMicrotask(() =>
+        setWeek(monday(first ? first.start.slice(0, 10) : today)),
+      );
     }
   }, [ready, selected, calendars, account]);
-  const dates = Array.from({ length: 7 }, (_, i) => shift(week, i));
+  const weekStart = monday(week);
+  const dates = Array.from({ length: 7 }, (_, i) => shift(weekStart, i));
   const officialEvents = selected?.includeAcademic
     ? academicEvents(academic)
     : [];
@@ -282,9 +324,41 @@ export function CalendarWorkspace() {
           month: "2-digit",
           day: "2-digit",
         }).format(new Date(event.start));
-  const visible = [...events, ...officialEvents].filter(
-    (e) => e.start.slice(0, 10) <= dates[6] && e.end.slice(0, 10) >= week,
+  const rangeStart =
+    officialSelected && view !== "week" ? week.slice(0, 7) + "-01" : weekStart;
+  const rangeEnd =
+    officialSelected && view !== "week"
+      ? new Date(
+          Date.UTC(Number(week.slice(0, 4)), Number(week.slice(5, 7)), 0),
+        )
+          .toISOString()
+          .slice(0, 10)
+      : dates[6];
+  const allEvents = [
+    ...new Map(
+      [...events, ...officialEvents].map((event) => [event.id, event]),
+    ).values(),
+  ];
+  const visible = allEvents.filter(
+    (event) =>
+      event.start.slice(0, 10) <= rangeEnd &&
+      event.end.slice(0, 10) >= rangeStart,
   );
+  function navigate(offset: number) {
+    setWeek(
+      officialSelected && view !== "week"
+        ? new Date(
+            Date.UTC(
+              Number(week.slice(0, 4)),
+              Number(week.slice(5, 7)) - 1 + offset,
+              1,
+            ),
+          )
+            .toISOString()
+            .slice(0, 10)
+        : shift(week, offset * 7),
+    );
+  }
   const stale =
     selected?.kind === "simulation" &&
     selected.term &&
@@ -337,7 +411,7 @@ export function CalendarWorkspace() {
             </p>
           </div>
           <div className={styles.actions}>
-            <button onClick={() => create()} disabled={!ready}>
+            <button onClick={() => setCreating(true)} disabled={!ready}>
               <Plus size={15} />
               {t("New calendar", "新建日历")}
             </button>
@@ -411,6 +485,37 @@ export function CalendarWorkspace() {
               : message}
           </p>
         )}
+        <div className={styles.sourceStatus}>
+          <ShieldCheck size={15} />
+          <span>
+            {t("Official calendar", "官方校历")} · OSU University Registrar
+          </span>
+          <small>
+            {academicStatus === "loading"
+              ? t("Loading dates…", "正在加载日期…")
+              : academicStatus === "ready"
+                ? `${academic.length} ${t("dates", "项日期")}${academicUpdated ? " · " + t("Updated ", "更新于 ") + new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" }).format(new Date(academicUpdated)) : ""}`
+                : t("Dates unavailable", "日期暂不可用")}
+          </small>
+          {academicStatus === "error" || academicStatus === "empty" ? (
+            <button
+              onClick={() => {
+                setAcademicStatus("loading");
+                setAcademicRetry((value) => value + 1);
+              }}
+            >
+              {t("Retry", "重新加载")}
+            </button>
+          ) : null}
+          <a
+            href="https://registrar.osu.edu/academic-calendar/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t("View source", "查看来源")}
+            <ExternalLink size={12} />
+          </a>
+        </div>
         <div className={styles.layout}>
           <aside
             className={styles.sidebar}
@@ -424,8 +529,19 @@ export function CalendarWorkspace() {
                 data-color={c.color}
                 onClick={() => {
                   setSelectedId(c.id);
-                  const first = combinedEvents(calendars, c)[0];
-                  if (first) setWeek(monday(first.start.slice(0, 10)));
+                  const today = dateString(new Date());
+                  const all = combinedEvents(calendars, c);
+                  const next =
+                    all.find((event) => event.end.slice(0, 10) >= today) ??
+                    all.at(-1);
+                  setView(isOfficialCalendar(c.id) ? "month" : "week");
+                  setWeek(
+                    isOfficialCalendar(c.id)
+                      ? today
+                      : next
+                        ? monday(next.start.slice(0, 10))
+                        : monday(today),
+                  );
                 }}
               >
                 <strong>
@@ -440,7 +556,14 @@ export function CalendarWorkspace() {
                   })()}{" "}
                   {c.title}
                 </strong>
-                <CalendarPreview events={combinedEvents(calendars, c)} />
+                {isOfficialCalendar(c.id) ? (
+                  <span className={styles.officialBadge}>
+                    <ShieldCheck size={11} />
+                    {t("Official source", "官方来源")}
+                  </span>
+                ) : (
+                  <CalendarPreview events={combinedEvents(calendars, c)} />
+                )}
                 <small>
                   {combinedEvents(calendars, c).length} {t("events", "个日程")}{" "}
                   ·{" "}
@@ -450,6 +573,7 @@ export function CalendarWorkspace() {
                       personal: t("Personal", "个人"),
                       feed: t("Subscription", "订阅"),
                       combined: t("Combined", "组合"),
+                      official: t("Automatically updated", "自动更新"),
                     }[c.kind]
                   }
                 </small>
@@ -465,18 +589,25 @@ export function CalendarWorkspace() {
                     <p>{selected.description}</p>
                   </div>
                   <div className={styles.actions}>
-                    <CalendarShare
-                      calendars={calendars}
-                      selected={selected.id}
-                      locale={locale}
-                      persist={persist}
-                    />
-                    <button
-                      onClick={() => setEditor(structuredClone(selected))}
-                    >
-                      <Pencil size={13} />
-                      {t("Edit", "编辑")}
-                    </button>
+                    {!officialSelected && (
+                      <CalendarShare
+                        calendars={privateCalendars}
+                        selected={selected.id}
+                        locale={locale}
+                        persist={persist}
+                      />
+                    )}
+                    {!officialSelected && (
+                      <button
+                        onClick={() => {
+                          setEditorBaseline(JSON.stringify(selected));
+                          setEditor(structuredClone(selected));
+                        }}
+                      >
+                        <Pencil size={13} />
+                        {t("Edit", "编辑")}
+                      </button>
+                    )}
                     <button onClick={download}>
                       <Download size={13} />
                       {t("Export", "导出")}
@@ -489,25 +620,27 @@ export function CalendarWorkspace() {
                         {t("Refresh", "更新")}
                       </button>
                     )}
-                    <button
-                      disabled={selected.kind === "feed"}
-                      onClick={() => {
-                        setEventDirty(false);
-                        setEventEditor({
-                          id: browserUuid(),
-                          title: "",
-                          start: week,
-                          end: shift(week, 1),
-                          allDay: true,
-                          category: "event",
-                          description: "",
-                          location: "",
-                        });
-                      }}
-                    >
-                      <Plus size={13} />
-                      {t("Event", "日程")}
-                    </button>
+                    {!officialSelected && (
+                      <button
+                        disabled={selected.kind === "feed"}
+                        onClick={() => {
+                          setEventDirty(false);
+                          setEventEditor({
+                            id: browserUuid(),
+                            title: "",
+                            start: week,
+                            end: shift(week, 1),
+                            allDay: true,
+                            category: "event",
+                            description: "",
+                            location: "",
+                          });
+                        }}
+                      >
+                        <Plus size={13} />
+                        {t("Event", "日程")}
+                      </button>
+                    )}
                   </div>
                 </div>
                 {stale && (
@@ -521,24 +654,43 @@ export function CalendarWorkspace() {
                 <div className={styles.toolbar}>
                   <div className={styles.actions}>
                     <button
-                      aria-label={t("Previous week", "上一周")}
-                      onClick={() => setWeek(shift(week, -7))}
+                      aria-label={
+                        officialSelected && view !== "week"
+                          ? t("Previous month", "上个月")
+                          : t("Previous week", "上一周")
+                      }
+                      onClick={() => navigate(-1)}
                     >
                       <ChevronLeft size={14} />
                     </button>
                     <button
-                      onClick={() => setWeek(monday(dateString(new Date())))}
+                      onClick={() =>
+                        setWeek(
+                          officialSelected
+                            ? dateString(new Date())
+                            : monday(dateString(new Date())),
+                        )
+                      }
                     >
                       {t("Today", "今天")}
                     </button>
                     <button
-                      aria-label={t("Next week", "下一周")}
-                      onClick={() => setWeek(shift(week, 7))}
+                      aria-label={
+                        officialSelected && view !== "week"
+                          ? t("Next month", "下个月")
+                          : t("Next week", "下一周")
+                      }
+                      onClick={() => navigate(1)}
                     >
                       <ChevronRight size={14} />
                     </button>
                     <span>
-                      {week} — {dates[6].slice(5)}
+                      {officialSelected && view !== "week"
+                        ? new Intl.DateTimeFormat(
+                            locale === "zh" ? "zh-CN" : "en-US",
+                            { year: "numeric", month: "long", timeZone: "UTC" },
+                          ).format(new Date(week + "T12:00:00Z"))
+                        : `${weekStart} — ${dates[6].slice(5)}`}
                     </span>
                   </div>
                   <ChoiceSelect
@@ -547,11 +699,21 @@ export function CalendarWorkspace() {
                     value={view}
                     onValueChange={setView}
                   >
+                    {officialSelected ? (
+                      <option value="month">{t("Month", "月视图")}</option>
+                    ) : null}
                     <option value="week">{t("Week", "周视图")}</option>
                     <option value="agenda">{t("Agenda", "日程清单")}</option>
                   </ChoiceSelect>
                 </div>
-                {view === "week" ? (
+                {view === "month" && officialSelected ? (
+                  <CalendarMonth
+                    date={week}
+                    events={events}
+                    locale={locale}
+                    onEvent={editEvent}
+                  />
+                ) : view === "week" ? (
                   <CalendarWeek
                     events={visible}
                     dates={dates}
@@ -560,6 +722,14 @@ export function CalendarWorkspace() {
                   />
                 ) : (
                   <div className={styles.agenda}>
+                    {!visible.length ? (
+                      <p className={styles.empty}>
+                        {t(
+                          "No events in this period. Change dates or add an event.",
+                          "此时间段没有日程，可切换日期或添加日程。",
+                        )}
+                      </p>
+                    ) : null}
                     {visible
                       .sort((a, b) => a.start.localeCompare(b.start))
                       .map((event, index) => (
@@ -606,149 +776,139 @@ export function CalendarWorkspace() {
           </section>
         </div>
         <WorkspaceDialog
+          open={creating}
+          onOpenChange={setCreating}
+          title={t("Create a calendar", "创建日历")}
+          description={t("Choose how to start", "选择一种方式开始安排")}
+          closeLabel={t("Close", "关闭")}
+          guard={false}
+          detectFormChanges={false}
+        >
+          <div className={styles.createOptions}>
+            <button onClick={() => create()}>
+              <CalendarDays size={22} />
+              <span>
+                <strong>{t("Personal calendar", "个人日历")}</strong>
+                <small>
+                  {t(
+                    "Add classes, activities and reminders yourself.",
+                    "自由添加课程、活动和提醒。",
+                  )}
+                </small>
+              </span>
+              <ChevronRight size={16} />
+            </button>
+            <button
+              onClick={() => {
+                setCreating(false);
+                setFeed(true);
+              }}
+            >
+              <Link2 size={22} />
+              <span>
+                <strong>{t("Subscribe to a feed", "订阅远程日历")}</strong>
+                <small>
+                  {t(
+                    "Keep Canvas assignments or another ICS feed up to date.",
+                    "持续获取 Canvas 作业或其他 ICS 日历。",
+                  )}
+                </small>
+              </span>
+              <ChevronRight size={16} />
+            </button>
+            <button onClick={() => create("combined")}>
+              <Layers size={22} />
+              <span>
+                <strong>{t("Combine calendars", "组合已有日历")}</strong>
+                <small>
+                  {t(
+                    "Bring your schedule and official dates together.",
+                    "将课表与官方校历汇总在一个视图。",
+                  )}
+                </small>
+              </span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </WorkspaceDialog>
+        <WorkspaceDialog
           open={!!editor}
           onOpenChange={(open) => {
             if (!open) setEditor(null);
           }}
-          title={t("Calendar settings", "日历设置")}
-          description={t("Name, appearance and sources", "名称、样式与来源")}
-          closeLabel={t("Close", "关闭")}
-          dirty={
-            !!editor &&
-            JSON.stringify(editor) !==
-              JSON.stringify(calendars.find((c) => c.id === editor.id))
+          title={
+            editor &&
+            privateCalendars.some((calendar) => calendar.id === editor.id)
+              ? t("Calendar settings", "日历设置")
+              : t("Create your calendar", "创建你的日历")
           }
+          description={t(
+            "Name it, choose an appearance and add sources",
+            "设置名称、外观与日程来源",
+          )}
+          closeLabel={t("Close", "关闭")}
+          dirty={!!editor && JSON.stringify(editor) !== editorBaseline}
+          detectFormChanges={false}
         >
-          {editor && (
-            <form
-              className={styles.form}
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!save(editor) || !(await persist())) return;
+          {editor ? (
+            <CalendarSettings
+              value={editor}
+              onChange={setEditor}
+              calendars={calendars}
+              locale={locale}
+              onSave={async () => {
+                if (!save(editor) || !(await persist())) throw Error("storage");
                 setEditor(null);
               }}
-            >
-              <label>
-                {t("Title", "标题")}
-                <input
-                  required
-                  maxLength={120}
-                  value={editor.title}
-                  onChange={(e) =>
-                    setEditor({ ...editor, title: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                {t("Description", "介绍")}
-                <textarea
-                  maxLength={1000}
-                  value={editor.description}
-                  onChange={(e) =>
-                    setEditor({ ...editor, description: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                {t("Icon", "图标")}
-                <ChoiceSelect
-                  value={editor.icon}
-                  onValueChange={(icon) =>
-                    setEditor({ ...editor, icon: icon as UserCalendar["icon"] })
-                  }
-                >
-                  {["calendar", "book", "graduation", "star"].map(
-                    (icon, index) => (
-                      <option key={icon} value={icon}>
-                        {locale === "zh"
-                          ? ["日历", "课程", "学业", "星标"][index]
-                          : ["Calendar", "Book", "Graduation", "Star"][index]}
-                      </option>
-                    ),
-                  )}
-                </ChoiceSelect>
-              </label>
-              <label>
-                {t("Color", "颜色")}
-                <ChoiceSelect
-                  value={editor.color}
-                  onValueChange={(color) =>
-                    setEditor({
-                      ...editor,
-                      color: color as UserCalendar["color"],
-                    })
-                  }
-                >
-                  {["rose", "blue", "mint", "violet", "amber"].map(
-                    (color, index) => (
-                      <option key={color} value={color}>
-                        {locale === "zh"
-                          ? ["玫瑰", "天空", "薄荷", "淡紫", "琥珀"][index]
-                          : color}
-                      </option>
-                    ),
-                  )}
-                </ChoiceSelect>
-              </label>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={editor.includeAcademic}
-                onClick={() =>
-                  setEditor({
-                    ...editor,
-                    includeAcademic: !editor.includeAcademic,
-                  })
-                }
-              >
-                {editor.includeAcademic ? "✓ " : ""}
-                {t("Include OSU academic dates", "包含 OSU 官方校历")}
-              </button>
-              {editor.kind === "combined" &&
-                calendars
-                  .filter((c) => c.id !== editor.id)
-                  .map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      role="checkbox"
-                      aria-checked={editor.sourceIds.includes(c.id)}
-                      onClick={() =>
-                        setEditor({
-                          ...editor,
-                          sourceIds: editor.sourceIds.includes(c.id)
-                            ? editor.sourceIds.filter((id) => id !== c.id)
-                            : [...editor.sourceIds, c.id],
-                        })
-                      }
-                    >
-                      {editor.sourceIds.includes(c.id) ? "✓" : "+"} {c.title}
-                    </button>
-                  ))}
-              <div className={styles.actions}>
-                <button type="submit">{t("Save", "保存")}</button>
-                {calendars.some((c) => c.id === editor.id) && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setPlan((p) => ({
-                        ...p,
+              onRemove={
+                privateCalendars.some((calendar) => calendar.id === editor.id)
+                  ? async () => {
+                      setPlan((current) => ({
+                        ...current,
                         schedule: {
-                          ...p.schedule,
-                          calendars: p.schedule.calendars?.filter(
-                            (c) => c.id !== editor.id,
+                          ...current.schedule,
+                          calendars: current.schedule.calendars?.filter(
+                            (calendar) => calendar.id !== editor.id,
                           ),
                         },
                       }));
-                      if (await persist()) setEditor(null);
-                    }}
-                  >
-                    {t("Delete calendar", "删除日历")}
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
+                      if (!(await persist())) throw Error("storage");
+                      setEditor(null);
+                    }
+                  : undefined
+              }
+            />
+          ) : null}
+        </WorkspaceDialog>
+        <WorkspaceDialog
+          open={!!officialEvent}
+          onOpenChange={(open) => {
+            if (!open) setOfficialEvent(null);
+          }}
+          title={officialEvent?.title.split(" | ")[0] ?? ""}
+          description={t("Official OSU calendar entry", "OSU 官方校历安排")}
+          closeLabel={t("Close", "关闭")}
+          guard={false}
+          detectFormChanges={false}
+        >
+          {officialEvent ? (
+            <div className={styles.officialDetail}>
+              <span>
+                <CalendarDays size={18} />
+                {officialEvent.start} — {shift(officialEvent.end, -1)}
+              </span>
+              <p>{officialEvent.title.split(" | ").slice(1).join(" · ")}</p>
+              <a
+                href="https://registrar.osu.edu/academic-calendar/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ShieldCheck size={15} />
+                OSU University Registrar
+                <ExternalLink size={13} />
+              </a>
+            </div>
+          ) : null}
         </WorkspaceDialog>
         <WorkspaceDialog
           open={feed}

@@ -56,9 +56,12 @@ export function isNoClassDate(date: string, days: AcademicDay[]) {
     (day) => day.noClasses && date >= day.date && date <= day.end,
   );
 }
-export function academicEvents(days: AcademicDay[]): CalendarEvent[] {
+export function academicEvents(
+  days: AcademicDay[],
+  includeDeadlines = false,
+): CalendarEvent[] {
   return days
-    .filter((day) => day.kind !== "deadline")
+    .filter((day) => includeDeadlines || day.kind !== "deadline")
     .map((day) => ({
       id: "official-" + day.id,
       title: day.title,
@@ -75,7 +78,51 @@ export function academicEvents(days: AcademicDay[]): CalendarEvent[] {
             : "event",
       description: "OSU University Registrar",
       location: "",
+      url: "https://registrar.osu.edu/academic-calendar/",
     }));
+}
+export const OFFICIAL_CALENDAR_IDS = [
+  "osu-official-academic",
+  "osu-official-holidays",
+  "osu-official-deadlines",
+] as const;
+/** Shared database sources are references, never duplicate private event copies. */
+export function officialCalendars(
+  days: AcademicDay[],
+  locale: "en" | "zh" = "en",
+): UserCalendar[] {
+  return OFFICIAL_CALENDAR_IDS.map((id, index) => ({
+    id,
+    title: (locale === "zh"
+      ? ["学期与考试", "假期与停课", "注册与缴费截止"]
+      : ["Terms & exams", "Holidays & breaks", "Registration deadlines"])[
+      index
+    ],
+    description:
+      locale === "zh"
+        ? "OSU University Registrar 官方校历"
+        : "Official dates from OSU University Registrar",
+    icon: index === 0 ? "graduation" : index === 1 ? "calendar" : "book",
+    color: index === 0 ? "blue" : index === 1 ? "amber" : "violet",
+    kind: "official",
+    sourceIds: [],
+    includeAcademic: false,
+    active: true,
+    updatedAt: "",
+    events: academicEvents(
+      days.filter((day) =>
+        index === 0
+          ? ["term", "exam"].includes(day.kind)
+          : index === 1
+            ? day.kind === "holiday"
+            : day.kind === "deadline",
+      ),
+      true,
+    ),
+  }));
+}
+export function isOfficialCalendar(id: string) {
+  return (OFFICIAL_CALENDAR_IDS as readonly string[]).includes(id);
 }
 export function academicForCalendar(
   calendar: UserCalendar,
