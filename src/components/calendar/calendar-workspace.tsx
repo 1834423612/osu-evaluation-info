@@ -61,6 +61,10 @@ import {
 import { browserUuid } from "@/lib/uuid";
 import { newYorkDate, eventInDateRange } from "@/lib/calendar/dates";
 import styles from "./calendar.module.css";
+type CalendarDraft = UserCalendar & {
+  editorSession: string;
+  existing: boolean;
+};
 const dateString = (date: Date) => date.toISOString().slice(0, 10);
 function monday(date: string) {
   const d = new Date(date + "T12:00:00Z");
@@ -102,7 +106,7 @@ export function CalendarWorkspace() {
     const timer = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(timer);
   }, []);
-  const [editor, setEditor] = useState<UserCalendar | null>(null);
+  const [editor, setEditor] = useState<CalendarDraft | null>(null);
   const [editorBaseline, setEditorBaseline] = useState("");
   const [creating, setCreating] = useState(false);
   const [officialEvent, setOfficialEvent] = useState<CalendarEvent | null>(
@@ -166,6 +170,15 @@ export function CalendarWorkspace() {
       return false;
     }
   }
+  function openCalendar(calendar: UserCalendar, existing = false) {
+    const draft = {
+      ...structuredClone(calendar),
+      editorSession: browserUuid(),
+      existing,
+    };
+    setEditorBaseline(JSON.stringify(draft));
+    setEditor(draft);
+  }
   function editEvent(event: CalendarEvent) {
     if (event.id.startsWith("official-")) {
       setOfficialEvent(event);
@@ -201,8 +214,7 @@ export function CalendarWorkspace() {
       updatedAt: new Date().toISOString(),
     });
     setCreating(false);
-    setEditorBaseline(JSON.stringify(draft));
-    setEditor(draft);
+    openCalendar(draft);
   }
   async function remote(url: string, existing?: UserCalendar) {
     if (busy.current) return;
@@ -601,8 +613,7 @@ export function CalendarWorkspace() {
                     {!officialSelected && (
                       <button
                         onClick={() => {
-                          setEditorBaseline(JSON.stringify(selected));
-                          setEditor(structuredClone(selected));
+                          openCalendar(selected, true);
                         }}
                       >
                         <Pencil size={13} />
@@ -838,8 +849,7 @@ export function CalendarWorkspace() {
             if (!open) setEditor(null);
           }}
           title={
-            editor &&
-            privateCalendars.some((calendar) => calendar.id === editor.id)
+            editor?.existing
               ? t("Calendar settings", "日历设置")
               : t("Create your calendar", "创建你的日历")
           }
@@ -853,17 +863,28 @@ export function CalendarWorkspace() {
         >
           {editor ? (
             <CalendarSettings
+              key={editor.editorSession}
               value={editor}
-              onChange={setEditor}
+              onChange={(value) =>
+                setEditor({
+                  ...value,
+                  editorSession: editor.editorSession,
+                  existing: editor.existing,
+                })
+              }
               calendars={calendars}
               locale={locale}
               onSave={async () => {
+                const session = editor.editorSession;
                 if (!save(editor) || !(await persist())) throw Error("storage");
-                setEditor(null);
+                setEditor((current) =>
+                  current?.editorSession === session ? null : current,
+                );
               }}
               onRemove={
-                privateCalendars.some((calendar) => calendar.id === editor.id)
+                editor.existing
                   ? async () => {
+                      const session = editor.editorSession;
                       setPlan((current) => ({
                         ...current,
                         schedule: {
@@ -874,7 +895,9 @@ export function CalendarWorkspace() {
                         },
                       }));
                       if (!(await persist())) throw Error("storage");
-                      setEditor(null);
+                      setEditor((current) =>
+                        current?.editorSession === session ? null : current,
+                      );
                     }
                   : undefined
               }
