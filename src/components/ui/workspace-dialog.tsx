@@ -31,6 +31,7 @@ export function WorkspaceDialog({
   dirty = false,
   guard = true,
   closeOnly = false,
+  detectFormChanges = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,6 +43,7 @@ export function WorkspaceDialog({
   dirty?: boolean;
   guard?: boolean;
   closeOnly?: boolean;
+  detectFormChanges?: boolean;
 }) {
   const mobile = useSyncExternalStore(subscribe, snapshot, () => false);
   const body = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export function WorkspaceDialog({
     setPreviousOpen(open);
     if (!open) setEdited(false);
   }
-  useDraftGuard(guard && open && (dirty || edited));
+  useDraftGuard(guard && open && (dirty || (detectFormChanges && edited)));
   useEffect(() => {
     if (!open) baseline.current = null;
     else if (body.current && baseline.current === null)
@@ -79,7 +81,7 @@ export function WorkspaceDialog({
     if (
       !next &&
       guard &&
-      (dirty || edited) &&
+      (dirty || (detectFormChanges && edited)) &&
       !window.confirm(
         closeLabel === "关闭"
           ? "有尚未保存的修改，确定放弃？"
