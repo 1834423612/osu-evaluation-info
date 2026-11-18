@@ -655,6 +655,20 @@ export function DebugTools() {
                         <RefreshCw size={12} />
                         {text(locale, "Refresh data", "刷新页面与内存数据")}
                       </button>
+                      <button onClick={() => router.push("/calendar")}>
+                        {text(locale, "Calendar workspace", "检查日程与课表")}
+                      </button>
+                      <button
+                        onClick={() =>
+                          router.push("/account#development-account")
+                        }
+                      >
+                        {text(
+                          locale,
+                          "Development account link",
+                          "开发与生产账号关联",
+                        )}
+                      </button>
                       <button
                         onClick={() => {
                           const result = migrateBrowserStorage(localStorage);

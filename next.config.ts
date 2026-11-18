@@ -11,10 +11,11 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_UPDATED_AT: build?.updatedAt ?? "",
     NEXT_PUBLIC_BUILD_TIME_KIND: build?.timeKind ?? "commit",
   },
-  allowedDevOrigins: Array.from(
-    { length: 64 },
-    (_, index) => `100.${index + 64}.*.*`,
-  ),
+  allowedDevOrigins: [
+    "127.0.0.1",
+    "[::1]",
+    ...Array.from({ length: 64 }, (_, index) => `100.${index + 64}.*.*`),
+  ],
   typedRoutes: true,
   serverExternalPackages: ["pg"],
 };

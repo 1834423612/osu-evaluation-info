@@ -70,6 +70,13 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm search:prepare
 
+      - name: Refresh official academic calendar
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
+        run: node scripts/calendar/sync.mjs --apply
+
       - name: Summarize catalog failure
         if: failure()
         shell: bash

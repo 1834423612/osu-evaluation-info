@@ -16,6 +16,7 @@ import {
   syncPlanning,
 } from "@/lib/planning/client-sync";
 import { debugFlag } from "@/lib/debug/flags";
+import { pullDevelopmentAccount } from "@/lib/development/client";
 export function SyncProvider() {
   const { data: session, isPending } = authClient.useSession();
   const accountId = session?.user.emailVerified ? session.user.id : null;
@@ -54,6 +55,16 @@ export function SyncProvider() {
             (result) => result.status === "rejected",
           );
           if (failure?.status === "rejected") throw failure.reason;
+          if (
+            !stopped &&
+            (await pullDevelopmentAccount(accountId).catch(() => false))
+          ) {
+            if (stopped) return;
+            await Promise.allSettled([
+              syncCycle(accountId),
+              syncPlanning(accountId),
+            ]);
+          }
           failures = 0;
           retryAfter = 0;
         }

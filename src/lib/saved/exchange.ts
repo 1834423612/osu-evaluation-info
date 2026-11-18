@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { savedRmpProfileSchema } from "./rmp-profile.ts";
+import { collectionsSchema } from "./collection-schema.ts";
 const str = z.string().max(500),
   id = z
     .string()
@@ -149,6 +150,8 @@ export const snapshotSchema = z
     title: z.string().trim().min(1).max(80),
     createdAt: z.iso.datetime(),
     items: z.array(exchangeItemSchema).min(1).max(700),
+    collections: collectionsSchema.optional(),
+    author: z.object({ nickname: z.string().max(80) }).optional(),
   })
   .superRefine((snapshot, ctx) => {
     const seen = new Set<string>();
@@ -239,6 +242,15 @@ export function itemHref(item: ExchangeItem) {
 }
 export function publicSnapshot(value: SavedSnapshot): SavedSnapshot {
   const copy = snapshotSchema.parse(value);
+  if (copy.collections) {
+    const keys = new Set(copy.items.map(itemKey));
+    copy.collections = copy.collections
+      .map((collection) => ({
+        ...collection,
+        members: collection.members.filter((key) => keys.has(key)),
+      }))
+      .filter((collection) => collection.members.length);
+  }
   for (const item of copy.items) {
     if (item.kind === "instructor") item.payload.email = null;
     if (item.kind === "syllabus")

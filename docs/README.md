@@ -9,6 +9,8 @@ Run commands from the repository root. English is the default; the Chinese tree 
 - [Testing](testing.md)
 - [Accounts, favorites and sharing](user-data.md)
 - [Development tools and local data](development-tools.md)
+- [Development account pairing](development-account.md)
+- [Calendars, subscriptions and saved schedule groups](planning/calendars.md)
 - [On-demand translation](translation.md)
 - [Translation provider state and operations](translation-operations.md)
 

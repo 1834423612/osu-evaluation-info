@@ -482,6 +482,38 @@
 .compactToggle[aria-checked="true"] .switchTrack i {
   transform: translateX(12px);
 }
+.savedGroups {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.savedGroups h3 {
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.savedGroups > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+}
+.savedGroups button {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 9px;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+.savedGroups strong {
+  font-size: 11px;
+}
+.savedGroups small {
+  font-size: 10px;
+  color: var(--muted);
+}
 @media (max-width: 600px) {
   .week {
     gap: 4px;
@@ -625,5 +657,15 @@
   }
   .preview[data-mobile-hidden="true"] {
     display: none;
+  }
+}
+
+@media (min-width: 801px) {
+  .layout > section {
+    max-height: calc(100dvh - 270px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 10px;
   }
 }

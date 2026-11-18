@@ -14,7 +14,10 @@ export const shareCreateSchema = z.object({
   snapshot: snapshotSchema,
   requestId: z.uuid().optional(),
   visibility: z.enum(["public", "link"]).default("link"),
-  expiresIn: z.number().int().min(900).max(2592000).default(604800),
+  expiresIn: z
+    .union([z.literal(0), z.number().int().min(900).max(2592000)])
+    .default(604800),
+  showAuthor: z.boolean().default(false),
 });
 export const shareIdSchema = z.uuid();
 export const shareReadSchema = z.object({
@@ -31,7 +34,7 @@ type ShareRow = {
   snapshot: SavedSnapshot;
   visibility: "public" | "link";
   created_at: Date;
-  expires_at: Date;
+  expires_at: Date | null;
   revoked_at: Date | null;
 };
 type CreatedRow = ShareRow & {
@@ -51,7 +54,7 @@ function createdResult(row: CreatedRow, digest: string, owner: string) {
     row.request_digest !== digest ||
     !row.capability_seed ||
     row.revoked_at ||
-    new Date(row.expires_at).getTime() <= Date.now()
+    (row.expires_at && new Date(row.expires_at).getTime() <= Date.now())
   )
     throw new UserDataError("request_conflict", 409);
   return {
@@ -67,7 +70,7 @@ function createdResult(row: CreatedRow, digest: string, owner: string) {
       "share-issued-management",
     ),
     code: row.code ?? null,
-    expiresAt: new Date(row.expires_at).toISOString(),
+    expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null,
   };
 }
 
@@ -107,7 +110,9 @@ export async function createShare(
       "management",
       "share-issued-management",
     ),
-    expiresAt = new Date(Date.now() + input.expiresIn * 1000);
+    expiresAt = input.expiresIn
+      ? new Date(Date.now() + input.expiresIn * 1000)
+      : null;
   const db = await getDatabasePool().connect();
   let code: string | null = null;
   try {
@@ -124,7 +129,7 @@ export async function createShare(
     const quota = await db.query<{ n: string; bytes: string }>(
       "SELECT count(*) AS n,coalesce(sum(bytes),0) AS bytes FROM " +
         userDataTable("shared_collection") +
-        " WHERE owner_id=$1 AND revoked_at IS NULL AND expires_at>now()",
+        " WHERE owner_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>now())",
       [actor.id],
     );
     if (
@@ -187,7 +192,7 @@ export async function createShare(
     capability: input.visibility === "link" ? capability : null,
     management,
     code,
-    expiresAt: expiresAt.toISOString(),
+    expiresAt: expiresAt?.toISOString() ?? null,
   };
 }
 export async function readShare(
@@ -198,7 +203,7 @@ export async function readShare(
   const r = await queryDatabase<ShareRow>(
     "SELECT id,owner_id,title,snapshot,visibility,created_at,expires_at,revoked_at FROM " +
       userDataTable("shared_collection") +
-      " WHERE id=$1 AND revoked_at IS NULL AND expires_at>now() AND (visibility='public' OR (owner_id=ANY($3::text[]) AND $2='') OR capability_digest=$2)",
+      " WHERE id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>now()) AND (visibility='public' OR (owner_id=ANY($3::text[]) AND $2='') OR capability_digest=$2)",
     [id, capability ? privateDigest(capability, "share") : "", owners],
   );
   if (!r.rows[0]) throw new UserDataError("not_found", 404);
@@ -211,7 +216,7 @@ export async function resolveShareCode(code: string) {
       userDataTable("share_code") +
       " c JOIN " +
       userDataTable("shared_collection") +
-      " s ON s.id=c.share_id WHERE c.code=$1 AND c.expires_at>now() AND s.visibility='public' AND s.revoked_at IS NULL AND s.expires_at>now()",
+      " s ON s.id=c.share_id WHERE c.code=$1 AND c.expires_at>now() AND s.visibility='public' AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at>now())",
     [code],
   );
   if (!r.rows[0]) throw new UserDataError("not_found", 404);
@@ -231,7 +236,7 @@ export async function recordShareEvent(
       userDataTable("share_event") +
       "(event_key,share_id,action,principal_id,item_count,source) SELECT $1,id,$3,$4,$5,$6 FROM " +
       userDataTable("shared_collection") +
-      " WHERE id=$2 AND revoked_at IS NULL AND expires_at>now() ON CONFLICT DO NOTHING",
+      " WHERE id=$2 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>now()) ON CONFLICT DO NOTHING",
     [eventKey, id, action, actorId, itemCount, source],
   );
 }
@@ -240,9 +245,9 @@ export async function listShares(owners: string[]) {
   const r = await queryDatabase(
     "SELECT s.id,s.title,s.visibility,s.created_at,s.expires_at,s.revoked_at,c.code,c.expires_at AS code_expires_at,count(e.event_key) FILTER(WHERE e.action='preview')::int AS previews,count(e.event_key) FILTER(WHERE e.action='open')::int AS opens,count(e.event_key) FILTER(WHERE e.action='import')::int AS imports FROM " +
       userDataTable("shared_collection") +
-      " s LEFT JOIN " +
+      " s LEFT JOIN LATERAL (SELECT code,expires_at FROM " +
       userDataTable("share_code") +
-      " c ON c.share_id=s.id AND c.reusable_after>now() LEFT JOIN " +
+      " WHERE share_id=s.id ORDER BY expires_at DESC LIMIT 1) c ON true LEFT JOIN " +
       userDataTable("share_event") +
       " e ON e.share_id=s.id WHERE s.owner_id=ANY($1::text[]) GROUP BY s.id,c.code,c.expires_at ORDER BY s.created_at DESC LIMIT 50",
     [owners],
@@ -252,7 +257,7 @@ export async function listShares(owners: string[]) {
 export async function manageShare(
   actor: Actor,
   id: string,
-  action: "revoke" | "rotate" | "copy",
+  action: "revoke" | "rotate" | "copy" | "renew-code",
   management?: string,
 ) {
   const r = await queryDatabase<CreatedRow>(
@@ -281,8 +286,62 @@ export async function manageShare(
       capability: null,
     };
   }
+  if (action === "renew-code") {
+    if (
+      row.visibility !== "public" ||
+      (row.expires_at && new Date(row.expires_at).getTime() <= Date.now())
+    )
+      throw new UserDataError("not_found", 404);
+    await checkBudget("share-code-renew", actor.id ?? "", 3600, 20);
+    const db = await getDatabasePool().connect();
+    try {
+      await db.query("BEGIN");
+      await db.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        "waho-public-code-allocation",
+      ]);
+      const current = await db.query(
+        `SELECT c.code,c.expires_at FROM ${userDataTable("share_code")} c JOIN ${userDataTable("shared_collection")} s ON s.id=c.share_id WHERE c.share_id=$1 AND c.expires_at>now() AND s.revoked_at IS NULL LIMIT 1`,
+        [id],
+      );
+      if (current.rows.length) {
+        await db.query("COMMIT");
+        return {
+          id,
+          code: current.rows[0].code,
+          expiresAt: current.rows[0].expires_at,
+        };
+      }
+      const active = await db.query(
+        `SELECT id FROM ${userDataTable("shared_collection")} WHERE id=$1 AND revoked_at IS NULL FOR UPDATE`,
+        [id],
+      );
+      if (!active.rows.length) throw new UserDataError("not_found", 404);
+      const allocated = await db.query(
+        `SELECT count(*) AS n FROM ${userDataTable("share_code")} WHERE reusable_after>now()`,
+      );
+      if (Number(allocated.rows[0].n) >= 10000)
+        throw new UserDataError("code_capacity", 503);
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const code = String(randomInt(1000000)).padStart(6, "0");
+        const result = await db.query(
+          `INSERT INTO ${userDataTable("share_code")}(code,share_id,expires_at,reusable_after) VALUES($1,$2,least($3::timestamptz,now()+interval '24 hours'),least($3::timestamptz,now()+interval '24 hours')+interval '24 hours') ON CONFLICT(code) DO UPDATE SET share_id=excluded.share_id,expires_at=excluded.expires_at,reusable_after=excluded.reusable_after WHERE ${userDataTable("share_code")}.reusable_after<now() RETURNING code,expires_at`,
+          [code, id, row.expires_at],
+        );
+        if (result.rows.length) {
+          await db.query("COMMIT");
+          return { id, code, expiresAt: result.rows[0].expires_at };
+        }
+      }
+      throw new UserDataError("code_capacity", 503);
+    } catch (error) {
+      await db.query("ROLLBACK");
+      throw error;
+    } finally {
+      db.release();
+    }
+  }
   if (
-    new Date(row.expires_at).getTime() <= Date.now() ||
+    (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()) ||
     row.visibility !== "link"
   )
     throw new UserDataError("not_found", 404);

@@ -16,11 +16,49 @@ export function mergeSnapshots(current: Plan, incoming: Plan): Plan {
     catalogTerm:
       left.catalogTerm === right.catalogTerm ? left.catalogTerm : null,
     auditMode: left.auditMode === right.auditMode ? left.auditMode : "unknown",
-    hiddenPrograms: [...new Set([...(left.hiddenPrograms ?? []), ...(right.hiddenPrograms ?? [])])],
+    hiddenPrograms: [
+      ...new Set([
+        ...(left.hiddenPrograms ?? []),
+        ...(right.hiddenPrograms ?? []),
+      ]),
+    ],
     schedule: {
-      groups:[...left.schedule.groups ?? [],...(right.schedule.groups ?? []).map((g)=>({...g,id:id(g.id),requirementId:g.requirementId?id(g.requirementId):undefined,courseIds:g.courseIds.map(id),selectedCourseId:g.selectedCourseId?id(g.selectedCourseId):g.selectedCourseId,credits:g.credits?Object.fromEntries(Object.entries(g.credits).map(([key,value])=>[id(key),value])):undefined}))],
-      sectionChoices: { ...right.schedule.sectionChoices, ...left.schedule.sectionChoices },
-      simulationPreferences: { ...right.schedule.simulationPreferences, ...left.schedule.simulationPreferences },
+      calendars: [
+        ...new Map(
+          [
+            ...(right.schedule.calendars ?? []),
+            ...(left.schedule.calendars ?? []),
+          ].map((calendar) => [calendar.id, calendar]),
+        ).values(),
+      ],
+      groups: [
+        ...(left.schedule.groups ?? []),
+        ...(right.schedule.groups ?? []).map((g) => ({
+          ...g,
+          id: id(g.id),
+          requirementId: g.requirementId ? id(g.requirementId) : undefined,
+          courseIds: g.courseIds.map(id),
+          selectedCourseId: g.selectedCourseId
+            ? id(g.selectedCourseId)
+            : g.selectedCourseId,
+          credits: g.credits
+            ? Object.fromEntries(
+                Object.entries(g.credits).map(([key, value]) => [
+                  id(key),
+                  value,
+                ]),
+              )
+            : undefined,
+        })),
+      ],
+      sectionChoices: {
+        ...right.schedule.sectionChoices,
+        ...left.schedule.sectionChoices,
+      },
+      simulationPreferences: {
+        ...right.schedule.simulationPreferences,
+        ...left.schedule.simulationPreferences,
+      },
       campuses: { ...right.schedule.campuses, ...left.schedule.campuses },
       terms: [...new Set([...left.schedule.terms, ...right.schedule.terms])],
       placements: [
@@ -92,8 +130,21 @@ export function removeSnapshot(plan: Plan, documentId: string): Plan {
     reviewed: false,
     schedule: {
       ...plan.schedule,
-      groups:plan.schedule.groups?.filter((g)=>!g.requirementId||!removedRequirements.has(g.requirementId)).map((g)=>({...g,courseIds:g.courseIds.filter((id)=>!removedCourses.has(id)),selectedCourseId:g.selectedCourseId&&!removedCourses.has(g.selectedCourseId)?g.selectedCourseId:null})),
-      placements: plan.schedule.placements.filter((p) => !removedCourses.has(p.courseId)),
+      groups: plan.schedule.groups
+        ?.filter(
+          (g) => !g.requirementId || !removedRequirements.has(g.requirementId),
+        )
+        .map((g) => ({
+          ...g,
+          courseIds: g.courseIds.filter((id) => !removedCourses.has(id)),
+          selectedCourseId:
+            g.selectedCourseId && !removedCourses.has(g.selectedCourseId)
+              ? g.selectedCourseId
+              : null,
+        })),
+      placements: plan.schedule.placements.filter(
+        (p) => !removedCourses.has(p.courseId),
+      ),
     },
     documents: plan.documents.filter((d) => d.id !== documentId),
     programs: plan.programs.filter((p) => p.documentId !== documentId),
@@ -263,8 +314,19 @@ export function pruneAllocations(plan: Plan): Plan {
     ),
     schedule: {
       ...plan.schedule,
-      groups:plan.schedule.groups?.filter((g)=>!g.requirementId||requirements.has(g.requirementId)).map((g)=>({...g,courseIds:g.courseIds.filter((id)=>courses.has(id)),selectedCourseId:g.selectedCourseId&&courses.has(g.selectedCourseId)?g.selectedCourseId:null})),
-      placements: plan.schedule.placements.filter((p) => courses.has(p.courseId)),
+      groups: plan.schedule.groups
+        ?.filter((g) => !g.requirementId || requirements.has(g.requirementId))
+        .map((g) => ({
+          ...g,
+          courseIds: g.courseIds.filter((id) => courses.has(id)),
+          selectedCourseId:
+            g.selectedCourseId && courses.has(g.selectedCourseId)
+              ? g.selectedCourseId
+              : null,
+        })),
+      placements: plan.schedule.placements.filter((p) =>
+        courses.has(p.courseId),
+      ),
     },
   };
 }

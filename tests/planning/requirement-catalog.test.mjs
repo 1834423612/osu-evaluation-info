@@ -43,6 +43,32 @@ test("unmapped requirements do not query an unrestricted catalog", async () => {
   );
   assert.equal(result.mapped, false);
 });
+test("unmapped requirements can browse a chosen subject without claiming degree applicability", async () => {
+  let params;
+  const result = await readRequirementCourses(
+    "Specialization electives",
+    { campus: "MNS", term: "1272" },
+    async (url) => {
+      params = new URL(url, "https://local").searchParams;
+      return Response.json({
+        courses: [
+          { id: "cse", subject: "CSE", catalogNumber: "1223" },
+          { id: "bio", subject: "BIOLOGY", catalogNumber: "1113" },
+        ],
+      });
+    },
+    new AbortController().signal,
+    undefined,
+    { subject: "CSE" },
+  );
+  assert.equal(params.get("subject"), "CSE");
+  assert.equal(params.get("campus"), "mns");
+  assert.equal(result.mapped, false);
+  assert.deepEqual(
+    result.courses.map((c) => c.id),
+    ["cse"],
+  );
+});
 test("explicit requirement titles retain base and alternative course numbers", () => {
   assert.deepEqual(
     requirementCodes({ alternatives: [], title: "MATH 1131 or 1151 Calculus" }),

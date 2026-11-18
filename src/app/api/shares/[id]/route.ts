@@ -28,7 +28,7 @@ export async function POST(request: Request, context: Context) {
       input = await readJson(
         request,
         z.object({
-          action: z.enum(["revoke", "rotate", "copy"]),
+          action: z.enum(["revoke", "rotate", "copy", "renew-code"]),
           management: z
             .string()
             .regex(/^[A-Za-z0-9_-]{43}$/)

@@ -5,6 +5,7 @@ import type { Plan } from "@/lib/planning/model";
 import {
   prerequisiteText,
   prerequisiteReferences,
+  matchesPrerequisite,
   creditLabel,
   planningCredits,
 } from "@/lib/planning/course-catalog";
@@ -131,10 +132,8 @@ export function CourseInspector({
           {references.length > 0 && (
             <ul>
               {references.map((c) => {
-                const recorded = boardCourses(plan).filter(
-                  (row) =>
-                    row.course.subject === c.subject &&
-                    row.course.number === c.number,
+                const recorded = boardCourses(plan).filter((row) =>
+                  matchesPrerequisite(c, row.course, prereq ?? ""),
                 );
                 const status = [
                   "completed",
@@ -159,6 +158,17 @@ export function CourseInspector({
                       status={status ?? "remaining"}
                       locale={locale}
                     />
+                    {recorded.some((row) => row.course.number !== c.number) && (
+                      <small>
+                        {recorded
+                          .filter((row) => row.course.number !== c.number)
+                          .map(
+                            (row) =>
+                              `${row.course.subject} ${row.course.number}`,
+                          )
+                          .join(" · ")}
+                      </small>
+                    )}
                   </li>
                 );
               })}

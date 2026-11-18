@@ -67,7 +67,7 @@ export function PlanningWorkspace() {
 function PlanningWorkspaceBody({ account }: { account: string | null }) {
   const { locale } = usePreferences();
   const t = (en: string, zh: string) => text(locale, en, zh);
-  const { plan, setPlan, ready, saved, storageError } =
+  const { plan, setPlan, ready, saved, storageError, persist } =
     usePlanningWorkspace(account);
   const [tab, setTab] = useState<"board" | "map" | "official" | "import">(
     "board",
@@ -497,6 +497,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               plan={plan}
               locale={locale}
               update={update}
+              persist={persist}
               onCatalogTermChange={setCatalogTerm}
               onReview={() => setTab("import")}
             />

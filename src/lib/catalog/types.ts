@@ -34,6 +34,7 @@ export type SectionAvailability = {
 export type AvailabilityState =
   "idle" | "queued" | "loading" | "ready" | "error";
 export type CatalogSection = {
+  holidaySchedule?: string;
   id: string;
   classNumber: string;
   section: string;

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { readRequirementCourses } from "@/lib/planning/requirement-catalog";
+import { requirementSearch } from "@/lib/planning/requirement-search";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import { text, type Locale } from "@/lib/i18n";
 import { usePlanningCatalog } from "./course-catalog";
@@ -21,6 +23,12 @@ export function RequirementChoices({
   inspect?: (code: { subject: string; number: string }) => void;
 }) {
   const context = usePlanningCatalog();
+  const [subject, setSubject] = useState(""),
+    [category, setCategory] = useState("");
+  const [vocabulary, setVocabulary] = useState<
+    { slug: string; items: { value: string; label: string }[] }[]
+  >([]);
+  const mapped = !!requirementSearch(title);
   const anchor = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false),
     [attempt, setAttempt] = useState(0);
@@ -32,10 +40,45 @@ export function RequirementChoices({
     error: boolean;
     mapped: boolean;
   } | null>(null);
-  const key = [title, context.campus, context.term].join("|");
+  const key = [title, context.campus, context.term, subject, category].join(
+    "|",
+  );
   const current = state?.key === key ? state : null;
   const request = useRef<AbortController | null>(null);
   const t = (en: string, zh: string) => text(locale, en, zh);
+  useEffect(() => {
+    if (!visible || mapped) return;
+    const controller = new AbortController();
+    Promise.allSettled([
+      fetchCatalogResource(
+        "/api/catalog/facets?" +
+          new URLSearchParams({
+            term: context.term,
+            campus: context.campus.toLowerCase(),
+          }),
+        { signal: controller.signal },
+      ).then((response) => (response.ok ? response.json() : Promise.reject())),
+      fetch("/api/catalog/subjects?term=" + context.term, {
+        signal: controller.signal,
+      }).then((response) => (response.ok ? response.json() : Promise.reject())),
+    ]).then((results) => {
+      if (controller.signal.aborted) return;
+      const filters = results.flatMap((result) =>
+        result.status === "fulfilled" ? (result.value.filters ?? []) : [],
+      );
+      setVocabulary([
+        ...new Map(
+          filters.map(
+            (filter: {
+              slug: string;
+              items: { value: string; label: string }[];
+            }) => [filter.slug, filter],
+          ),
+        ).values(),
+      ] as typeof vocabulary);
+    });
+    return () => controller.abort();
+  }, [visible, mapped, context]);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
@@ -55,6 +98,8 @@ export function RequirementChoices({
       context,
       fetchCatalogResource,
       controller.signal,
+      undefined,
+      { subject, category },
     )
       .then((data) => {
         if (!controller.signal.aborted)
@@ -79,7 +124,7 @@ export function RequirementChoices({
           });
       });
     return () => controller.abort();
-  }, [visible, key, title, context, attempt]);
+  }, [visible, key, title, context, attempt, subject, category]);
   async function more() {
     if (!current?.cursor || current.loading) return;
     const controller = new AbortController();
@@ -93,6 +138,7 @@ export function RequirementChoices({
         fetchCatalogResource,
         controller.signal,
         current.cursor,
+        { subject, category },
       );
       if (!controller.signal.aborted)
         setState({
@@ -114,6 +160,46 @@ export function RequirementChoices({
   useEffect(() => () => request.current?.abort(), []);
   return (
     <div ref={anchor} className={styles.list}>
+      {!mapped && (
+        <div className={styles.browse}>
+          <p>
+            {t(
+              "Browse the official catalog; confirm applicability against this requirement.",
+              "直接浏览官方目录，课程是否适用以此项要求原文为准。",
+            )}
+          </p>
+          <ChoiceSelect
+            aria-label={t("Course category", "课程类别")}
+            value={category}
+            onValueChange={setCategory}
+          >
+            <option value="">
+              {t("All academic categories", "全部学业类别")}
+            </option>
+            {vocabulary
+              .find((filter) => filter.slug === "gen-categories")
+              ?.items.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+          </ChoiceSelect>
+          <ChoiceSelect
+            aria-label={t("Subject", "科目")}
+            value={subject}
+            onValueChange={setSubject}
+          >
+            <option value="">{t("Choose a subject", "选择科目")}</option>
+            {vocabulary
+              .find((filter) => filter.slug === "subject")
+              ?.items.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.value} · {item.label}
+                </option>
+              ))}
+          </ChoiceSelect>
+        </div>
+      )}
       {current?.courses.map((c) => {
         const code = { subject: c.subject, number: c.catalogNumber },
           id = `${c.subject} ${c.catalogNumber}`;
@@ -124,7 +210,9 @@ export function RequirementChoices({
               disabled={!inspect}
               onClick={() => inspect?.(code)}
             >
-              <b>{id}</b>
+              <b>
+                {id} <span aria-hidden="true">↗</span>
+              </b>
               <span>{c.title}</span>
             </button>
             <small>
@@ -165,8 +253,8 @@ export function RequirementChoices({
                 "此校区和目录学期暂无符合该要求的课程。",
               )
             : t(
-                "This report does not list course options. An Expanded Audit can provide the detailed options.",
-                "这份报告未列出具体选项，Expanded Audit 可补充详细课程范围。",
+                "Choose a catalog category or subject above.",
+                "选择上方课程类别或科目，即可列出课程。",
               )}
         </p>
       )}

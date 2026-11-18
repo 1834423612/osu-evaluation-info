@@ -16,6 +16,9 @@ import {
 } from "@/lib/planning/timetable";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./semester-simulation.module.css";
+import { SessionTimeline } from "@/components/calendar/session-timeline";
+import { sessionWeeks } from "@/lib/calendar/session-weeks";
+import { isNoClassDate, type AcademicDay } from "@/lib/calendar/academic";
 
 const timeLabel = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -30,14 +33,19 @@ export function SimulationTimetable({
   courses,
   conflicted,
   locale,
+  academic = [],
 }: {
   choices: SimulationChoice[];
   courses: CatalogCourse[];
   conflicted: Set<string>;
   locale: Locale;
+  academic?: AcademicDay[];
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState("");
+  const weeks = sessionWeeks(choices).weeks;
+  const week = weeks.includes(selectedWeek) ? selectedWeek : (weeks[0] ?? "");
   const detail = useRef<HTMLElement>(null);
   useEffect(() => {
     if (selectedId)
@@ -54,11 +62,25 @@ export function SimulationTimetable({
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const meetings = timetableMeetings(choices);
   const events = meetings.flatMap((meeting) =>
-    meeting.slots.map((slot) => ({
-      ...meeting,
-      ...slot,
-      id: `${meeting.id}|${slot.day}`,
-    })),
+    meeting.slots
+      .filter((slot) => {
+        if (!week) return true;
+        const date = new Date(
+          Date.parse(week + "T12:00:00Z") + slot.day * 86400000,
+        )
+          .toISOString()
+          .slice(0, 10);
+        return (
+          (!meeting.startDate || date >= meeting.startDate) &&
+          (!meeting.endDate || date <= meeting.endDate) &&
+          !isNoClassDate(date, academic)
+        );
+      })
+      .map((slot) => ({
+        ...meeting,
+        ...slot,
+        id: `${meeting.id}|${slot.day}`,
+      })),
   );
   const unscheduled = meetings.filter((meeting) => !meeting.slots.length);
   const selected = events.find((event) => event.id === selectedId);
@@ -79,6 +101,29 @@ export function SimulationTimetable({
 
   return (
     <>
+      <SessionTimeline
+        choices={choices}
+        academic={academic}
+        selected={week}
+        onSelect={setSelectedWeek}
+        locale={locale}
+      />
+      {week &&
+        academic
+          .filter(
+            (day) =>
+              day.noClasses &&
+              day.date <=
+                new Date(Date.parse(week) + 6 * 86400000)
+                  .toISOString()
+                  .slice(0, 10) &&
+              day.end >= week,
+          )
+          .map((day) => (
+            <p className={styles.warning} key={day.id}>
+              {day.title} · {day.date} — {day.end}
+            </p>
+          ))}
       <div className={styles.timetableLegend}>
         <span>
           <MapPin size={12} />
@@ -186,6 +231,9 @@ export function SimulationTimetable({
             <small>
               {t("Section", "班次")} {selected.section} · {selected.component}
             </small>
+            <small title={selected.sessionDates}>
+              {selected.session} · {selected.sessionDates}
+            </small>
           </div>
           <p>{courseTitle(selected.key)}</p>
           <div>
@@ -217,12 +265,12 @@ export function SimulationTimetable({
         >
           <h4>
             <CircleHelp size={14} />
-            {t("Time to be confirmed", "时间待定")}
+            {t("Flexible study & unscheduled classes", "自主学习与待定时间")}
           </h4>
           <p>
             {t(
-              "These meetings are excluded from time-conflict checks. Online delivery alone does not mean self-paced study.",
-              "以下授课时段尚未公布，无法核对时间冲突。线上课程也可能需要定时上课。",
+              "Self-paced distance learning has no fixed meeting time. Other unscheduled classes need a time check.",
+              "自主学习的远程课程无需固定上课时间，其他时间未公布的课程仍需核对。",
             )}
           </p>
           {unscheduled.map((meeting) => {
@@ -233,7 +281,9 @@ export function SimulationTimetable({
                   {meeting.key}
                   <small>
                     {t("Section", "班次")} {meeting.section} ·{" "}
-                    {meeting.component}
+                    <span title={meeting.sessionDates}>
+                      {meeting.component} · {meeting.session}
+                    </span>
                   </small>
                 </strong>
                 <span
@@ -241,7 +291,9 @@ export function SimulationTimetable({
                   data-delivery={meeting.delivery}
                 >
                   <Icon size={12} />
-                  {deliveryLabel(meeting.delivery)}
+                  {meeting.selfPaced
+                    ? t("Self-paced online", "线上自主学习")
+                    : t("Time TBA", "时间待公布")}
                 </span>
                 {meeting.delivery === "in-person" && (
                   <small>

@@ -3,6 +3,22 @@ import { authTablePrefix, authSchema } from "../auth/config.ts";
 import { userDataSchema, userDataTable as table } from "./namespace.ts";
 const rules = [
   [
+    "development_grant",
+    `expires_at<now() OR revoked_at IS NOT NULL OR account_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
+  ],
+  [
+    "development_link",
+    `account_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
+  ],
+  [
+    "calendar",
+    `owner_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
+  ],
+  [
+    "calendar_link",
+    "expires_at<now()-interval '30 days' OR revoked_at<now()-interval '30 days'",
+  ],
+  [
     "planning_backup",
     `account_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
   ],

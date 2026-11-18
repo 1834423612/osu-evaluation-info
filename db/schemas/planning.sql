@@ -76,3 +76,9 @@ CREATE TABLE IF NOT EXISTS osu_planning.catalog_release (
 );
 CREATE INDEX IF NOT EXISTS catalog_release_published_idx
   ON osu_planning.catalog_release (published_at DESC, id);
+CREATE TABLE IF NOT EXISTS osu_planning.academic_calendar (
+  id text PRIMARY KEY,
+  data jsonb NOT NULL,
+  source_url text NOT NULL,
+  fetched_at timestamptz NOT NULL DEFAULT now()
+);

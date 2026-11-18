@@ -92,8 +92,12 @@ export function simulationDiagnostics(
     if (
       choice.sections.some(
         (s) =>
-          !s.meetings.length ||
-          s.meetings.some((m) => !meetingSlots([m]).length),
+          (!s.meetings.length ||
+            s.meetings.some((m) => !meetingSlots([m]).length)) &&
+          !(
+            /^(?:Distance Learning|DL)$/i.test(s.instructionMode) &&
+            !s.meetings.some((m) => meetingSlots([m]).length)
+          ),
       )
     )
       unknown.push(choice.key);

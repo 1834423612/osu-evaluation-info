@@ -29,6 +29,7 @@ import {
   Sparkles,
   X,
   ArrowRight,
+  Info,
 } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
 import {
@@ -48,6 +49,7 @@ import {
   removeEmptySemester,
 } from "@/lib/planning/workspace";
 import { placeCourse, termOrder } from "@/lib/planning/schedule";
+import { semesterCatalogCode } from "@/lib/planning/simulation";
 import { applyRecommendationBundle } from "@/lib/planning/recommendation";
 import { browserUuid } from "@/lib/uuid";
 import { text, type Locale } from "@/lib/i18n";
@@ -114,6 +116,33 @@ function CourseCard({
     if (lookup.detail) loaded(key, lookup.detail);
   }, [lookup.detail, key, loaded]);
   const credits = planningCredits(c, lookup.detail);
+  const sessionSections =
+    lookup.detail?.course.termCode === semesterCatalogCode(row.term)
+      ? lookup.detail.course.sections.filter(
+          (section) =>
+            !c.section ||
+            section.section === c.section ||
+            section.classNumber === c.section,
+        )
+      : [];
+  const sessionNames = [
+    ...new Set(
+      sessionSections.map((section) => section.session).filter(Boolean),
+    ),
+  ];
+  const sessionLabel = c.session
+    ? `Session ${c.session}`
+    : sessionNames.length === 1
+      ? sessionNames[0]
+      : sessionNames.length > 1
+        ? t("Multiple sessions", "多个可选 Session")
+        : null;
+  const sessionDates = sessionSections
+    .map(
+      (section) =>
+        `${section.session}: ${section.meetings.map((meeting) => [meeting.startDate?.slice(0, 10), meeting.endDate?.slice(0, 10)].filter(Boolean).join(" — ")).join(" · ")}`,
+    )
+    .join("\n");
   const locked =
     ["withdrawn", "dropped", "failed"].includes(c.status) ||
     row.protectedRecord ||
@@ -155,6 +184,7 @@ function CourseCard({
                 : (c.title ?? t("Requirement placeholder", "学业要求占位符"))
               : `${c.subject} ${c.number}`}
           </b>
+          {c.kind !== "placeholder" && <Info size={12} aria-hidden="true" />}
         </button>
         <span
           className={styles.creditPill}
@@ -190,10 +220,10 @@ function CourseCard({
           <ArrowRight size={13} />
         </button>
       )}
-      {(c.section || c.session) && (
-        <small className={styles.courseTitle}>
+      {(c.section || sessionLabel) && (
+        <small className={styles.courseTitle} title={sessionDates}>
           {c.section && `${t("Section", "班次")} ${c.section}`}
-          {c.session && ` · Session ${c.session}`}
+          {sessionLabel && `${c.section ? " · " : ""}${sessionLabel}`}
         </small>
       )}
       <div className={styles.cardFooter}>
@@ -254,12 +284,14 @@ export function SemesterBoard({
   plan,
   locale,
   update,
+  persist,
   onReview,
   onCatalogTermChange,
 }: {
   plan: Plan;
   locale: Locale;
   update: (fn: (p: Plan) => Plan) => void;
+  persist: () => Promise<boolean>;
   onReview: () => void;
   onCatalogTermChange: (value: string) => void;
 }) {
@@ -334,7 +366,6 @@ export function SemesterBoard({
   );
   const inspect = (code: { subject: string; number: string }) => {
     setSelected(code);
-    setDrawer(true);
   };
   async function add(code: { subject: string; number: string }) {
     try {
@@ -1105,6 +1136,7 @@ export function SemesterBoard({
                   term={simulationTerm}
                   locale={locale}
                   update={update}
+                  persist={persist}
                 />
               )}
             </WorkspaceDialog>

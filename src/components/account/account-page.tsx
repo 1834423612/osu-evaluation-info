@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { SyncPanel } from "@/components/sync/sync-panel";
+import { DevelopmentAccount } from "./development-account";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { Button } from "@/components/ui/button";
@@ -368,6 +369,10 @@ function AccountWorkspace() {
                 )}
                 <div id="sync" className={layout.section}>
                   <SyncPanel accountId={session.user.id} locale={locale} />
+                  <DevelopmentAccount
+                    account={session.user.id}
+                    locale={locale}
+                  />
                 </div>
                 <section id="security" className={layout.section}>
                   <h2>

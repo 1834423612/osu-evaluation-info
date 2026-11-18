@@ -10,6 +10,7 @@ import { Share2, Copy } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { EmptyResult } from "@/components/brand/empty-result";
+import { MeetingStrip } from "@/components/catalog/meeting-strip";
 import { Button } from "@/components/ui/button";
 import { CollectionImport } from "./collection-import";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -39,7 +40,7 @@ export function SharedPage({ id }: { id?: string }) {
     { locale } = preferences;
   const [isPublic, setIsPublic] = useState(false);
   const [snapshot, setSnapshot] = useState<SavedSnapshot | null>(null),
-    [expiry, setExpiry] = useState(""),
+    [expiry, setExpiry] = useState<string | null>(""),
     [loading, setLoading] = useState(!!id),
     [error, setError] = useState(false),
     [code, setCode] = useState(""),
@@ -212,9 +213,65 @@ export function SharedPage({ id }: { id?: string }) {
             <p className={styles.muted}>
               {text(locale, "Expires", "到期")} · {sharingDate(expiry, locale)}
             </p>
+            {snapshot.author?.nickname && (
+              <p>
+                {text(locale, "Shared by", "分享者")} ·{" "}
+                {snapshot.author.nickname}
+              </p>
+            )}
             <CollectionImport
               snapshot={snapshot}
               locale={locale}
+              renderItem={(item) =>
+                item.kind === "course" ? (
+                  <SharedCourseCard
+                    course={item.payload}
+                    locale={locale}
+                    saved={preferences.saved.some(
+                      (course) => course.id === item.payload.id,
+                    )}
+                    onSave={preferences.toggleSaved}
+                    refreshPreview
+                    enrollmentWatch={preferences.enrollmentWatch}
+                    enrollmentWatchInterval={
+                      preferences.enrollmentWatchInterval
+                    }
+                    onEnrollmentWatchChange={preferences.setEnrollmentWatch}
+                    onEnrollmentWatchIntervalChange={
+                      preferences.setEnrollmentWatchInterval
+                    }
+                  />
+                ) : item.kind === "section" ? (
+                  <div>
+                    <p>
+                      {item.payload.section.component} ·{" "}
+                      {item.payload.section.section} ·{" "}
+                      {item.payload.section.session}
+                    </p>
+                    {item.payload.section.meetings.map((meeting, index) => (
+                      <MeetingStrip
+                        key={index}
+                        meeting={meeting}
+                        instructionMode={item.payload.section.instructionMode}
+                        locale={locale}
+                      />
+                    ))}
+                    <p>
+                      {item.payload.section.instructors
+                        .map((teacher) => teacher.name)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                ) : item.kind === "instructor" ? (
+                  <p>
+                    {item.payload.courses
+                      .map((course) => course.label)
+                      .join(" · ")}
+                  </p>
+                ) : (
+                  <p>{item.payload.course.title}</p>
+                )
+              }
               onOpen={openItem}
               onImported={(keys) => {
                 if (!keys.length) return;

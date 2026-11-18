@@ -103,6 +103,34 @@ test("capability fragments are captured before collection and removed from the b
   assert.ok(!replaced.includes("#"));
 });
 
+test("calendar capability is stripped before replay startup and retained for refresh", () => {
+  const id = "11111111-1111-4111-8111-111111111111",
+    token = "c".repeat(43),
+    stored = new Map();
+  const location = {
+    pathname: "/calendar/shared",
+    search: "?id=" + id,
+    hash: "#k=" + token,
+  };
+  const window = {};
+  let replaced = "";
+  vm.runInNewContext("(" + captureLinkCapability.toString() + ")()", {
+    window,
+    location,
+    URLSearchParams,
+    sessionStorage: { setItem: (key, value) => stored.set(key, value) },
+    history: {
+      state: null,
+      replaceState: (_state, _title, url) => {
+        replaced = url;
+      },
+    },
+  });
+  assert.equal(replaced, "/calendar/shared?id=" + id);
+  assert.equal(window.__WAHO_LINK_CAPABILITY__.family, "calendar");
+  assert.equal(stored.get("course-atlas:capability:calendar:" + id), token);
+});
+
 test("startup events wait for one visit token, remain bounded, and honor opt-outs while waiting", async () => {
   let cache,
     setting = null;

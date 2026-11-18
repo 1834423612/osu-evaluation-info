@@ -95,7 +95,7 @@
   padding: 0;
   margin-left: 12px;
   padding-left: 24px;
-  border-left: 1px solid var(--line);
+  border-left: 2px solid color-mix(in srgb, var(--primary) 20%, var(--line));
 }
 .tree li {
   position: relative;
@@ -128,7 +128,8 @@
   gap: 10px;
   cursor: pointer;
   padding: 9px 12px;
-  border: 1px solid var(--line);
+  border: 0;
+  border-left: 3px solid color-mix(in srgb, var(--primary) 30%, var(--line));
   border-radius: 5px;
   background: var(--subtle-surface);
   min-height: 46px;
@@ -155,7 +156,7 @@
 }
 .nodeTitle > span {
   font-size: 10px;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 4px;
   padding: 2px 6px;
   background: var(--surface);
@@ -181,13 +182,16 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--line);
+  border: 0;
+  border-bottom: 1px solid var(--line);
   background: var(--surface);
   border-radius: 5px;
   padding: 8px 12px;
   min-width: 0;
 }
 .root .courseRow button:first-of-type {
+  border: 0;
+  background: transparent;
   flex: 1;
   min-width: 0;
   justify-content: start;

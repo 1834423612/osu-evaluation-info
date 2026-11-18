@@ -118,6 +118,24 @@ export function prerequisiteText(description: string) {
   return start < 0 ? null : description.slice(start).trim();
 }
 
+/** Only an explicit numeric "or above/higher" range permits a higher same-subject record. */
+export function matchesPrerequisite(
+  reference: { subject: string; number: string },
+  course: Pick<PlanCourse, "subject" | "number">,
+  wording: string,
+) {
+  if (course.subject !== reference.subject || !course.number) return false;
+  if (course.number === reference.number) return true;
+  const number = reference.number.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return (
+    new RegExp(`\\b${number}\\s+or\\s+(?:above|higher)\\b`, "i").test(
+      wording,
+    ) &&
+    Number.isFinite(Number(course.number)) &&
+    Number(course.number) >= Number(reference.number)
+  );
+}
+
 /** Navigation references only. Preserve the original text for logical conditions. */
 export function prerequisiteReferences(
   text: string,
@@ -125,6 +143,7 @@ export function prerequisiteReferences(
   subjects: { code: string; title: string }[],
 ) {
   const aliases = new Map<string, string>();
+  aliases.set(ownSubject.toLowerCase(), ownSubject);
   for (const subject of subjects)
     for (const name of [subject.code, subject.title])
       aliases.set(name.toLowerCase(), subject.code);

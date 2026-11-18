@@ -7,6 +7,7 @@ import {
   requirementCoverage,
   createAlternativeGroup,
   moveCourseGroup,
+  editAlternativeGroup,
 } from "../../src/lib/planning/groups.ts";
 import {
   addPlanningCourse,
@@ -16,6 +17,34 @@ import { replaceImportedReports } from "../../src/lib/planning/reimport.ts";
 import { placeCourse, scheduledTerm } from "../../src/lib/planning/schedule.ts";
 let ordinal = 0;
 const id = () => "id-" + ++ordinal;
+test("alternative membership can change without deleting courses or losing placement", () => {
+  let plan = emptyPlan();
+  for (const number of ["1100", "1200", "1300"])
+    plan = addPlanningCourse(
+      plan,
+      { subject: "ART", number },
+      "Spring2027",
+      id,
+    );
+  const ids = plan.semesters.flatMap((semester) =>
+    semester.courses.map((course) => course.id),
+  );
+  plan = createAlternativeGroup(plan, ids.slice(0, 2), "Spring2027", id);
+  const group = plan.schedule.groups[0];
+  plan = editAlternativeGroup(plan, group.id, ids[2], true);
+  assert.equal(plan.schedule.groups[0].courseIds.length, 3);
+  plan.schedule.groups[0].selectedCourseId = ids[0];
+  plan = editAlternativeGroup(plan, group.id, ids[0], false);
+  assert.equal(
+    plan.semesters.flatMap((semester) => semester.courses).length,
+    3,
+  );
+  assert.equal(plan.schedule.groups[0].selectedCourseId, null);
+  assert.equal(
+    boardCourses(plan).find((row) => row.course.id === ids[0]).term,
+    "Spring2027",
+  );
+});
 function fixture() {
   const p = emptyPlan();
   p.documents = [

@@ -1,7 +1,8 @@
 "use client";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Plus, Sparkles } from "lucide-react";
+import { ArrowUpRight, Plus, Sparkles, X } from "lucide-react";
+import { courseEligibility } from "@/lib/planning/eligibility";
 import { courseSearchHref, type Plan } from "@/lib/planning/model";
 import {
   recommendCourses,
@@ -73,16 +74,53 @@ export function NextTerm({
   const catalogScope = catalog.campus + "|" + catalog.term;
   const [catalogState, setCatalogState] = useState<{
     scope: string;
-    credits: Record<string, { min: number; max: number; title?: string }>;
+    credits: Record<
+      string,
+      { min: number; max: number; title?: string; description?: string }
+    >;
   }>({ scope: "", credits: {} });
   const [maxCredits, setMaxCredits] = useState(15);
   const [maxQuantitative, setMaxQuantitative] = useState(2);
   const [prefixes, setPrefixes] = useState("MATH STAT PHYSICS CHEM CSE");
+  const [preferredSubjects, setPreferredSubjects] = useState<string[]>([]);
+  const [ratingPriority, setRatingPriority] = useState(true);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [detailsChecked, setDetailsChecked] = useState("");
+  const [subjects, setSubjects] = useState<{ code: string; title: string }[]>(
+    [],
+  );
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/catalog/subjects?term=${catalog.term}`, {
+      signal: controller.signal,
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (!controller.signal.aborted)
+          setSubjects(
+            (
+              data.filters?.find((f: { slug: string }) => f.slug === "subject")
+                ?.items ?? []
+            ).map((item: { value: string; label: string }) => ({
+              code: item.value,
+              title: item.label,
+            })),
+          );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [catalog.term]);
   const [samples, setSamples] = useState<PublicSample[]>([]);
   const [sampleId, setSampleId] = useState("");
   const [sampleYear, setSampleYear] = useState(1);
-  const [campus, setCampus] = useState("COL");
+  const [campus, setCampus] = useState(catalog.campus);
   const [ratings, setRatings] = useState<Record<string, Rating>>({});
+  useEffect(() => {
+    queueMicrotask(() => {
+      setCampus(catalog.campus);
+      setRatings({});
+    });
+  }, [catalog.campus]);
   const [visibleCount, setVisibleCount] = useState(12);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -160,27 +198,48 @@ export function NextTerm({
     });
     return () => controller.abort();
   }, [categoriesKey, candidateScope, catalog]);
+  const recommendationOptions = {
+    preferredSubjects,
+    ratingPriority,
+    programId: program?.id ?? "",
+    currentTerm,
+    targetTerm,
+    maxCredits,
+    maxQuantitative,
+    quantitativeSubjects: prefixes.split(/[ ,]+/),
+    sample: samples.find((s) => s.id === sampleId),
+    sampleYear,
+    ratings,
+    requirementCandidates:
+      categoryState.scope === candidateScope ? categoryState.rules : {},
+    catalogCredits:
+      catalogState.scope === catalogScope ? catalogState.credits : {},
+  };
+  let rawResult: ReturnType<typeof recommendCourses> | null = null;
   let result: ReturnType<typeof recommendCourses> | null = null;
   try {
+    rawResult = recommendCourses(plan, recommendationOptions);
     result = recommendCourses(plan, {
-      programId: program?.id ?? "",
-      currentTerm,
-      targetTerm,
-      maxCredits,
-      maxQuantitative,
-      quantitativeSubjects: prefixes.split(/[ ,]+/),
-      sample: samples.find((s) => s.id === sampleId),
-      sampleYear,
-      ratings,
-      requirementCandidates:
-        categoryState.scope === candidateScope ? categoryState.rules : {},
-      catalogCredits:
-        catalogState.scope === catalogScope ? catalogState.credits : {},
+      ...recommendationOptions,
+      eligibility: Object.fromEntries(
+        rawResult.candidates.map((c) => [
+          c.key,
+          courseEligibility(
+            plan,
+            targetTerm,
+            catalogState.scope === catalogScope
+              ? catalogState.credits[c.key]?.description
+              : undefined,
+            c.subject,
+            subjects,
+          ),
+        ]),
+      ),
     });
   } catch {}
   const candidateCodes = [
     ...new Set([
-      ...(result?.candidates
+      ...(rawResult?.candidates
         .slice(0, 60)
         .map((c) => c.subject + " " + c.number) ?? []),
       ...boardCourses(plan)
@@ -211,23 +270,41 @@ export function NextTerm({
           },
           controller.signal,
         );
+        if (!controller.signal.aborted)
+          setCatalogState((previous) => ({
+            scope: catalogScope,
+            credits: {
+              ...(previous.scope === catalogScope ? previous.credits : {}),
+              [code]: {
+                min: detail.course.creditsMin,
+                max: detail.course.creditsMax,
+                title: detail.course.title,
+                description: detail.course.description,
+              },
+            },
+          }));
         return [
           code,
           {
             min: detail.course.creditsMin,
             max: detail.course.creditsMax,
             title: detail.course.title,
+            description: detail.course.description,
           },
         ] as const;
       }),
     ).then((results) => {
       if (controller.signal.aborted) return;
-      setCatalogState({
+      setDetailsChecked(catalogScope + "|" + candidateCodes);
+      setCatalogState((previous) => ({
         scope: catalogScope,
-        credits: Object.fromEntries(
-          results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])),
-        ),
-      });
+        credits: {
+          ...(previous.scope === catalogScope ? previous.credits : {}),
+          ...Object.fromEntries(
+            results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])),
+          ),
+        },
+      }));
     });
     return () => controller.abort();
   }, [candidateCodes, catalog, catalogScope]);
@@ -288,6 +365,21 @@ export function NextTerm({
       if (!controller.signal.aborted) setBusy(false);
     }
   }
+  const ratingCodes =
+    result?.candidates
+      .slice(0, 24)
+      .map((c) => c.key)
+      .sort()
+      .join(",") ?? "";
+  const ratedScope = useRef(new Set<string>());
+  useEffect(() => {
+    const key = campus + "|" + ratingCodes;
+    if (!ratingCodes || ratedScope.current.has(key)) return;
+    ratedScope.current.add(key);
+    void lookupRatings();
+    // Stable identifier set controls automatic score refresh, not ranking order.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campus, ratingCodes]);
   return (
     <section
       className={styles.root}
@@ -346,123 +438,243 @@ export function NextTerm({
             </button>
           </p>
         )}
-      <details className={styles.preferences}>
-        <summary>
-          {t("Semester, workload and ratings", "调整学期、负担与评分")}
-        </summary>
-        <div className={styles.controls}>
-          <label>
-            {t("Current semester", "当前学期")}
-            <input
-              value={currentTerm}
-              onChange={(e) => setCurrentTerm(e.target.value)}
-              placeholder="Autumn2026"
-            />
-          </label>
-          <label>
-            {t("Target semester", "目标学期")}
-            <input
-              value={targetTerm}
-              onChange={(e) => setTargetTerm(e.target.value)}
-              placeholder="Spring2027"
-            />
-          </label>
-          <label>
-            {t("Credit ceiling", "学分上限")}
-            <input
-              type="number"
-              min="1"
-              max="30"
-              value={maxCredits}
-              onChange={(e) => setMaxCredits(Number(e.target.value))}
-            />
-          </label>
-          <label>
-            {t("Official sample (optional)", "官方样表（可选）")}
-            <ChoiceSelect
-              value={sampleId}
-              onValueChange={(value) => setSampleId(value)}
-            >
-              <option value="">{t("No example selected", "未选择样表")}</option>
-              {samples.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label ?? s.program}
-                </option>
-              ))}
-            </ChoiceSelect>
-          </label>
-          <label>
-            {t("Sample year", "样表年级")}
-            <ChoiceSelect
-              value={sampleYear}
-              onValueChange={(value) => setSampleYear(Number(value))}
-            >
-              {[1, 2, 3, 4].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </ChoiceSelect>
-          </label>
-          <label>
-            {t("Limit these prefixes", "限制这些课程前缀")}
-            <input
-              value={prefixes}
-              maxLength={150}
-              onChange={(e) => setPrefixes(e.target.value.toUpperCase())}
-            />
-          </label>
-          <label>
-            {t("Maximum courses with those prefixes", "这些前缀的课程数量上限")}
-            <input
-              type="number"
-              min="0"
-              max="8"
-              value={maxQuantitative}
-              onChange={(e) => setMaxQuantitative(Number(e.target.value))}
-            />
-          </label>
-        </div>
-        <div className={styles.notice}>
-          {t(
-            "Draft suggestions require prerequisite, session, seat and meeting-time checks. Prefix limits reflect your preference; evaluations do not measure difficulty. Unknown credits cannot enter the automatic combination.",
-            "候选组合仍需核对先修、session、余位和上课时间。前缀限制由你设置；课程评价不等于难度。未知学分课程不进入自动组合。",
-          )}
-        </div>
-        <div className={styles.ratingBar}>
-          <label>
-            {t("Evaluation campus", "评价校区")}
-            <ChoiceSelect
-              value={campus}
-              onValueChange={(value) => {
-                request.current?.abort();
-                setBusy(false);
-                setCampus(value);
-                setRatings({});
-                setMessage("");
-              }}
-            >
-              {["COL", "LMA", "MNS", "MRN", "NWK", "WST"].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </ChoiceSelect>
-          </label>
-          <button
-            disabled={busy || !result?.candidates.length}
-            onClick={() => void lookupRatings()}
+      <div className={styles.controls}>
+        <label>
+          {t("Preferred subjects", "偏好科目")}
+          <span className={styles.prefixes}>
+            {preferredSubjects.map((subject) => (
+              <button
+                type="button"
+                key={subject}
+                onClick={() =>
+                  setPreferredSubjects(
+                    preferredSubjects.filter((item) => item !== subject),
+                  )
+                }
+              >
+                {subject}
+                <X size={12} />
+              </button>
+            ))}
+          </span>
+          <ChoiceSelect
+            value=""
+            aria-label={t("Add preferred subject", "添加偏好科目")}
+            onValueChange={(value) => {
+              if (value)
+                setPreferredSubjects([
+                  ...new Set([...preferredSubjects, value]),
+                ]);
+            }}
           >
-            {busy
-              ? t("Loading…", "加载中…")
-              : t("Load ratings for top 24", "查询前 24 门的评分")}
-          </button>
-          <p>
-            {t(
-              "Sends only those course codes and campus to this site's evaluation service.",
-              "仅向本站评价服务发送这些课程代码和校区。",
-            )}
-          </p>
-        </div>
-      </details>
+            <option value="">
+              {t("Choose subjects…", "选择感兴趣的科目…")}
+            </option>
+            {subjects
+              .filter((subject) => !preferredSubjects.includes(subject.code))
+              .map((subject) => (
+                <option key={subject.code} value={subject.code}>
+                  {subject.code} · {subject.title}
+                </option>
+              ))}
+          </ChoiceSelect>
+        </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={ratingPriority}
+          onClick={() => setRatingPriority(!ratingPriority)}
+        >
+          {ratingPriority ? "✓" : "+"}{" "}
+          {t("Prioritize highly rated courses", "优先推荐高评分课程")}
+        </button>
+      </div>
+      {!result?.candidates.length && !!rawResult?.candidates.length && (
+        <p role="status">
+          {detailsChecked !== catalogScope + "|" + candidateCodes
+            ? t(
+                "Checking course details and prerequisite evidence. Courses with unresolved eligibility stay out of the automatic combination.",
+                "正在核对课程详情与先修证据。条件尚未明确的课程暂不加入自动组合。",
+              )
+            : t(
+                "No courses have confirmed prerequisite evidence for this semester. Check the requirements or change your preferences.",
+                "当前没有满足本学期先修证据的候选课程。请核对要求或调整偏好。",
+              )}
+        </p>
+      )}
+      <section className={styles.preferences}>
+        <button
+          type="button"
+          aria-expanded={preferencesOpen}
+          onClick={() => setPreferencesOpen(!preferencesOpen)}
+        >
+          {t("Semester, workload and ratings", "调整学期、负担与评分")}
+        </button>
+        {preferencesOpen && (
+          <>
+            <div className={styles.controls}>
+              <label>
+                {t("Current semester", "当前学期")}
+                <input
+                  value={currentTerm}
+                  onChange={(e) => setCurrentTerm(e.target.value)}
+                  placeholder="Autumn2026"
+                />
+              </label>
+              <label>
+                {t("Target semester", "目标学期")}
+                <input
+                  value={targetTerm}
+                  onChange={(e) => setTargetTerm(e.target.value)}
+                  placeholder="Spring2027"
+                />
+              </label>
+              <label>
+                {t("Credit ceiling", "学分上限")}
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={maxCredits}
+                  onChange={(e) => setMaxCredits(Number(e.target.value))}
+                />
+              </label>
+              <label>
+                {t("Official sample (optional)", "官方样表（可选）")}
+                <ChoiceSelect
+                  value={sampleId}
+                  onValueChange={(value) => setSampleId(value)}
+                >
+                  <option value="">
+                    {t("No example selected", "未选择样表")}
+                  </option>
+                  {samples.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label ?? s.program}
+                    </option>
+                  ))}
+                </ChoiceSelect>
+              </label>
+              <label>
+                {t("Sample year", "样表年级")}
+                <ChoiceSelect
+                  value={sampleYear}
+                  onValueChange={(value) => setSampleYear(Number(value))}
+                >
+                  {[1, 2, 3, 4].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </ChoiceSelect>
+              </label>
+              <label>
+                {t("Limit these prefixes", "限制这些课程前缀")}
+                <span className={styles.prefixes}>
+                  {prefixes
+                    .split(" ")
+                    .filter(Boolean)
+                    .map((prefix) => (
+                      <button
+                        key={prefix}
+                        type="button"
+                        onClick={() =>
+                          setPrefixes(
+                            prefixes
+                              .split(" ")
+                              .filter((p) => p !== prefix)
+                              .join(" "),
+                          )
+                        }
+                      >
+                        {prefix}
+                        <X size={12} />
+                      </button>
+                    ))}
+                </span>
+                <ChoiceSelect
+                  aria-label={t("Add subject prefix", "添加科目前缀")}
+                  value=""
+                  onValueChange={(v) => {
+                    if (v)
+                      setPrefixes(
+                        [
+                          ...new Set([
+                            ...prefixes.split(" ").filter(Boolean),
+                            v,
+                          ]),
+                        ].join(" "),
+                      );
+                  }}
+                >
+                  <option value="">
+                    {t("Choose a subject…", "选择科目…")}
+                  </option>
+                  {subjects
+                    .filter((s) => !prefixes.split(" ").includes(s.code))
+                    .map((s) => (
+                      <option key={s.code} value={s.code}>
+                        {s.code} · {s.title}
+                      </option>
+                    ))}
+                </ChoiceSelect>
+              </label>
+              <label>
+                {t(
+                  "Maximum courses with those prefixes",
+                  "这些前缀的课程数量上限",
+                )}
+                <input
+                  type="number"
+                  min="0"
+                  max="8"
+                  value={maxQuantitative}
+                  onChange={(e) => setMaxQuantitative(Number(e.target.value))}
+                />
+              </label>
+            </div>
+            <div className={styles.notice}>
+              {t(
+                "Draft suggestions require prerequisite, session, seat and meeting-time checks. Prefix limits reflect your preference; evaluations do not measure difficulty. Unknown credits cannot enter the automatic combination.",
+                "候选组合仍需核对先修、session、余位和上课时间。前缀限制由你设置；课程评价不等于难度。未知学分课程不进入自动组合。",
+              )}
+            </div>
+            <div className={styles.ratingBar}>
+              <label>
+                {t("Evaluation campus", "评价校区")}
+                <ChoiceSelect
+                  value={campus}
+                  onValueChange={(value) => {
+                    request.current?.abort();
+                    setBusy(false);
+                    setCampus(value);
+                    setRatings({});
+                    setMessage("");
+                  }}
+                >
+                  {["COL", "LMA", "MNS", "MRN", "NWK", "WST"].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </ChoiceSelect>
+              </label>
+              <button
+                disabled={busy || !result?.candidates.length}
+                onClick={() => void lookupRatings()}
+              >
+                {busy
+                  ? t("Loading…", "加载中…")
+                  : t("Load ratings for top 24", "查询前 24 门的评分")}
+              </button>
+              <p>
+                {t(
+                  "Sends only those course codes and campus to this site's evaluation service.",
+                  "仅向本站评价服务发送这些课程代码和校区。",
+                )}
+              </p>
+            </div>
+          </>
+        )}
+      </section>
       {message && <p role="status">{message}</p>}
       {!result ? (
         <p role="alert">
@@ -578,6 +790,14 @@ export function NextTerm({
                       )}
                     </li>
                   )}
+                  {c.eligibility === "conditional" && (
+                    <li>
+                      {t(
+                        "Requires successful completion of your current prerequisite",
+                        "需先通过当前正在修读的先修课",
+                      )}
+                    </li>
+                  )}
                   {c.conflict && (
                     <li>
                       {t(
@@ -632,8 +852,8 @@ export function NextTerm({
         <summary>{t("Scoring and evidence", "排序与依据")}</summary>
         <p>
           {t(
-            "Reviewed requirement option +45; unreviewed option +15; matching sample semester +25, another sample semester +8; existing planned course +10; evaluation 0–15 using (score × responses + 3.6 × 20) / (responses + 20); conflicting observations −20. Missing ratings receive a neutral ranking baseline and remain labelled unknown. Instruments are never pooled. A 128-state beam search proposes a workload-limited combination; it does not guarantee the optimum or degree applicability.",
-            "已核对要求可选课 +45；未核对候选 +15；对应样表学期 +25，其他样表学期 +8；已有计划记录 +10；评价按 (评分 × 回答数 + 3.6 × 20) / (回答数 + 20) 收缩后计 0–15 分；记录冲突 −20。缺失评价使用中性排序基准，仍显示未知。不同评价工具不混合。保留 128 个状态的束搜索提供受负担限制的组合，不保证全局最优或毕业适用性。",
+            "Reviewed requirement option +45; unreviewed option +15; matching sample semester +25, another sample semester +8; existing planned course +10; preferred subject +25; evaluation 0–40 when prioritized, otherwise 0–15 using (score × responses + 3.6 × 20) / (responses + 20); conflicting observations −20. Missing ratings receive a neutral ranking baseline and remain labelled unknown. Instruments are never pooled. A 128-state beam search proposes a workload-limited combination; it does not guarantee the optimum or degree applicability.",
+            "已核对要求可选课 +45；未核对候选 +15；对应样表学期 +25，其他样表学期 +8；已有计划记录 +10；偏好科目 +25；评价优先时计 0–40 分，否则计 0–15 分，按 (评分 × 回答数 + 3.6 × 20) / (回答数 + 20) 收缩后排序；记录冲突 −20。缺失评价使用中性排序基准，仍显示未知。不同评价工具不混合。保留 128 个状态的束搜索提供受负担限制的组合，不保证全局最优或毕业适用性。",
           )}
         </p>
         <p>

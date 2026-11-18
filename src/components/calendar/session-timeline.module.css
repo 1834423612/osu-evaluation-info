@@ -1,0 +1,100 @@
+.root {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin: 10px 0;
+}
+.weeks {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.weeks button {
+  flex: 1 0 35px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 6px 2px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--subtle-surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.weeks button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+.weeks b {
+  font-size: 11px;
+}
+.weeks small {
+  font-size: 8px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rows {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 115px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.row > span {
+  font-size: 10px;
+}
+.row small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 115px;
+}
+.row > div {
+  position: relative;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--subtle-surface);
+  overflow: hidden;
+}
+.row i {
+  position: absolute;
+  top: 4px;
+  height: 8px;
+  border-left: 2px solid #648dad;
+  background: repeating-linear-gradient(
+    135deg,
+    #b8d7ec 0,
+    #b8d7ec 5px,
+    #d0e4f1 5px,
+    #d0e4f1 10px
+  );
+}
+.row b {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--muted);
+  background: #fff4;
+}
+.root p {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .row {
+    grid-template-columns: 85px minmax(0, 1fr);
+  }
+  .row small {
+    max-width: 85px;
+  }
+}

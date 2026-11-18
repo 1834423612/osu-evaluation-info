@@ -501,8 +501,8 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
         <ShareCollection
           locale={locale}
           selected={selected}
-          title={title}
-          scopeKeys={scopeKeys}
+          title={collection?.name}
+          activeCollectionId={collection?.id}
         />
         <SharedManagement locale={locale} />
         <Button variant="outline" aria-pressed={selecting} onClick={manage}>

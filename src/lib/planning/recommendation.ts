@@ -4,6 +4,7 @@ import { requirementProgress } from "./snapshots.ts";
 import { addPlanningCourse, boardCourses } from "./workspace.ts";
 import { programRequirements, requirementCodes } from "./programs.ts";
 import { termOrder } from "./schedule.ts";
+import type { Eligibility } from "./eligibility.ts";
 
 export type SampleCourse = {
   subject: string;
@@ -27,6 +28,7 @@ export type Rating = {
   instrument: "SEI" | "SSLE";
 };
 export type PlanningCandidate = {
+  eligibility?: Eligibility;
   subject: string;
   number: string;
   key: string;
@@ -52,9 +54,12 @@ export type RecommendationOptions = {
   ratings?: Record<string, Rating>;
   requirementCandidates?: Record<string, { subject: string; number: string }[]>;
   catalogCredits?: Record<string, { min: number; max: number }>;
+  eligibility?: Record<string, Eligibility>;
+  preferredSubjects?: string[];
+  ratingPriority?: boolean;
 };
 
-/** Local, explainable ranking. Never interprets prerequisites, grades or eligibility. */
+/** Local ranking consumes prerequisite evidence supplied by the catalog eligibility check. */
 export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   if (
     !/^(Autumn|Spring|Summer)20\d{2}$/.test(options.currentTerm) ||
@@ -174,6 +179,12 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
   }
   const candidates = [...pool.values()]
     .filter((c) => {
+      c.eligibility = options.eligibility?.[c.key];
+      if (
+        options.eligibility &&
+        !["eligible", "conditional"].includes(c.eligibility ?? "unknown")
+      )
+        return false;
       const facts = observations.get(c.key) ?? [];
       // Positive attendance evidence excludes a course even when a plan export
       // labels the same registration as planned. Unknown never overrides completion.
@@ -206,7 +217,8 @@ export function recommendCourses(plan: Plan, options: RecommendationOptions) {
           (c.ruleIds.length ? 45 : c.unreviewed ? 15 : 0) +
           (c.sampleMatch ? 25 : c.sample ? 8 : 0) +
           (c.planned ? 10 : 0) +
-          ratingValue * 15 -
+          (options.preferredSubjects?.includes(c.subject) ? 25 : 0) +
+          ratingValue * (options.ratingPriority ? 40 : 15) -
           (c.conflict ? 20 : 0),
       };
     })
