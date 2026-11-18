@@ -28,6 +28,19 @@ export function semesterCatalogCode(term: string) {
   if (!match) throw Error("Invalid semester");
   return `1${match[2].slice(2)}${{ Spring: 2, Summer: 4, Autumn: 8 }[match[1] as "Spring" | "Summer" | "Autumn"]}`;
 }
+/** Credit/unassigned buckets are valid planner rows, but have no attendance session. */
+export function sessionSectionsForTerm(
+  course: CatalogCourse | undefined,
+  term: string,
+  section?: string,
+) {
+  if (!course || !/^(Autumn|Spring|Summer)(20\d{2})$/.test(term)) return [];
+  if (course.termCode !== semesterCatalogCode(term)) return [];
+  return course.sections.filter(
+    (item) =>
+      !section || item.section === section || item.classNumber === section,
+  );
+}
 export function meetingSlots(meetings: CatalogMeeting[]): Slot[] {
   return meetings.flatMap((m) => {
     const start = minuteOfDay(m.startTime),

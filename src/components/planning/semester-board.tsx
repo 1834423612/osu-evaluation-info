@@ -49,7 +49,7 @@ import {
   removeEmptySemester,
 } from "@/lib/planning/workspace";
 import { placeCourse, termOrder } from "@/lib/planning/schedule";
-import { semesterCatalogCode } from "@/lib/planning/simulation";
+import { sessionSectionsForTerm } from "@/lib/planning/simulation";
 import { applyRecommendationBundle } from "@/lib/planning/recommendation";
 import { browserUuid } from "@/lib/uuid";
 import { text, type Locale } from "@/lib/i18n";
@@ -116,15 +116,11 @@ function CourseCard({
     if (lookup.detail) loaded(key, lookup.detail);
   }, [lookup.detail, key, loaded]);
   const credits = planningCredits(c, lookup.detail);
-  const sessionSections =
-    lookup.detail?.course.termCode === semesterCatalogCode(row.term)
-      ? lookup.detail.course.sections.filter(
-          (section) =>
-            !c.section ||
-            section.section === c.section ||
-            section.classNumber === c.section,
-        )
-      : [];
+  const sessionSections = sessionSectionsForTerm(
+    lookup.detail?.course,
+    row.term,
+    c.section,
+  );
   const sessionNames = [
     ...new Set(
       sessionSections.map((section) => section.session).filter(Boolean),
