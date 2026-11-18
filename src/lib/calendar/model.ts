@@ -60,6 +60,18 @@ export const calendarSchema = z
   .strip();
 export type CalendarEvent = z.infer<typeof calendarEventSchema>;
 export type UserCalendar = z.infer<typeof calendarSchema>;
+/** Missing sources must not consume a combined calendar's selection capacity. */
+export function availableSourceIds(
+  calendar: UserCalendar,
+  calendars: UserCalendar[],
+) {
+  const available = new Set(
+    calendars
+      .filter((source) => source.id !== calendar.id)
+      .map((source) => source.id),
+  );
+  return [...new Set(calendar.sourceIds)].filter((id) => available.has(id));
+}
 /** Apply remote source data to the current calendar, preserving in-flight edits. */
 export function applyCalendarRefresh(
   current: UserCalendar,

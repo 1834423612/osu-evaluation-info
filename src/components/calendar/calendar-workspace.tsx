@@ -45,6 +45,7 @@ import {
   calendarSchema,
   combinedEvents,
   applyCalendarRefresh,
+  availableSourceIds,
   type UserCalendar,
   type CalendarEvent,
 } from "@/lib/calendar/model";
@@ -133,6 +134,7 @@ export function CalendarWorkspace() {
     try {
       const value = calendarSchema.parse({
         ...calendar,
+        sourceIds: availableSourceIds(calendar, calendars),
         updatedAt: new Date().toISOString(),
       });
       setPlan((p) => {

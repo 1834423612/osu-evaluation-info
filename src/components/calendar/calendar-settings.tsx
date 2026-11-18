@@ -10,6 +10,7 @@ import {
   Info,
 } from "lucide-react";
 import type { UserCalendar } from "@/lib/calendar/model";
+import { availableSourceIds } from "@/lib/calendar/model";
 import type { Locale } from "@/lib/i18n";
 import styles from "./calendar-settings.module.css";
 
@@ -39,6 +40,7 @@ export function CalendarSettings({
     [removing, setRemoving] = useState(false),
     [error, setError] = useState(false);
   const Icon = icons[value.icon];
+  const sourceIds = availableSourceIds(value, calendars);
   return (
     <form
       className={styles.form}
@@ -190,17 +192,16 @@ export function CalendarSettings({
                 <label key={calendar.id} className={styles.option}>
                   <input
                     type="checkbox"
-                    checked={value.sourceIds.includes(calendar.id)}
+                    checked={sourceIds.includes(calendar.id)}
                     disabled={
-                      !value.sourceIds.includes(calendar.id) &&
-                      value.sourceIds.length >= 30
+                      !sourceIds.includes(calendar.id) && sourceIds.length >= 30
                     }
                     onChange={(event) =>
                       onChange({
                         ...value,
                         sourceIds: event.target.checked
-                          ? [...value.sourceIds, calendar.id]
-                          : value.sourceIds.filter((id) => id !== calendar.id),
+                          ? [...sourceIds, calendar.id]
+                          : sourceIds.filter((id) => id !== calendar.id),
                       })
                     }
                   />

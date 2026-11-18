@@ -17,6 +17,7 @@ import {
   calendarEventSchema,
   combinedEvents,
   applyCalendarRefresh,
+  availableSourceIds,
 } from "../../src/lib/calendar/model.ts";
 import { newYorkDate, eventInDateRange } from "../../src/lib/calendar/dates.ts";
 const envelope = (events) =>
@@ -43,6 +44,29 @@ test("Today and range boundaries use Eastern dates and exclusive all-day ends", 
     end: "2027-02-01T16:00:00Z",
   };
   assert.equal(eventInDateRange(meeting, "2027-02-01", "2027-02-28"), true);
+});
+
+test("missing combined sources do not consume replacement capacity", () => {
+  const calendar = calendarSchema.parse({
+    id: "combined",
+    title: "Combined",
+    kind: "combined",
+    events: [],
+    updatedAt: "",
+    sourceIds: Array.from({ length: 30 }, (_, i) => "missing-" + i),
+  });
+  const source = { ...calendar, id: "available", sourceIds: [] };
+  assert.deepEqual(availableSourceIds(calendar, [calendar, source]), []);
+  assert.deepEqual(
+    availableSourceIds(
+      {
+        ...calendar,
+        sourceIds: ["combined", "available", "available", "missing"],
+      },
+      [calendar, source],
+    ),
+    ["available"],
+  );
 });
 
 test("default official calendars partition shared dates and retain stable source identities", () => {
