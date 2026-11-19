@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { FeatureSyncStatus } from "@/components/sync/feature-sync-status";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { ChoiceSelect } from "@/components/ui/choice-select";
@@ -76,7 +77,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
   const [catalogTerm, setCatalogTerm] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useActionNotice();
   const [progress, setProgress] = useState("");
   const [backup, setBackup] = useState<Plan | null>(null);
   const backupInput = useRef<HTMLInputElement>(null);
@@ -252,15 +253,17 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               </p>
             </div>
             <div className={styles.globalActions}>
-              <FeatureSyncStatus feature="planning" locale={locale} />
-              <span>
-                <ShieldCheck size={15} />
-                {storageError
-                  ? t("Local save unavailable", "本地保存不可用")
-                  : saved === fingerprint
-                    ? t("Saved on this device", "已自动保存到此设备")
-                    : t("Private workspace", "私密工作区")}
-              </span>
+              <div className={styles.saveStatus}>
+                <FeatureSyncStatus feature="planning" locale={locale} />
+                <span>
+                  <ShieldCheck size={15} />
+                  {storageError
+                    ? t("Local save unavailable", "本地保存不可用")
+                    : saved === fingerprint
+                      ? t("Saved on this device", "已自动保存到此设备")
+                      : t("Private workspace", "私密工作区")}
+                </span>
+              </div>
               <button
                 data-analytics-action="planning_backup_export"
                 onClick={exportBackup}

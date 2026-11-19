@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
@@ -40,7 +41,7 @@ export function SharedCalendar() {
       calendars: UserCalendar[];
       author: { nickname?: string };
     } | null>(null),
-    [message, setMessage] = useState(""),
+    [message, setMessage] = useActionNotice(),
     [selected, setSelected] = useState<string[]>([]);
   useEffect(() => {
     const c = new AbortController(),

@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { DraftForm } from "@/components/forms/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -54,7 +55,7 @@ export function SharedPage({ id }: { id?: string }) {
     [error, setError] = useState(false),
     [code, setCode] = useState(""),
     [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useActionNotice(),
     [focused, setFocused] = useState<ExchangeItem | null>(null),
     [capability, setCapability] = useState<string | undefined>();
   const opened = useRef<Promise<unknown> | null>(null);

@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -34,7 +35,7 @@ export function HistoryPage() {
   const [kind, setKind] = useState<"all" | "search" | "course">("all"),
     [query, setQuery] = useState(""),
     [clearOpen, setClearOpen] = useState(false),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useActionNotice();
   const visible = entries.filter(
     (x) =>
       (kind === "all" || x.kind === kind) &&

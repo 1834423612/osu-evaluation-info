@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -320,7 +321,7 @@ export function SemesterBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
     useSensor(KeyboardSensor),
   );
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useActionNotice();
   const all = boardCourses(plan);
   const rows = all.filter((r) =>
     `${r.course.subject ?? ""} ${r.course.number ?? ""} ${r.course.title ?? ""}`
