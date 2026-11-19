@@ -29,19 +29,35 @@ export function planConflicts(
 ): string[] {
   if (same(local, base) || same(remote, base) || same(local, remote)) return [];
   if (Array.isArray(local) && Array.isArray(remote)) {
-    const keyed = (values: unknown[]) =>
-      new Map(
-        values.map((v) => {
-          if (!v || typeof v !== "object") return [JSON.stringify(v), v];
-          const row = v as Record<string, unknown>;
-          const key = path.endsWith("semesters")
-            ? JSON.stringify([row.documentId, row.term, row.creditOrigin])
-            : path.endsWith("allocations")
-              ? `${row.courseId}|${row.requirementId}`
-              : String(row.id ?? row.courseId ?? JSON.stringify(v));
-          return [key, v];
-        }),
-      );
+    const keyed = (values: unknown[]) => {
+      const result = new Map<string, unknown>();
+      for (const v of values) {
+        if (!v || typeof v !== "object") {
+          result.set(JSON.stringify(v), v);
+          continue;
+        }
+        const row = v as Record<string, unknown>;
+        const key = path.endsWith("semesters")
+          ? JSON.stringify([row.documentId, row.term, row.creditOrigin])
+          : path.endsWith("allocations")
+            ? `${row.courseId}|${row.requirementId}`
+            : String(row.id ?? row.courseId ?? JSON.stringify(v));
+        const previous = result.get(key) as Record<string, unknown> | undefined;
+        result.set(
+          key,
+          path.endsWith("semesters") && previous
+            ? {
+                ...row,
+                courses: [
+                  ...(previous.courses as unknown[]),
+                  ...(row.courses as unknown[]),
+                ],
+              }
+            : v,
+        );
+      }
+      return result;
+    };
     const left = keyed(local),
       right = keyed(remote),
       before = keyed(Array.isArray(base) ? base : []);

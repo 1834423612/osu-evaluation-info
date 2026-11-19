@@ -29,6 +29,8 @@ export function subscribePlanningScope(callback: () => void) {
 export type PlanningState = {
   plan: Plan | null;
   base: Plan | null;
+  /** Latest full server payload; base advances only for enabled domains. */
+  cloud?: Plan | null;
   version: number;
   templateDigest?: string;
   templateStatus?: "saved" | "account-required" | "retry";
@@ -151,8 +153,9 @@ async function synchronizePlanning(account: string, features: SyncFeatures) {
     const local = planningState(account);
     const remotePlan = remote.plan ? planSchema.parse(remote.plan) : null;
     const transfer = projectSyncPlan(local.plan, local.base, features);
+    const received = projectSyncPlan(remotePlan, local.base, features);
     const paths = local.base
-      ? planConflicts(local.base, transfer, remotePlan)
+      ? planConflicts(local.base, transfer, received)
       : [];
     if (paths.length) {
       const next: PlanningState = {
@@ -167,11 +170,12 @@ async function synchronizePlanning(account: string, features: SyncFeatures) {
       commit(account, next);
       return next;
     }
-    const merged = reconcilePlans(local.base, transfer, remotePlan);
+    const merged = reconcilePlans(local.base, transfer, received);
     const next = {
       ...local,
       plan: projectSyncPlan(merged, local.plan, features),
-      base: remotePlan,
+      base: received,
+      cloud: remotePlan,
       version: remote.version,
       problem: undefined,
       conflict: undefined,
@@ -182,8 +186,8 @@ async function synchronizePlanning(account: string, features: SyncFeatures) {
   });
   notify();
   if (prepared.conflict) return;
-  const sent = projectSyncPlan(prepared.plan, prepared.base, features);
-  if (JSON.stringify(sent) !== JSON.stringify(prepared.base)) {
+  const sent = projectSyncPlan(prepared.plan, prepared.cloud ?? null, features);
+  if (JSON.stringify(sent) !== JSON.stringify(prepared.cloud ?? null)) {
     const latestPreferences = await readSyncState(account);
     if (
       !latestPreferences.enabled ||
@@ -210,18 +214,20 @@ async function synchronizePlanning(account: string, features: SyncFeatures) {
     prepared = await withSavedMutation(() => {
       assertAuthenticatedAccount(account);
       const current = planningState(account);
+      const savedPlan = saved.plan ? planSchema.parse(saved.plan) : null;
       const next = {
         ...current,
         plan: projectSyncPlan(
           reconcilePlans(
             sent,
             projectSyncPlan(current.plan, sent, features),
-            saved.plan ? planSchema.parse(saved.plan) : null,
+            savedPlan,
           ),
           current.plan,
           features,
         ),
-        base: saved.plan ? planSchema.parse(saved.plan) : null,
+        base: projectSyncPlan(savedPlan, current.base, features),
+        cloud: savedPlan,
         version: saved.version,
         syncedAt: new Date().toISOString(),
       };
@@ -288,7 +294,12 @@ export async function resolvePlanningConflict(
               syncFeatures(preferences),
             )
           : local.plan,
-      base: conflict.remote,
+      base: projectSyncPlan(
+        conflict.remote,
+        local.base,
+        syncFeatures(preferences),
+      ),
+      cloud: conflict.remote,
       version: conflict.version,
       conflict: undefined,
       problem: undefined,
