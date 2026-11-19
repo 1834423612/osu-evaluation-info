@@ -421,7 +421,9 @@
   font-size: 12px;
   color: var(--muted);
   margin: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .section {
   scroll-margin-top: 100px;
