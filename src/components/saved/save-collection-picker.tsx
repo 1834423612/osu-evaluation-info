@@ -8,7 +8,7 @@ import { useDraftGuard } from "@/components/forms/draft-guard";
 import { browserUuid } from "@/lib/uuid";
 import { savedScope } from "@/lib/saved/scope";
 import { readCollections, editCollections } from "@/lib/saved/collections";
-import { readLocalItems } from "@/lib/saved/local";
+import { readLocalItems, removeLocalItems } from "@/lib/saved/local";
 import { itemKey } from "@/lib/saved/exchange";
 import { withSavedMutation } from "@/lib/saved/mutations";
 import type { SavedCollection } from "@/lib/saved/collection-schema";
@@ -254,6 +254,21 @@ export function SaveCollectionPicker() {
               : text(locale, "Keep unfiled", "暂不分类")}
           </Button>
           {notice ? <small role="status">{notice}</small> : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={async () => {
+              if (!item) return;
+              const result = await withSavedMutation(() => {
+                if (item.scope !== savedScope()) throw Error();
+                return removeLocalItems(new Set([item.key]));
+              });
+              if (result) setItem(null);
+            }}
+          >
+            {text(locale, "Remove from favorites", "取消此项收藏")}
+          </Button>
           <Popover.Arrow className={styles.arrow} />
         </Popover.Content>
       </Popover.Portal>
