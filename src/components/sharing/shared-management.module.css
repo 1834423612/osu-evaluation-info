@@ -3,6 +3,17 @@
   gap: 18px;
   color: var(--ink);
 }
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.toolbar > button:first-child {
+  order: 1;
+  margin-left: auto;
+}
 .summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

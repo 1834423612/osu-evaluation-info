@@ -276,41 +276,43 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
                   />
                 </label>
               ) : null}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void load()}
-                disabled={loading}
-              >
-                <RefreshCw size={13} />
-                {text(locale, "Refresh", "刷新")}
-              </Button>
-              <div className={styles.tools}>
-                {(["active", "all"] as const).map((value) => (
-                  <Button
-                    key={value}
-                    size="sm"
-                    variant={filter === value ? "secondary" : "ghost"}
-                    aria-pressed={filter === value}
-                    onClick={() => setFilter(value)}
-                  >
-                    {text(
-                      locale,
-                      value === "active" ? "Active" : "All shares",
-                      value === "active" ? "有效分享" : "全部分享",
-                    )}{" "}
-                    ·{" "}
-                    {
-                      rows.filter(
-                        (row) =>
-                          value === "all" ||
-                          (!row.revoked_at &&
-                            (!row.expires_at ||
-                              Date.parse(row.expires_at) > now)),
-                      ).length
-                    }
-                  </Button>
-                ))}
+              <div className={layout.toolbar}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void load()}
+                  disabled={loading}
+                >
+                  <RefreshCw size={13} />
+                  {text(locale, "Refresh", "刷新")}
+                </Button>
+                <div className={styles.tools}>
+                  {(["active", "all"] as const).map((value) => (
+                    <Button
+                      key={value}
+                      size="sm"
+                      variant={filter === value ? "secondary" : "ghost"}
+                      aria-pressed={filter === value}
+                      onClick={() => setFilter(value)}
+                    >
+                      {text(
+                        locale,
+                        value === "active" ? "Active" : "All shares",
+                        value === "active" ? "有效分享" : "全部分享",
+                      )}{" "}
+                      ·{" "}
+                      {
+                        rows.filter(
+                          (row) =>
+                            value === "all" ||
+                            (!row.revoked_at &&
+                              (!row.expires_at ||
+                                Date.parse(row.expires_at) > now)),
+                        ).length
+                      }
+                    </Button>
+                  ))}
+                </div>
               </div>
               {loading ? (
                 <p className={styles.muted}>
