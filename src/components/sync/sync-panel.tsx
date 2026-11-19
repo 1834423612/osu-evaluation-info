@@ -1,4 +1,7 @@
 "use client";
+import { SyncFeatureSettings } from "./sync-feature-settings";
+import { syncPlanning } from "@/lib/planning/client-sync";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { useEffect, useState } from "react";
 import { Cloud, RefreshCw, Pause, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +33,7 @@ export function SyncPanel({
   const [state, setState] = useState<SyncState | null>(null),
     [preview, setPreview] = useState<MergePreview | null>(null),
     [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useActionNotice();
   useEffect(() => {
     let live = true;
     const refresh = () => {
@@ -55,7 +58,7 @@ export function SyncPanel({
       live = false;
       window.removeEventListener(SYNC_EVENT, refresh);
     };
-  }, [accountId, locale]);
+  }, [accountId, locale, setNotice]);
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setNotice("");
@@ -89,7 +92,7 @@ export function SyncPanel({
       <div className={styles.panelHeading}>
         <h2>
           <Cloud size={18} />
-          {text(locale, "Favorites sync", "收藏同步")}
+          {text(locale, "Cloud sync", "云端同步")}
         </h2>
         <span className={styles.badge}>
           {state?.enabled
@@ -118,6 +121,7 @@ export function SyncPanel({
             )}
         </small>
       ) : null}
+      <SyncFeatureSettings state={state} account={accountId} locale={locale} />
       <div className={styles.actions}>
         {!state?.enabled || state.needsReview ? (
           <Button
@@ -145,7 +149,14 @@ export function SyncPanel({
             <Button
               variant="outline"
               disabled={busy}
-              onClick={() => void run(() => syncCycle(accountId))}
+              onClick={() =>
+                void run(async () => {
+                  await Promise.all([
+                    syncCycle(accountId),
+                    syncPlanning(accountId),
+                  ]);
+                })
+              }
             >
               <RefreshCw size={15} />
               {text(locale, "Sync now", "立即同步")}

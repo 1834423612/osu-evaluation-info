@@ -1,4 +1,5 @@
 "use client";
+import { FeatureSyncStatus } from "@/components/sync/feature-sync-status";
 import { RmpSavedRemove } from "./rmp-saved-remove";
 
 import {
@@ -196,6 +197,7 @@ function SavedCoursesBody() {
       <AppHeader active="saved" />
       <main className="saved-shell" data-telemetry-private>
         <div className="page-heading">
+          <FeatureSyncStatus feature="favorites" locale={locale} />
           <div>
             <h1>{text(locale, "Saved items", "我的收藏")}</h1>
             <p>

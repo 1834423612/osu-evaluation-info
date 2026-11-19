@@ -1,0 +1,64 @@
+.trigger {
+  position: relative;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface);
+}
+.trigger[data-conflict="true"] {
+  color: #966516;
+  border-color: #c9a866;
+  background: color-mix(in srgb, #c9a866 8%, var(--surface));
+}
+.trigger i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c59032;
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.panel {
+  z-index: 230;
+  width: min(340px, calc(100vw - 24px));
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 12px 40px #17212f20;
+  font-size: 12px;
+}
+.panel > strong {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+.panel p {
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 10px 0;
+}
+.panel small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.conflicts {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+.arrow {
+  fill: var(--surface);
+}

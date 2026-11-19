@@ -17,6 +17,7 @@ import {
 } from "@/lib/planning/client-sync";
 import { debugFlag } from "@/lib/debug/flags";
 import { pullDevelopmentAccount } from "@/lib/development/client";
+import { syncFeatures } from "@/lib/sync/features";
 export function SyncProvider() {
   const { data: session, isPending } = authClient.useSession();
   const accountId = session?.user.emailVerified ? session.user.id : null;
@@ -57,6 +58,7 @@ export function SyncProvider() {
           if (failure?.status === "rejected") throw failure.reason;
           if (
             !stopped &&
+            Object.values(syncFeatures(state)).every(Boolean) &&
             (await pullDevelopmentAccount(accountId).catch(() => false))
           ) {
             if (stopped) return;
@@ -87,7 +89,13 @@ export function SyncProvider() {
       if (accountId)
         void readSyncState(accountId)
           .then((s) => {
-            if (!stopped && navigator.onLine && s.enabled && s.outbox.length)
+            if (
+              !stopped &&
+              navigator.onLine &&
+              s.enabled &&
+              syncFeatures(s).favorites &&
+              s.outbox.length
+            )
               schedule();
           })
           .catch(() => {});

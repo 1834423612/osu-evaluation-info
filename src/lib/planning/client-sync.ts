@@ -9,6 +9,9 @@ import { reconcilePlans } from "./reconcile.ts";
 import { genericRequirementTemplates } from "./generic-template.ts";
 import { withSavedMutation } from "../saved/mutations.ts";
 import { assertAuthenticatedAccount } from "../saved/scope.ts";
+import { readSyncState } from "../sync/database.ts";
+import { syncFeatures, type SyncFeatures } from "../sync/features.ts";
+import { projectSyncPlan, planConflicts } from "./sync-selection.ts";
 export const PLANNING_EVENT = "course-atlas:planning-change";
 export const PLANNING_SCOPE_EVENT = "course-atlas:planning-scope";
 let scope: string | null = null;
@@ -31,6 +34,8 @@ export type PlanningState = {
   templateStatus?: "saved" | "account-required" | "retry";
   templateAttempt?: number;
   syncedAt?: string;
+  problem?: "unavailable" | "conflict";
+  conflict?: { remote: Plan | null; version: number; paths: string[] };
 };
 function key(account: string) {
   return PLAN_STORAGE_KEY + ":account:" + account;
@@ -111,6 +116,27 @@ function genericPlan(plan: Plan) {
 }
 export async function syncPlanning(account: string) {
   assertAuthenticatedAccount(account);
+  const preferences = await readSyncState(account),
+    features = syncFeatures(preferences);
+  if (!preferences.enabled || (!features.planning && !features.calendars))
+    return;
+  try {
+    await synchronizePlanning(account, features);
+  } catch (error) {
+    await withSavedMutation(() => {
+      assertAuthenticatedAccount(account);
+      const local = planningState(account);
+      commit(account, {
+        ...local,
+        problem: local.conflict ? "conflict" : "unavailable",
+      });
+    });
+    notify();
+    throw error;
+  }
+}
+async function synchronizePlanning(account: string, features: SyncFeatures) {
+  assertAuthenticatedAccount(account);
   const response = await fetch("/api/planning/backup", {
     cache: "no-store",
     signal: AbortSignal.timeout(20000),
@@ -123,22 +149,48 @@ export async function syncPlanning(account: string) {
   prepared = await withSavedMutation(() => {
     assertAuthenticatedAccount(account);
     const local = planningState(account);
+    const remotePlan = remote.plan ? planSchema.parse(remote.plan) : null;
+    const transfer = projectSyncPlan(local.plan, local.base, features);
+    const paths = local.base
+      ? planConflicts(local.base, transfer, remotePlan)
+      : [];
+    if (paths.length) {
+      const next: PlanningState = {
+        ...local,
+        problem: "conflict",
+        conflict: {
+          remote: remotePlan,
+          version: remote.version,
+          paths: [...new Set(paths)],
+        },
+      };
+      commit(account, next);
+      return next;
+    }
+    const merged = reconcilePlans(local.base, transfer, remotePlan);
     const next = {
       ...local,
-      plan: reconcilePlans(
-        local.base,
-        local.plan,
-        remote.plan ? planSchema.parse(remote.plan) : null,
-      ),
-      base: remote.plan ? planSchema.parse(remote.plan) : null,
+      plan: projectSyncPlan(merged, local.plan, features),
+      base: remotePlan,
       version: remote.version,
+      problem: undefined,
+      conflict: undefined,
+      syncedAt: new Date().toISOString(),
     };
     commit(account, next);
     return next;
   });
   notify();
-  if (JSON.stringify(prepared.plan) !== JSON.stringify(prepared.base)) {
-    const sent = prepared.plan;
+  if (prepared.conflict) return;
+  const sent = projectSyncPlan(prepared.plan, prepared.base, features);
+  if (JSON.stringify(sent) !== JSON.stringify(prepared.base)) {
+    const latestPreferences = await readSyncState(account);
+    if (
+      !latestPreferences.enabled ||
+      JSON.stringify(syncFeatures(latestPreferences)) !==
+        JSON.stringify(features)
+    )
+      return;
     const put = await fetch("/api/planning/backup", {
       method: "PUT",
       signal: AbortSignal.timeout(20000),
@@ -160,10 +212,14 @@ export async function syncPlanning(account: string) {
       const current = planningState(account);
       const next = {
         ...current,
-        plan: reconcilePlans(
-          sent,
+        plan: projectSyncPlan(
+          reconcilePlans(
+            sent,
+            projectSyncPlan(current.plan, sent, features),
+            saved.plan ? planSchema.parse(saved.plan) : null,
+          ),
           current.plan,
-          saved.plan ? planSchema.parse(saved.plan) : null,
+          features,
         ),
         base: saved.plan ? planSchema.parse(saved.plan) : null,
         version: saved.version,
@@ -174,7 +230,7 @@ export async function syncPlanning(account: string) {
     });
     notify();
   }
-  if (!prepared.plan?.requirements.length) return;
+  if (!features.planning || !prepared.plan?.requirements.length) return;
   const templatePlan = genericPlan(prepared.plan);
   if (!templatePlan.requirements.length) return;
   const hash = await crypto.subtle.digest(
@@ -211,4 +267,33 @@ export async function syncPlanning(account: string) {
     });
   });
   notify();
+}
+export async function resolvePlanningConflict(
+  account: string,
+  choice: "local" | "cloud",
+) {
+  const preferences = await readSyncState(account);
+  await withSavedMutation(() => {
+    assertAuthenticatedAccount(account);
+    const local = planningState(account),
+      conflict = local.conflict;
+    if (!conflict) return;
+    commit(account, {
+      ...local,
+      plan:
+        choice === "cloud"
+          ? projectSyncPlan(
+              conflict.remote,
+              local.plan,
+              syncFeatures(preferences),
+            )
+          : local.plan,
+      base: conflict.remote,
+      version: conflict.version,
+      conflict: undefined,
+      problem: undefined,
+    });
+  });
+  notify();
+  requestPlanningSync();
 }

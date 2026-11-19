@@ -1,4 +1,5 @@
 "use client";
+import { FeatureSyncStatus } from "@/components/sync/feature-sync-status";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { Button } from "@/components/ui/button";
@@ -251,6 +252,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               </p>
             </div>
             <div className={styles.globalActions}>
+              <FeatureSyncStatus feature="planning" locale={locale} />
               <span>
                 <ShieldCheck size={15} />
                 {storageError
