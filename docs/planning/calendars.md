@@ -40,3 +40,9 @@ Private `calendar` and `calendar_link` tables are in `osu_identity` / `osu_ident
 Calendar URLs and events are private account data until shared. They are readable by the application server and are not end-to-end encrypted. A private source URL may itself be a credential. Calendar pages and portals mask replay content; analytics exclude private event text, source URLs and capability values.
 
 For local inspection without uploading a file, run `node scripts/calendar/inspect.mjs /path/to/calendar.ics`; it prints aggregate event and round-trip counts only. See [testing](../testing.md) for offline regression commands.
+
+## Interface and import behavior
+
+Event selection opens an anchored details preview; editing is a separate action for editable calendars. Official and subscribed events stay read-only. Mobile source cards use matching dimensions, and all seven weekday headings stay on one row. Newly generated share links attempt one automatic clipboard copy; a visible copy field remains available when the browser refuses clipboard access. Sharing lists explicit calendar/category choices and publication state.
+
+Remote DNS pinning supports Node.js single-address and automatic-family lookup contracts. Canvas links with `#assignment_` are recognized as assignments. ICS import/export preserves explicit event categories and HTTP(S) source links; a zero-duration deadline shows a single time rather than an identical start/end range.
