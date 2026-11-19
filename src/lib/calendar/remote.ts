@@ -1,6 +1,17 @@
 import { lookup } from "node:dns/promises";
 import { get } from "node:https";
 import { isIP } from "node:net";
+import type { LookupFunction } from "node:net";
+
+/** Support Node's single-address and auto-family lookup contracts without resolving again. */
+export function pinnedCalendarLookup(
+  addresses: { address: string; family: number }[],
+): LookupFunction {
+  return (_hostname, options, callback) => {
+    if (options.all) callback(null, addresses);
+    else callback(null, addresses[0].address, addresses[0].family);
+  };
+}
 /** Resolve once and pin the connection to a public address for each redirect. */
 export function publicCalendarAddress(address: string) {
   if (isIP(address) === 4) {
@@ -56,7 +67,6 @@ export async function readRemoteCalendar(
     addresses.some((item) => !publicCalendarAddress(item.address))
   )
     throw Error("Calendar address unavailable");
-  const target = addresses[0];
   return new Promise((resolve, reject) => {
     const request = get(
       url,
@@ -64,8 +74,7 @@ export async function readRemoteCalendar(
         timeout: Math.max(1, deadline - Date.now()),
         signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
         headers: { Accept: "text/calendar", "User-Agent": "WahO-Calendar/1.0" },
-        lookup: (_hostname, _options, callback) =>
-          callback(null, target.address, target.family),
+        lookup: pinnedCalendarLookup(addresses),
       },
       (response) => {
         if (
