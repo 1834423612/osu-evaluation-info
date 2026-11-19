@@ -45,11 +45,12 @@
   min-width: 0;
   padding: 0 2px;
 }
-.banner {
+.week .banner {
   display: block;
   width: 100%;
   min-width: 0;
   text-align: left;
+  justify-content: flex-start;
   color: var(--ink);
   cursor: pointer;
   border: 0;
@@ -128,6 +129,14 @@
   cursor: pointer;
   min-height: 18px;
 }
+.week .event[data-point="true"] {
+  min-height: 40px;
+}
+.event[data-point="true"] strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .event:hover {
   z-index: 2;
   filter: brightness(0.97);
@@ -194,6 +203,9 @@
     padding: 3px 2px;
     gap: 2px;
     border-left-width: 2px;
+  }
+  .week .event[data-point="true"] {
+    min-height: 30px;
   }
   .event strong {
     font-size: 9px;

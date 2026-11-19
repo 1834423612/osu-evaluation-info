@@ -154,7 +154,8 @@ export function CalendarWeek({
                     <strong>{event.title}</strong>
                     <span>
                       <Clock3 size={10} />
-                      {time(event.start)}–{time(event.end)}
+                      {time(event.start)}
+                      {event.end !== event.start ? "–" + time(event.end) : ""}
                     </span>
                     {event.location && (
                       <span>
@@ -178,6 +179,7 @@ export function CalendarWeek({
                     className={styles.event}
                     data-category={event.category}
                     data-online={online}
+                    data-point={event.start === event.end || undefined}
                     title={`${event.title}\n${time(event.start)}–${time(event.end)}\n${event.location}`}
                     style={position}
                     onClick={(click) => onEvent(event, click.currentTarget)}
@@ -190,6 +192,7 @@ export function CalendarWeek({
                     className={styles.event}
                     data-category={event.category}
                     data-online={online}
+                    data-point={event.start === event.end || undefined}
                     style={position}
                   >
                     {content}

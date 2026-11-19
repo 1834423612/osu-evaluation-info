@@ -111,6 +111,15 @@ export function CalendarWorkspace() {
     const rect = anchor?.getBoundingClientRect();
     setEventPreview({
       event,
+      readOnly: calendars.some(
+        (calendar) =>
+          calendar.kind === "feed" &&
+          calendar.events.some((item) =>
+            calendar.id === selected?.id
+              ? item.id === event.id
+              : JSON.stringify([calendar.id, item.id]) === event.id,
+          ),
+      ),
       left: rect?.left ?? innerWidth / 2,
       top: rect?.bottom ?? 120,
     });
@@ -210,7 +219,7 @@ export function CalendarWorkspace() {
         item.id === event.id ||
         JSON.stringify([owner.id, item.id]) === event.id,
     );
-    if (owner && original) {
+    if (owner && original && owner.kind !== "feed") {
       setEventDirty(false);
       setSelectedId(owner.id);
       setEventEditor(structuredClone(original));

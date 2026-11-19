@@ -79,6 +79,9 @@
 }
 .sidebar .calendar {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  align-items: stretch;
   grid-template-rows: 36px 100px 24px;
   gap: 7px;
   width: 100%;

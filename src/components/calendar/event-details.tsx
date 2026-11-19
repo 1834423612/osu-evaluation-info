@@ -18,6 +18,7 @@ export type CalendarEventPreview = {
   event: CalendarEvent;
   left: number;
   top: number;
+  readOnly?: boolean;
 };
 export function EventDetails({
   preview,
@@ -90,7 +91,7 @@ export function EventDetails({
                   }
                 </span>
                 <div>
-                  {!event.id.startsWith("official-") && (
+                  {!preview?.readOnly && !event.id.startsWith("official-") && (
                     <Button
                       variant="ghost"
                       size="icon-sm"
