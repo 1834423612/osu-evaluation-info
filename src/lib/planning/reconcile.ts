@@ -66,6 +66,14 @@ function merge(
       ),
     );
   }
+  if (
+    field === "refreshedAt" &&
+    typeof local === "string" &&
+    typeof remote === "string" &&
+    Number.isFinite(Date.parse(local)) &&
+    Number.isFinite(Date.parse(remote))
+  )
+    return Date.parse(local) >= Date.parse(remote) ? local : remote;
   // The local edit being submitted wins a concurrent edit to the same scalar.
   return local;
 }

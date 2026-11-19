@@ -127,3 +127,26 @@ test("conflict detection aggregates earlier semester chunks and accepts regroupe
   ];
   assert.deepEqual(planConflicts(base, local, regrouped), []);
 });
+
+test("identical subscription refreshes merge their freshness metadata without blocking user edits", () => {
+  const base = fixture("Feed", "COL");
+  base.schedule.calendars[0].kind = "feed";
+  base.schedule.calendars[0].refreshedAt = "2026-11-18T00:00:00Z";
+  const local = structuredClone(base),
+    remote = structuredClone(base);
+  local.schedule.calendars[0].refreshedAt = "2026-11-19T01:00:00Z";
+  remote.schedule.calendars[0].refreshedAt = "2026-11-19T02:00:00Z";
+  local.schedule.campuses.Spring2027 = "MNS";
+  assert.deepEqual(planConflicts(base, local, remote), []);
+  const merged = reconcilePlans(base, local, remote);
+  assert.equal(
+    merged.schedule.calendars[0].refreshedAt,
+    remote.schedule.calendars[0].refreshedAt,
+  );
+  assert.equal(merged.schedule.campuses.Spring2027, "MNS");
+  local.schedule.calendars[0].title = "Local title";
+  remote.schedule.calendars[0].title = "Remote title";
+  assert.deepEqual(planConflicts(base, local, remote), [
+    "plan.schedule.calendars[].title",
+  ]);
+});

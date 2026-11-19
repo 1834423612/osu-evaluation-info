@@ -81,7 +81,8 @@ export function planConflicts(
       before = (base ?? {}) as Record<string, unknown>;
     return [...new Set([...Object.keys(left), ...Object.keys(right)])].flatMap(
       (key) =>
-        key === "updatedAt"
+        key === "updatedAt" ||
+        (key === "refreshedAt" && path.endsWith("calendars[]"))
           ? []
           : planConflicts(before[key], left[key], right[key], path + "." + key),
     );
