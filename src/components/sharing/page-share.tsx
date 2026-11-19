@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Popover } from "radix-ui";
 import { Share2, Copy, Check, LoaderCircle } from "lucide-react";
@@ -21,6 +21,13 @@ export function PageShare({
   compact?: boolean;
 }) {
   const pathname = usePathname();
+  const generation = useRef(0);
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    [],
+  );
   const [busy, setBusy] = useState(false),
     [url, setUrl] = useState(""),
     [open, setOpen] = useState(false),
@@ -37,6 +44,7 @@ export function PageShare({
     ? course.subject + " " + course.catalogNumber + " · " + course.title
     : undefined;
   async function publish() {
+    const current = ++generation.current;
     setBusy(true);
     setNotice("");
     setCopied(false);
@@ -71,8 +79,10 @@ export function PageShare({
             link = location.origin + "/l/" + data.id;
         }
       } catch {}
+      if (current !== generation.current) return;
       setUrl(link);
       const copied = await copyLink(link);
+      if (current !== generation.current) return;
       setCopied(copied);
       if (copied) notify(text(locale, "Link copied", "链接已复制"), "success");
       else
@@ -80,11 +90,12 @@ export function PageShare({
           text(locale, "Select the link to copy it.", "请选择链接后手动复制。"),
         );
     } catch {
+      if (current !== generation.current) return;
       setNotice(
         text(locale, "A link could not be created.", "暂时无法生成链接。"),
       );
     } finally {
-      setBusy(false);
+      if (current === generation.current) setBusy(false);
     }
   }
   return (
@@ -93,6 +104,10 @@ export function PageShare({
       onOpenChange={(next) => {
         setOpen(next);
         if (next) void publish();
+        else {
+          generation.current++;
+          setBusy(false);
+        }
       }}
     >
       <Popover.Trigger asChild>
