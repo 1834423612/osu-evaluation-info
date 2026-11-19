@@ -102,8 +102,34 @@
   align-items: center;
   padding: 9px 10px 12px;
   margin-bottom: 5px;
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--subtle-surface);
   color: var(--ink);
+}
+.menuProfile > span:first-of-type {
+  min-width: 0;
+  flex: 1;
+}
+.menuProfile small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 190px;
+}
+.profileAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--primary);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.menuProfile:hover,
+.menuProfile:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--line));
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
 .menuProfile > svg {
   color: var(--primary);

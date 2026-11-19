@@ -16,6 +16,7 @@ import {
   History,
   UserRound,
   ArrowRightLeft,
+  ChevronRight,
   Link as LinkIcon,
   TrendingUp,
   Bookmark,
@@ -338,6 +339,10 @@ function NavigationMenu({
                           "登录后同步你的收藏",
                         )}
                   </small>
+                </span>
+                <span className={styles.profileAction}>
+                  {text(locale, "Account", "个人中心")}{" "}
+                  <ChevronRight size={14} />
                 </span>
               </Link>
             </DropdownMenu.Item>
