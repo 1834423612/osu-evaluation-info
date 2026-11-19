@@ -99,6 +99,13 @@ export async function parseCalendar(
       const url = String(
         detail.item.component.getFirstPropertyValue("url") ?? "",
       );
+      const category = detail.item.component
+        .getAllProperties("categories")
+        .flatMap((property) => property.getValues())
+        .map((value) => String(value).toLowerCase())
+        .find((value) =>
+          ["class", "assignment", "exam", "holiday", "event"].includes(value),
+        ) as CalendarEvent["category"] | undefined;
       events.push(
         calendarEventSchema.parse({
           id: "pending",
@@ -106,7 +113,11 @@ export async function parseCalendar(
           start: date(detail.startDate, start),
           end: date(detail.endDate, end),
           allDay,
-          category: /\/assignments\//.test(url) ? "assignment" : "event",
+          category:
+            category ??
+            (/\/assignments\/|#assignment_/i.test(url)
+              ? "assignment"
+              : "event"),
           description: String(detail.item.description ?? "")
             .replace(/<[^>]*>/g, "")
             .slice(0, 4000),
@@ -169,8 +180,10 @@ export function exportCalendar(
       `DTSTART${event.allDay ? ";VALUE=DATE" : ""}:${stamp(event.start)}`,
       `DTEND${event.allDay ? ";VALUE=DATE" : ""}:${stamp(event.end)}`,
       `SUMMARY:${escape(event.title)}`,
+      `CATEGORIES:${event.category}`,
       `DESCRIPTION:${escape(event.description)}`,
       `LOCATION:${escape(event.location)}`,
+      ...(/^https?:\/\//i.test(event.url ?? "") ? [`URL:${event.url}`] : []),
       "END:VEVENT",
     );
   }

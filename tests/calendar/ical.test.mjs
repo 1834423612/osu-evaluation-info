@@ -23,6 +23,19 @@ import { newYorkDate, eventInDateRange } from "../../src/lib/calendar/dates.ts";
 const envelope = (events) =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
 const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+test("Canvas assignment fragments are categorized and ICS round trips retain category and source link", async () => {
+  const source = envelope(
+    "BEGIN:VEVENT\r\nUID:assignment-test\r\nDTSTART:20270112T140000Z\r\nDTEND:20270112T140000Z\r\nSUMMARY:Reading due\r\nURL:https://osu.instructure.com/calendar#assignment_123\r\nEND:VEVENT",
+  );
+  const [event] = await parseCalendar(source, ...bounds);
+  assert.equal(event.category, "assignment");
+  const [roundTrip] = await parseCalendar(
+    exportCalendar("Test", [{ ...event, category: "exam" }], "test"),
+    ...bounds,
+  );
+  assert.equal(roundTrip.category, "exam");
+  assert.equal(roundTrip.url, event.url);
+});
 
 test("Today and range boundaries use Eastern dates and exclusive all-day ends", () => {
   assert.equal(newYorkDate(new Date("2026-12-01T01:00:00Z")), "2026-11-30");
