@@ -5,7 +5,6 @@ import { RmpSavedRemove } from "./rmp-saved-remove";
 import {
   SavedWorkspace,
   SavedCardFrame,
-  SavedStorageSummary,
   useSavedWorkspace,
 } from "./saved-workspace";
 
@@ -197,7 +196,6 @@ function SavedCoursesBody() {
       <AppHeader active="saved" />
       <main className="saved-shell" data-telemetry-private>
         <div className="page-heading">
-          <FeatureSyncStatus feature="favorites" locale={locale} />
           <div>
             <h1>{text(locale, "Saved items", "我的收藏")}</h1>
             <p>
@@ -208,7 +206,7 @@ function SavedCoursesBody() {
               )}
             </p>
           </div>
-          <SavedStorageSummary locale={locale} />
+          <FeatureSyncStatus feature="favorites" locale={locale} />
         </div>
         <Tabs
           value={
