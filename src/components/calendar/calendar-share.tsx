@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Share2,
   Copy,
@@ -47,6 +47,13 @@ export function CalendarShare({
   persist: () => Promise<boolean>;
 }) {
   const t = (en: string, zh: string) => (locale === "zh" ? zh : en);
+  const generation = useRef(0);
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    [],
+  );
   const [open, setOpen] = useState(false),
     [ids, setIds] = useState<string[]>([]),
     [kinds, setKinds] = useState([...categories]),
@@ -82,7 +89,9 @@ export function CalendarShare({
   const view = (link: SavedLink) =>
     `${location.origin}/calendar/shared?id=${link.id}#k=${link.token}`;
   async function copy(value: string) {
+    const session = generation.current;
     const ok = await copyLink(value);
+    if (session !== generation.current) return;
     setCopied(ok);
     notify(
       ok
@@ -93,6 +102,7 @@ export function CalendarShare({
   }
   async function publish() {
     if (busy) return;
+    const session = generation.current;
     setBusy(true);
     try {
       const account = planningScope();
@@ -102,6 +112,7 @@ export function CalendarShare({
         throw Error("sync_paused");
       if (!(await persist())) throw Error("storage");
       await syncPlanning(account);
+      if (session !== generation.current) return;
       if (planningState(account).conflict) throw Error("conflict");
       const response = await fetch("/api/calendar/links", {
         method: "POST",
@@ -114,6 +125,7 @@ export function CalendarShare({
         }),
       });
       const data = await response.json();
+      if (session !== generation.current) return;
       if (!response.ok) throw Error(data.error);
       const link = { ...data, calendarIds: [...ids] };
       setCurrent(link);
@@ -121,6 +133,7 @@ export function CalendarShare({
       setDirty(false);
       await copy(view(link));
     } catch (error) {
+      if (session !== generation.current) return;
       const code = error instanceof Error ? error.message : "";
       notify(
         code === "institution_required"
@@ -145,7 +158,7 @@ export function CalendarShare({
         "error",
       );
     } finally {
-      setBusy(false);
+      if (session === generation.current) setBusy(false);
     }
   }
   async function revoke(link: SavedLink) {
@@ -173,6 +186,7 @@ export function CalendarShare({
         variant="outline"
         size="sm"
         onClick={() => {
+          generation.current++;
           setLoading(true);
           setFailed(false);
           setIds(calendars.some((c) => c.id === selected) ? [selected] : []);
@@ -188,7 +202,13 @@ export function CalendarShare({
       </Button>
       <WorkspaceDialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(next) => {
+          if (!next) {
+            generation.current++;
+            setBusy(false);
+          }
+          setOpen(next);
+        }}
         title={t("Share calendars", "分享日历")}
         description={t(
           "Choose calendars and the content recipients can see.",
@@ -199,118 +219,125 @@ export function CalendarShare({
         detectFormChanges={false}
       >
         <div className={styles.root} data-telemetry-private>
-          <section className={styles.section}>
-            <div className={styles.sectionTitle}>
-              <CalendarDays size={16} />
-              <h3>{t("Calendars", "分享哪些日历")}</h3>
-              <small>
-                {ids.length} {t("selected", "个已选")}
-              </small>
-            </div>
-            <div className={styles.choices}>
-              {calendars.map((c) => (
-                <button
-                  key={c.id}
-                  className={styles.calendar}
-                  role="checkbox"
-                  aria-checked={ids.includes(c.id)}
-                  onClick={() => {
-                    setIds((old) =>
-                      old.includes(c.id)
-                        ? old.filter((id) => id !== c.id)
-                        : [...old, c.id],
-                    );
-                    setDirty(true);
-                  }}
-                >
-                  <span className={styles.checkbox}>
-                    {ids.includes(c.id) && <Check size={13} />}
-                  </span>
-                  <span>
-                    <strong>{c.title}</strong>
-                    <small>
-                      {c.events.length} {t("events", "个日程")}
-                    </small>
-                  </span>
-                </button>
-              ))}
-            </div>
-            {!calendars.length && (
+          <fieldset
+            className={styles.editable}
+            disabled={busy}
+            aria-label={t("Share settings", "分享设置")}
+          >
+            <section className={styles.section}>
+              <div className={styles.sectionTitle}>
+                <CalendarDays size={16} />
+                <h3>{t("Calendars", "分享哪些日历")}</h3>
+                <small>
+                  {ids.length} {t("selected", "个已选")}
+                </small>
+              </div>
+              <div className={styles.choices}>
+                {calendars.map((c) => (
+                  <button
+                    key={c.id}
+                    className={styles.calendar}
+                    role="checkbox"
+                    aria-checked={ids.includes(c.id)}
+                    onClick={() => {
+                      setIds((old) =>
+                        old.includes(c.id)
+                          ? old.filter((id) => id !== c.id)
+                          : [...old, c.id],
+                      );
+                      setDirty(true);
+                    }}
+                  >
+                    <span className={styles.checkbox}>
+                      {ids.includes(c.id) && <Check size={13} />}
+                    </span>
+                    <span>
+                      <strong>{c.title}</strong>
+                      <small>
+                        {c.events.length} {t("events", "个日程")}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {!calendars.length && (
+                <p className={styles.hint}>
+                  {t(
+                    "Create a personal calendar first.",
+                    "请先创建一个个人日历。",
+                  )}
+                </p>
+              )}
+            </section>
+            <section className={styles.section}>
+              <div className={styles.sectionTitle}>
+                <ShieldCheck size={16} />
+                <h3>{t("Visible content", "允许查看的内容")}</h3>
+              </div>
+              <div className={styles.chips}>
+                {categories.map((kind, index) => (
+                  <button
+                    key={kind}
+                    role="checkbox"
+                    aria-checked={kinds.includes(kind)}
+                    onClick={() => {
+                      setKinds((old) =>
+                        old.includes(kind)
+                          ? old.filter((k) => k !== kind)
+                          : [...old, kind],
+                      );
+                      setDirty(true);
+                    }}
+                  >
+                    {kinds.includes(kind) ? (
+                      <Check size={13} />
+                    ) : (
+                      <span className={styles.unchecked} />
+                    )}{" "}
+                    {t(kind, labels[index])}
+                  </button>
+                ))}
+              </div>
               <p className={styles.hint}>
                 {t(
-                  "Create a personal calendar first.",
-                  "请先创建一个个人日历。",
+                  "Private subscription addresses are excluded.",
+                  "私密订阅来源地址不会出现在分享内容中。",
                 )}
               </p>
-            )}
-          </section>
-          <section className={styles.section}>
-            <div className={styles.sectionTitle}>
-              <ShieldCheck size={16} />
-              <h3>{t("Visible content", "允许查看的内容")}</h3>
-            </div>
-            <div className={styles.chips}>
-              {categories.map((kind, index) => (
-                <button
-                  key={kind}
-                  role="checkbox"
-                  aria-checked={kinds.includes(kind)}
-                  onClick={() => {
-                    setKinds((old) =>
-                      old.includes(kind)
-                        ? old.filter((k) => k !== kind)
-                        : [...old, kind],
-                    );
+            </section>
+            <div className={styles.fields}>
+              <label>
+                {t("Public nickname (optional)", "公开昵称（可选）")}
+                <input
+                  maxLength={80}
+                  value={nickname}
+                  placeholder={t("Anonymous", "匿名")}
+                  onChange={(e) => {
+                    setNickname(e.target.value);
+                    setDirty(true);
+                  }}
+                />
+              </label>
+              <label>
+                {t("Link expiry", "链接有效期")}
+                <ChoiceSelect
+                  disabled={busy}
+                  value={expiry}
+                  onValueChange={(value) => {
+                    setExpiry(value);
                     setDirty(true);
                   }}
                 >
-                  {kinds.includes(kind) ? (
-                    <Check size={13} />
-                  ) : (
-                    <span className={styles.unchecked} />
-                  )}{" "}
-                  {t(kind, labels[index])}
-                </button>
-              ))}
+                  <option value="86400">{t("One day", "一天")}</option>
+                  <option value="604800">{t("One week", "一周")}</option>
+                  <option value="2592000">{t("30 days", "30 天")}</option>
+                  <option value="0">
+                    {t("Until revoked", "长期有效，直到撤销")}
+                  </option>
+                </ChoiceSelect>
+              </label>
             </div>
-            <p className={styles.hint}>
-              {t(
-                "Private subscription addresses are excluded.",
-                "私密订阅来源地址不会出现在分享内容中。",
-              )}
-            </p>
-          </section>
-          <div className={styles.fields}>
-            <label>
-              {t("Public nickname (optional)", "公开昵称（可选）")}
-              <input
-                maxLength={80}
-                value={nickname}
-                placeholder={t("Anonymous", "匿名")}
-                onChange={(e) => {
-                  setNickname(e.target.value);
-                  setDirty(true);
-                }}
-              />
-            </label>
-            <label>
-              {t("Link expiry", "链接有效期")}
-              <ChoiceSelect
-                value={expiry}
-                onValueChange={(value) => {
-                  setExpiry(value);
-                  setDirty(true);
-                }}
-              >
-                <option value="86400">{t("One day", "一天")}</option>
-                <option value="604800">{t("One week", "一周")}</option>
-                <option value="2592000">{t("30 days", "30 天")}</option>
-                <option value="0">
-                  {t("Until revoked", "长期有效，直到撤销")}
-                </option>
-              </ChoiceSelect>
-            </label>
-          </div>
+          </fieldset>
           <Button
             disabled={busy || !ids.length || ids.length > 30 || !kinds.length}
             onClick={() => void publish()}
