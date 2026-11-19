@@ -13,7 +13,7 @@ export function CalendarMonth({
   date: string;
   events: CalendarEvent[];
   locale: Locale;
-  onEvent: (event: CalendarEvent) => void;
+  onEvent: (event: CalendarEvent, anchor?: HTMLElement) => void;
 }) {
   const month = date.slice(0, 7),
     first = new Date(month + "-01T12:00:00Z");
@@ -61,7 +61,7 @@ export function CalendarMonth({
                   type="button"
                   data-category={event.category}
                   title={event.title}
-                  onClick={() => onEvent(event)}
+                  onClick={(click) => onEvent(event, click.currentTarget)}
                 >
                   {event.title.split(" | ")[0]}
                 </button>
@@ -75,7 +75,7 @@ export function CalendarMonth({
                     <button
                       key={event.id}
                       type="button"
-                      onClick={() => onEvent(event)}
+                      onClick={(click) => onEvent(event, click.currentTarget)}
                     >
                       {event.title.split(" | ")[0]}
                     </button>

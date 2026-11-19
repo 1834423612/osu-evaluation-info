@@ -46,6 +46,13 @@
   padding: 0 2px;
 }
 .banner {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  border: 0;
   background: color-mix(in srgb, #d3a34e 13%, var(--surface));
   border-left: 2px solid #b78d40;
   border-radius: 3px;
@@ -101,6 +108,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: flex-start;
+  min-width: 0;
   gap: 4px;
   text-align: left;
   padding: 6px;
@@ -130,10 +139,20 @@
   z-index: 3;
 }
 .event strong {
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
   font-size: 11px;
   line-height: 1.4;
 }
 .event span {
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
   font-size: 10px;
   display: flex;
   align-items: center;

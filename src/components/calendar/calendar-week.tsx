@@ -25,7 +25,7 @@ export function CalendarWeek({
   events: CalendarEvent[];
   dates: string[];
   locale: Locale;
-  onEvent?: (event: CalendarEvent) => void;
+  onEvent?: (event: CalendarEvent, anchor?: HTMLElement) => void;
 }) {
   const timed = weekSegments(events, dates);
   const start = Math.max(
@@ -73,14 +73,16 @@ export function CalendarWeek({
                   event.allDay && event.start <= date && event.end > date,
               )
               .map((event) => (
-                <div
+                <button
+                  type="button"
+                  onClick={(click) => onEvent?.(event, click.currentTarget)}
                   className={styles.banner}
                   data-category={event.category}
                   key={event.id}
                   title={event.title}
                 >
                   {event.title}
-                </div>
+                </button>
               ))}
           </div>
         ))}
@@ -178,7 +180,7 @@ export function CalendarWeek({
                     data-online={online}
                     title={`${event.title}\n${time(event.start)}–${time(event.end)}\n${event.location}`}
                     style={position}
-                    onClick={() => onEvent(event)}
+                    onClick={(click) => onEvent(event, click.currentTarget)}
                   >
                     {content}
                   </button>

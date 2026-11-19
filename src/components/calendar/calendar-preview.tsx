@@ -41,6 +41,21 @@ export function CalendarPreview({ events }: { events: CalendarEvent[] }) {
         <span key={index}>{day}</span>
       ))}
       <div>
+        {!positions.length &&
+          events
+            .filter((event) => event.allDay)
+            .slice(0, 3)
+            .map((event, index) => (
+              <i
+                key={event.id}
+                style={{
+                  left: "3%",
+                  top: `${8 + index * 26}%`,
+                  height: "14%",
+                  width: `${90 - index * 9}%`,
+                }}
+              />
+            ))}
         {positions.slice(0, 40).map((event, index) => (
           <i
             key={index}

@@ -1,4 +1,7 @@
 "use client";
+import { EventDetails, type CalendarEventPreview } from "./event-details";
+import { useActionNotice } from "@/hooks/use-action-notice";
+import { FeatureSyncStatus } from "@/components/sync/feature-sync-status";
 import {
   useEffect,
   useRef,
@@ -100,7 +103,18 @@ export function CalendarWorkspace() {
   const officialSelected = !!selected && isOfficialCalendar(selected.id);
   const [week, setWeek] = useState(() => monday(newYorkDate()));
   const [view, setView] = useState("week");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useActionNotice();
+  const [eventPreview, setEventPreview] = useState<CalendarEventPreview | null>(
+    null,
+  );
+  function previewEvent(event: CalendarEvent, anchor?: HTMLElement) {
+    const rect = anchor?.getBoundingClientRect();
+    setEventPreview({
+      event,
+      left: rect?.left ?? innerWidth / 2,
+      top: rect?.bottom ?? 120,
+    });
+  }
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60000);
@@ -424,6 +438,7 @@ export function CalendarWorkspace() {
             </p>
           </div>
           <div className={styles.actions}>
+            <FeatureSyncStatus feature="calendars" locale={locale} />
             <button onClick={() => setCreating(true)} disabled={!ready}>
               <Plus size={15} />
               {t("New calendar", "新建日历")}
@@ -567,16 +582,9 @@ export function CalendarWorkspace() {
                     }[c.icon];
                     return <Icon size={14} />;
                   })()}{" "}
-                  {c.title}
+                  <span>{c.title}</span>
                 </strong>
-                {isOfficialCalendar(c.id) ? (
-                  <span className={styles.officialBadge}>
-                    <ShieldCheck size={11} />
-                    {t("Official source", "官方来源")}
-                  </span>
-                ) : (
-                  <CalendarPreview events={combinedEvents(calendars, c)} />
-                )}
+                <CalendarPreview events={combinedEvents(calendars, c)} />
                 <small>
                   {combinedEvents(calendars, c).length} {t("events", "个日程")}{" "}
                   ·{" "}
@@ -723,14 +731,14 @@ export function CalendarWorkspace() {
                     date={week}
                     events={events}
                     locale={locale}
-                    onEvent={editEvent}
+                    onEvent={previewEvent}
                   />
                 ) : view === "week" ? (
                   <CalendarWeek
                     events={visible}
                     dates={dates}
                     locale={locale}
-                    onEvent={editEvent}
+                    onEvent={previewEvent}
                   />
                 ) : (
                   <div className={styles.agenda}>
@@ -749,7 +757,9 @@ export function CalendarWorkspace() {
                           key={event.id + index}
                           className={styles.event}
                           data-category={event.category}
-                          onClick={() => editEvent(event)}
+                          onClick={(click) =>
+                            previewEvent(event, click.currentTarget)
+                          }
                         >
                           <strong>{event.title}</strong>
                           <small>
@@ -1046,6 +1056,12 @@ export function CalendarWorkspace() {
           )}
         </WorkspaceDialog>
       </main>
+      <EventDetails
+        preview={eventPreview}
+        locale={locale}
+        onClose={() => setEventPreview(null)}
+        onEdit={editEvent}
+      />
       <AppFooter />
     </>
   );
