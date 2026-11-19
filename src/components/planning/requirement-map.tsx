@@ -8,6 +8,7 @@ import { requirementProgress } from "@/lib/planning/snapshots";
 import { planningPrograms, requirementCodes } from "@/lib/planning/programs";
 import { boardCourses } from "@/lib/planning/workspace";
 import { text, type Locale } from "@/lib/i18n";
+import { isGraduationConstraint } from "@/lib/planning/requirement-search";
 import { RequirementChoices } from "./requirement-choices";
 import { CourseStatus } from "./course-status";
 import styles from "./requirement-map.module.css";
@@ -117,7 +118,8 @@ export function RequirementMap({
           <li key={r.id}>
             <details
               className={styles.node}
-              open={depth < 2}
+              open={depth < 1}
+              data-depth={Math.min(depth, 3)}
               data-state={status}
             >
               <summary>
@@ -187,19 +189,30 @@ export function RequirementMap({
               {children.length > 0 && (
                 <ol>{branch(r.id, programId, depth + 1)}</ol>
               )}
-              {!children.length && !alternatives.length && r.title && (
-                <RequirementChoices
-                  title={r.title}
-                  locale={locale}
-                  unavailable={[...facts]
-                    .filter(([, c]) =>
-                      ["completed", "in-progress"].includes(c.status),
-                    )
-                    .map(([code]) => code)}
-                  add={addCourse}
-                  inspect={inspectCourse}
-                />
-              )}
+              {!children.length &&
+                !alternatives.length &&
+                r.title &&
+                !isGraduationConstraint(r.title) && (
+                  <RequirementChoices
+                    title={r.title}
+                    relatedSubjects={[
+                      ...new Set(
+                        rules
+                          .filter((rule) => rule.programId === programId)
+                          .flatMap(requirementCodes)
+                          .map((code) => code.subject),
+                      ),
+                    ].slice(0, 12)}
+                    locale={locale}
+                    unavailable={[...facts]
+                      .filter(([, c]) =>
+                        ["completed", "in-progress"].includes(c.status),
+                      )
+                      .map(([code]) => code)}
+                    add={addCourse}
+                    inspect={inspectCourse}
+                  />
+                )}
             </details>
           </li>
         );

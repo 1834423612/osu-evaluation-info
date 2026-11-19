@@ -2,6 +2,49 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readRequirementCourses } from "../../src/lib/planning/requirement-catalog.ts";
 import { requirementCodes } from "../../src/lib/planning/programs.ts";
+import {
+  requirementCatalogFilter,
+  isGraduationConstraint,
+} from "../../src/lib/planning/requirement-search.ts";
+
+test("degree conditions do not become unrestricted course pickers, and official civic and writing attributes stay distinct from GEN facets", async () => {
+  for (const title of [
+    "Minimum GPA 2.0",
+    "Ohio State Residency Requirement - 30 Hours",
+    "123 Total Degree Hours",
+    "Upper Division Courses - 39 Hours",
+  ])
+    assert.equal(isGraduationConstraint(title), true);
+  assert.equal(isGraduationConstraint("Advanced Writing Literacy"), false);
+  assert.deepEqual(requirementCatalogFilter("Advanced Writing Literacy"), {
+    key: "class-attribute-value",
+    value: "GEL Writing and Communication: level 2",
+  });
+  let params;
+  const result = await readRequirementCourses(
+    "Civic Literacy- Courses taken for this requirement may double count with another GE",
+    { campus: "MNS", term: "1272" },
+    async (url) => {
+      params = new URL(url, "https://local").searchParams;
+      return Response.json({
+        courses: [
+          { id: "civic", attributes: ["Civic Literacy"] },
+          {
+            id: "unrelated",
+            attributes: ["GEN Foundation: Social and Behavioral Sciences"],
+          },
+        ],
+      });
+    },
+    new AbortController().signal,
+  );
+  assert.equal(params.get("class-attribute-value"), "Civic Literacy");
+  assert.equal(params.has("gen-categories"), false);
+  assert.deepEqual(
+    result.courses.map((c) => c.id),
+    ["civic"],
+  );
+});
 test("category lookup preserves campus and cursor and rejects relaxed unrelated results", async () => {
   let params;
   const result = await readRequirementCourses(

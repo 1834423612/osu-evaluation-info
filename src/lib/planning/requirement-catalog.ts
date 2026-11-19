@@ -1,5 +1,5 @@
 import type { CatalogCourse } from "../catalog/types";
-import { requirementSearch } from "./requirement-search.ts";
+import { requirementCatalogFilter } from "./requirement-search.ts";
 export async function readRequirementCourses(
   title: string,
   scope: { campus: string; term: string },
@@ -8,8 +8,8 @@ export async function readRequirementCourses(
   cursor?: string,
   browse?: { subject?: string; category?: string },
 ) {
-  const inferred = requirementSearch(title);
-  const category = inferred || browse?.category;
+  const inferred = requirementCatalogFilter(title);
+  const category = inferred?.value || browse?.category;
   const subject = browse?.subject?.toUpperCase();
   if (subject && !/^[A-Z][A-Z&-]{0,19}$/.test(subject))
     throw Error("Invalid subject");
@@ -22,7 +22,7 @@ export async function readRequirementCourses(
   const params = new URLSearchParams({
     campus: scope.campus.toLowerCase(),
     term: scope.term,
-    ...(category ? { "gen-categories": category } : {}),
+    ...(category ? { [inferred?.key ?? "gen-categories"]: category } : {}),
     ...(subject ? { subject } : {}),
     limit: "24",
     exactPreview: "1",
