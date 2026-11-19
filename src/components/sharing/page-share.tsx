@@ -10,6 +10,7 @@ import { pageShareHref, courseShareHref } from "@/lib/saved/page-link";
 import { copyLink, ensureActorSession } from "@/lib/saved/share-links";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./page-share.module.css";
+import { notify } from "@/lib/notify";
 export function PageShare({
   locale,
   course,
@@ -71,6 +72,13 @@ export function PageShare({
         }
       } catch {}
       setUrl(link);
+      const copied = await copyLink(link);
+      setCopied(copied);
+      if (copied) notify(text(locale, "Link copied", "链接已复制"), "success");
+      else
+        setNotice(
+          text(locale, "Select the link to copy it.", "请选择链接后手动复制。"),
+        );
     } catch {
       setNotice(
         text(locale, "A link could not be created.", "暂时无法生成链接。"),
