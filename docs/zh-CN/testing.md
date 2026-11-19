@@ -552,4 +552,4 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 ## 同步、版本与完整性回归
 
-`node --test tests/planning/sync-selection.test.mjs tests/syllabus/diff.test.mjs tests/calendar/security.test.mjs tests/calendar/ical.test.mjs tests/planning/requirement-catalog.test.mjs` 检查暂停部分的数据保留、并发字段修改、准确且有内存上限的大纲差异、Node DNS 回调约定、Canvas 作业／类别往返及官方要求属性。这些测试使用内存中的受控输入，不写应用数据，也不请求外部服务。`node scripts/user-data/audit.mjs` 是需配置数据库并主动运行的只读审计；参数、输出和失败行为见[用户数据](user-data.md#完整性审计只读)。不要将私密 SQL 导出作为测试语句执行。
+`node --test tests/planning/sync-selection.test.mjs tests/syllabus/diff.test.mjs tests/calendar/security.test.mjs tests/calendar/ical.test.mjs tests/planning/requirement-catalog.test.mjs` 检查暂停恢复同步基线、学期分块、订阅刷新时间合并、并发字段修改、准确且有内存上限的大纲差异、Node DNS 回调约定、Canvas 作业／类别往返及官方要求属性。这些测试使用内存中的受控输入，不写应用数据，也不请求外部服务。`node scripts/user-data/audit.mjs` 是需配置数据库并主动运行的只读审计；参数、输出和失败行为见[用户数据](user-data.md#完整性审计只读)。不要将私密 SQL 导出作为测试语句执行。
