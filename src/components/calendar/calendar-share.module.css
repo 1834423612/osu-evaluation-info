@@ -1,0 +1,209 @@
+.root {
+  display: grid;
+  gap: 20px;
+  color: var(--ink);
+}
+.section {
+  display: grid;
+  gap: 12px;
+}
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.sectionTitle > svg {
+  color: #347c75;
+  flex-shrink: 0;
+}
+.sectionTitle h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+.sectionTitle > small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.calendar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  min-width: 0;
+}
+.calendar[aria-checked="true"] {
+  border-color: #76aaa1;
+  background: color-mix(in srgb, #347c75 5%, var(--surface));
+}
+.calendar > span:last-child {
+  min-width: 0;
+}
+.calendar strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+}
+.calendar small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.checkbox {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+[aria-checked="true"] > .checkbox {
+  background: #347c75;
+  border-color: #347c75;
+  color: white;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.chips button[aria-checked="true"] {
+  border-color: #a2c5bd;
+  color: #28675e;
+  background: color-mix(in srgb, #347c75 6%, var(--surface));
+}
+.unchecked {
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.fields label {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.fields input,
+.copyRow input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink);
+}
+.result {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #a2c5bd;
+  border-radius: 12px;
+  background: color-mix(in srgb, #347c75 4%, var(--surface));
+}
+.copyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  text-decoration: none;
+  padding: 7px 9px;
+  font-size: 11px;
+}
+.shareRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+}
+.shareRow > div {
+  flex: 1;
+  min-width: 0;
+}
+.shareRow strong {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.shareRow small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.root button:hover,
+.actions a:hover {
+  filter: brightness(0.98);
+}
+.root button:focus-visible,
+.actions a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .choices,
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .root {
+    gap: 18px;
+  }
+}
