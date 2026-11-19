@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import Link from "next/link";
 import { POLICY_VERSION } from "@/content/legal/policy";
 import {
@@ -44,7 +45,7 @@ export function AuthEntry({
     [otp, setOtp] = useState(""),
     [sent, setSent] = useState(false),
     [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useActionNotice(),
     [cooldown, setCooldown] = useState(0),
     [visible, setVisible] = useState(false),
     [recovery, setRecovery] = useState(""),

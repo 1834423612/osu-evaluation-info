@@ -2,7 +2,14 @@
 
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, Share2, RotateCcw, X, CircleAlert } from "lucide-react";
+import {
+  Bookmark,
+  CircleCheck,
+  Info,
+  RotateCcw,
+  X,
+  CircleAlert,
+} from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
@@ -14,6 +21,7 @@ type ToastDetail = {
   undo?: () => void;
   error?: "capacity" | "storage" | "failed";
   limit?: number;
+  tone?: "success" | "error" | "info";
 };
 
 export function ActionToast() {
@@ -73,17 +81,27 @@ export function ActionToast() {
     <div
       ref={surface}
       className="action-toast"
-      data-state={toast.error ? "error" : toast.added ? "added" : "removed"}
+      data-state={
+        toast.error || toast.tone === "error"
+          ? "error"
+          : toast.added
+            ? "added"
+            : "removed"
+      }
       data-phase={leaving ? "closing" : "open"}
       role="status"
       aria-live="polite"
       aria-atomic="true"
       style={{ pointerEvents: "auto" }}
     >
-      {toast.message ? (
-        <Share2 size={17} aria-hidden="true" />
-      ) : toast.error ? (
+      {toast.error || toast.tone === "error" ? (
         <CircleAlert size={17} aria-hidden="true" />
+      ) : toast.message ? (
+        toast.tone === "info" ? (
+          <Info size={17} aria-hidden="true" />
+        ) : (
+          <CircleCheck size={17} aria-hidden="true" />
+        )
       ) : toast.added ? (
         <BrandMascot expression="belly-laugh" size={32} eager />
       ) : (
