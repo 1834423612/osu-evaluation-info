@@ -251,7 +251,9 @@ function AccountWorkspace() {
               </div>
               <div className={layout.profileCopy}>
                 <h1>{session.user.name}</h1>
-                <p>{session.user.email}</p>
+                <p title={session.user.email} tabIndex={0}>
+                  {session.user.email}
+                </p>
               </div>
               <Button
                 variant="ghost"

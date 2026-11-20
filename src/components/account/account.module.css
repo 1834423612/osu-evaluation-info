@@ -425,6 +425,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.profileCopy p:focus {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .section {
   scroll-margin-top: 100px;
 }

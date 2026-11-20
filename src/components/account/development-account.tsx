@@ -255,6 +255,21 @@ export function DevelopmentAccount({
                                   "Planning · competing edits",
                                   "规划 · 两端同时修改",
                                 )}
+                        <details>
+                          <summary>
+                            {t("Field details", "查看冲突字段")}
+                          </summary>
+                          <code
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              fontSize: 11,
+                              marginTop: 6,
+                            }}
+                          >
+                            {path}
+                          </code>
+                        </details>
                       </li>
                     ))}
                   </ul>
