@@ -23,6 +23,36 @@ import { newYorkDate, eventInDateRange } from "../../src/lib/calendar/dates.ts";
 const envelope = (events) =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
 const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+test("ICS export rejects URL property injection while preserving ordinary URI punctuation", async () => {
+  const event = {
+    id: "one",
+    title: "Due",
+    start: "2027-01-12T14:00:00Z",
+    end: "2027-01-12T14:00:00Z",
+    allDay: false,
+    category: "assignment",
+    description: "",
+    location: "",
+  };
+  const malicious = exportCalendar(
+    "Test",
+    [
+      {
+        ...event,
+        url: "https://example.edu/\r\nATTENDEE:mailto:test@example.edu",
+      },
+    ],
+    "test",
+  );
+  assert.ok(!malicious.includes("\r\nATTENDEE:"));
+  assert.ok(!malicious.includes("\r\nURL:"));
+  const url = "https://example.edu/task?a=1&b=2#assignment_3";
+  const [roundTrip] = await parseCalendar(
+    exportCalendar("Test", [{ ...event, url }], "test"),
+    ...bounds,
+  );
+  assert.equal(roundTrip.url, url);
+});
 test("Canvas assignment fragments are categorized and ICS round trips retain category and source link", async () => {
   const source = envelope(
     "BEGIN:VEVENT\r\nUID:assignment-test\r\nDTSTART:20270112T140000Z\r\nDTEND:20270112T140000Z\r\nSUMMARY:Reading due\r\nURL:https://osu.instructure.com/calendar#assignment_123\r\nEND:VEVENT",

@@ -183,7 +183,10 @@ export function exportCalendar(
       `CATEGORIES:${event.category}`,
       `DESCRIPTION:${escape(event.description)}`,
       `LOCATION:${escape(event.location)}`,
-      ...(/^https?:\/\//i.test(event.url ?? "") ? [`URL:${event.url}`] : []),
+      ...(/^https?:\/\//i.test(event.url ?? "") &&
+      !/[\r\n]/.test(event.url ?? "")
+        ? [`URL:${event.url}`]
+        : []),
       "END:VEVENT",
     );
   }
