@@ -151,10 +151,14 @@ export function SyncPanel({
               disabled={busy}
               onClick={() =>
                 void run(async () => {
-                  await Promise.all([
+                  const results = await Promise.allSettled([
                     syncCycle(accountId),
                     syncPlanning(accountId),
                   ]);
+                  const failed = results.find(
+                    (result) => result.status === "rejected",
+                  );
+                  if (failed?.status === "rejected") throw failed.reason;
                 })
               }
             >

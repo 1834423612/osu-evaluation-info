@@ -116,7 +116,17 @@ function genericPlan(plan: Plan) {
   }
   return planSchema.parse(result);
 }
-export async function syncPlanning(account: string) {
+const inFlight = new Map<string, Promise<void>>();
+export function syncPlanning(account: string): Promise<void> {
+  const current = inFlight.get(account);
+  if (current) return current;
+  const operation = runPlanningSync(account).finally(() => {
+    if (inFlight.get(account) === operation) inFlight.delete(account);
+  });
+  inFlight.set(account, operation);
+  return operation;
+}
+async function runPlanningSync(account: string) {
   assertAuthenticatedAccount(account);
   const preferences = await readSyncState(account),
     features = syncFeatures(preferences);

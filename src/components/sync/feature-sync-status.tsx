@@ -54,7 +54,8 @@ export function FeatureSyncStatus({
       }
       try {
         const next = await readSyncState(account);
-        const planning = planningState(account);
+        const planning =
+          feature === "favorites" ? null : planningState(account);
         if (!live || revision !== stamp) return;
         setState(next);
         setPlan(planning);
@@ -62,15 +63,19 @@ export function FeatureSyncStatus({
           feature === "favorites"
             ? hasPendingSavedChanges(next, readSyncItems())
             : JSON.stringify(
-                projectSyncPlan(planning.plan, planning.base, {
-                  favorites: true,
-                  planning: feature === "planning",
-                  calendars: feature === "calendars",
-                }),
-              ) !== JSON.stringify(planning.base),
+                projectSyncPlan(
+                  planning?.plan ?? null,
+                  planning?.base ?? null,
+                  {
+                    favorites: true,
+                    planning: feature === "planning",
+                    calendars: feature === "calendars",
+                  },
+                ),
+              ) !== JSON.stringify(planning?.base ?? null),
         );
       } catch {
-        if (live) setPending(true);
+        if (live && revision === stamp) setPending(true);
       }
     };
     void read();
@@ -200,6 +205,14 @@ export function FeatureSyncStatus({
                     setBusy(true);
                     try {
                       await resolvePlanningConflict(account, choice);
+                    } catch {
+                      notify(
+                        t(
+                          "Could not resolve this conflict. Try again.",
+                          "未能处理冲突，请重试。",
+                        ),
+                        "error",
+                      );
                     } finally {
                       setBusy(false);
                     }
