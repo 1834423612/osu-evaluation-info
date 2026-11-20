@@ -36,7 +36,7 @@ export function SyllabusRevisionHistory({
       .then((d) => {
         if (!c.signal.aborted) {
           setVersions(d.versions);
-          setLoading(d.versions.length >= 2);
+          if (d.versions.length < 2) setLoading(false);
           setAfter(d.versions[0]?.id ?? "");
           setBefore(d.versions[1]?.id ?? "");
         }
@@ -52,6 +52,9 @@ export function SyllabusRevisionHistory({
   useEffect(() => {
     if (!open || !before || !after) return;
     const c = new AbortController();
+    queueMicrotask(() => {
+      if (!c.signal.aborted) setLoading(true);
+    });
     fetch(
       "/api/syllabus/revisions?" + new URLSearchParams({ code, before, after }),
       { signal: c.signal },
@@ -86,6 +89,7 @@ export function SyllabusRevisionHistory({
           setAfter("");
           setLines([]);
           setListing(true);
+          setLoading(false);
           setFailed(false);
           setOpen(true);
         }}
