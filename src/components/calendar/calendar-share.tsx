@@ -48,6 +48,11 @@ export function CalendarShare({
 }) {
   const t = (en: string, zh: string) => (locale === "zh" ? zh : en);
   const generation = useRef(0);
+  const initialSettings = useRef({
+    kinds: [...categories],
+    nickname: "",
+    expiry: "604800",
+  });
   useEffect(
     () => () => {
       generation.current++;
@@ -131,6 +136,7 @@ export function CalendarShare({
       setCurrent(link);
       setLinks((rows) => [link, ...rows.filter((r) => r.id !== link.id)]);
       setDirty(false);
+      initialSettings.current = { kinds: [...kinds], nickname, expiry };
       await copy(view(link));
     } catch (error) {
       if (session !== generation.current) return;
@@ -163,6 +169,7 @@ export function CalendarShare({
   }
   async function revoke(link: SavedLink) {
     if (busy) return;
+    const session = generation.current;
     setBusy(true);
     try {
       const r = await fetch("/api/calendar/links", {
@@ -171,13 +178,15 @@ export function CalendarShare({
         body: JSON.stringify({ id: link.id }),
       });
       if (!r.ok) throw Error();
+      if (session !== generation.current) return;
       setLinks((rows) => rows.filter((l) => l.id !== link.id));
       if (current?.id === link.id) setCurrent(null);
       notify(t("Share revoked", "分享已撤销"), "success");
     } catch {
+      if (session !== generation.current) return;
       notify(t("Could not revoke. Try again.", "撤销失败，请重试。"), "error");
     } finally {
-      setBusy(false);
+      if (session === generation.current) setBusy(false);
     }
   }
   return (
@@ -187,6 +196,7 @@ export function CalendarShare({
         size="sm"
         onClick={() => {
           generation.current++;
+          initialSettings.current = { kinds: [...kinds], nickname, expiry };
           setLoading(true);
           setFailed(false);
           setIds(calendars.some((c) => c.id === selected) ? [selected] : []);
@@ -206,6 +216,12 @@ export function CalendarShare({
           if (!next) {
             generation.current++;
             setBusy(false);
+            if (dirty) {
+              setKinds(initialSettings.current.kinds);
+              setNickname(initialSettings.current.nickname);
+              setExpiry(initialSettings.current.expiry);
+              setDirty(false);
+            }
           }
           setOpen(next);
         }}
