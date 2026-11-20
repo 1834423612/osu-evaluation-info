@@ -111,6 +111,7 @@ export function CalendarWorkspace() {
     const rect = anchor?.getBoundingClientRect();
     setEventPreview({
       event,
+      opener: anchor,
       readOnly: calendars.some(
         (calendar) =>
           calendar.kind === "feed" &&
@@ -202,7 +203,7 @@ export function CalendarWorkspace() {
     setEditorBaseline(JSON.stringify(draft));
     setEditor(draft);
   }
-  function editEvent(event: CalendarEvent) {
+  function editEvent(event: CalendarEvent, copyFeed = false) {
     if (event.id.startsWith("official-")) {
       setOfficialEvent(event);
       return;
@@ -219,7 +220,7 @@ export function CalendarWorkspace() {
         item.id === event.id ||
         JSON.stringify([owner.id, item.id]) === event.id,
     );
-    if (owner && original && owner.kind !== "feed") {
+    if (owner && original && (owner.kind !== "feed" || copyFeed)) {
       setEventDirty(false);
       setSelectedId(owner.id);
       setEventEditor(structuredClone(original));
@@ -1069,7 +1070,8 @@ export function CalendarWorkspace() {
         preview={eventPreview}
         locale={locale}
         onClose={() => setEventPreview(null)}
-        onEdit={editEvent}
+        onEdit={(event) => editEvent(event)}
+        onCopy={(event) => editEvent(event, true)}
       />
       <AppFooter />
     </>

@@ -42,6 +42,7 @@ export function SharedCalendar() {
       author: { nickname?: string };
     } | null>(null),
     [message, setMessage] = useActionNotice(),
+    [loadError, setLoadError] = useState(""),
     [selected, setSelected] = useState<string[]>([]);
   useEffect(() => {
     const c = new AbortController(),
@@ -49,7 +50,9 @@ export function SharedCalendar() {
       id = url.searchParams.get("id"),
       token = id ? linkCapability("calendar", id) : undefined;
     if (!token || !id) {
-      queueMicrotask(() => setMessage(t("Calendar unavailable", "日历不可用")));
+      queueMicrotask(() =>
+        setLoadError(t("Calendar unavailable", "日历不可用")),
+      );
       return;
     }
     fetch("/api/calendar/public?" + new URLSearchParams({ id, key: token }), {
@@ -79,7 +82,7 @@ export function SharedCalendar() {
       })
       .catch(() => {
         if (!c.signal.aborted)
-          setMessage(
+          setLoadError(
             t("Calendar unavailable or expired", "日历不可用或已过期"),
           );
       });
@@ -151,7 +154,7 @@ export function SharedCalendar() {
             <Link href="/account">{t("Account", "登录 / 注册")}</Link>
           </p>
         )}
-        <p role="status">{message}</p>
+        <p role="status">{loadError || message}</p>
         <div className={styles.layout}>
           <aside className={styles.sidebar}>
             {data?.calendars.map((calendar) => (

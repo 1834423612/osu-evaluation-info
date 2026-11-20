@@ -1,5 +1,6 @@
 "use client";
 import { Popover } from "radix-ui";
+import { useEffect, useRef } from "react";
 import {
   CalendarDays,
   Clock3,
@@ -19,18 +20,26 @@ export type CalendarEventPreview = {
   left: number;
   top: number;
   readOnly?: boolean;
+  opener?: HTMLElement;
 };
 export function EventDetails({
   preview,
   locale,
   onClose,
   onEdit,
+  onCopy,
 }: {
   preview: CalendarEventPreview | null;
   locale: Locale;
   onClose: () => void;
   onEdit: (event: CalendarEvent) => void;
+  onCopy?: (event: CalendarEvent) => void;
 }) {
+  const openingEditor = useRef(false);
+  const opener = useRef<HTMLElement | undefined>(undefined);
+  useEffect(() => {
+    if (preview?.opener) opener.current = preview.opener;
+  }, [preview]);
   const event = preview?.event,
     zh = locale === "zh";
   const date = (value: string) =>
@@ -68,7 +77,14 @@ export function EventDetails({
       </Popover.Anchor>
       <Popover.Portal>
         <Popover.Content
-          className={styles.panel}
+          className={`${styles.panel} rr-block`}
+          data-telemetry-private
+          onCloseAutoFocus={(close) => {
+            close.preventDefault();
+            if (!openingEditor.current && opener.current?.isConnected)
+              opener.current.focus();
+            openingEditor.current = false;
+          }}
           sideOffset={10}
           collisionPadding={12}
           align="start"
@@ -97,6 +113,7 @@ export function EventDetails({
                       size="icon-sm"
                       aria-label={zh ? "编辑日程" : "Edit event"}
                       onClick={() => {
+                        openingEditor.current = true;
                         onEdit(event);
                         onClose();
                       }}
@@ -115,7 +132,23 @@ export function EventDetails({
                   </Popover.Close>
                 </div>
               </header>
-              <h2>{event.title.split(" | ")[0]}</h2>
+              <h2>{event.title}</h2>
+              {preview?.readOnly &&
+                !event.id.startsWith("official-") &&
+                onCopy && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      openingEditor.current = true;
+                      onCopy(event);
+                      onClose();
+                    }}
+                  >
+                    <Pencil size={14} />
+                    {zh ? "创建可编辑副本" : "Create editable copy"}
+                  </Button>
+                )}
               <div className={styles.fact}>
                 <Clock3 size={16} />
                 <div>
@@ -141,13 +174,10 @@ export function EventDetails({
                   <span>{event.location}</span>
                 </div>
               )}
-              {(event.description || event.title.includes(" | ")) && (
+              {event.description && (
                 <div className={styles.fact}>
                   <AlignLeft size={16} />
-                  <p>
-                    {event.description ||
-                      event.title.split(" | ").slice(1).join(" · ")}
-                  </p>
+                  <p>{event.description}</p>
                 </div>
               )}
               {event.url && /^https?:\/\//i.test(event.url) && (

@@ -120,7 +120,10 @@ export function CalendarWeek({
             ) {
               const segment = daily[index++],
                 { event, from } = segment,
-                to = Math.max(from + 15, segment.to);
+                to = Math.max(
+                  from + (event.start === event.end ? 50 : 23),
+                  segment.to,
+                );
               let lane = ends.findIndex((value) => value <= from);
               if (lane < 0) lane = ends.length;
               ends[lane] = to;
