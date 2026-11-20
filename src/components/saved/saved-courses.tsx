@@ -1,10 +1,10 @@
 "use client";
+import { FeatureSyncStatus } from "@/components/sync/feature-sync-status";
 import { RmpSavedRemove } from "./rmp-saved-remove";
 
 import {
   SavedWorkspace,
   SavedCardFrame,
-  SavedStorageSummary,
   useSavedWorkspace,
 } from "./saved-workspace";
 
@@ -206,7 +206,7 @@ function SavedCoursesBody() {
               )}
             </p>
           </div>
-          <SavedStorageSummary locale={locale} />
+          <FeatureSyncStatus feature="favorites" locale={locale} />
         </div>
         <Tabs
           value={

@@ -8,7 +8,7 @@ import { useDraftGuard } from "@/components/forms/draft-guard";
 import { browserUuid } from "@/lib/uuid";
 import { savedScope } from "@/lib/saved/scope";
 import { readCollections, editCollections } from "@/lib/saved/collections";
-import { readLocalItems } from "@/lib/saved/local";
+import { readLocalItems, removeLocalItems } from "@/lib/saved/local";
 import { itemKey } from "@/lib/saved/exchange";
 import { withSavedMutation } from "@/lib/saved/mutations";
 import type { SavedCollection } from "@/lib/saved/collection-schema";
@@ -33,6 +33,8 @@ export function SaveCollectionPicker() {
       [...chosen].sort().join() !== [...initial].sort().join());
   useDraftGuard(dirty);
   const dirtyRef = useRef(dirty);
+  const generation = useRef(0);
+  const lastScope = useRef<string | null>(null);
   const pointer = useRef<{ x: number; y: number; time: number } | null>(null);
   useEffect(() => {
     dirtyRef.current = dirty;
@@ -50,6 +52,9 @@ export function SaveCollectionPicker() {
         return;
       const value = (event as CustomEvent<Item>).detail;
       if (value.scope !== savedScope()) return;
+      generation.current++;
+      lastScope.current = value.scope;
+      setBusy(false);
       const all = readCollections();
       setGroups(all);
       const ids = new Set(
@@ -77,6 +82,10 @@ export function SaveCollectionPicker() {
       setContainer(active?.closest('[role="dialog"]') as HTMLElement | null);
     };
     const scope = () => {
+      if (lastScope.current !== savedScope()) {
+        generation.current++;
+        lastScope.current = savedScope();
+      }
       setItem((old) => (old && old.scope !== savedScope() ? null : old));
     };
     const position = (event: PointerEvent) => {
@@ -97,6 +106,7 @@ export function SaveCollectionPicker() {
   }, []);
   async function save() {
     if (!item) return;
+    const session = generation.current;
     setBusy(true);
     try {
       await withSavedMutation(() => {
@@ -123,8 +133,9 @@ export function SaveCollectionPicker() {
           return next;
         });
       });
-      setItem(null);
+      if (session === generation.current) setItem(null);
     } catch {
+      if (session !== generation.current) return;
       setNotice(
         text(
           locale,
@@ -133,7 +144,7 @@ export function SaveCollectionPicker() {
         ),
       );
     } finally {
-      setBusy(false);
+      if (session === generation.current) setBusy(false);
     }
   }
   return (
@@ -151,8 +162,10 @@ export function SaveCollectionPicker() {
                 "放弃尚未保存的分组选择？",
               ),
             ))
-        )
+        ) {
+          generation.current++;
           setItem(null);
+        }
       }}
     >
       <Popover.Anchor asChild>
@@ -170,7 +183,8 @@ export function SaveCollectionPicker() {
       </Popover.Anchor>
       <Popover.Portal container={container ?? undefined}>
         <Popover.Content
-          className={styles.picker}
+          className={`${styles.picker} rr-block`}
+          data-telemetry-private
           align="end"
           sideOffset={8}
           collisionPadding={12}
@@ -254,6 +268,37 @@ export function SaveCollectionPicker() {
               : text(locale, "Keep unfiled", "暂不分类")}
           </Button>
           {notice ? <small role="status">{notice}</small> : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={async () => {
+              if (!item) return;
+              const session = generation.current;
+              setBusy(true);
+              try {
+                const result = await withSavedMutation(() => {
+                  if (item.scope !== savedScope()) throw Error();
+                  return removeLocalItems(new Set([item.key]));
+                });
+                if (!result) throw Error();
+                if (session === generation.current) setItem(null);
+              } catch {
+                if (session === generation.current)
+                  setNotice(
+                    text(
+                      locale,
+                      "Could not remove this favorite. Try again.",
+                      "未能取消收藏，请重试。",
+                    ),
+                  );
+              } finally {
+                if (session === generation.current) setBusy(false);
+              }
+            }}
+          >
+            {text(locale, "Remove from favorites", "取消此项收藏")}
+          </Button>
           <Popover.Arrow className={styles.arrow} />
         </Popover.Content>
       </Popover.Portal>

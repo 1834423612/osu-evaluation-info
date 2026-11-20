@@ -25,7 +25,7 @@ export function CalendarWeek({
   events: CalendarEvent[];
   dates: string[];
   locale: Locale;
-  onEvent?: (event: CalendarEvent) => void;
+  onEvent?: (event: CalendarEvent, anchor?: HTMLElement) => void;
 }) {
   const timed = weekSegments(events, dates);
   const start = Math.max(
@@ -73,14 +73,16 @@ export function CalendarWeek({
                   event.allDay && event.start <= date && event.end > date,
               )
               .map((event) => (
-                <div
+                <button
+                  type="button"
+                  onClick={(click) => onEvent?.(event, click.currentTarget)}
                   className={styles.banner}
                   data-category={event.category}
                   key={event.id}
                   title={event.title}
                 >
                   {event.title}
-                </div>
+                </button>
               ))}
           </div>
         ))}
@@ -118,7 +120,10 @@ export function CalendarWeek({
             ) {
               const segment = daily[index++],
                 { event, from } = segment,
-                to = Math.max(from + 15, segment.to);
+                to = Math.max(
+                  from + (event.start === event.end ? 50 : 23),
+                  segment.to,
+                );
               let lane = ends.findIndex((value) => value <= from);
               if (lane < 0) lane = ends.length;
               ends[lane] = to;
@@ -152,7 +157,8 @@ export function CalendarWeek({
                     <strong>{event.title}</strong>
                     <span>
                       <Clock3 size={10} />
-                      {time(event.start)}–{time(event.end)}
+                      {time(event.start)}
+                      {event.end !== event.start ? "–" + time(event.end) : ""}
                     </span>
                     {event.location && (
                       <span>
@@ -176,9 +182,10 @@ export function CalendarWeek({
                     className={styles.event}
                     data-category={event.category}
                     data-online={online}
+                    data-point={event.start === event.end || undefined}
                     title={`${event.title}\n${time(event.start)}–${time(event.end)}\n${event.location}`}
                     style={position}
-                    onClick={() => onEvent(event)}
+                    onClick={(click) => onEvent(event, click.currentTarget)}
                   >
                     {content}
                   </button>
@@ -188,6 +195,7 @@ export function CalendarWeek({
                     className={styles.event}
                     data-category={event.category}
                     data-online={online}
+                    data-point={event.start === event.end || undefined}
                     style={position}
                   >
                     {content}

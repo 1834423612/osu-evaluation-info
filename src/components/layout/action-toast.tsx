@@ -2,7 +2,14 @@
 
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, Share2, RotateCcw, X, CircleAlert } from "lucide-react";
+import {
+  Bookmark,
+  CircleCheck,
+  Info,
+  RotateCcw,
+  X,
+  CircleAlert,
+} from "lucide-react";
 import { BrandMascot } from "@/components/brand/brand-mascot";
 import { usePreferences } from "@/hooks/use-preferences";
 import { text } from "@/lib/i18n";
@@ -14,12 +21,14 @@ type ToastDetail = {
   undo?: () => void;
   error?: "capacity" | "storage" | "failed";
   limit?: number;
+  tone?: "success" | "error" | "info";
 };
 
 export function ActionToast() {
   const { locale } = usePreferences();
   const [toast, setToast] = useState<ToastDetail | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [container, setContainer] = useState<Element | null>(null);
   const surface = useRef<HTMLDivElement>(null);
   const previousSize = useRef<{ width: number; height: number } | null>(null);
   useLayoutEffect(() => {
@@ -45,6 +54,11 @@ export function ActionToast() {
 
   useEffect(() => {
     const onToast = (event: Event) => {
+      setContainer(
+        [...document.querySelectorAll('[role="dialog"][data-state="open"]')].at(
+          -1,
+        ) ?? null,
+      );
       setLeaving(false);
       setToast((event as CustomEvent<ToastDetail>).detail);
     };
@@ -55,6 +69,15 @@ export function ActionToast() {
       window.removeEventListener("course-atlas:save-error", onToast);
     };
   }, []);
+
+  useEffect(() => {
+    if (!container) return;
+    const observer = new MutationObserver(() => {
+      if (!container.isConnected) setContainer(null);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [container]);
 
   useEffect(() => {
     if (!toast) return;
@@ -72,18 +95,29 @@ export function ActionToast() {
   return createPortal(
     <div
       ref={surface}
-      className="action-toast"
-      data-state={toast.error ? "error" : toast.added ? "added" : "removed"}
+      className="action-toast rr-block"
+      data-telemetry-private
+      data-state={
+        toast.error || toast.tone === "error"
+          ? "error"
+          : toast.added
+            ? "added"
+            : "removed"
+      }
       data-phase={leaving ? "closing" : "open"}
       role="status"
       aria-live="polite"
       aria-atomic="true"
       style={{ pointerEvents: "auto" }}
     >
-      {toast.message ? (
-        <Share2 size={17} aria-hidden="true" />
-      ) : toast.error ? (
+      {toast.error || toast.tone === "error" ? (
         <CircleAlert size={17} aria-hidden="true" />
+      ) : toast.message ? (
+        toast.tone === "info" ? (
+          <Info size={17} aria-hidden="true" />
+        ) : (
+          <CircleCheck size={17} aria-hidden="true" />
+        )
       ) : toast.added ? (
         <BrandMascot expression="belly-laugh" size={32} eager />
       ) : (
@@ -132,6 +166,6 @@ export function ActionToast() {
         <X size={15} aria-hidden="true" />
       </button>
     </div>,
-    document.body,
+    container ?? document.body,
   );
 }

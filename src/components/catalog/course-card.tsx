@@ -1,6 +1,7 @@
 "use client";
 import { confirmDiscard } from "@/components/forms/draft-guard";
 import { recordCourseOpen } from "@/lib/telemetry/client";
+import { CourseSaveButton } from "@/components/saved/course-save-button";
 import { PageShare } from "@/components/sharing/page-share";
 import { SearchMatch } from "./search-match";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
@@ -9,7 +10,6 @@ import { recordHistory } from "@/lib/history/store";
 import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
-  Bookmark,
   GraduationCap,
   MapPin,
   MonitorPlay,
@@ -788,6 +788,8 @@ export function CourseCard({
       data-analytics-value={`${course.subject} ${course.catalogNumber}`}
       tabIndex={0}
       onClick={(event) => {
+        // React portals bubble through this card; their controls must not reopen the sections tab.
+        if (!event.currentTarget.contains(event.target as Node)) return;
         const target = event.target as HTMLElement;
         if (
           target.closest(
@@ -817,19 +819,13 @@ export function CourseCard({
             </span>
             <CourseIdentityFacts course={current} locale={locale} compact />
             <PageShare locale={locale} course={current} compact />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => onSave(current)}
-              aria-label={`${saved ? text(locale, "Unsave", "取消收藏") : text(locale, "Save", "收藏")} ${course.subject} ${course.catalogNumber}`}
-              aria-pressed={saved}
-              data-analytics-action="course_favorite"
-              data-analytics-label="course"
-              data-analytics-value={`${course.subject} ${course.catalogNumber}`}
-              className="save-course"
-            >
-              <Bookmark fill={saved ? "currentColor" : "none"} />
-            </Button>
+            <CourseSaveButton
+              course={current}
+              saved={saved}
+              locale={locale}
+              onSave={onSave}
+              compact
+            />
           </div>
           <h2>
             <button
@@ -961,6 +957,12 @@ export function CourseCard({
                 <div className="course-facts-share">
                   <CourseIdentityFacts course={current} locale={locale} />
                   <PageShare locale={locale} course={current} compact />
+                  <CourseSaveButton
+                    course={current}
+                    saved={saved}
+                    locale={locale}
+                    onSave={onSave}
+                  />
                 </div>
               </div>
               <Button
@@ -1029,6 +1031,12 @@ export function CourseCard({
                 <div className="course-facts-share">
                   <CourseIdentityFacts course={current} locale={locale} />
                   <PageShare locale={locale} course={current} compact />
+                  <CourseSaveButton
+                    course={current}
+                    saved={saved}
+                    locale={locale}
+                    onSave={onSave}
+                  />
                 </div>
               </div>
               <Button

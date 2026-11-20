@@ -29,7 +29,7 @@ type State = {
   collections: SavedCollection[];
   setCollections: Dispatch<SetStateAction<SavedCollection[]>>;
   active: string;
-  setActive: Dispatch<SetStateAction<string>>;
+  setActive: (value: string) => void;
   selected: Set<string>;
   setSelected: Dispatch<SetStateAction<Set<string>>>;
   compact: boolean;
@@ -70,7 +70,17 @@ export function SavedWorkspace({ children }: { children: ReactNode }) {
       try {
         const next = readLocalItems();
         setItems(next);
-        setCollections(readCollections());
+        const groups = readCollections();
+        setCollections(groups);
+        const remembered = localStorage.getItem(
+          "course-atlas:last-folder:" + (nextScope ?? "guest"),
+        );
+        setActive(
+          remembered === "unfiled" ||
+            groups.some((group) => group.id === remembered)
+            ? remembered!
+            : "all",
+        );
         const keys = new Set(next.map(itemKey));
         setSelected((old) => new Set([...old].filter((key) => keys.has(key))));
       } catch {}
@@ -100,7 +110,15 @@ export function SavedWorkspace({ children }: { children: ReactNode }) {
         collections,
         setCollections,
         active,
-        setActive,
+        setActive: (value) => {
+          try {
+            localStorage.setItem(
+              "course-atlas:last-folder:" + (savedScope() ?? "guest"),
+              value,
+            );
+          } catch {}
+          setActive(value);
+        },
         selected,
         setSelected,
         selecting,

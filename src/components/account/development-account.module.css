@@ -1,0 +1,74 @@
+.panel {
+  display: grid;
+  gap: 16px;
+}
+.panel h2,
+.panel p {
+  margin: 0;
+}
+.panel form {
+  display: grid;
+  gap: 12px;
+}
+.panel :is(input, button) {
+  min-width: 0;
+}
+.panel > span {
+  justify-self: start;
+}
+.panel > div {
+  min-width: 0;
+}
+.panel label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.preview {
+  display: grid;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, #b98c43 35%, var(--line));
+  border-radius: 12px;
+  padding: 16px;
+  background: color-mix(in srgb, #b98c43 5%, var(--surface));
+  font-size: 12px;
+  line-height: 1.7;
+}
+.preview > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+}
+.preview ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.preview li {
+  border-left: 3px solid #bd8a37;
+  padding: 7px 10px;
+  background: var(--surface);
+  border-radius: 4px;
+}
+.preview details {
+  color: var(--muted);
+  font-size: 10px;
+}
+.preview details li {
+  overflow-wrap: anywhere;
+}
+.panel :global([role="status"]):empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .panel {
+    gap: 14px;
+    padding: 18px;
+  }
+  .preview {
+    padding: 12px;
+  }
+}

@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { useEffect, useState } from "react";
 import { Mail, ShieldCheck } from "lucide-react";
 import { DraftForm } from "@/components/forms/draft-guard";
@@ -34,7 +35,7 @@ export function InstitutionalProfile({ locale }: { locale: Locale }) {
     [code, setCode] = useState(""),
     [sent, setSent] = useState(false),
     [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useActionNotice(),
     [cooldown, setCooldown] = useState(0),
     [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -58,7 +59,7 @@ export function InstitutionalProfile({ locale }: { locale: Locale }) {
           );
       });
     return () => c.abort();
-  }, [locale]);
+  }, [locale, setNotice]);
   useEffect(() => {
     if (!cooldown) return;
     const t = setTimeout(() => setCooldown((n) => Math.max(0, n - 1)), 1000);

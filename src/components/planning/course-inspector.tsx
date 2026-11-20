@@ -10,6 +10,8 @@ import {
   planningCredits,
 } from "@/lib/planning/course-catalog";
 import { TranslateText } from "@/components/translation/translate-text";
+import { CourseSaveButton } from "@/components/saved/course-save-button";
+import { usePreferences } from "@/hooks/use-preferences";
 import { CourseDetailTabs } from "./course-detail-tabs";
 import { CourseStatus } from "./course-status";
 import { boardCourses } from "@/lib/planning/workspace";
@@ -34,6 +36,7 @@ export function CourseInspector({
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const lookup = usePlanningCourse(code.subject, code.number);
+  const preferences = usePreferences();
   const course = lookup.detail?.course;
   const prereq = course ? prerequisiteText(course.description) : null;
   const overview = prereq
@@ -95,6 +98,14 @@ export function CourseInspector({
         </button>
       )}
       <div className={styles.detailActions}>
+        {course && (
+          <CourseSaveButton
+            course={course}
+            locale={locale}
+            saved={preferences.saved.some((item) => item.id === course.id)}
+            onSave={preferences.toggleSaved}
+          />
+        )}
         <button
           className={styles.primary}
           disabled={observations.some(

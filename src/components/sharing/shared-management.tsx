@@ -1,4 +1,6 @@
 "use client";
+import layout from "./shared-management.module.css";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { authClient } from "@/lib/auth/client";
 import { useEffect, useState } from "react";
 import { Link2, Copy, RefreshCw, Trash2 } from "lucide-react";
@@ -39,7 +41,7 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false),
     [rows, setRows] = useState<Row[]>([]),
     [loading, setLoading] = useState(false),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useActionNotice(),
     [pending, setPending] = useState<{
       row: Row;
       action: "revoke" | "rotate";
@@ -209,226 +211,258 @@ function SharedManagementBody({ locale }: { locale: Locale }) {
         }
         closeLabel={text(locale, "Close", "关闭")}
       >
-        {notice ? (
-          <p role="status" className={styles.notice}>
-            {notice}
-          </p>
-        ) : null}
-        {pending ? (
-          <>
-            <p>{pending.row.title}</p>
-            <div className={styles.tools}>
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => setPending(null)}
-              >
-                {text(locale, "Cancel", "取消")}
-              </Button>
-              <Button disabled={busy} onClick={() => void change()}>
-                {text(locale, "Confirm", "确认")}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            {manualUrl ? (
-              <label className={styles.fields}>
-                {text(
-                  locale,
-                  "Select and copy this link",
-                  "请选择并复制此链接",
-                )}
-                <input
-                  className={styles.input}
-                  value={manualUrl}
-                  readOnly
-                  onFocus={(e) => e.target.select()}
-                />
-              </label>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => void load()}
-              disabled={loading}
-            >
-              <RefreshCw size={13} />
-              {text(locale, "Refresh", "刷新")}
-            </Button>
-            <div className={styles.tools}>
-              {(["active", "all"] as const).map((value) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant={filter === value ? "secondary" : "ghost"}
-                  aria-pressed={filter === value}
-                  onClick={() => setFilter(value)}
-                >
-                  {text(
-                    locale,
-                    value === "active" ? "Active" : "All shares",
-                    value === "active" ? "有效分享" : "全部分享",
-                  )}{" "}
-                  ·{" "}
+        <div className={layout.root}>
+          {!pending && (
+            <div className={layout.summary}>
+              <span>
+                <strong>
                   {
                     rows.filter(
                       (row) =>
-                        value === "all" ||
-                        (!row.revoked_at &&
-                          (!row.expires_at ||
-                            Date.parse(row.expires_at) > now)),
+                        !row.revoked_at &&
+                        (!row.expires_at || Date.parse(row.expires_at) > now),
                     ).length
                   }
-                </Button>
-              ))}
+                </strong>
+                {text(locale, "Active links", "有效分享")}
+              </span>
+              <span>
+                <strong>{rows.reduce((sum, row) => sum + row.opens, 0)}</strong>
+                {text(locale, "Opens", "访问")}
+              </span>
+              <span>
+                <strong>
+                  {rows.reduce((sum, row) => sum + row.imports, 0)}
+                </strong>
+                {text(locale, "Saved by others", "转存")}
+              </span>
             </div>
-            {loading ? (
-              <p className={styles.muted}>
-                {text(locale, "Loading…", "正在读取…")}
-              </p>
-            ) : !visibleRows.length ? (
-              <p className={styles.muted}>
-                {text(locale, "No shared links yet.", "还没有分享链接。")}
-              </p>
-            ) : (
-              <ul className={styles.list}>
-                {visibleRows.map((row) => {
-                  const active =
-                    !row.revoked_at &&
-                    (!row.expires_at || Date.parse(row.expires_at) > now);
-                  return (
-                    <li
-                      className={styles.shareRow}
-                      data-active={active}
-                      key={row.id}
+          )}
+          {notice ? (
+            <p role="status" className={styles.notice}>
+              {notice}
+            </p>
+          ) : null}
+          {pending ? (
+            <>
+              <p>{pending.row.title}</p>
+              <div className={styles.tools}>
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setPending(null)}
+                >
+                  {text(locale, "Cancel", "取消")}
+                </Button>
+                <Button disabled={busy} onClick={() => void change()}>
+                  {text(locale, "Confirm", "确认")}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {manualUrl ? (
+                <label className={styles.fields}>
+                  {text(
+                    locale,
+                    "Select and copy this link",
+                    "请选择并复制此链接",
+                  )}
+                  <input
+                    className={styles.input}
+                    value={manualUrl}
+                    readOnly
+                    onFocus={(e) => e.target.select()}
+                  />
+                </label>
+              ) : null}
+              <div className={layout.toolbar}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void load()}
+                  disabled={loading}
+                >
+                  <RefreshCw size={13} />
+                  {text(locale, "Refresh", "刷新")}
+                </Button>
+                <div className={styles.tools}>
+                  {(["active", "all"] as const).map((value) => (
+                    <Button
+                      key={value}
+                      size="sm"
+                      variant={filter === value ? "secondary" : "ghost"}
+                      aria-pressed={filter === value}
+                      onClick={() => setFilter(value)}
                     >
-                      <div>
-                        <strong>{row.title}</strong>
-                        <span className={styles.badge}>
-                          {row.revoked_at
-                            ? text(locale, "Revoked", "已撤销")
-                            : !active
-                              ? text(locale, "Expired", "已过期")
-                              : text(
-                                  locale,
-                                  row.visibility === "public"
-                                    ? "Public code"
-                                    : "Link only",
-                                  row.visibility === "public"
-                                    ? "公开码"
-                                    : "仅链接",
-                                )}
-                        </span>
-                        <small>
-                          {text(locale, "Expires", "到期")} ·{" "}
-                          {sharingDate(row.expires_at, locale)}
-                        </small>
-                      </div>
-                      <div className={styles.tools}>
-                        <span className={styles.muted}>
-                          {row.previews} {text(locale, "previews", "预览")} ·{" "}
-                          {row.opens} {text(locale, "opens", "打开")} ·{" "}
-                          {row.imports} {text(locale, "imports", "转存")}
-                        </span>
-                        {row.code &&
-                        row.code_expires_at &&
-                        Date.parse(row.code_expires_at) > now ? (
-                          <span className={styles.badge}>{row.code}</span>
-                        ) : null}
-                      </div>
-                      <div className={styles.tools}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!active}
-                          onClick={() => void copy(row)}
-                        >
-                          <Copy size={13} />
-                          {text(locale, "Copy link", "复制链接")}
-                        </Button>
-                        {row.visibility === "link" ? (
+                      {text(
+                        locale,
+                        value === "active" ? "Active" : "All shares",
+                        value === "active" ? "有效分享" : "全部分享",
+                      )}{" "}
+                      ·{" "}
+                      {
+                        rows.filter(
+                          (row) =>
+                            value === "all" ||
+                            (!row.revoked_at &&
+                              (!row.expires_at ||
+                                Date.parse(row.expires_at) > now)),
+                        ).length
+                      }
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {loading ? (
+                <p className={styles.muted}>
+                  {text(locale, "Loading…", "正在读取…")}
+                </p>
+              ) : !visibleRows.length ? (
+                <p className={styles.muted}>
+                  {text(locale, "No shared links yet.", "还没有分享链接。")}
+                </p>
+              ) : (
+                <ul className={styles.list}>
+                  {visibleRows.map((row) => {
+                    const active =
+                      !row.revoked_at &&
+                      (!row.expires_at || Date.parse(row.expires_at) > now);
+                    return (
+                      <li
+                        className={styles.shareRow}
+                        data-active={active}
+                        key={row.id}
+                      >
+                        <div>
+                          <strong>{row.title}</strong>
+                          <span className={styles.badge}>
+                            {row.revoked_at
+                              ? text(locale, "Revoked", "已撤销")
+                              : !active
+                                ? text(locale, "Expired", "已过期")
+                                : text(
+                                    locale,
+                                    row.visibility === "public"
+                                      ? "Public code"
+                                      : "Link only",
+                                    row.visibility === "public"
+                                      ? "公开码"
+                                      : "仅链接",
+                                  )}
+                          </span>
+                          <small>
+                            {text(locale, "Expires", "到期")} ·{" "}
+                            {sharingDate(row.expires_at, locale)}
+                          </small>
+                        </div>
+                        <div className={styles.tools}>
+                          <span className={styles.muted}>
+                            {row.previews} {text(locale, "previews", "预览")} ·{" "}
+                            {row.opens} {text(locale, "opens", "打开")} ·{" "}
+                            {row.imports} {text(locale, "imports", "转存")}
+                          </span>
+                          {row.code &&
+                          row.code_expires_at &&
+                          Date.parse(row.code_expires_at) > now ? (
+                            <span className={styles.badge}>{row.code}</span>
+                          ) : null}
+                        </div>
+                        <div className={styles.tools}>
                           <Button
                             variant="outline"
                             size="sm"
                             disabled={!active}
-                            onClick={() =>
-                              setPending({ row, action: "rotate" })
-                            }
+                            onClick={() => void copy(row)}
                           >
-                            {text(locale, "Replace link", "更换链接")}
+                            <Copy size={13} />
+                            {text(locale, "Copy link", "复制链接")}
                           </Button>
-                        ) : null}
-                        {row.visibility === "public" &&
-                          active &&
-                          (!row.code_expires_at ||
-                            Date.parse(row.code_expires_at) <= now) && (
+                          {row.visibility === "link" ? (
                             <Button
                               variant="outline"
                               size="sm"
-                              disabled={busy}
-                              onClick={async () => {
-                                setBusy(true);
-                                try {
-                                  const response = await fetch(
-                                    "/api/shares/" + row.id,
-                                    {
-                                      method: "POST",
-                                      headers: {
-                                        "Content-Type": "application/json",
-                                      },
-                                      body: JSON.stringify({
-                                        action: "renew-code",
-                                        management: readShareLinks().find(
-                                          (link) => link.id === row.id,
-                                        )?.management,
-                                      }),
-                                    },
-                                  );
-                                  if (!response.ok) throw Error();
-                                  const data = await response.json();
-                                  setNotice(
-                                    text(locale, "New code: ", "新分享码：") +
-                                      data.code,
-                                  );
-                                  await load(false);
-                                } catch {
-                                  setNotice(
-                                    text(
-                                      locale,
-                                      "Could not renew code",
-                                      "分享码生成失败",
-                                    ),
-                                  );
-                                } finally {
-                                  setBusy(false);
-                                }
-                              }}
+                              disabled={!active}
+                              onClick={() =>
+                                setPending({ row, action: "rotate" })
+                              }
                             >
-                              {text(
-                                locale,
-                                "Generate a new code",
-                                "生成新的分享码",
-                              )}
+                              {text(locale, "Replace link", "更换链接")}
                             </Button>
-                          )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!active}
-                          onClick={() => setPending({ row, action: "revoke" })}
-                        >
-                          <Trash2 size={13} />
-                          {text(locale, "Revoke", "撤销")}
-                        </Button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </>
-        )}
+                          ) : null}
+                          {row.visibility === "public" &&
+                            active &&
+                            (!row.code_expires_at ||
+                              Date.parse(row.code_expires_at) <= now) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={busy}
+                                onClick={async () => {
+                                  setBusy(true);
+                                  try {
+                                    const response = await fetch(
+                                      "/api/shares/" + row.id,
+                                      {
+                                        method: "POST",
+                                        headers: {
+                                          "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify({
+                                          action: "renew-code",
+                                          management: readShareLinks().find(
+                                            (link) => link.id === row.id,
+                                          )?.management,
+                                        }),
+                                      },
+                                    );
+                                    if (!response.ok) throw Error();
+                                    const data = await response.json();
+                                    setNotice(
+                                      text(locale, "New code: ", "新分享码：") +
+                                        data.code,
+                                    );
+                                    await load(false);
+                                  } catch {
+                                    setNotice(
+                                      text(
+                                        locale,
+                                        "Could not renew code",
+                                        "分享码生成失败",
+                                      ),
+                                    );
+                                  } finally {
+                                    setBusy(false);
+                                  }
+                                }}
+                              >
+                                {text(
+                                  locale,
+                                  "Generate a new code",
+                                  "生成新的分享码",
+                                )}
+                              </Button>
+                            )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!active}
+                            onClick={() =>
+                              setPending({ row, action: "revoke" })
+                            }
+                          >
+                            <Trash2 size={13} />
+                            {text(locale, "Revoke", "撤销")}
+                          </Button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
       </WorkspaceDialog>
     </>
   );

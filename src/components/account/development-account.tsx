@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { useEffect, useState } from "react";
 import {
   Link2,
@@ -16,6 +17,7 @@ import {
   pullDevelopmentAccount,
 } from "@/lib/development/client";
 import { text, type Locale } from "@/lib/i18n";
+import layout from "./development-account.module.css";
 import styles from "@/components/ui/workspace.module.css";
 type Status = {
   development: boolean;
@@ -44,7 +46,7 @@ export function DevelopmentAccount({
   const [status, setStatus] = useState<Status | null>(null),
     [pairing, setPairing] = useState(""),
     [issued, setIssued] = useState(""),
-    [message, setMessage] = useState(""),
+    [message, setMessage] = useActionNotice(),
     [busy, setBusy] = useState(false),
     [preview, setPreview] = useState<Preview | null>(null);
   async function load() {
@@ -134,7 +136,7 @@ export function DevelopmentAccount({
   return (
     <section
       id="development-account"
-      className={`${styles.panel} rr-block`}
+      className={`${styles.panel} ${layout.panel} rr-block`}
       data-telemetry-private
       data-analytics-area="development_account"
     >
@@ -222,7 +224,7 @@ export function DevelopmentAccount({
             </>
           )}
           {preview && (
-            <div className={styles.notice}>
+            <div className={layout.preview}>
               <strong>{t("Merge preview", "合并预览")}</strong>
               <p>
                 {preview.favorites} {t("saved records", "个收藏及分组")} ·{" "}
@@ -239,7 +241,36 @@ export function DevelopmentAccount({
                   </p>
                   <ul>
                     {preview.conflicts.map((path) => (
-                      <li key={path}>{path}</li>
+                      <li key={path}>
+                        {path.includes("favorites")
+                          ? t("Favorites · item details", "收藏 · 项目内容")
+                          : path.includes("groups")
+                            ? t(
+                                "Simulated schedule · section selection",
+                                "模拟排课 · 班次选择",
+                              )
+                            : path.includes("calendars")
+                              ? t("Calendar · event changes", "日历 · 日程改动")
+                              : t(
+                                  "Planning · competing edits",
+                                  "规划 · 两端同时修改",
+                                )}
+                        <details>
+                          <summary>
+                            {t("Field details", "查看冲突字段")}
+                          </summary>
+                          <code
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              fontSize: 11,
+                              marginTop: 6,
+                            }}
+                          >
+                            {path}
+                          </code>
+                        </details>
+                      </li>
                     ))}
                   </ul>
                 </>

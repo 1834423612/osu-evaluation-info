@@ -73,20 +73,26 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
 }
 .backupSummary {
   margin: 0 0 16px;
   font-size: 13px;
   line-height: 1.6;
 }
-.globalActions > span {
+.saveStatus {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-basis: 100%;
+  gap: 10px;
+}
+.saveStatus > span {
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 11px;
   color: var(--muted);
-  width: 100%;
-  justify-content: flex-end;
 }
 .main .primary {
   background: var(--primary);
@@ -373,10 +379,12 @@
     flex-direction: column;
     gap: 16px;
   }
-  .globalActions > span {
-    width: auto;
-    justify-content: start;
-    order: 3;
+  .globalActions {
+    justify-content: flex-start;
+  }
+  .saveStatus {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
   .workspaceNav > div {
     display: grid;

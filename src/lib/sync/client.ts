@@ -1,4 +1,5 @@
 "use client";
+import { syncFeatures, type SyncFeature } from "./features.ts";
 import { browserUuid } from "../uuid.ts";
 import { importLocalItems } from "../saved/local.ts";
 import { syncItemKey as itemKey, syncBatch, type SyncItem } from "./items.ts";
@@ -66,12 +67,18 @@ export async function syncCycle(accountId: string) {
   try {
     const state = await updateSyncState(accountId, (s) => {
       validAccount(accountId);
-      if (s.enabled && !s.needsReview)
+      if (s.enabled && syncFeatures(s).favorites && !s.needsReview)
         captureChanges(s, readSyncItems(), () => browserUuid());
       if (!navigator.onLine) s.problem = "offline";
       return structuredClone(s);
     });
-    if (!state.enabled || state.needsReview || !navigator.onLine) return;
+    if (
+      !state.enabled ||
+      !syncFeatures(state).favorites ||
+      state.needsReview ||
+      !navigator.onLine
+    )
+      return;
     const response = await exchange(accountId, {
       cursor: state.cursor,
       operations: syncBatch(state.outbox),
@@ -210,6 +217,18 @@ export async function pauseSync(accountId: string) {
     s.enabled = false;
   });
   changed();
+}
+export async function setFeatureSync(
+  accountId: string,
+  feature: SyncFeature,
+  enabled: boolean,
+) {
+  validAccount(accountId);
+  await updateSyncState(accountId, (state) => {
+    state.features = { ...syncFeatures(state), [feature]: enabled };
+  });
+  changed();
+  window.dispatchEvent(new Event("course-atlas:planning-sync-request"));
 }
 export async function chooseConflict(
   accountId: string,

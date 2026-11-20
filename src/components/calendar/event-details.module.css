@@ -1,0 +1,86 @@
+.panel {
+  z-index: 220;
+  width: min(430px, calc(100vw - 24px));
+  max-height: min(
+    600px,
+    calc(100dvh - 40px),
+    var(--radix-popover-content-available-height)
+  );
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 14px 50px #16243d26;
+}
+.panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.panel header > div {
+  display: flex;
+  gap: 4px;
+}
+.category {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  color: #347c75;
+  font-size: 11px;
+}
+.panel h2 {
+  margin: 0 0 20px;
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.fact {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 16px;
+  min-width: 0;
+}
+.fact > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--muted);
+}
+.fact > :last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fact strong {
+  font-weight: 550;
+}
+.fact small {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+  font-size: 10px;
+}
+.fact p {
+  margin: 0;
+  white-space: pre-wrap;
+  max-height: 240px;
+  overflow: auto;
+}
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  margin-top: 20px;
+  font-size: 12px;
+}
+.arrow {
+  fill: var(--surface);
+}

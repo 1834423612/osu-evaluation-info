@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { History, LoaderCircle } from "lucide-react";
+import { useEffect, useState, useId } from "react";
+import { History, LoaderCircle, BookOpen, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -27,6 +27,7 @@ export function HistoricalSyllabi({
   locale: Locale;
 }) {
   const { subject, catalogNumber, termCode, campusCode, classNumber } = query;
+  const documentId = useId();
   const [rows, setRows] = useState<SyllabusReference[] | null>(null),
     [failed, setFailed] = useState(false),
     [retry, setRetry] = useState(0),
@@ -149,22 +150,25 @@ export function HistoricalSyllabi({
           </SelectContent>
         </Select>
         <Button
-          variant="outline"
+          variant={reading ? "outline" : "default"}
           size="sm"
+          aria-expanded={reading}
+          aria-controls={documentId}
           onClick={() => {
             if (reading && !confirmDiscard()) return;
             setReading((value) => !value);
           }}
         >
+          {reading ? <ChevronUp size={15} /> : <BookOpen size={15} />}
           {text(
             locale,
-            reading ? "Hide reference" : "Read reference",
-            reading ? "收起参考" : "阅读参考",
+            reading ? "Hide reference" : "Open selected syllabus",
+            reading ? "收起参考" : "打开所选大纲",
           )}
         </Button>
       </div>
       {reading ? (
-        <div className={styles.referenceDocument}>
+        <div className={styles.referenceDocument} id={documentId}>
           <p className={styles.referenceTerm}>
             {chosen.entry.termName} · {chosen.entry.title}
           </p>

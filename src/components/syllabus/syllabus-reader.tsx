@@ -11,6 +11,7 @@ import { officialSyllabusUrl, SyllabusError } from "@/lib/syllabus/normalize";
 import { formatSyllabusTime } from "@/lib/syllabus/time";
 import { savedSyllabiActions } from "@/hooks/use-saved-syllabi";
 import { SyllabusUpdateNotice } from "./syllabus-update-notice";
+import { SyllabusRevisionHistory } from "./revision-history";
 import type {
   SyllabusDocument,
   SyllabusEntry,
@@ -119,6 +120,7 @@ export function SyllabusReader({
 
   return (
     <div className={styles.reader}>
+      <SyllabusRevisionHistory code={code} locale={locale} />
       <div className={styles.sourceLine}>
         <DataSourceBadge
           source={result.source === "backup" ? "sync" : "official"}

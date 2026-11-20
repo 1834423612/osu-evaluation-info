@@ -8,6 +8,8 @@ import {
   type PlanningState,
 } from "@/lib/planning/client-sync";
 import { SYNC_EVENT, readSyncState } from "@/lib/sync/client";
+import { syncFeatures } from "@/lib/sync/features";
+import { projectSyncPlan } from "@/lib/planning/sync-selection";
 import { text, type Locale } from "@/lib/i18n";
 import styles from "./cloud-backup.module.css";
 
@@ -32,7 +34,8 @@ export function CloudBackup({
       if (account)
         void readSyncState(account)
           .then((value) => {
-            if (active) setEnabled(!value.initialized || value.enabled);
+            if (active)
+              setEnabled(value.enabled && syncFeatures(value).planning);
           })
           .catch(() => {});
     };
@@ -47,7 +50,15 @@ export function CloudBackup({
       window.removeEventListener("storage", read);
     };
   }, [account]);
-  const pending = JSON.stringify(state?.plan) !== JSON.stringify(state?.base);
+  const pending =
+    state &&
+    JSON.stringify(
+      projectSyncPlan(state.plan, state.base, {
+        favorites: true,
+        planning: true,
+        calendars: false,
+      }),
+    ) !== JSON.stringify(state.base);
   return (
     <section className={styles.root} data-analytics-area="planning_sync">
       <h2>
@@ -65,15 +76,20 @@ export function CloudBackup({
                 "Sync is paused in account settings.",
                 "同步已在账户设置中暂停。",
               )
-            : pending
+            : state?.problem
               ? t(
-                  "Saved on this device. Waiting to sync changes…",
-                  "已保存在此设备，正在等待同步变更…",
+                  "Sync needs attention. Open the sync status above to review or retry.",
+                  "同步需要处理，请打开页面顶部的同步状态查看或重试。",
                 )
-              : t(
-                  "Plan changes sync automatically across your devices.",
-                  "规划变更已自动同步，可在其他设备继续使用。",
-                )}
+              : pending || !state?.syncedAt
+                ? t(
+                    "Saved on this device. Waiting to sync changes…",
+                    "已保存在此设备，正在等待同步变更…",
+                  )
+                : t(
+                    "Plan changes sync automatically across your devices.",
+                    "规划变更已自动同步，可在其他设备继续使用。",
+                  )}
       </p>
       {state?.syncedAt && (
         <small>

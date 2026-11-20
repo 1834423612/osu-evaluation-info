@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 import { ShareFolderPicker } from "./share-folder-picker";
 import { useState } from "react";
 import {
@@ -171,6 +172,19 @@ export function ShareCollection({
         title: snapshot!.title,
         expiresAt: data.expiresAt,
       });
+      const copied = await copyLink(
+        shareLink(location.origin, data.id, data.capability),
+      );
+      notify(
+        copied
+          ? text(locale, "Link copied", "链接已复制")
+          : text(
+              locale,
+              "Select and copy the link below.",
+              "请选择下方链接后复制。",
+            ),
+        copied ? "success" : "info",
+      );
     } catch (error) {
       setNotice(
         text(

@@ -1,4 +1,5 @@
 "use client";
+import { useActionNotice } from "@/hooks/use-action-notice";
 import { confirmDiscard, DraftForm } from "@/components/forms/draft-guard";
 import { useEffect, useState } from "react";
 import {
@@ -85,7 +86,7 @@ function AccountWorkspace() {
   const [status, setStatus] = useState<AccountStatus | null>(null),
     [statusRevision, setStatusRevision] = useState(0),
     [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useActionNotice(),
     [keys, setKeys] = useState<Passkey[]>([]),
     [devices, setDevices] = useState<Device[]>([]),
     [metadata, setMetadata] = useState<Metadata[]>([]),
@@ -250,7 +251,9 @@ function AccountWorkspace() {
               </div>
               <div className={layout.profileCopy}>
                 <h1>{session.user.name}</h1>
-                <p>{session.user.email}</p>
+                <p title={session.user.email} tabIndex={0}>
+                  {session.user.email}
+                </p>
               </div>
               <Button
                 variant="ghost"
@@ -279,7 +282,7 @@ function AccountWorkspace() {
                 </a>
                 <a href="#sync">
                   <Cloud size={16} />
-                  {text(locale, "Sync", "收藏同步")}
+                  {text(locale, "Sync", "云端同步")}
                 </a>
                 <a href="#security">
                   <ShieldCheck size={16} />

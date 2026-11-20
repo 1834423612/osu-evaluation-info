@@ -1,0 +1,40 @@
+.root {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 16px 0;
+  overflow: hidden;
+}
+.root > p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+  background: var(--subtle-surface);
+  margin: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  font-size: 12px;
+}
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+.row > svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.row > span {
+  flex: 1;
+  min-width: 0;
+}
+.row button[aria-checked="true"] {
+  color: #2e7b70;
+  background: color-mix(in srgb, #2e7b70 6%, var(--surface));
+  border-color: color-mix(in srgb, #2e7b70 30%, var(--line));
+}

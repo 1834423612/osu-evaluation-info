@@ -3,9 +3,26 @@ import assert from "node:assert/strict";
 import {
   publicCalendarAddress,
   readRemoteCalendar,
+  pinnedCalendarLookup,
 } from "../../src/lib/calendar/remote.ts";
 import { weekSegments } from "../../src/lib/calendar/week.ts";
 import { parseCalendar } from "../../src/lib/calendar/ical.ts";
+test("pinned DNS lookup supports Node auto-family selection without resolving unverified addresses", () => {
+  const addresses = [
+    { address: "1.1.1.1", family: 4 },
+    { address: "2606:4700::1111", family: 6 },
+  ];
+  const pinned = pinnedCalendarLookup(addresses);
+  pinned("example.com", { all: true }, (error, result) => {
+    assert.equal(error, null);
+    assert.deepEqual(result, addresses);
+  });
+  pinned("example.com", {}, (error, address, family) => {
+    assert.equal(error, null);
+    assert.equal(address, "1.1.1.1");
+    assert.equal(family, 4);
+  });
+});
 test("remote feeds reject private and reserved addresses and unsupported URLs without fetching", async () => {
   for (const address of [
     "127.0.0.1",

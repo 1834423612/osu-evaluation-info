@@ -78,7 +78,12 @@
   min-width: 0;
 }
 .sidebar .calendar {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  align-items: stretch;
+  grid-template-rows: 36px 100px 24px;
+  gap: 7px;
   width: 100%;
   text-align: left;
 }
@@ -111,6 +116,22 @@
   gap: 6px;
   font-size: 13px;
   margin-bottom: 8px;
+}
+.calendar strong > svg {
+  flex-shrink: 0;
+}
+.calendar strong > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+  line-height: 1.4;
+}
+.calendar > small {
+  overflow: hidden;
+  line-height: 1.6;
+  margin-top: 0;
 }
 .calendar small {
   display: block;
@@ -402,6 +423,10 @@
   }
   .sidebar .calendar {
     flex: 0 0 170px;
+    grid-template-rows: 34px 65px 24px;
+    gap: 6px;
+    padding: 10px;
+    height: 155px;
   }
   .sidebar .mini {
     height: 65px;

@@ -1,34 +1,45 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
+import subjectVocabulary from "../../../data/planning/subjects.json";
+import { sampleReferenceReader } from "@/lib/planning/public-samples";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { readRequirementCourses } from "@/lib/planning/requirement-catalog";
-import { requirementSearch } from "@/lib/planning/requirement-search";
-import { ChoiceSelect } from "@/components/ui/choice-select";
+import { requirementCatalogFilter } from "@/lib/planning/requirement-search";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import { text, type Locale } from "@/lib/i18n";
 import { usePlanningCatalog } from "./course-catalog";
 import styles from "./requirement-choices.module.css";
+const subjectReference = sampleReferenceReader(subjectVocabulary.subjects);
 export function RequirementChoices({
   title,
   locale,
   unavailable,
   add,
   inspect,
+  relatedSubjects = [],
 }: {
   title: string;
+  relatedSubjects?: string[];
   locale: Locale;
   unavailable: string[];
   add: (code: { subject: string; number: string }) => void;
   inspect?: (code: { subject: string; number: string }) => void;
 }) {
   const context = usePlanningCatalog();
-  const [subject, setSubject] = useState(""),
-    [category, setCategory] = useState("");
-  const [vocabulary, setVocabulary] = useState<
-    { slug: string; items: { value: string; label: string }[] }[]
-  >([]);
-  const mapped = !!requirementSearch(title);
+  const [chosenSubject, setSubject] = useState("");
+  const [browseAll, setBrowseAll] = useState(false),
+    [subjectQuery, setSubjectQuery] = useState("");
+  const suggestions = [
+    ...new Set(
+      relatedSubjects.flatMap((value) =>
+        subjectReference(`${value} 1000`).map((code) => code.subject),
+      ),
+    ),
+  ].slice(0, 12);
+  const category = "";
+  const mapped = !!requirementCatalogFilter(title);
+  const subject = mapped ? "" : chosenSubject || suggestions[0] || "";
   const anchor = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false),
     [attempt, setAttempt] = useState(0);
@@ -46,39 +57,6 @@ export function RequirementChoices({
   const current = state?.key === key ? state : null;
   const request = useRef<AbortController | null>(null);
   const t = (en: string, zh: string) => text(locale, en, zh);
-  useEffect(() => {
-    if (!visible || mapped) return;
-    const controller = new AbortController();
-    Promise.allSettled([
-      fetchCatalogResource(
-        "/api/catalog/facets?" +
-          new URLSearchParams({
-            term: context.term,
-            campus: context.campus.toLowerCase(),
-          }),
-        { signal: controller.signal },
-      ).then((response) => (response.ok ? response.json() : Promise.reject())),
-      fetch("/api/catalog/subjects?term=" + context.term, {
-        signal: controller.signal,
-      }).then((response) => (response.ok ? response.json() : Promise.reject())),
-    ]).then((results) => {
-      if (controller.signal.aborted) return;
-      const filters = results.flatMap((result) =>
-        result.status === "fulfilled" ? (result.value.filters ?? []) : [],
-      );
-      setVocabulary([
-        ...new Map(
-          filters.map(
-            (filter: {
-              slug: string;
-              items: { value: string; label: string }[];
-            }) => [filter.slug, filter],
-          ),
-        ).values(),
-      ] as typeof vocabulary);
-    });
-    return () => controller.abort();
-  }, [visible, mapped, context]);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
@@ -162,42 +140,56 @@ export function RequirementChoices({
     <div ref={anchor} className={styles.list}>
       {!mapped && (
         <div className={styles.browse}>
-          <p>
-            {t(
-              "Browse the official catalog; confirm applicability against this requirement.",
-              "直接浏览官方目录，课程是否适用以此项要求原文为准。",
+          <strong>{t("Related program subjects", "专业相关科目")}</strong>
+          <div className={styles.subjects}>
+            {suggestions.map((value) => (
+              <button
+                key={value}
+                aria-pressed={subject === value}
+                onClick={() => setSubject(value)}
+              >
+                {value}
+              </button>
+            ))}
+            {!!suggestions.length && (
+              <button
+                aria-expanded={browseAll}
+                onClick={() => setBrowseAll(!browseAll)}
+              >
+                {t("Other subjects", "其他科目")}
+              </button>
             )}
-          </p>
-          <ChoiceSelect
-            aria-label={t("Course category", "课程类别")}
-            value={category}
-            onValueChange={setCategory}
-          >
-            <option value="">
-              {t("All academic categories", "全部学业类别")}
-            </option>
-            {vocabulary
-              .find((filter) => filter.slug === "gen-categories")
-              ?.items.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-          </ChoiceSelect>
-          <ChoiceSelect
-            aria-label={t("Subject", "科目")}
-            value={subject}
-            onValueChange={setSubject}
-          >
-            <option value="">{t("Choose a subject", "选择科目")}</option>
-            {vocabulary
-              .find((filter) => filter.slug === "subject")
-              ?.items.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.value} · {item.label}
-                </option>
-              ))}
-          </ChoiceSelect>
+          </div>
+          {(!suggestions.length || browseAll) && (
+            <>
+              <input
+                className={styles.subjectQuery}
+                aria-label={t("Find a catalog subject", "查找目录科目")}
+                placeholder={t("Subject code or name", "科目代码或名称")}
+                value={subjectQuery}
+                onChange={(event) => setSubjectQuery(event.target.value)}
+              />
+              <div className={styles.subjects}>
+                {subjectVocabulary.subjects
+                  .filter((row) =>
+                    `${row.code} ${row.title}`
+                      .toLowerCase()
+                      .includes(subjectQuery.trim().toLowerCase()),
+                  )
+                  .slice(0, 12)
+                  .map((row) => (
+                    <button
+                      key={row.code}
+                      title={row.title}
+                      aria-pressed={subject === row.code}
+                      onClick={() => setSubject(row.code)}
+                    >
+                      {row.code}
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
         </div>
       )}
       {current?.courses.map((c) => {
@@ -233,7 +225,9 @@ export function RequirementChoices({
       })}
       {visible && !current && (
         <p role="status">
-          {t("Loading eligible courses…", "正在加载符合此项要求的课程…")}
+          {mapped
+            ? t("Loading eligible courses…", "正在加载符合此项要求的课程…")
+            : t("Loading related courses…", "正在加载专业相关课程…")}
         </p>
       )}
       {current?.error && (
@@ -253,8 +247,8 @@ export function RequirementChoices({
                 "此校区和目录学期暂无符合该要求的课程。",
               )
             : t(
-                "Choose a catalog category or subject above.",
-                "选择上方课程类别或科目，即可列出课程。",
+                "No related courses in this campus and term.",
+                "此校区与学期暂无相关课程。",
               )}
         </p>
       )}
@@ -262,7 +256,9 @@ export function RequirementChoices({
         <button disabled={current.loading} onClick={() => void more()}>
           {current.loading
             ? t("Loading…", "加载中…")
-            : t("More eligible courses", "更多符合要求的课程")}
+            : mapped
+              ? t("More eligible courses", "更多符合要求的课程")
+              : t("More related courses", "更多专业相关课程")}
         </button>
       )}
     </div>

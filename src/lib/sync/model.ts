@@ -1,4 +1,5 @@
 import { browserUuid } from "../uuid.ts";
+import type { SyncFeatures } from "./features.ts";
 import { syncItemKey as itemKey, type SyncItem } from "./items.ts";
 import {
   sameItem,
@@ -15,6 +16,7 @@ export type SyncState = {
   version: 1;
   accountId: string;
   enabled: boolean;
+  features?: Partial<SyncFeatures>;
   initialized: boolean;
   once: boolean;
   cursor: number;
