@@ -15,6 +15,16 @@
   flex-wrap: wrap;
   gap: 5px;
 }
+.subjectQuery {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+}
 .subjects button {
   font-size: 10px;
   padding: 5px 7px;

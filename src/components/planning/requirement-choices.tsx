@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
+import subjectVocabulary from "../../../data/planning/subjects.json";
+import { sampleReferenceReader } from "@/lib/planning/public-samples";
 import type { CatalogCourse } from "@/lib/catalog/types";
 import { readRequirementCourses } from "@/lib/planning/requirement-catalog";
 import { requirementCatalogFilter } from "@/lib/planning/requirement-search";
@@ -8,6 +10,7 @@ import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import { text, type Locale } from "@/lib/i18n";
 import { usePlanningCatalog } from "./course-catalog";
 import styles from "./requirement-choices.module.css";
+const subjectReference = sampleReferenceReader(subjectVocabulary.subjects);
 export function RequirementChoices({
   title,
   locale,
@@ -25,9 +28,18 @@ export function RequirementChoices({
 }) {
   const context = usePlanningCatalog();
   const [chosenSubject, setSubject] = useState("");
+  const [browseAll, setBrowseAll] = useState(false),
+    [subjectQuery, setSubjectQuery] = useState("");
+  const suggestions = [
+    ...new Set(
+      relatedSubjects.flatMap((value) =>
+        subjectReference(`${value} 1000`).map((code) => code.subject),
+      ),
+    ),
+  ].slice(0, 12);
   const category = "";
   const mapped = !!requirementCatalogFilter(title);
-  const subject = mapped ? "" : chosenSubject || relatedSubjects[0] || "";
+  const subject = mapped ? "" : chosenSubject || suggestions[0] || "";
   const anchor = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false),
     [attempt, setAttempt] = useState(0);
@@ -126,11 +138,11 @@ export function RequirementChoices({
   useEffect(() => () => request.current?.abort(), []);
   return (
     <div ref={anchor} className={styles.list}>
-      {!mapped && relatedSubjects.length > 0 && (
+      {!mapped && (
         <div className={styles.browse}>
           <strong>{t("Related program subjects", "专业相关科目")}</strong>
           <div className={styles.subjects}>
-            {relatedSubjects.map((value) => (
+            {suggestions.map((value) => (
               <button
                 key={value}
                 aria-pressed={subject === value}
@@ -139,7 +151,45 @@ export function RequirementChoices({
                 {value}
               </button>
             ))}
+            {!!suggestions.length && (
+              <button
+                aria-expanded={browseAll}
+                onClick={() => setBrowseAll(!browseAll)}
+              >
+                {t("Other subjects", "其他科目")}
+              </button>
+            )}
           </div>
+          {(!suggestions.length || browseAll) && (
+            <>
+              <input
+                className={styles.subjectQuery}
+                aria-label={t("Find a catalog subject", "查找目录科目")}
+                placeholder={t("Subject code or name", "科目代码或名称")}
+                value={subjectQuery}
+                onChange={(event) => setSubjectQuery(event.target.value)}
+              />
+              <div className={styles.subjects}>
+                {subjectVocabulary.subjects
+                  .filter((row) =>
+                    `${row.code} ${row.title}`
+                      .toLowerCase()
+                      .includes(subjectQuery.trim().toLowerCase()),
+                  )
+                  .slice(0, 12)
+                  .map((row) => (
+                    <button
+                      key={row.code}
+                      title={row.title}
+                      aria-pressed={subject === row.code}
+                      onClick={() => setSubject(row.code)}
+                    >
+                      {row.code}
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
         </div>
       )}
       {current?.courses.map((c) => {

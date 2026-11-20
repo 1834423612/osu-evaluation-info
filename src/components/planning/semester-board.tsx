@@ -629,6 +629,14 @@ export function SemesterBoard({
                 ) : (
                   <RequirementChoices
                     title={rule.title ?? ""}
+                    relatedSubjects={[
+                      ...new Set(
+                        plan.requirements
+                          .filter((row) => row.programId === rule.programId)
+                          .flatMap(requirementCodes)
+                          .map((code) => code.subject),
+                      ),
+                    ]}
                     locale={locale}
                     unavailable={all
                       .filter((r) =>
