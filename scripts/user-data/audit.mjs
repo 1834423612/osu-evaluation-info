@@ -40,6 +40,34 @@ function modelSummary(values, schema) {
   }
   return { checked: values.length, invalid, issues };
 }
+async function readModels(table, column, schema) {
+  const summary = { checked: 0, invalid: 0, issues: {} };
+  await db.query("BEGIN READ ONLY");
+  try {
+    await db.query("SET LOCAL statement_timeout='20s'");
+    await db.query(
+      `DECLARE audit_models NO SCROLL CURSOR FOR SELECT ${quote(column)} AS value FROM ${table} WHERE ${quote(column)} IS NOT NULL`,
+    );
+    for (;;) {
+      const { rows } = await db.query("FETCH FORWARD 100 FROM audit_models");
+      if (!rows.length) break;
+      const batch = modelSummary(
+        rows.map((row) => row.value),
+        schema,
+      );
+      summary.checked += batch.checked;
+      summary.invalid += batch.invalid;
+      for (const [code, count] of Object.entries(batch.issues))
+        summary.issues[code] = (summary.issues[code] ?? 0) + count;
+    }
+    await db.query("CLOSE audit_models");
+    await db.query("COMMIT");
+    return summary;
+  } catch (error) {
+    await db.query("ROLLBACK");
+    throw error;
+  }
+}
 try {
   const columns =
     await read(`SELECT c.table_schema,c.table_name,c.column_name,c.data_type,c.character_maximum_length
@@ -86,15 +114,9 @@ try {
       const column =
         fields[0].table_name === "planning_backup" ? "plan" : "data";
       if (schema && fields.some((field) => field.column_name === column)) {
-        const rows = await read(
-          `SELECT ${quote(column)} AS value FROM ${table} WHERE ${quote(column)} IS NOT NULL`,
-        );
         report.models.push({
           table: name,
-          ...modelSummary(
-            rows.map((row) => row.value),
-            schema,
-          ),
+          ...(await readModels(table, column, schema)),
         });
       }
     } catch (error) {
@@ -105,11 +127,21 @@ try {
     }
   }
   const inputIndex = process.argv.indexOf("--plan");
-  if (inputIndex >= 0)
-    report.inputPlan = modelSummary(
-      [JSON.parse(readFileSync(process.argv[inputIndex + 1], "utf8"))],
-      planSchema,
-    );
+  if (inputIndex >= 0) {
+    try {
+      report.inputPlan = modelSummary(
+        [JSON.parse(readFileSync(process.argv[inputIndex + 1], "utf8"))],
+        planSchema,
+      );
+    } catch {
+      report.inputPlan = {
+        checked: 1,
+        invalid: 1,
+        issues: { unreadable_input: 1 },
+      };
+      report.incomplete.push({ table: "input_plan", code: "unreadable_input" });
+    }
+  }
   const outputIndex = process.argv.indexOf("--output");
   if (outputIndex >= 0)
     writeFileSync(
