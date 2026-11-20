@@ -1,7 +1,11 @@
 .panel {
   z-index: 220;
   width: min(430px, calc(100vw - 24px));
-  max-height: min(600px, calc(100dvh - 40px));
+  max-height: min(
+    600px,
+    calc(100dvh - 40px),
+    var(--radix-popover-content-available-height)
+  );
   overflow: auto;
   padding: 20px;
   border: 1px solid var(--line);
