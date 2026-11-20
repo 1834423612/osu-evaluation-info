@@ -28,6 +28,7 @@ export function ActionToast() {
   const { locale } = usePreferences();
   const [toast, setToast] = useState<ToastDetail | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [container, setContainer] = useState<Element | null>(null);
   const surface = useRef<HTMLDivElement>(null);
   const previousSize = useRef<{ width: number; height: number } | null>(null);
   useLayoutEffect(() => {
@@ -53,6 +54,11 @@ export function ActionToast() {
 
   useEffect(() => {
     const onToast = (event: Event) => {
+      setContainer(
+        [...document.querySelectorAll('[role="dialog"][data-state="open"]')].at(
+          -1,
+        ) ?? null,
+      );
       setLeaving(false);
       setToast((event as CustomEvent<ToastDetail>).detail);
     };
@@ -63,6 +69,15 @@ export function ActionToast() {
       window.removeEventListener("course-atlas:save-error", onToast);
     };
   }, []);
+
+  useEffect(() => {
+    if (!container) return;
+    const observer = new MutationObserver(() => {
+      if (!container.isConnected) setContainer(null);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [container]);
 
   useEffect(() => {
     if (!toast) return;
@@ -80,7 +95,8 @@ export function ActionToast() {
   return createPortal(
     <div
       ref={surface}
-      className="action-toast"
+      className="action-toast rr-block"
+      data-telemetry-private
       data-state={
         toast.error || toast.tone === "error"
           ? "error"
@@ -150,6 +166,6 @@ export function ActionToast() {
         <X size={15} aria-hidden="true" />
       </button>
     </div>,
-    document.body,
+    container ?? document.body,
   );
 }
