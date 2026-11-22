@@ -8,6 +8,12 @@
 
 ## 默认检查
 
+`tests/catalog/coverage.integration.test.mjs` 在内存 PGlite 中执行第 7 版迁移和真实 SQL，覆盖异常发布拦截、正常变化与新学期、隔离备份、归档不可变性和变更历史过滤。仅使用合成数据和本地临时文件，不连接外部服务或生产数据库。运行 `node --test tests/catalog/coverage.integration.test.mjs`。
+
+`tests/search/generation-fallback.test.mjs` 通过注入加载器验证同学期回退、最多三个版本、循环拦截、请求和排队截止时间以及固定游标隔离；默认不调用外部服务、不持久写入。设置 `CATALOG_DATABASE_TEST=1` 后还会验证真实 PostgreSQL 只读查询取消与唯一池连接名额的复用。运行 `node --test tests/search/generation-fallback.test.mjs`，或 `CATALOG_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test tests/search/generation-fallback.test.mjs`。
+
+`tests/catalog/sync-safety.test.mjs` 还覆盖 null 学期占位、异常筛选项分类、受限重试日志和维护错误凭据脱敏；使用合成响应，不请求网络。
+
 规划审查回归覆盖失败修读后的重修、独立审计记录、重复占位项、JSONB 键顺序变化后的重试，以及仅含明确可选课程的通用模板。`tests/planning/import-profile.test.mjs` 还使用 PDF.js 提取浏览器合成 PDF 后验证自动识别。浏览器工作区脚本通过自定义选择框选项操作，并在刷新后核对恢复的标签。私有 HAR 对比遇到学分冲突会失败。统计隐私测试覆盖规划页面访问、元数据白名单、弹窗与私密选择器浮层回放屏蔽、自定义选择器埋点和分享路径脱敏。可通过 `pnpm test` 执行，浏览器与私有文件脚本仍按下文说明显式运行。
 
 在仓库根目录使用 Node.js 24+ 并安装依赖后运行：

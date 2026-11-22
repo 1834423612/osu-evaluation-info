@@ -8,6 +8,12 @@ Integration tests check components together, including SQL, transactions and rec
 
 ## Run the default checks
 
+`tests/catalog/coverage.integration.test.mjs` runs migration 7 and real SQL in an in-memory PGlite database. It checks coverage rejection, ordinary/new-term publication, quarantine backups, immutable archives and accepted change-history filtering. It uses synthetic data, temporary local files and no external service or production database. Run `node --test tests/catalog/coverage.integration.test.mjs`.
+
+`tests/search/generation-fallback.test.mjs` checks same-term recovery, a three-generation limit, loop rejection, request/queue deadlines and pinned-cursor isolation with injected loaders. The default checks use no external service or persistent writes. `CATALOG_DATABASE_TEST=1` additionally verifies cancellation of a real read-only PostgreSQL query and reuse of the sole pool slot. Run `node --test tests/search/generation-fallback.test.mjs`, or `CATALOG_DATABASE_TEST=1 node --env-file-if-exists=.env.local --test tests/search/generation-fallback.test.mjs`.
+
+`tests/catalog/sync-safety.test.mjs` also covers null term placeholders, classified malformed facets, bounded retry diagnostics and credential-redacted maintenance errors with synthetic responses and no network calls.
+
 The planning review regressions cover unsuccessful retakes, unrelated audit observations, repeated placeholders, JSONB key-order retries, and option-only generic templates. `tests/planning/import-profile.test.mjs` also extracts the synthetic browser PDF with PDF.js before automatic layout detection. The browser workspace script uses custom combobox options and checks the restored label after reload. Private HAR comparisons fail when course credits conflict. Analytics privacy tests cover planning pageviews, metadata allowlists, masked dialog and private-select portals, custom-select wiring and redacted share paths. Run these through `pnpm test`; browser and private-file scripts remain opt-in with their documented setup below.
 
 Run commands from the repository root with Node.js 24+ and installed dependencies:
