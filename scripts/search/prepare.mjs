@@ -6,6 +6,7 @@ import {
 } from "../catalog/database.mjs";
 import {
   FIND_CATALOG_SNAPSHOT_SQL,
+  FIND_PREVIOUS_CATALOG_SNAPSHOT_SQL,
   LIST_CATALOG_TERMS_SQL,
 } from "../../src/lib/catalog/snapshot-policy.ts";
 import { loadCatalogCorpus } from "../../src/lib/search/catalog-source.ts";
@@ -52,44 +53,64 @@ export async function prepareSearchArtifacts(client) {
   let built = 0,
     reused = 0;
   for (const term of terms) {
-    const selected = (
+    let selected = (
       await client.query(FIND_CATALOG_SNAPSHOT_SQL, [term.code, null])
     ).rows[0];
-    if (!selected) continue;
-    const snapshot = {
-      run: selected.id,
-      term: term.code,
-      snapshotAt: new Date(selected.completed_at).toISOString(),
-      terms,
-    };
-    const existing = await client.query(
-      "SELECT payload,digest FROM osu_catalog.search_artifacts WHERE run_id=$1 AND term_code=$2 AND format_version=$3",
-      [selected.id, term.code, SEARCH_ARTIFACT_VERSION],
-    );
-    if (existing.rows.length) {
-      try {
-        decodePreparedCorpus(
-          existing.rows[0].payload,
-          existing.rows[0].digest,
-          snapshot,
-        );
-        reused++;
-        continue;
-      } catch {
-        /* Rebuild damaged derived data from its immutable source. */
+    const seen = new Set();
+    for (
+      let generation = 0;
+      generation < 2 && selected && !seen.has(selected.id);
+      generation++
+    ) {
+      seen.add(selected.id);
+      const snapshot = {
+        run: selected.id,
+        term: term.code,
+        snapshotAt: new Date(selected.completed_at).toISOString(),
+        terms,
+      };
+      const existing = await client.query(
+        "SELECT payload,digest FROM osu_catalog.search_artifacts WHERE run_id=$1 AND term_code=$2 AND format_version=$3",
+        [selected.id, term.code, SEARCH_ARTIFACT_VERSION],
+      );
+      let valid = false;
+      if (existing.rows.length) {
+        try {
+          decodePreparedCorpus(
+            existing.rows[0].payload,
+            existing.rows[0].digest,
+            snapshot,
+          );
+          reused++;
+          valid = true;
+        } catch {
+          /* Rebuild damaged derived data from its immutable source. */
+        }
       }
+      if (!valid) {
+        await prepareSearchGeneration(client, snapshot);
+        built++;
+      }
+      selected =
+        generation === 0
+          ? (
+              await client.query(FIND_PREVIOUS_CATALOG_SNAPSHOT_SQL, [
+                term.code,
+                selected.id,
+              ])
+            ).rows[0]
+          : null;
     }
-    await prepareSearchGeneration(client, snapshot);
-    built++;
   }
   // Only disposable derived artifacts are pruned; original snapshots are never changed.
   await client.query(`DELETE FROM osu_catalog.search_artifacts WHERE (run_id,term_code,format_version) IN (
     SELECT run_id,term_code,format_version FROM (
-      SELECT run_id,term_code,format_version,row_number() OVER (
-        PARTITION BY term_code,format_version ORDER BY prepared_at DESC,run_id DESC) AS position
+      SELECT a.run_id,a.term_code,a.format_version,row_number() OVER (
+        PARTITION BY a.term_code,a.format_version ORDER BY v.published_at DESC,a.run_id DESC) AS position
       FROM osu_catalog.search_artifacts a
-      WHERE EXISTS (SELECT 1 FROM osu_catalog.snapshot_versions v
-        WHERE v.run_id=a.run_id AND v.published_at IS NOT NULL)
+      JOIN osu_catalog.snapshot_versions v ON v.run_id=a.run_id
+      JOIN osu_catalog.sync_runs r ON r.id=a.run_id
+      WHERE v.published_at IS NOT NULL AND r.status='complete'
     ) ranked WHERE position > 2)`);
   return { built, reused };
 }

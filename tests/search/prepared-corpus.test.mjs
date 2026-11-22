@@ -230,7 +230,7 @@ test("failed preparation rolls back without committing or publishing a generatio
     ),
   );
 });
-test("catalog CLI prepares indexes before exposing a generation and requires migration 6", async () => {
+test("catalog CLI prepares indexes before exposing a generation and requires migration 7", async () => {
   const { readFile } = await import("node:fs/promises");
   const cli = await readFile(
     new URL("../../scripts/catalog/sync_osu_catalog.mjs", import.meta.url),
@@ -244,7 +244,7 @@ test("catalog CLI prepares indexes before exposing a generation and requires mig
     new URL("../../scripts/catalog/database.mjs", import.meta.url),
     "utf8",
   );
-  assert.match(database, /CATALOG_SCHEMA_VERSION = 6/);
+  assert.match(database, /CATALOG_SCHEMA_VERSION = 7/);
 });
 
 test("preparation repairs damaged artifacts atomically instead of reusing them", async () => {

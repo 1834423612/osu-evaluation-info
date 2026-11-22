@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return Response.json(result, {
       headers: {
         "Cache-Control":
-          "public, max-age=30, s-maxage=300, stale-while-revalidate=600",
+          "public, max-age=30, s-maxage=30, stale-while-revalidate=60",
         "Server-Timing": `search;dur=${Math.round(performance.now() - started)}`,
       },
     });
@@ -42,6 +42,17 @@ export async function GET(request: Request) {
           : error instanceof UnsupportedSearchFilter
             ? 422
             : 503;
+    if (status === 503)
+      console.error(
+        JSON.stringify({
+          event: "catalog.search_unavailable",
+          code: /^[A-Z0-9_]{1,64}$/.test(
+            String((error as { code?: unknown })?.code),
+          )
+            ? String((error as { code: unknown }).code)
+            : "GENERATION_UNAVAILABLE",
+        }),
+      );
     return Response.json(
       {
         error:
