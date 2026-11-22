@@ -113,7 +113,16 @@ export function actualCount(data) {
 export function searchableTerms(data) {
   if (!Array.isArray(data.data))
     throw catalogError("Invalid official searchable terms.");
-  const terms = data.data.filter((t) => t.classSearch === "Y");
+  const placeholders = data.data.filter((t) => t === null).length;
+  if (placeholders)
+    console.warn(
+      JSON.stringify({
+        event: "catalog.term_placeholders",
+        endpoint: "searchableTermsV2",
+        count: placeholders,
+      }),
+    );
+  const terms = data.data.filter((t) => t?.classSearch === "Y");
   const seen = new Set();
   for (const term of terms) {
     if (

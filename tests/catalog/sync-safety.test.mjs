@@ -112,6 +112,17 @@ it("rejects cap/count drift, malformed counts and unexpected empty pages", () =>
     /duplicate/,
   );
 });
+it("ignores null placeholders in the official term list but validates searchable identities", () => {
+  assert.deepEqual(
+    searchableTerms({ data: [null, { ...term, classSearch: "Y" }, null] }),
+    [{ ...term, classSearch: "Y" }],
+  );
+  assert.throws(
+    () => searchableTerms({ data: [null, { classSearch: "Y" }] }),
+    /Invalid.*term/,
+  );
+  assert.throws(() => searchableTerms({ data: [null] }), /No searchable/);
+});
 it("compares partition keys and individual counts even when totals match", () => {
   const a = { query: { term: "1272", subject: "a" }, expected_sections: 2 },
     b = { query: { term: "1272", subject: "b" }, expected_sections: 2 };
