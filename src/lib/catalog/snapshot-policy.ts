@@ -1,4 +1,10 @@
 /** Only validated, published generations are visible; cursors may pin older ones. */
+export function acceptedCatalogRunSql(reference: string) {
+  if (!/^[a-z]+\.run_id$/.test(reference))
+    throw Error("Invalid catalog run reference");
+  return `EXISTS(SELECT 1 FROM osu_catalog.sync_runs accepted JOIN osu_catalog.snapshot_versions publication ON publication.run_id=accepted.id WHERE accepted.id=${reference} AND accepted.status='complete' AND publication.published_at IS NOT NULL)`;
+}
+
 export const LATEST_CATALOG_TERM_SQL = `
   SELECT term_code FROM osu_catalog.term_archives
   ORDER BY (source_status='listed') DESC,term_code DESC LIMIT 1`;
@@ -12,6 +18,13 @@ export const FIND_CATALOG_SNAPSHOT_SQL = `
   FROM osu_catalog.sync_runs r JOIN osu_catalog.snapshot_versions v ON v.run_id=r.id
   WHERE v.published_at IS NOT NULL AND r.status='complete' AND r.completed_at IS NOT NULL
     AND r.terms ? $1 AND ($2::uuid IS NULL OR r.id=$2)
+  ORDER BY v.published_at DESC,r.id DESC LIMIT 1`;
+
+export const FIND_PREVIOUS_CATALOG_SNAPSHOT_SQL = `
+  SELECT r.id,r.completed_at FROM osu_catalog.sync_runs r JOIN osu_catalog.snapshot_versions v ON v.run_id=r.id
+  WHERE v.published_at IS NOT NULL AND r.status='complete' AND r.completed_at IS NOT NULL
+    AND r.terms ? $1 AND (v.published_at,r.id)<(
+      SELECT published_at,run_id FROM osu_catalog.snapshot_versions WHERE run_id=$2::uuid)
   ORDER BY v.published_at DESC,r.id DESC LIMIT 1`;
 
 export const FIND_COURSE_ARCHIVE_SQL = `

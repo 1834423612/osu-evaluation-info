@@ -37,6 +37,7 @@ it(
         "db/migrations/catalog/004-term-archives.sql",
         "db/migrations/catalog/005-course-changes.sql",
         "db/migrations/catalog/006-search-artifacts.sql",
+        "db/migrations/catalog/007-coverage-guard.sql",
       ]) {
         await client.query(
           (
@@ -48,7 +49,7 @@ it(
         );
       }
       await client.query(
-        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(6)`,
+        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(7)`,
       );
       const preload = join(directory, "preload.mjs");
       await writeFile(

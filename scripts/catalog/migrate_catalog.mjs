@@ -29,6 +29,7 @@ try {
     "CREATE TABLE IF NOT EXISTS osu_catalog.schema_versions (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())",
   );
   const migrations = [
+    { version: 7, file: "../../db/migrations/catalog/007-coverage-guard.sql" },
     {
       version: 6,
       file: "../../db/migrations/catalog/006-search-artifacts.sql",

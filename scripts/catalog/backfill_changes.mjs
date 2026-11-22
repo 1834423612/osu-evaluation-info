@@ -9,6 +9,7 @@ import {
   captureCourseChanges,
   parseChangeBackfillOptions,
 } from "./changes.mjs";
+import { catalogFailure } from "./diagnostics.mjs";
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
   console.log(
@@ -46,7 +47,15 @@ try {
         captureCourseChanges(client, row.run_id, row.term, { deadline }),
       );
     } catch (error) {
-      if (error.code !== "CATALOG_CHANGE_BUDGET") throw error;
+      if (!["CATALOG_CHANGE_BUDGET", "57014"].includes(error.code)) throw error;
+      console.warn(
+        JSON.stringify(
+          catalogFailure("catalog.change_backfill_deferred", error, {
+            run: row.run_id,
+            term: row.term,
+          }),
+        ),
+      );
       pausedForRuntime = true;
       break;
     }
@@ -69,7 +78,7 @@ try {
   );
 } catch (error) {
   console.error(
-    `Change backfill failed (${error.code ?? "configuration"}): ${error.message}`,
+    JSON.stringify(catalogFailure("catalog.change_backfill_failed", error)),
   );
   process.exitCode = 1;
 } finally {

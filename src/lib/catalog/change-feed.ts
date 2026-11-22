@@ -4,6 +4,7 @@ import { createSearchResultCache } from "@/lib/search/result-cache";
 import {
   LATEST_CATALOG_TERM_SQL,
   LIST_CATALOG_TERMS_SQL,
+  acceptedCatalogRunSql,
 } from "./snapshot-policy";
 import {
   changeSignature,
@@ -57,7 +58,7 @@ export async function catalogChanges(filters: ChangeFilters) {
         cursor?.time ?? null,
         cursor?.id ?? null,
       ];
-      const where = `e.term_code=$1 AND ($2='ALL' OR e.campus_code=$2) AND ($3='' OR strpos(lower(e.subject||e.catalog_number||' '||e.subject||' '||e.catalog_number||' '||e.title),lower($3))>0) AND e.observed_at>=$4::timestamptz AND e.id<=$5::bigint`;
+      const where = `${acceptedCatalogRunSql("e.run_id")} AND e.term_code=$1 AND ($2='ALL' OR e.campus_code=$2) AND ($3='' OR strpos(lower(e.subject||e.catalog_number||' '||e.subject||' '||e.catalog_number||' '||e.title),lower($3))>0) AND e.observed_at>=$4::timestamptz AND e.id<=$5::bigint`;
       const counts = { added: 0, restored: 0, changed: 0, removed: 0 };
       const totals = await connection.query<{ kind: ChangeKind; n: number }>(
         `SELECT e.kind,count(*)::int n FROM osu_catalog.course_changes e WHERE ${where} GROUP BY e.kind`,
@@ -76,7 +77,7 @@ export async function catalogChanges(filters: ChangeFilters) {
           comparisonSince: string | null;
           baselineSince: string | null;
         }>(
-          `SELECT max(observed_at)::text "latestCheck",min(observed_at) FILTER(WHERE previous_run_id IS NOT NULL)::text "comparisonSince",min(observed_at)::text "baselineSince" FROM osu_catalog.change_batches WHERE term_code=$1`,
+          `SELECT max(observed_at)::text "latestCheck",min(observed_at) FILTER(WHERE previous_run_id IS NOT NULL)::text "comparisonSince",min(observed_at)::text "baselineSince" FROM osu_catalog.change_batches b WHERE term_code=$1 AND ${acceptedCatalogRunSql("b.run_id")}`,
           [term],
         )
       ).rows[0];

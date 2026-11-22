@@ -22,6 +22,9 @@ import { preparePage } from "./rows.mjs";
 import { writePage } from "./writer.mjs";
 import { prepareSearchGeneration } from "../search/prepare.mjs";
 import { publishCatalogSnapshot } from "./snapshots.mjs";
+import { assertCatalogCoverage } from "./coverage.mjs";
+import { catalogFailure } from "./diagnostics.mjs";
+const context = { stage: "configuration" };
 
 async function main() {
   const args = process.argv.slice(2);
@@ -59,8 +62,8 @@ async function main() {
     : createCatalogClient("osu-catalog-sync");
   let locked = false,
     runId;
-  const deadline = Date.now() + 45 * 60 * 1000;
-  const signal = AbortSignal.timeout(45 * 60 * 1000);
+  const deadline = Date.now() + 20 * 60 * 1000;
+  const signal = AbortSignal.timeout(20 * 60 * 1000);
   const search = (query) => searchOfficial(query, { signal });
   let processed = 0;
   let stopping = false;
@@ -85,6 +88,7 @@ async function main() {
       }
       await requireCatalogSchema(client);
     }
+    context.stage = "term-discovery";
     const available = searchableTerms(
       await fetchOfficialJson("searchableTermsV2", { signal }),
     );
@@ -116,6 +120,7 @@ async function main() {
     // At most one automatic restart when the live index moves during traversal.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
+        context.stage = "partition-discovery";
         const plan = await discoverPlan(terms, available, search);
         runId = await selectRun(
           client,
@@ -129,6 +134,7 @@ async function main() {
             [runId],
           )
         ).rows;
+        context.stage = "snapshot-ingestion";
         for (const partition of partitions) {
           for (let page = partition.next_page; ; page++) {
             if (processed >= maxPages || stopping || Date.now() >= deadline) {
@@ -180,6 +186,8 @@ async function main() {
             )
           ).rows[0].n,
         );
+        context.stage = "coverage-validation";
+        await assertCatalogCoverage(client, runId);
         // Keep the old publication visible until every term has a complete index.
         // A failed preparation cannot expose a new generation to visitors.
         const searchTerms = terms.map((term) => ({
@@ -187,6 +195,7 @@ async function main() {
           label: term.descr,
         }));
         for (const term of termCodes) {
+          context.stage = "search-preparation";
           await prepareSearchGeneration(client, {
             run: runId,
             term,
@@ -194,6 +203,7 @@ async function main() {
             snapshotAt: new Date().toISOString(),
           });
         }
+        context.stage = "publication";
         await publishCatalogSnapshot(
           client,
           runId,
@@ -247,7 +257,7 @@ async function main() {
 
 main().catch((error) => {
   console.error(
-    `Catalog sync failed (${error.code ?? "configuration"}): ${error.message}`,
+    JSON.stringify(catalogFailure("catalog.sync_failed", error, context)),
   );
   process.exitCode = 1;
 });

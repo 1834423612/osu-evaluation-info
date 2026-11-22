@@ -7,8 +7,21 @@ export function catalogError(message, code = "CATALOG_DATA_INVALID") {
 /** Retry transport failures and temporary HTTP errors, with bounded Retry-After. */
 export async function fetchOfficialJson(
   path,
-  { fetcher = fetch, wait = delay, signal } = {},
+  {
+    fetcher = fetch,
+    wait = delay,
+    signal,
+    report = (event) => console.warn(JSON.stringify(event)),
+  } = {},
 ) {
+  const [endpoint, query] = path.split("?");
+  const scope = Object.fromEntries(
+    [...new URLSearchParams(query)].filter(
+      ([key, value]) =>
+        ["term", "campus", "subject", "p"].includes(key) &&
+        /^[\w.-]{1,32}$/.test(value),
+    ),
+  );
   for (let attempt = 0; ; attempt++) {
     signal?.throwIfAborted();
     let response;
@@ -40,13 +53,22 @@ export async function fetchOfficialJson(
         throw catalogError("Invalid OSU response envelope.");
       return value.data;
     } catch (error) {
+      const detail = {
+        endpoint,
+        ...scope,
+        attempt: attempt + 1,
+        status: response?.status ?? null,
+        code: error.code ?? "CATALOG_TRANSPORT_ERROR",
+      };
       if (
         signal?.aborted ||
         attempt >= 4 ||
         error.retryable === false ||
         error.code === "CATALOG_DATA_INVALID"
-      )
+      ) {
+        report({ event: "catalog.upstream_failed", ...detail });
         throw error;
+      }
       const header = response?.headers.get("retry-after");
       const retryAfter =
         header == null
@@ -54,15 +76,15 @@ export async function fetchOfficialJson(
           : /^\d+$/.test(header)
             ? Number(header) * 1000
             : Date.parse(header) - Date.now();
-      await wait(
-        Math.min(
-          30_000,
-          Math.max(
-            800 * 2 ** attempt,
-            Number.isFinite(retryAfter) ? retryAfter : 0,
-          ),
+      const waitMs = Math.min(
+        30_000,
+        Math.max(
+          800 * 2 ** attempt,
+          Number.isFinite(retryAfter) ? retryAfter : 0,
         ),
       );
+      report({ event: "catalog.upstream_retry", ...detail, waitMs });
+      await wait(waitMs);
     }
   }
 }
@@ -80,9 +102,7 @@ export function hitCount(value, label = "hit count") {
 }
 
 export function facet(data, slug) {
-  if (!Array.isArray(data.filters))
-    throw catalogError("Missing official filters.");
-  const items = data.filters.find((f) => f.slug === slug)?.items ?? [];
+  const items = officialFilters(data).find((f) => f.slug === slug)?.items ?? [];
   if (!Array.isArray(items)) throw catalogError(`Invalid ${slug} facets.`);
   const keys = new Set();
   for (const item of items) {
@@ -100,19 +120,38 @@ export function facet(data, slug) {
 
 export function actualCount(data) {
   hitCount(data.totalItems);
-  if (!Array.isArray(data.filters))
-    throw catalogError("Missing official filters.");
-  const selected = data.filters.flatMap((f) => {
-    if (!Array.isArray(f.items))
-      throw catalogError("Invalid official filter items.");
+  const selected = officialFilters(data).flatMap((f) => {
     return f.items.filter((i) => i.selected).map((i) => hitCount(i.count));
   });
   return selected.length ? Math.min(...selected) : data.totalItems;
 }
 
+function officialFilters(data) {
+  if (!Array.isArray(data?.filters))
+    throw catalogError("Missing official filters.");
+  for (const filter of data.filters)
+    if (
+      !filter ||
+      typeof filter !== "object" ||
+      !Array.isArray(filter.items) ||
+      filter.items.some(
+        (item) => !item || typeof item !== "object" || Array.isArray(item),
+      )
+    )
+      throw catalogError("Invalid official filter items.");
+  return data.filters;
+}
+
 export function searchableTerms(data) {
   if (!Array.isArray(data.data))
     throw catalogError("Invalid official searchable terms.");
+  if (
+    data.data.some(
+      (term) =>
+        term !== null && (typeof term !== "object" || Array.isArray(term)),
+    )
+  )
+    throw catalogError("Invalid official term entry.");
   const placeholders = data.data.filter((t) => t === null).length;
   if (placeholders)
     console.warn(

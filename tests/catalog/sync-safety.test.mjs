@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { discoverPlan, samePlan } from "../../scripts/catalog/plan.mjs";
 import { preparePage } from "../../scripts/catalog/rows.mjs";
+import { catalogFailure } from "../../scripts/catalog/diagnostics.mjs";
 import {
   fetchOfficialJson,
   actualCount,
@@ -9,6 +10,23 @@ import {
 } from "../../scripts/catalog/upstream.mjs";
 
 const term = { strm: "1272", descr: "Spring" };
+it("maintenance errors redact credentials and preserve the failed stage", () => {
+  const event = catalogFailure(
+    "catalog.sync_failed",
+    Object.assign(
+      Error(
+        "connect postgresql://user:secret@database/db password='hidden'\n::error::untrusted",
+      ),
+      { code: "ECONNRESET" },
+    ),
+    { stage: "discovery" },
+  );
+  assert.equal(event.stage, "discovery");
+  assert.equal(event.code, "ECONNRESET");
+  assert.ok(!JSON.stringify(event).includes("secret"));
+  assert.ok(!JSON.stringify(event).includes("hidden"));
+  assert.ok(!event.message.includes("\n"));
+});
 const partition = {
   query: { term: "1272", subject: "math" },
   partition_key: "term=1272&subject=math",
@@ -213,6 +231,43 @@ it("HTTP retries transient errors with bounded Retry-After and does not retry 40
     /403/,
   );
   assert.equal(calls, 1);
+});
+it("upstream diagnostics report retries and terminal failures without query text or credentials", async () => {
+  const events = [];
+  await assert.rejects(
+    fetchOfficialJson(
+      "search?term=1272&campus=col&subject=psych&q=private-text",
+      {
+        fetcher: async () => new Response("", { status: 503 }),
+        wait: async () => {},
+        report: (event) => events.push(event),
+      },
+    ),
+    /503/,
+  );
+  assert.equal(events.length, 5);
+  assert.equal(events[0].event, "catalog.upstream_retry");
+  assert.equal(events.at(-1).event, "catalog.upstream_failed");
+  assert.equal(events.at(-1).attempt, 5);
+  assert.equal(events[0].term, "1272");
+  assert.equal(events[0].campus, "col");
+  assert.equal(events[0].status, 503);
+  assert.ok(!JSON.stringify(events).includes("private-text"));
+});
+it("malformed official facet and term entries fail with a classified data error", () => {
+  for (const filters of [
+    [null],
+    [{ slug: "campus", items: [null] }],
+    [{ slug: "campus", items: null }],
+  ])
+    assert.throws(
+      () => actualCount({ totalItems: 10, filters }),
+      (error) => error.code === "CATALOG_DATA_INVALID",
+    );
+  assert.throws(
+    () => searchableTerms({ data: [42, { ...term, classSearch: "Y" }] }),
+    (error) => error.code === "CATALOG_DATA_INVALID",
+  );
 });
 it("HTTP bounds transport retries and rejects malformed envelopes", async () => {
   let calls = 0;

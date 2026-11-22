@@ -36,6 +36,7 @@ it(
         "db/migrations/catalog/004-term-archives.sql",
         "db/migrations/catalog/005-course-changes.sql",
         "db/migrations/catalog/006-search-artifacts.sql",
+        "db/migrations/catalog/007-coverage-guard.sql",
       ])
         await client.query(
           (
@@ -46,7 +47,7 @@ it(
           ).replaceAll("osu_catalog", schema),
         );
       await client.query(
-        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(6)`,
+        `CREATE TABLE ${schema}.schema_versions(version integer PRIMARY KEY);INSERT INTO ${schema}.schema_versions VALUES(7)`,
       );
       const preload = join(directory, "preload.mjs");
       await writeFile(
@@ -72,7 +73,7 @@ it(
         let count=subject?counts[subject]:4;
         if(page){pageCalls++;if(mode==='drift-always'||mode==='drift-once'&&pageCalls===1)count++;}
         const subjects={math:'MATH',physics:'PHYSICS',chem:'CHEM'};
-        let sections=Array.from({length:count},(_,i)=>({termCode:'1272',classNumber:String((subject==='math'?100:200)+i),courseId:subject==='math'?'1':'2',courseOfferingNumber:'1',secCampus:'COL',enrollmentStatus:'Open',enrollmentTotal:9}));
+        let sections=Array.from({length:count},(_,i)=>({termCode:'1272',classNumber:String((subject==='math'?100:200)+i),courseId:subject==='math'?'1':'2',courseOfferingNumber:'1',secCampus:i===1?'MNS':'COL',enrollmentStatus:'Open',enrollmentTotal:9}));
         if(mode==='incomplete'&&page)sections.pop();
         if(mode==='bad-id'&&page)delete sections[0].classNumber;
         if(mode==='conflict'&&page&&subject==='physics')sections[0].classNumber='100';
