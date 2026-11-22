@@ -37,7 +37,12 @@ printf '%s\n' "$runtime_bin" >> "$GITHUB_PATH"
 
 # Avoid third-party Actions so owner-only repository policies are respected.
 package_tools="$RUNNER_TEMP/catalog-pnpm"
-npm install --global --prefix "$package_tools" --ignore-scripts --no-audit --no-fund pnpm@11.18.0
+package_manager="$(node -p 'require("./package.json").packageManager.split("+")[0]')"
+if [[ ! "$package_manager" =~ ^pnpm@[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo '::error::package.json must declare an exact pnpm version.'
+  exit 1
+fi
+npm install --global --prefix "$package_tools" --ignore-scripts --no-audit --no-fund "$package_manager"
 export PATH="$package_tools/bin:$PATH"
 printf '%s\n' "$package_tools/bin" >> "$GITHUB_PATH"
 node --version

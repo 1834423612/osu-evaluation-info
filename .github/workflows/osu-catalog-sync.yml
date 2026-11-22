@@ -41,6 +41,7 @@ jobs:
         run: bash scripts/ci/setup-catalog-runtime.sh
 
       - name: Install runtime dependencies
+        id: dependencies
         run: pnpm install --prod --frozen-lockfile
 
       - name: Sync the official OSU catalog
@@ -51,6 +52,7 @@ jobs:
         run: pnpm catalog:sync 2>&1 | tee "$RUNNER_TEMP/catalog-sync.log"
 
       - name: Refresh RMP identity and course evidence
+        id: mapping
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         shell: bash
@@ -60,32 +62,48 @@ jobs:
           "$RUNNER_TEMP/rmp-mapping-runtime/bin/python" scripts/rmp/sync_rmp_mappings.py --require-schema
 
       - name: Complete pending course change history
+        id: changes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/catalog/backfill_changes.mjs --max-batches 12 --max-seconds 120
+        shell: bash
+        run: node scripts/catalog/backfill_changes.mjs --max-batches 12 --max-seconds 120 2>&1 | tee "$RUNNER_TEMP/change-backfill.log"
 
       - name: Repair and retain published search indexes
-        if: ${{ !cancelled() && steps.catalog.outcome == 'success' }}
+        id: indexes
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: pnpm search:prepare
+        shell: bash
+        run: pnpm search:prepare 2>&1 | tee "$RUNNER_TEMP/search-prepare.log"
 
       - name: Refresh official academic calendar
-        if: ${{ !cancelled() }}
+        id: calendar
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NODE_ENV: production
-        run: node scripts/calendar/sync.mjs --apply
+        shell: bash
+        run: node scripts/calendar/sync.mjs --apply 2>&1 | tee "$RUNNER_TEMP/calendar-sync.log"
 
-      - name: Summarize catalog failure
-        if: failure()
+      - name: Summarize catalog maintenance
+        if: ${{ !cancelled() }}
+        env:
+          CATALOG_OUTCOME: ${{ steps.catalog.outcome }}
+          MAPPING_OUTCOME: ${{ steps.mapping.outcome }}
+          CHANGES_OUTCOME: ${{ steps.changes.outcome }}
+          INDEX_OUTCOME: ${{ steps.indexes.outcome }}
+          CALENDAR_OUTCOME: ${{ steps.calendar.outcome }}
         shell: bash
         run: |
           {
-            echo 'Catalog synchronization or maintenance failed. Inspect the failed step; published snapshots and source RMP records are retained.'
-            if [[ -f "$RUNNER_TEMP/catalog-sync.log" ]]; then
-              echo '```text'
-              tail -n 20 "$RUNNER_TEMP/catalog-sync.log"
-              echo '```'
-            fi
+            printf 'Catalog: %s. RMP evidence: %s. Change history: %s. Search indexes: %s. Calendar: %s.\n' "$CATALOG_OUTCOME" "$MAPPING_OUTCOME" "$CHANGES_OUTCOME" "$INDEX_OUTCOME" "$CALENDAR_OUTCOME"
+            echo 'Rejected or incomplete refreshes retain the last accepted catalog and its indexes.'
+            for log in catalog-sync change-backfill search-prepare calendar-sync; do
+              if [[ -f "$RUNNER_TEMP/$log.log" ]]; then
+                printf '\n### %s\n' "$log"
+                echo '```text'
+                tail -n 20 "$RUNNER_TEMP/$log.log"
+                echo '```'
+              fi
+            done
           } >> "$GITHUB_STEP_SUMMARY"
