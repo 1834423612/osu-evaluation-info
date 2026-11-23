@@ -325,7 +325,11 @@
   font-size: 10px;
   min-height: 25px;
 }
-
+.cardFooter [data-course-user-status] {
+  flex: 0 1 92px;
+  min-width: 72px;
+  max-width: 110px;
+}
 .cardFooter .dragHandle {
   margin-left: auto;
   cursor: grab;

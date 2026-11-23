@@ -16,6 +16,15 @@
 .badge[data-status="completed"] {
   --status-color: var(--positive, #18866b);
 }
+.badge[data-status="registered"] {
+  --status-color: var(--positive, #18866b);
+}
+.badge[data-status="dropped-no-w"] {
+  --status-color: #7b6385;
+}
+.badge[data-status="withdrawn-w"] {
+  --status-color: #b54e68;
+}
 .badge[data-status="in-progress"] {
   --status-color: #c56819;
 }

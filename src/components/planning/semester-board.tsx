@@ -33,6 +33,7 @@ import {
   Info,
 } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
+import { setCourseUserStatus } from "@/lib/planning/course-status";
 import {
   catalogKey,
   planningCredits,
@@ -90,6 +91,7 @@ function CourseCard({
   loaded,
   remove,
   choose,
+  annotate,
 }: {
   row: BoardCourse;
   locale: Locale;
@@ -99,6 +101,10 @@ function CourseCard({
   loaded: (key: string, detail: PlanningCourseDetail) => void;
   remove: (id: string) => void;
   choose: (row: BoardCourse) => void;
+  annotate: (
+    id: string,
+    status: "registered" | "dropped-no-w" | "withdrawn-w" | undefined,
+  ) => void;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const c = row.course;
@@ -229,6 +235,37 @@ function CourseCard({
           locale={locale}
         />
         {c.repeated && <CourseStatus status="repeated" locale={locale} />}
+        {c.userStatus ? (
+          <CourseStatus status={c.userStatus} locale={locale} manual />
+        ) : null}
+        {c.id && c.kind === "course" ? (
+          <ChoiceSelect
+            aria-label={`${t("Set personal status", "设置手动状态")} ${c.subject} ${c.number}`}
+            data-course-user-status
+            title={t(
+              "Personal label; the source status is retained",
+              "手动标签，来源状态仍保留",
+            )}
+            value={c.userStatus ?? "source"}
+            onValueChange={(value) =>
+              annotate(
+                c.id!,
+                value === "source"
+                  ? undefined
+                  : (value as "registered" | "dropped-no-w" | "withdrawn-w"),
+              )
+            }
+          >
+            <option value="source">{t("Status", "状态")}</option>
+            <option value="registered">{t("Registered", "已注册")}</option>
+            <option value="dropped-no-w">
+              {t("Dropped · no W", "退课 · 无 W")}
+            </option>
+            <option value="withdrawn-w">
+              {t("Withdrawn · W", "退课 · 有 W")}
+            </option>
+          </ChoiceSelect>
+        ) : null}
         {!locked && (
           <button
             className={styles.dragHandle}
@@ -986,6 +1023,11 @@ export function SemesterBoard({
                                     loaded={loaded}
                                     remove={remove}
                                     choose={choose}
+                                    annotate={(id, status) =>
+                                      update((p) =>
+                                        setCourseUserStatus(p, id, status),
+                                      )
+                                    }
                                   />
                                 ))}
                                 {!group.length && (
@@ -1108,6 +1150,11 @@ export function SemesterBoard({
                               loaded={loaded}
                               remove={remove}
                               choose={choose}
+                              annotate={(id, status) =>
+                                update((p) =>
+                                  setCourseUserStatus(p, id, status),
+                                )
+                              }
                             />
                           ))}
                       </div>

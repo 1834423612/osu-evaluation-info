@@ -15,6 +15,13 @@ import { text, type Locale } from "@/lib/i18n";
 import styles from "./course-status.module.css";
 
 const states = {
+  registered: { Icon: Check, en: "Registered", zh: "已注册" },
+  "dropped-no-w": {
+    Icon: CircleMinus,
+    en: "Dropped · no W",
+    zh: "退课 · 无 W",
+  },
+  "withdrawn-w": { Icon: CircleSlash, en: "Withdrawn · W", zh: "退课 · 有 W" },
   completed: { Icon: Check, en: "Completed", zh: "已完成" },
   "in-progress": { Icon: Clock3, en: "In progress", zh: "进行中" },
   planned: { Icon: CalendarDays, en: "Planned", zh: "计划" },
@@ -35,13 +42,21 @@ export function CourseStatus({
   status,
   locale,
   iconOnly = false,
+  manual = false,
 }: {
-  status: PlanCourse["status"] | "placeholder" | "repeated" | "remaining";
+  status:
+    | PlanCourse["status"]
+    | NonNullable<PlanCourse["userStatus"]>
+    | "placeholder"
+    | "repeated"
+    | "remaining";
   locale: Locale;
   iconOnly?: boolean;
+  manual?: boolean;
 }) {
   const { Icon, en, zh } = states[status];
-  const label = text(locale, en, zh);
+  const label =
+    (manual ? text(locale, "Manual · ", "手动 · ") : "") + text(locale, en, zh);
   return (
     <span
       className={styles.badge}

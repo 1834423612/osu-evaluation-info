@@ -117,6 +117,9 @@ export const courseSchema = z
       "dropped",
       "failed",
     ]),
+    userStatus: z
+      .enum(["registered", "dropped-no-w", "withdrawn-w"])
+      .optional(),
     repeated: z.boolean().optional(),
     page: z.number().int().min(1).max(200).nullable(),
   })

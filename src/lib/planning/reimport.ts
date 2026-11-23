@@ -74,6 +74,23 @@ export function replaceImportedReports(current: Plan, incoming: Plan) {
       if (match?.c.id) courseMap.set(c.id, match.c.id);
     }
   const ruleMap = new Map<string, string>();
+  const annotations = new Map(
+    current.semesters.flatMap((s) =>
+      s.courses.flatMap((c) =>
+        c.id && c.userStatus && courseMap.has(c.id)
+          ? [[courseMap.get(c.id)!, c.userStatus] as const]
+          : [],
+      ),
+    ),
+  );
+  next.semesters = next.semesters.map((s) => ({
+    ...s,
+    courses: s.courses.map((c) =>
+      c.id && annotations.has(c.id)
+        ? { ...c, userStatus: annotations.get(c.id) }
+        : c,
+    ),
+  }));
   for (const rule of current.requirements) {
     const match =
       next.requirements.find((r) => r.id === rule.id) ??
