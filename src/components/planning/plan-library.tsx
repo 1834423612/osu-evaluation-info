@@ -258,8 +258,8 @@ export function PlanLibrary({
                 "这会从工作区及同步设备中删除这个方案。",
               )
             : t(
-                "Give a friend’s plan or an alternative course combination its own name.",
-                "为朋友的规划或另一种课程组合起一个独立名称。 ",
+                "Give an alternative course combination its own name.",
+                "为另一种课程组合起一个独立名称。",
               )
         }
         closeLabel={t("Close", "关闭")}
