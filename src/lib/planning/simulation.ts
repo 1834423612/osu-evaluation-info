@@ -215,17 +215,41 @@ export function simulateSchedule(
       .slice(0, 48)
       .map((s) => s.choices);
   }
-  const choices = beam[0] ?? [];
-  return {
+  const ranked = beam.map((choices) => ({
     choices,
     ...simulationDiagnostics(choices, preferences),
-    unavailable,
     restricted: choices
       .filter((choice) =>
         choice.sections.some((s) => /closed|wait/i.test(s.enrollmentStatus)),
       )
       .map((choice) => choice.key),
-    capped,
+  }));
+  const compatible = ranked.filter((option) => !option.conflicts.length);
+  const seen = new Set<string>();
+  const alternatives = (compatible.length ? compatible : ranked.slice(0, 1))
+    .filter((option) => {
+      const identity = JSON.stringify(
+        option.choices.map((choice) => [
+          choice.key,
+          choice.sections.map((section) => section.classNumber).sort(),
+        ]),
+      );
+      if (!option.choices.length || seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    })
+    .slice(0, 24);
+  const best = alternatives[0] ?? {
+    choices: [],
+    conflicts: [],
+    unknown: [],
+    restricted: [],
+  };
+  return {
+    ...best,
+    alternatives,
+    unavailable,
+    capped: capped || compatible.length > 24,
     incomplete: courses
       .filter((c) => c.sectionsPartial)
       .map((c) => `${c.subject} ${c.catalogNumber}`),

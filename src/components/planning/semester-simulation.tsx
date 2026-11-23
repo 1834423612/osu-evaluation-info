@@ -1,5 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import {
   CalendarClock,
   SlidersHorizontal,
@@ -8,6 +15,8 @@ import {
   X,
   Plus,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Plan } from "@/lib/planning/model";
 import type { CatalogCourse } from "@/lib/catalog/types";
@@ -38,10 +47,34 @@ import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import type { UserCalendar } from "@/lib/calendar/model";
 import type { AcademicDay } from "@/lib/calendar/academic";
 import { browserUuid } from "@/lib/uuid";
+import { simulationCourseColors } from "@/lib/planning/simulation-colors";
+import { calendarTimeBounds } from "@/lib/calendar/week";
 type Result = ReturnType<typeof simulateSchedule>;
 const timeLabel = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 const times = Array.from({ length: 97 }, (_, i) => i * 15);
+type NavigationEvent = Pick<
+  ReactKeyboardEvent,
+  "altKey" | "ctrlKey" | "metaKey" | "shiftKey" | "defaultPrevented" | "key"
+> & { target: EventTarget | null };
+function navigationStep(event: NavigationEvent) {
+  if (
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    event.defaultPrevented
+  )
+    return 0;
+  const target = event.target instanceof Element ? event.target : null;
+  if (
+    target?.closest(
+      'input, textarea, select, [role="combobox"], [role="textbox"], [role="spinbutton"], [role="listbox"], [role="option"], [contenteditable]:not([contenteditable="false"])',
+    )
+  )
+    return 0;
+  return event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
+}
 export function SemesterSimulation({
   plan,
   term,
@@ -72,6 +105,7 @@ export function SemesterSimulation({
     ),
   ];
   const scope = [term, campus, ...codes].join("|");
+  const colors = simulationCourseColors(codes);
   const [loaded, setLoaded] = useState<{
     scope: string;
     courses: CatalogCourse[];
@@ -80,9 +114,53 @@ export function SemesterSimulation({
   const [view, setView] = useState("settings");
   const [replaceId, setReplaceId] = useState("");
   const [preview, setPreview] = useState<UserCalendar | null>(null);
-  const savedGroups = (plan.schedule.calendars ?? []).filter(
-    (calendar) => calendar.kind === "simulation" && calendar.term === term,
+  const navigation = useRef<HTMLElement>(null);
+  const previewNavigation = useRef<HTMLElement>(null);
+  const savedGroups = useMemo(
+    () =>
+      (plan.schedule.calendars ?? []).filter(
+        (calendar) => calendar.kind === "simulation" && calendar.term === term,
+      ),
+    [plan.schedule.calendars, term],
   );
+  const previewIndex = savedGroups.findIndex(
+    (calendar) => calendar.id === preview?.id,
+  );
+  const savedBounds = useMemo(
+    () =>
+      calendarTimeBounds(savedGroups.flatMap((calendar) => calendar.events)),
+    [savedGroups],
+  );
+  useEffect(() => {
+    if (!preview) return;
+    const navigate = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const dialog = previewNavigation.current?.closest('[role="dialog"]');
+      if (
+        !target ||
+        !dialog ||
+        target.closest('[role="dialog"], [role="alertdialog"]') !== dialog ||
+        dialog.closest('[aria-hidden="true"], [inert]') ||
+        target.closest('[role="menu"], [role="menubar"]')
+      )
+        return;
+      const step = navigationStep(event);
+      if (!step) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const current = savedGroups.findIndex(
+        (calendar) => calendar.id === preview.id,
+      );
+      const next =
+        savedGroups[
+          Math.max(0, Math.min(savedGroups.length - 1, current + step))
+        ];
+      if (next) setPreview(next);
+      previewNavigation.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener("keydown", navigate, true);
+    return () => window.removeEventListener("keydown", navigate, true);
+  }, [preview, savedGroups]);
   const [academicDays, setAcademicDays] = useState<AcademicDay[]>([]);
   useEffect(() => {
     const controller = new AbortController();
@@ -100,6 +178,7 @@ export function SemesterSimulation({
     fingerprint: string;
     value: Result;
   } | null>(null);
+  const [optionIndex, setOptionIndex] = useState(0);
   const worker = useRef<Worker | null>(null);
   const request = useRef<AbortController | null>(null);
   const [day, setDay] = useState("0"),
@@ -107,27 +186,16 @@ export function SemesterSimulation({
     [end, setEnd] = useState("780");
   const preferences =
     plan.schedule.simulationPreferences?.[term] ?? defaultSimulationPreferences;
-  function fixedChoices(courses: CatalogCourse[]) {
-    const choices = { ...plan.schedule.sectionChoices?.[term] };
-    for (const row of boardCourses(plan).filter(
-      (r) => r.term === term && r.course.section,
-    )) {
-      const key = `${row.course.subject} ${row.course.number}`;
-      if (Object.hasOwn(choices, key)) continue;
-      const section = courses
-        .find((c) => `${c.subject} ${c.catalogNumber}` === key)
-        ?.sections.find(
-          (s) =>
-            s.section === row.course.section ||
-            s.classNumber === row.course.section,
-        );
-      if (section) choices[key] = [section.classNumber];
-    }
-    return choices;
-  }
-  const fixed = fixedChoices(loaded?.scope === scope ? loaded.courses : []);
+  // A row's imported section is evidence, not an explicit simulation constraint.
+  const fixed = { ...plan.schedule.sectionChoices?.[term] };
   const fingerprint = JSON.stringify([scope, preferences, fixed]);
-  const output = result?.fingerprint === fingerprint ? result.value : null;
+  const simulation = result?.fingerprint === fingerprint ? result.value : null;
+  const activeIndex = simulation
+    ? Math.min(optionIndex, Math.max(0, simulation.alternatives.length - 1))
+    : 0;
+  const output = simulation
+    ? { ...simulation, ...simulation.alternatives[activeIndex] }
+    : null;
   useEffect(
     () => () => {
       request.current?.abort();
@@ -148,10 +216,13 @@ export function SemesterSimulation({
     }));
   }
   function choose(key: string, component: string, value: string) {
-    const group =
-      loaded?.courses
-        .find((c) => `${c.subject} ${c.catalogNumber}` === key)
-        ?.sections.filter((s) => s.component === component) ?? [];
+    const course = loaded?.courses.find(
+      (c) => `${c.subject} ${c.catalogNumber}` === key,
+    );
+    const group = course
+      ? (sectionGroups(course).find((group) => group.component === component)
+          ?.sections ?? [])
+      : [];
     update((p) => ({
       ...p,
       schedule: {
@@ -211,7 +282,7 @@ export function SemesterSimulation({
       setLoaded(data);
     }
     if (controller.signal.aborted) return;
-    const selected = fixedChoices(data.courses);
+    const selected = fixed;
     const runFingerprint = JSON.stringify([scope, preferences, selected]);
     try {
       const active = new Worker(
@@ -227,6 +298,7 @@ export function SemesterSimulation({
         if (event.data.error)
           setMessage(t("Could not simulate. Try again.", "模拟失败，请重试。"));
         else {
+          setOptionIndex(0);
           setResult({ fingerprint: runFingerprint, value: event.data.result });
           setView("result");
         }
@@ -262,8 +334,58 @@ export function SemesterSimulation({
     locale === "zh"
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const notices = output
+    ? [
+        ...output.conflicts.map(
+          (conflict) =>
+            `${days[conflict.day]} · ${conflict.left} ↔ ${conflict.right === "blocked" ? t("Blocked time", "避开时段") : conflict.right}`,
+        ),
+        ...(output.unknown.length
+          ? [`${t("Time TBA", "时间待公布")} · ${output.unknown.join(" · ")}`]
+          : []),
+        ...(output.unavailable.length
+          ? [
+              `${t("Selected sections missing", "所选班次缺失")} · ${output.unavailable.join(" · ")}`,
+            ]
+          : []),
+        ...(output.restricted.length
+          ? [
+              `${t("Closed or waitlisted", "已满或候补班次")} · ${output.restricted.join(" · ")}`,
+            ]
+          : []),
+        ...(output.linked.length
+          ? [
+              `${t("Confirm lecture/lab registration links", "请核对讲座与实验的注册关联")} · ${output.linked.join(" · ")}`,
+            ]
+          : []),
+        ...(output.capped
+          ? [
+              t(
+                "Search is bounded; other combinations may exist.",
+                "本次组合搜索有数量限制，可能存在其他安排。",
+              ),
+            ]
+          : []),
+      ]
+    : [];
   return (
-    <div className={styles.root} data-analytics-area="planning_simulation">
+    <div
+      className={styles.root}
+      data-analytics-area="planning_simulation"
+      onKeyDown={(event) => {
+        if (preview) return;
+        const step = navigationStep(event);
+        if (!step || !output || output.alternatives.length < 2) return;
+        event.preventDefault();
+        setOptionIndex(
+          Math.max(
+            0,
+            Math.min(output.alternatives.length - 1, activeIndex + step),
+          ),
+        );
+        navigation.current?.focus({ preventScroll: true });
+      }}
+    >
       <div className={styles.heading}>
         <CalendarClock size={20} />
         <strong>
@@ -275,10 +397,11 @@ export function SemesterSimulation({
       </div>
       <div className={styles.mobileTabs}>
         <button
+          aria-label={t("Sections & preferences", "班次与偏好")}
           aria-pressed={view === "settings"}
           onClick={() => setView("settings")}
         >
-          {t("Sections & preferences", "班次与偏好")}
+          {t("Sections", "班次偏好")}
         </button>
         <button
           aria-pressed={view === "result"}
@@ -463,6 +586,7 @@ export function SemesterSimulation({
                 <article
                   key={key}
                   className={styles.course}
+                  style={{ "--course-color": colors[key] } as CSSProperties}
                   data-conflict={conflicted.has(key)}
                   data-uncertain={
                     output?.unknown.includes(key) || !c.sections.length
@@ -472,6 +596,29 @@ export function SemesterSimulation({
                     {key}
                     <span>{c.title}</span>
                   </strong>
+                  {!!fixed[key]?.length && (
+                    <button
+                      type="button"
+                      className={styles.release}
+                      onClick={() =>
+                        update((p) => ({
+                          ...p,
+                          schedule: {
+                            ...p.schedule,
+                            sectionChoices: {
+                              ...p.schedule.sectionChoices,
+                              [term]: {
+                                ...p.schedule.sectionChoices?.[term],
+                                [key]: [],
+                              },
+                            },
+                          },
+                        }))
+                      }
+                    >
+                      {t("Use automatic sections", "全部自动选择")}
+                    </button>
+                  )}
                   {sectionGroups(c).map((group) => (
                     <label key={group.component}>
                       {group.component}
@@ -487,7 +634,10 @@ export function SemesterSimulation({
                         }
                       >
                         <option value="">
-                          {t("Recommend an available time", "自动推荐可用时间")}
+                          {t(
+                            "Automatic · compare all times",
+                            "自动选择 · 比较全部时间",
+                          )}
                         </option>
                         {group.sections.map((s) => (
                           <option key={s.classNumber} value={s.classNumber}>
@@ -501,11 +651,55 @@ export function SemesterSimulation({
                           </option>
                         ))}
                       </ChoiceSelect>
+                      <small className={styles.choiceHint}>
+                        {(fixed[key] ?? []).some((id) =>
+                          group.sections.some((s) => s.classNumber === id),
+                        )
+                          ? t("Pinned section", "已固定班次")
+                          : output?.choices
+                              .find((choice) => choice.key === key)
+                              ?.sections.filter((s) =>
+                                group.sections.some(
+                                  (section) =>
+                                    section.classNumber === s.classNumber,
+                                ),
+                              )
+                              .map(
+                                (s) =>
+                                  `${t("Current", "当前方案")} · ${s.section}`,
+                              )
+                              .join(" · ") ||
+                            t("Any available section", "比较所有可用班次")}
+                      </small>
                     </label>
                   ))}
                 </article>
               );
             })}
+          {!!savedGroups.length && (
+            <section className={styles.savedGroups}>
+              <h3>{t("Saved schedule groups", "已保存课表组")}</h3>
+              <div>
+                {savedGroups.map((calendar) => (
+                  <button
+                    key={calendar.id}
+                    onClick={() => setPreview(calendar)}
+                  >
+                    <strong>{calendar.title}</strong>
+                    <CalendarPreview events={calendar.events} />
+                    <small>
+                      {calendar.fingerprint !== semesterFingerprint(plan, term)
+                        ? t(
+                            "Out of date · regenerate to replace",
+                            "已过期 · 请重新生成替换",
+                          )
+                        : t("Preview schedule", "预览课表")}
+                    </small>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
         </section>
         <section
           className={styles.preview}
@@ -526,227 +720,253 @@ export function SemesterSimulation({
           )}
           {output && (
             <>
-              <div
-                className={styles.result}
-                data-incomplete={Boolean(
+              <div className={styles.previewContent}>
+                <nav
+                  ref={navigation}
+                  tabIndex={0}
+                  className={styles.alternatives}
+                  aria-label={t("Timetable alternatives", "可选时间表")}
+                >
+                  <div>
+                    <strong aria-live="polite">
+                      {t("Schedule", "方案")} {activeIndex + 1} /{" "}
+                      {Math.max(1, output.alternatives.length)}
+                    </strong>
+                    <small>
+                      {t("← → Compare schedules", "← → 切换对比方案")}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={t("Previous timetable", "上一种时间表")}
+                    disabled={activeIndex === 0}
+                    onClick={() => {
+                      navigation.current?.focus({ preventScroll: true });
+                      setOptionIndex(activeIndex - 1);
+                    }}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={t("Next timetable", "下一种时间表")}
+                    disabled={activeIndex + 1 >= output.alternatives.length}
+                    onClick={() => {
+                      navigation.current?.focus({ preventScroll: true });
+                      setOptionIndex(activeIndex + 1);
+                    }}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </nav>
+                <div
+                  className={styles.result}
+                  data-incomplete={Boolean(
+                    output.unknown.length ||
+                    output.unavailable.length ||
+                    output.incomplete.length ||
+                    output.restricted.length ||
+                    loaded?.failed.length,
+                  )}
+                  data-conflict={output.conflicts.length > 0}
+                  role="status"
+                >
+                  {output.conflicts.length ||
                   output.unknown.length ||
-                  output.unavailable.length ||
                   output.incomplete.length ||
                   output.restricted.length ||
-                  loaded?.failed.length,
-                )}
-                data-conflict={output.conflicts.length > 0}
-                role="status"
-              >
-                {output.conflicts.length ||
-                output.unknown.length ||
-                output.incomplete.length ||
-                output.restricted.length ||
-                output.unavailable.length ||
-                loaded?.failed.length ? (
-                  <AlertTriangle size={18} />
-                ) : (
-                  <CheckCircle2 size={18} />
-                )}
-                <strong>
-                  {output.conflicts.length
-                    ? t("Schedule conflicts found", "发现时间冲突")
-                    : output.unknown.length ||
-                        loaded?.failed.length ||
-                        output.unavailable.length ||
-                        output.incomplete.length ||
-                        output.restricted.length
-                      ? t(
-                          "Known meeting times do not overlap; some data is incomplete",
-                          "已知时间无冲突，部分班次资料仍不完整",
-                        )
-                      : t("No meeting-time conflicts", "上课时间无冲突")}
-                </strong>
-              </div>
-              {output.conflicts.map((c, i) => (
-                <p className={styles.warning} key={i}>
-                  {days[c.day]} · {c.left} ↔{" "}
-                  {c.right === "blocked"
-                    ? t("Blocked time", "避开时段")
-                    : c.right}
-                </p>
-              ))}
-              {!!output.unknown.length && (
-                <p>
-                  {t("Time to be announced", "时间待公布")} ·{" "}
-                  {output.unknown.join(" · ")}
-                </p>
-              )}
-              {!!output.unavailable.length && (
-                <p>
-                  {t(
-                    "Selected sections missing from this catalog",
-                    "所选班次在当前目录中缺失",
-                  )}{" "}
-                  · {output.unavailable.join(" · ")}
-                </p>
-              )}
-              {!!output.restricted.length && (
-                <p className={styles.warning}>
-                  {t("Closed or waitlisted sections", "班次已满或仅可候补")} ·{" "}
-                  {output.restricted.join(" · ")}
-                </p>
-              )}
-              {!!output.linked.length && (
-                <p>
-                  {t(
-                    "Confirm lecture/lab registration links for",
-                    "请核对讲座、实验等组件的注册关联",
-                  )}{" "}
-                  · {output.linked.join(" · ")}
-                </p>
-              )}
-              {output.capped && (
-                <small>
-                  {t(
-                    "A bounded search found this combination. Other combinations may exist.",
-                    "本次使用限量组合搜索，可能存在其他可行安排。",
+                  output.unavailable.length ||
+                  loaded?.failed.length ? (
+                    <AlertTriangle size={18} />
+                  ) : (
+                    <CheckCircle2 size={18} />
                   )}
-                </small>
-              )}
-              <SimulationTimetable
-                academic={academicDays}
-                choices={output.choices}
-                courses={loaded?.courses ?? []}
-                conflicted={conflicted}
-                locale={locale}
-              />
-              <ChoiceSelect
-                aria-label={t("Save destination", "课表保存位置")}
-                value={replaceId}
-                onValueChange={setReplaceId}
-              >
-                <option value="">
-                  {t("Save as a new group", "保存为新的课表组")}
-                </option>
-                {savedGroups.map((calendar) => (
-                  <option key={calendar.id} value={calendar.id}>
-                    {t("Replace", "替换")} · {calendar.title}
+                  <strong>
+                    {output.conflicts.length
+                      ? t("Schedule conflicts found", "发现时间冲突")
+                      : output.unknown.length ||
+                          loaded?.failed.length ||
+                          output.unavailable.length ||
+                          output.incomplete.length ||
+                          output.restricted.length
+                        ? t(
+                            "No known conflicts · review details",
+                            "已知时间无冲突 · 详情需核对",
+                          )
+                        : t("No meeting-time conflicts", "上课时间无冲突")}
+                  </strong>
+                </div>
+                <SimulationTimetable
+                  academic={academicDays}
+                  choices={output.choices}
+                  courses={loaded?.courses ?? []}
+                  conflicted={conflicted}
+                  locale={locale}
+                  warnings={notices}
+                />
+              </div>
+              <div className={styles.saveActions}>
+                <ChoiceSelect
+                  aria-label={t("Save destination", "课表保存位置")}
+                  value={replaceId}
+                  onValueChange={setReplaceId}
+                >
+                  <option value="">
+                    {t("Save as a new group", "保存为新的课表组")}
                   </option>
-                ))}
-              </ChoiceSelect>
-              <button
-                className={styles.run}
-                disabled={
-                  !output.choices.length ||
-                  output.conflicts.length > 0 ||
-                  (!replaceId &&
-                    (plan.schedule.calendars?.length ?? 0) >= 40) ||
-                  !!loaded?.failed.length ||
-                  !!output.unavailable.length
-                }
-                onClick={async () => {
-                  const id = replaceId || browserUuid();
-                  update((p) => {
-                    const previous = p.schedule.calendars?.find(
-                      (calendar) => calendar.id === id,
-                    );
-                    const generated = calendarFromSimulation(
-                      p,
-                      term,
-                      output.choices,
-                      academicDays,
-                      id,
-                    );
-                    const calendar = {
-                      ...generated,
-                      title:
-                        previous?.title ??
-                        `${semesterLabel(term, locale)} · ${output.choices.length}${t(" courses", " 门课程")} · ${t("Simulation", "模拟课表")}`,
-                      description:
-                        previous?.description || generated.description,
-                      icon: previous?.icon ?? generated.icon,
-                      color: previous?.color ?? generated.color,
-                    };
-                    return {
-                      ...p,
-                      schedule: {
-                        ...p.schedule,
-                        calendars: [
-                          ...(p.schedule.calendars ?? []).filter(
-                            (calendar) => calendar.id !== id,
+                  {savedGroups.map((calendar) => (
+                    <option key={calendar.id} value={calendar.id}>
+                      {t("Replace", "替换")} · {calendar.title}
+                    </option>
+                  ))}
+                </ChoiceSelect>
+                <button
+                  className={styles.run}
+                  disabled={
+                    !output.choices.length ||
+                    output.conflicts.length > 0 ||
+                    (!replaceId &&
+                      (plan.schedule.calendars?.length ?? 0) >= 40) ||
+                    !!loaded?.failed.length ||
+                    !!output.unavailable.length
+                  }
+                  onClick={async () => {
+                    const id = replaceId || browserUuid();
+                    update((p) => {
+                      const previous = p.schedule.calendars?.find(
+                        (calendar) => calendar.id === id,
+                      );
+                      const generated = calendarFromSimulation(
+                        p,
+                        term,
+                        output.choices,
+                        academicDays,
+                        id,
+                      );
+                      const calendar = {
+                        ...generated,
+                        title:
+                          previous?.title ??
+                          `${semesterLabel(term, locale)} · ${output.choices.length}${t(" courses", " 门课程")} · ${t("Simulation", "模拟课表")}`,
+                        description:
+                          previous?.description || generated.description,
+                        icon: previous?.icon ?? generated.icon,
+                        color: previous?.color ?? generated.color,
+                        reminders: previous?.reminders ?? generated.reminders,
+                      };
+                      return {
+                        ...p,
+                        schedule: {
+                          ...p.schedule,
+                          calendars: [
+                            ...(p.schedule.calendars ?? []).filter(
+                              (calendar) => calendar.id !== id,
+                            ),
+                            calendar,
+                          ],
+                        },
+                      };
+                    });
+                    setReplaceId(id);
+                    setMessage(
+                      (await persist())
+                        ? t("Schedule group saved", "课表组已保存")
+                        : t(
+                            "Could not save. Export a backup to keep your changes.",
+                            "保存失败，请导出备份保留修改。",
                           ),
-                          calendar,
-                        ],
-                      },
-                    };
-                  });
-                  setReplaceId(id);
-                  setMessage(
-                    (await persist())
-                      ? t("Schedule group saved", "课表组已保存")
-                      : t(
-                          "Could not save. Export a backup to keep your changes.",
-                          "保存失败，请导出备份保留修改。",
-                        ),
-                  );
-                }}
-              >
-                {t("Save this schedule group", "保存这组课表")}
-              </button>
-              <a href="/calendar">{t("Open my calendars", "打开我的日程")}</a>
+                    );
+                  }}
+                >
+                  {t("Save this schedule group", "保存这组课表")}
+                </button>
+                <a href="/calendar">{t("My calendars", "我的日程")}</a>
+              </div>
             </>
           )}
         </section>
       </div>
-      {!!savedGroups.length && (
-        <section className={styles.savedGroups}>
-          <h3>{t("Saved schedule groups", "已保存课表组")}</h3>
-          <div>
-            {savedGroups.map((calendar) => (
-              <button key={calendar.id} onClick={() => setPreview(calendar)}>
-                <strong>{calendar.title}</strong>
-                <CalendarPreview events={calendar.events} />
-                <small>
-                  {calendar.fingerprint !== semesterFingerprint(plan, term)
-                    ? t(
-                        "Out of date · regenerate to replace",
-                        "已过期 · 请重新生成替换",
-                      )
-                    : t("Preview schedule", "预览课表")}
-                </small>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
       <WorkspaceDialog
+        wide
         open={!!preview}
         onOpenChange={(open) => {
           if (!open) setPreview(null);
         }}
         title={preview?.title ?? ""}
-        description={t("Saved schedule preview", "已保存课表预览")}
+        description={t(
+          "Compare saved schedules · ← → to switch",
+          "对比已保存课表 · ← → 切换",
+        )}
         closeLabel={t("Close", "关闭")}
         guard={false}
       >
         {preview && (
-          <>
-            <CalendarWeek
-              events={preview.events}
-              dates={(() => {
-                const first =
-                  preview.events[0]?.start.slice(0, 10) ??
-                  new Date().toISOString().slice(0, 10);
-                const monday = new Date(first + "T12:00:00Z");
-                monday.setUTCDate(
-                  monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7),
-                );
-                return Array.from({ length: 7 }, (_, i) =>
-                  new Date(+monday + i * 86400000).toISOString().slice(0, 10),
-                );
-              })()}
-              locale={locale}
-            />
+          <div className={styles.savedPreview}>
+            <nav
+              className={styles.alternatives}
+              ref={previewNavigation}
+              tabIndex={0}
+              aria-label={t("Saved schedule alternatives", "已保存课表切换")}
+            >
+              <div>
+                <strong aria-live="polite">
+                  {t("Saved schedule", "已保存课表")} {previewIndex + 1} /{" "}
+                  {savedGroups.length}
+                </strong>
+                <small>
+                  {t(
+                    "Same time scale for every group",
+                    "所有课表采用相同时间标尺",
+                  )}
+                </small>
+              </div>
+              <button
+                type="button"
+                aria-label={t("Previous saved schedule", "上一组已保存课表")}
+                disabled={previewIndex <= 0}
+                onClick={() => {
+                  previewNavigation.current?.focus({ preventScroll: true });
+                  setPreview(savedGroups[previewIndex - 1]);
+                }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label={t("Next saved schedule", "下一组已保存课表")}
+                disabled={previewIndex + 1 >= savedGroups.length}
+                onClick={() => {
+                  previewNavigation.current?.focus({ preventScroll: true });
+                  setPreview(savedGroups[previewIndex + 1]);
+                }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </nav>
+            <div className={styles.savedWeek}>
+              <CalendarWeek
+                fit
+                timeBounds={savedBounds}
+                events={preview.events}
+                dates={(() => {
+                  const first =
+                    preview.events[0]?.start.slice(0, 10) ??
+                    new Date().toISOString().slice(0, 10);
+                  const monday = new Date(first + "T12:00:00Z");
+                  monday.setUTCDate(
+                    monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7),
+                  );
+                  return Array.from({ length: 7 }, (_, i) =>
+                    new Date(+monday + i * 86400000).toISOString().slice(0, 10),
+                  );
+                })()}
+                locale={locale}
+              />
+            </div>
             <a href="/calendar">
               {t("Edit in my calendars", "前往我的日程编辑")}
             </a>
-          </>
+          </div>
         )}
       </WorkspaceDialog>
     </div>

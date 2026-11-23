@@ -3,7 +3,10 @@ import { test } from "node:test";
 import {
   meetingDelivery,
   timetableMeetings,
+  timetableFrame,
+  timetableLanes,
 } from "../../src/lib/planning/timetable.ts";
+import { simulationCourseColors } from "../../src/lib/planning/simulation-colors.ts";
 
 const meeting = (
   location,
@@ -24,6 +27,45 @@ const section = (meetings, instructionMode = "Hybrid") => ({
   component: "LEC",
   instructionMode,
   meetings,
+});
+test("comparison frames include all candidate times and keep weekend columns stable", () => {
+  const courses = [
+    {
+      sections: [
+        section([meeting("Hall", [0], "07:20", "08:10")]),
+        section([meeting("Hall", [6], "21:30", "22:15")]),
+      ],
+    },
+  ];
+  assert.deepEqual(timetableFrame(courses), { start: 420, end: 1380, days: 7 });
+  assert.deepEqual(timetableFrame([]), { start: 480, end: 1200, days: 5 });
+});
+test("overlapping timetable events share lanes only for their connected time group", () => {
+  const events = [
+    { id: "later", day: 0, start: 660, end: 720 },
+    { id: "b", day: 0, start: 570, end: 660 },
+    { id: "a", day: 0, start: 540, end: 600 },
+    { id: "other-day", day: 1, start: 540, end: 600 },
+  ];
+  const placed = timetableLanes(events);
+  assert.equal(placed.find((event) => event.id === "a").lanes, 2);
+  assert.equal(placed.find((event) => event.id === "b").lane, 1);
+  assert.equal(placed.find((event) => event.id === "later").lanes, 1);
+  assert.equal(placed.find((event) => event.id === "other-day").lanes, 1);
+  assert.deepEqual(
+    events.map((event) => event.id),
+    ["later", "b", "a", "other-day"],
+  );
+});
+test("a timetable gives neighboring courses distinct colors regardless of source ordering", () => {
+  const keys = Array.from(
+    { length: 8 },
+    (_, i) => `CSE ${String(i + 1).repeat(4)}`,
+  );
+  const colors = simulationCourseColors(keys);
+  assert.equal(new Set(Object.values(colors)).size, 8);
+  assert.deepEqual(simulationCourseColors([...keys].reverse()), colors);
+  assert.deepEqual(simulationCourseColors([...keys, keys[0]]), colors);
 });
 
 test("mixed-delivery sections retain the location and mode of each meeting", () => {

@@ -1,8 +1,59 @@
-import type { CatalogMeeting, CatalogSection } from "../catalog/types";
+import type {
+  CatalogCourse,
+  CatalogMeeting,
+  CatalogSection,
+} from "../catalog/types";
 import { isOnlineMeeting } from "../catalog/presentation.ts";
 import { meetingSlots, type SimulationChoice } from "./simulation.ts";
 
 export type MeetingDelivery = "online" | "in-person" | "unknown";
+
+/** Use the whole candidate catalog so switching arrangements never changes the scale. */
+export function timetableFrame(courses: CatalogCourse[]) {
+  const frame = { start: 480, end: 1200, days: 5 };
+  for (const course of courses)
+    for (const section of course.sections)
+      for (const slot of meetingSlots(section.meetings)) {
+        frame.start = Math.min(frame.start, Math.floor(slot.start / 60) * 60);
+        frame.end = Math.max(frame.end, Math.ceil(slot.end / 60) * 60);
+        if (slot.day > 4) frame.days = 7;
+      }
+  return frame;
+}
+
+export function timetableLanes<
+  T extends { id: string; day: number; start: number; end: number },
+>(events: T[]): (T & { lane: number; lanes: number })[] {
+  const result: (T & { lane: number; lanes: number })[] = [];
+  for (let day = 0; day < 7; day++) {
+    const daily = events
+      .filter((event) => event.day === day)
+      .sort(
+        (a, b) =>
+          a.start - b.start || a.end - b.end || a.id.localeCompare(b.id),
+      );
+    for (let offset = 0; offset < daily.length;) {
+      const ends: number[] = [],
+        placed: (T & { lane: number })[] = [];
+      let boundary = daily[offset].end,
+        next = offset;
+      while (
+        next < daily.length &&
+        (next === offset || daily[next].start < boundary)
+      ) {
+        const event = daily[next++];
+        let lane = ends.findIndex((end) => end <= event.start);
+        if (lane < 0) lane = ends.length;
+        ends[lane] = event.end;
+        boundary = Math.max(boundary, event.end);
+        placed.push({ ...event, lane });
+      }
+      result.push(...placed.map((event) => ({ ...event, lanes: ends.length })));
+      offset = next;
+    }
+  }
+  return result;
+}
 
 export function meetingDelivery(
   meeting: Pick<CatalogMeeting, "location"> | undefined,

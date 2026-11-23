@@ -75,6 +75,84 @@ test("fixed conflicting classes remain fixed and identify both courses", () => {
   assert.equal(result.choices[1].sections[0].classNumber, "b");
   assert.equal(result.conflicts.length, 1);
 });
+test("simulation exposes ranked, distinct compatible timetables without fixing automatic sections", () => {
+  const result = simulateSchedule(
+    [
+      course("1111", [section("fixed", "09:00", "10:00")]),
+      course("2222", [
+        section("overlap", "09:30", "10:30"),
+        section("near", "10:10", "11:00"),
+        section("later", "12:00", "13:00"),
+      ]),
+    ],
+    { "CSE 1111": ["fixed"] },
+    preferences,
+  );
+  assert.equal(result.alternatives.length, 2);
+  assert.deepEqual(result.choices, result.alternatives[0].choices);
+  assert.deepEqual(
+    result.alternatives.map(
+      (option) => option.choices[1].sections[0].classNumber,
+    ),
+    ["near", "later"],
+  );
+  assert.ok(
+    result.alternatives.every((option) => option.conflicts.length === 0),
+  );
+  assert.ok(
+    result.alternatives.every(
+      (option) => option.choices[0].sections[0].classNumber === "fixed",
+    ),
+  );
+  const pinned = simulateSchedule(
+    [
+      course("2222", [
+        section("near", "10:10", "11:00"),
+        section("later", "12:00", "13:00"),
+      ]),
+    ],
+    { "CSE 2222": ["later"] },
+    preferences,
+  );
+  assert.equal(pinned.alternatives.length, 1);
+  assert.equal(pinned.choices[0].sections[0].classNumber, "later");
+});
+test("simulation alternatives stay bounded and retain a diagnosed result when every choice conflicts", () => {
+  const result = simulateSchedule(
+    [
+      course(
+        "1111",
+        Array.from({ length: 80 }, (_, i) =>
+          section(String(i), "09:00", "10:00", i % 5),
+        ),
+      ),
+    ],
+    {},
+    preferences,
+  );
+  assert.ok(result.alternatives.length > 1);
+  assert.ok(result.alternatives.length <= 24);
+  assert.equal(
+    new Set(
+      result.alternatives.map((a) => a.choices[0].sections[0].classNumber),
+    ).size,
+    result.alternatives.length,
+  );
+  assert.equal(result.capped, true);
+  const blocked = simulateSchedule(
+    [
+      course("1111", [
+        section("a", "09:00", "10:00"),
+        section("b", "11:00", "12:00"),
+      ]),
+    ],
+    {},
+    { ...preferences, blocked: [{ days: [0], start: 0, end: 1440 }] },
+  );
+  assert.equal(blocked.alternatives.length, 1);
+  assert.equal(blocked.alternatives[0].conflicts.length, 1);
+  assert.deepEqual(simulateSchedule([], {}, preferences).alternatives, []);
+});
 test("blocked days and compact preferences select a suitable alternative", () => {
   const courses = [
     course("1111", [section("a", "09:00", "10:00", 1)]),
