@@ -72,6 +72,7 @@ export async function savePlanningLocal(
   plan: Plan | null,
 ) {
   const result = await withSavedMutation(() => {
+    if (account) assertAuthenticatedAccount(account);
     const current = planningState(account);
     const next = { ...current, plan: reconcilePlans(base, plan, current.plan) };
     commit(account, next);

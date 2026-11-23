@@ -47,6 +47,10 @@ import {
 } from "@/lib/planning/client-sync";
 import { usePlanningWorkspace } from "./use-planning-workspace";
 import { CloudBackup } from "./cloud-backup";
+import { PlanLibrary } from "./plan-library";
+import { PlanningToolbar } from "./planning-toolbar";
+import { PlanningExchange } from "./planning-exchange";
+import { scenarioPlan, editScenario } from "@/lib/planning/scenarios";
 import { ImportGuide } from "./import-guide";
 import styles from "./planning.module.css";
 const SemesterBoard = dynamic(() =>
@@ -69,8 +73,25 @@ export function PlanningWorkspace() {
 function PlanningWorkspaceBody({ account }: { account: string | null }) {
   const { locale } = usePreferences();
   const t = (en: string, zh: string) => text(locale, en, zh);
-  const { plan, setPlan, ready, saved, storageError, persist } =
-    usePlanningWorkspace(account);
+  const workspace = usePlanningWorkspace(account);
+  const { ready, storageError, persist } = workspace;
+  const [selectedPlan, selectPlan] = useState<string | null>(null);
+  const activePlan = workspace.plan.scenarios?.some(
+    (s) => s.id === selectedPlan,
+  )
+    ? selectedPlan
+    : null;
+  const plan = scenarioPlan(workspace.plan, activePlan);
+  const saved =
+    workspace.saved === JSON.stringify(workspace.plan)
+      ? JSON.stringify(plan)
+      : workspace.saved;
+  const setPlan = (value: Plan | ((previous: Plan) => Plan)) =>
+    workspace.setPlan((current) =>
+      editScenario(current, activePlan, (p) =>
+        typeof value === "function" ? value(p) : value,
+      ),
+    );
   const [tab, setTab] = useState<"board" | "map" | "official" | "import">(
     "board",
   );
@@ -84,6 +105,14 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
   const fileInput = useRef<HTMLInputElement>(null),
     profile = useRef<ImportProfile | null>(null);
   const guard = useRef(new ImportGuard());
+  const selectedFromLink = useRef(false);
+  useEffect(() => {
+    if (!ready || selectedFromLink.current) return;
+    selectedFromLink.current = true;
+    const id = new URLSearchParams(location.search).get("plan");
+    if (id && workspace.plan.scenarios?.some((s) => s.id === id))
+      queueMicrotask(() => selectPlan(id));
+  }, [ready, workspace.plan.scenarios]);
   const [inspected, setInspected] = useState<{
     subject: string;
     number: string;
@@ -184,7 +213,7 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
   }
   function exportBackup() {
     const url = URL.createObjectURL(
-      new Blob([serializePlan(plan)], { type: "application/json" }),
+      new Blob([serializePlan(workspace.plan)], { type: "application/json" }),
     );
     const link = document.createElement("a");
     link.href = url;
@@ -294,6 +323,38 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               </button>
             </div>
           </header>
+          <PlanningToolbar
+            title={
+              workspace.plan.scenarios?.find((s) => s.id === activePlan)
+                ?.title ?? t("My academic plan", "我的学业规划")
+            }
+            locale={locale}
+          >
+            <PlanLibrary
+              workspace={workspace.plan}
+              update={workspace.setPlan}
+              active={activePlan}
+              select={(id) => {
+                guard.current.invalidate();
+                selectPlan(id);
+                setInspected(null);
+              }}
+              locale={locale}
+              disabled={!ready || busy}
+            />
+            <PlanningExchange
+              key={activePlan ?? "personal"}
+              plan={plan}
+              title={
+                workspace.plan.scenarios?.find((s) => s.id === activePlan)
+                  ?.title ?? t("My semester plan", "我的学期规划")
+              }
+              account={account}
+              locale={locale}
+              update={update}
+              disabled={!ready || busy}
+            />
+          </PlanningToolbar>
           <input
             ref={fileInput}
             type="file"
@@ -505,6 +566,21 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
               persist={persist}
               onCatalogTermChange={setCatalogTerm}
               onReview={() => setTab("import")}
+              onTermActions={(term) => (
+                <PlanningExchange
+                  key={(activePlan ?? "personal") + term}
+                  plan={plan}
+                  title={
+                    workspace.plan.scenarios?.find((s) => s.id === activePlan)
+                      ?.title ?? t("My semester plan", "我的学期规划")
+                  }
+                  account={account}
+                  locale={locale}
+                  update={update}
+                  disabled={!ready || busy}
+                  contextTerm={term}
+                />
+              )}
             />
           )}
           {tab === "map" && (
@@ -618,8 +694,8 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
           }}
           title={t("Restore planning backup", "恢复规划备份")}
           description={t(
-            "Restoring replaces this plan, including semesters, campuses, groups and section choices. Signed-in accounts sync the restored plan automatically.",
-            "恢复后将替换当前规划，包括学期、校区、课程组与班次选择。登录后会自动同步恢复后的规划。",
+            "Restoring replaces the entire planning workspace, including independent plans, calendars and section choices. Signed-in accounts sync it automatically.",
+            "恢复后将替换整个规划工作区，包括独立方案、日历与班次选择。登录后会自动同步。",
           )}
           closeLabel={t("Close", "关闭")}
           guard={false}
@@ -638,7 +714,9 @@ function PlanningWorkspaceBody({ account }: { account: string | null }) {
             <Button
               onClick={() => {
                 if (!backup) return;
-                update(() => backup);
+                guard.current.invalidate();
+                workspace.setPlan(backup);
+                selectPlan(null);
                 setBackup(null);
                 setTab("board");
                 setMessage(t("Planning backup restored.", "规划备份已恢复。"));

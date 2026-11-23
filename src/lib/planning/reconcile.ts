@@ -84,17 +84,33 @@ export function reconcilePlans(
 ): Plan | null {
   // Before the first shared version, imported IDs belong to separate devices.
   // Preserve both reports by remapping identities instead of combining their fields.
-  if (
+  const firstMerge =
     !base &&
     local?.documents.length &&
     remote?.documents.length &&
-    !same(local, remote)
-  ) {
-    return mergeSnapshots(local, remote);
-  }
-  const value = merge(base, local, remote) as Plan | null;
+    !same(local, remote);
+  const value = firstMerge
+    ? {
+        ...mergeSnapshots(local!, remote!),
+        scenarios: merge(
+          undefined,
+          local?.scenarios,
+          remote?.scenarios,
+          "scenarios",
+        ) as Plan["scenarios"],
+      }
+    : (merge(base, local, remote) as Plan | null);
   if (!value) return null;
   const result = { ...emptyPlan(), ...value };
+  result.scenarios = result.scenarios?.map((scenario) => ({
+    ...scenario,
+    plan:
+      reconcilePlans(
+        base?.scenarios?.find((s) => s.id === scenario.id)?.plan ?? null,
+        local?.scenarios?.find((s) => s.id === scenario.id)?.plan ?? null,
+        remote?.scenarios?.find((s) => s.id === scenario.id)?.plan ?? null,
+      ) ?? emptyPlan(),
+  }));
   const documents = new Set(result.documents.map((d) => d.id));
   result.programs = result.programs.filter((p) => documents.has(p.documentId));
   const programs = new Set(result.programs.map((p) => p.id));

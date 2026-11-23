@@ -2,6 +2,7 @@ export const ANALYTICS_KEY = "course-atlas:analytics:v1";
 export function analyticsPath(path: string) {
   return path
     .split(/[?#]/)[0]
+    .replace(/^\/planning\/share\/[^/]+/, "/planning/share/[id]")
     .replace(/^\/(share|transfer)\/[^/]+/, "/$1/[id]");
 }
 /** Runs before collectors; capability fragments never become replay navigation URLs. */
@@ -12,8 +13,11 @@ export function captureLinkCapability() {
   const calendarId = /^\/calendar\/shared\/?$/.test(location.pathname)
     ? new URLSearchParams(location.search).get("id")
     : null;
-  const family = calendarId ? "calendar" : match?.[1];
-  const id = calendarId ?? match?.[2];
+  const planningId = /^\/planning\/share\/([a-f0-9-]{36})\/?$/i.exec(
+    location.pathname,
+  )?.[1];
+  const family = planningId ? "planning" : calendarId ? "calendar" : match?.[1];
+  const id = planningId ?? calendarId ?? match?.[2];
   if (!family || !id || !/^[a-f0-9-]{36}$/i.test(id) || !location.hash) return;
   const capability = new URLSearchParams(location.hash.slice(1)).get("k");
   if (!capability || !/^[A-Za-z0-9_-]{43}$/.test(capability)) return;
@@ -140,10 +144,9 @@ export function analyticsBeforeSend(
       if (["url", "referrer", "filename"].includes(key)) {
         try {
           const u = new URL(v, location.origin);
-          u.pathname = u.pathname.replace(
-            /^\/(share|transfer)\/[^/]+/,
-            "/$1/[id]",
-          );
+          u.pathname = u.pathname
+            .replace(/^\/planning\/share\/[^/]+/, "/planning/share/[id]")
+            .replace(/^\/(share|transfer)\/[^/]+/, "/$1/[id]");
           const params = new URLSearchParams();
           for (const [k, x] of u.searchParams)
             if (/^utm_(source|medium|campaign|term|content)$/i.test(k))
@@ -158,6 +161,7 @@ export function analyticsBeforeSend(
       if (key === "path")
         return v
           .split(/[?#]/)[0]
+          .replace(/^\/planning\/share\/[^/]+/, "/planning/share/[id]")
           .replace(/^\/(share|transfer)\/[^/]+/, "/$1/[id]");
       return v
         .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, "[email]")

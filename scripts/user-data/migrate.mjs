@@ -22,6 +22,7 @@ const files = [
   "20261117_sharing_permanent.sql",
   "20261117_development_links.sql",
   "20261117_calendar_refresh.sql",
+  "20261123_planning_shares.sql",
 ];
 const db = getDatabasePool(),
   schema = userDataSchema(),

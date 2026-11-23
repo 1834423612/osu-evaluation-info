@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { accountSession } from "@/lib/auth/server";
 import { readPlanningBackup, writePlanningBackup } from "@/lib/planning/cloud";
-import { planSchema } from "@/lib/planning/model";
+import { planUploadSchema } from "@/lib/planning/model";
 import {
   readJson,
   sameOrigin,
@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 const requestSchema = z.object({
   accountId: z.string().min(1).max(100),
   version: z.number().int().nonnegative().safe(),
-  plan: planSchema.nullable(),
+  plan: planUploadSchema.nullable(),
 });
 export async function GET(request: Request) {
   return userRoute(async () => {

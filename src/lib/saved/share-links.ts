@@ -50,7 +50,7 @@ export function shareLink(
   );
 }
 export function linkCapability(
-  family: "share" | "transfer" | "calendar",
+  family: "share" | "transfer" | "calendar" | "planning",
   id: string,
 ) {
   if (typeof window === "undefined") return undefined;

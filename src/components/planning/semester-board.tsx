@@ -284,6 +284,7 @@ export function SemesterBoard({
   persist,
   onReview,
   onCatalogTermChange,
+  onTermActions,
 }: {
   plan: Plan;
   locale: Locale;
@@ -291,6 +292,7 @@ export function SemesterBoard({
   persist: () => Promise<boolean>;
   onReview: () => void;
   onCatalogTermChange: (value: string) => void;
+  onTermActions?: (term: string) => React.ReactNode;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
   const context = usePlanningCatalog();
@@ -931,6 +933,9 @@ export function SemesterBoard({
                                 {t("Simulate schedule", "模拟排课")}
                               </button>
                             )}
+                            {term !== "unassigned"
+                              ? onTermActions?.(term)
+                              : null}
                             {pending > 0 &&
                               original?.reportedCredits != null && (
                                 <small className={styles.pending}>

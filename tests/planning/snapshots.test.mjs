@@ -89,7 +89,7 @@ test("schema upgrades old exports and rejects reference cycles and cross-program
   delete old.programs;
   delete old.requirements;
   delete old.allocations;
-  assert.equal(planSchema.parse(old).schemaVersion, 2);
+  assert.equal(planSchema.parse(old).schemaVersion, 3);
   const plan = audit();
   plan.requirements[0].parentId = plan.requirements[1].id;
   assert.equal(planSchema.safeParse(plan).success, false);

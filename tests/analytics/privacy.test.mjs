@@ -276,3 +276,41 @@ test("root collectors cover every route and planning portals retain replay maski
       /data-analytics-area="planning/,
     );
 });
+
+test("planning link capability is captured before replay and share ids are removed from analytics", () => {
+  const id = "11111111-1111-4111-8111-111111111111",
+    token = "p".repeat(43),
+    stored = new Map();
+  const location = {
+    pathname: "/planning/share/" + id,
+    search: "",
+    hash: "#k=" + token,
+  };
+  const window = {};
+  let replaced;
+  vm.runInNewContext("(" + captureLinkCapability.toString() + ")()", {
+    window,
+    location,
+    URLSearchParams,
+    sessionStorage: { setItem: (k, v) => stored.set(k, v) },
+    history: {
+      state: null,
+      replaceState: (_s, _t, url) => {
+        replaced = url;
+      },
+    },
+  });
+  assert.equal(window.__WAHO_LINK_CAPABILITY__.family, "planning");
+  assert.equal(stored.get("course-atlas:capability:planning:" + id), token);
+  assert.equal(replaced, location.pathname);
+  assert.equal(
+    analyticsPath(location.pathname + "#k=" + token),
+    "/planning/share/[id]",
+  );
+  const event = send(
+    { url: location.pathname + "#k=" + token, path: location.pathname },
+    { path: location.pathname, type: "event" },
+  );
+  assert.equal(event.url, "https://site.example/planning/share/[id]");
+  assert.equal(event.path, "/planning/share/[id]");
+});

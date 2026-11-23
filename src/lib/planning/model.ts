@@ -123,7 +123,7 @@ export const courseSchema = z
   .strip();
 const planObject = z
   .object({
-    schemaVersion: z.literal(2),
+    schemaVersion: z.literal(3),
     schedule: z
       .object({
         calendars: z.array(calendarSchema).max(40).optional(),
@@ -260,99 +260,133 @@ const planObject = z
     reviewed: z.boolean(),
   })
   .strip();
-export const planSchema = z
-  .preprocess((value) => {
+function validatePlan(plan: z.infer<typeof planObject>, ctx: z.RefinementCtx) {
+  const documents = new Set(plan.documents.map((d) => d.id));
+  const programs = new Map(plan.programs.map((p) => [p.id, p]));
+  const requirements = new Map(plan.requirements.map((r) => [r.id, r]));
+  const courses = plan.semesters.flatMap((s) => s.courses).filter((c) => c.id);
+  const courseIds = new Set(courses.map((c) => c.id));
+  const issue = () =>
+    ctx.addIssue({
+      code: "custom",
+      message: "Invalid or duplicate planning reference",
+    });
+  if (
+    documents.size !== plan.documents.length ||
+    programs.size !== plan.programs.length ||
+    requirements.size !== plan.requirements.length ||
+    courseIds.size !== courses.length
+  )
+    issue();
+  if (
+    new Set(plan.schedule.terms).size !== plan.schedule.terms.length ||
+    new Set(plan.schedule.placements.map((p) => p.courseId)).size !==
+      plan.schedule.placements.length
+  )
+    issue();
+  for (const p of plan.schedule.placements)
     if (
-      value &&
-      typeof value === "object" &&
-      "schemaVersion" in value &&
-      value.schemaVersion === 1
-    )
-      return { ...value, schemaVersion: 2 };
-    return value;
-  }, planObject)
-  .superRefine((plan, ctx) => {
-    const documents = new Set(plan.documents.map((d) => d.id));
-    const programs = new Map(plan.programs.map((p) => [p.id, p]));
-    const requirements = new Map(plan.requirements.map((r) => [r.id, r]));
-    const courses = plan.semesters
-      .flatMap((s) => s.courses)
-      .filter((c) => c.id);
-    const courseIds = new Set(courses.map((c) => c.id));
-    const issue = () =>
-      ctx.addIssue({
-        code: "custom",
-        message: "Invalid or duplicate planning reference",
-      });
-    if (
-      documents.size !== plan.documents.length ||
-      programs.size !== plan.programs.length ||
-      requirements.size !== plan.requirements.length ||
-      courseIds.size !== courses.length
-    )
-      issue();
-    if (
-      new Set(plan.schedule.terms).size !== plan.schedule.terms.length ||
-      new Set(plan.schedule.placements.map((p) => p.courseId)).size !==
-        plan.schedule.placements.length
+      !courseIds.has(p.courseId) ||
+      (p.term && !plan.schedule.terms.includes(p.term.replace(/ /g, "")))
     )
       issue();
-    for (const p of plan.schedule.placements)
-      if (
-        !courseIds.has(p.courseId) ||
-        (p.term && !plan.schedule.terms.includes(p.term.replace(/ /g, "")))
-      )
+  const groupIds = new Set<string>();
+  for (const group of plan.schedule.groups ?? []) {
+    if (
+      groupIds.has(group.id) ||
+      group.courseIds.some((id) => !courseIds.has(id)) ||
+      (group.requirementId && !requirements.has(group.requirementId)) ||
+      (group.selectedCourseId &&
+        !group.courseIds.includes(group.selectedCourseId))
+    )
+      issue();
+    groupIds.add(group.id);
+  }
+  for (const p of plan.programs) if (!documents.has(p.documentId)) issue();
+  for (const s of plan.semesters) {
+    if (s.term && (s.creditOrigin === "transfer" || s.creditOrigin === "exam"))
+      issue();
+    if (s.documentId && !documents.has(s.documentId)) issue();
+    for (const c of s.courses)
+      if (c.documentId && !documents.has(c.documentId)) issue();
+  }
+  for (const r of plan.requirements) {
+    if (
+      !documents.has(r.documentId) ||
+      programs.get(r.programId)?.documentId !== r.documentId
+    )
+      issue();
+    const seen = new Set([r.id]);
+    let parent = r.parentId;
+    while (parent) {
+      const node = requirements.get(parent);
+      if (!node || seen.has(parent) || node.programId !== r.programId) {
         issue();
-    const groupIds = new Set<string>();
-    for (const group of plan.schedule.groups ?? []) {
-      if (
-        groupIds.has(group.id) ||
-        group.courseIds.some((id) => !courseIds.has(id)) ||
-        (group.requirementId && !requirements.has(group.requirementId)) ||
-        (group.selectedCourseId &&
-          !group.courseIds.includes(group.selectedCourseId))
-      )
-        issue();
-      groupIds.add(group.id);
-    }
-    for (const p of plan.programs) if (!documents.has(p.documentId)) issue();
-    for (const s of plan.semesters) {
-      if (
-        s.term &&
-        (s.creditOrigin === "transfer" || s.creditOrigin === "exam")
-      )
-        issue();
-      if (s.documentId && !documents.has(s.documentId)) issue();
-      for (const c of s.courses)
-        if (c.documentId && !documents.has(c.documentId)) issue();
-    }
-    for (const r of plan.requirements) {
-      if (
-        !documents.has(r.documentId) ||
-        programs.get(r.programId)?.documentId !== r.documentId
-      )
-        issue();
-      const seen = new Set([r.id]);
-      let parent = r.parentId;
-      while (parent) {
-        const node = requirements.get(parent);
-        if (!node || seen.has(parent) || node.programId !== r.programId) {
-          issue();
-          break;
-        }
-        seen.add(parent);
-        parent = node.parentId;
+        break;
       }
+      seen.add(parent);
+      parent = node.parentId;
     }
-    for (const a of plan.allocations)
-      if (!courseIds.has(a.courseId) || !requirements.has(a.requirementId))
-        issue();
+  }
+  for (const a of plan.allocations)
+    if (!courseIds.has(a.courseId) || !requirements.has(a.requirementId))
+      issue();
+}
+function migrateVersion(value: unknown) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "schemaVersion" in value &&
+    (value.schemaVersion === 1 || value.schemaVersion === 2)
+  )
+    return { ...value, schemaVersion: 3 };
+  return value;
+}
+// A scenario is a separate, bounded plan, never a recursive workspace tree.
+const scenarioSchema = z
+  .object({
+    id: reference,
+    title: z.string().trim().min(1).max(60),
+    plan: z.preprocess(migrateVersion, planObject.superRefine(validatePlan)),
+  })
+  .strip();
+export const planSchema = z
+  .preprocess(
+    migrateVersion,
+    planObject.extend({
+      scenarios: z.array(scenarioSchema).max(20).optional(),
+    }),
+  )
+  .superRefine(validatePlan)
+  .superRefine((plan, ctx) => {
+    if (
+      new Set(plan.scenarios?.map((scenario) => scenario.id)).size !==
+      (plan.scenarios?.length ?? 0)
+    )
+      ctx.addIssue({ code: "custom", message: "Duplicate independent plan" });
   });
 export type Plan = z.infer<typeof planSchema>;
+// Old clients strip fields they do not know. Only the current format may replace
+// a cloud workspace; reading/importing older backups remains supported.
+export const planUploadSchema = z
+  .unknown()
+  .superRefine((value, ctx) => {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      !("schemaVersion" in value) ||
+      value.schemaVersion !== 3
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Refresh to the current planning format before syncing",
+      });
+  })
+  .pipe(planSchema);
 export type PlanCourse = z.infer<typeof courseSchema>;
 export function emptyPlan(): Plan {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     schedule: { terms: [], placements: [] },
     documents: [],
     programs: [],

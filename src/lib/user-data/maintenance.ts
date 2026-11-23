@@ -22,6 +22,10 @@ const rules = [
     "planning_backup",
     `account_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
   ],
+  [
+    "planning_share",
+    `expires_at<now()-interval '7 days' OR revoked_at<now()-interval '7 days' OR owner_id NOT IN (SELECT id FROM "${authSchema()}"."${authTablePrefix()}user")`,
+  ],
   ["rate_bucket", "expires_at<now()"],
   ["cooldown_bucket", "expires_at<now()"],
   ["institutional_challenge", "expires_at<now()"],

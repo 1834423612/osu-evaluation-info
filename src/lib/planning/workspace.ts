@@ -123,7 +123,7 @@ export function boardCourses(plan: Plan) {
     .filter((r) => {
       // Each placeholder is a separate requirement slot, including legacy rows without IDs.
       if (r.course.kind === "placeholder") return true;
-      const key = `${r.course.subject} ${r.course.number}${["withdrawn", "dropped", "failed"].includes(r.course.status) ? "|" + r.term + "|" + r.course.status : ""}`;
+      const key = `${r.course.subject} ${r.course.number}${["withdrawn", "dropped", "failed"].includes(r.course.status) ? "|" + r.term + "|" + r.course.status : r.course.repeated ? "|" + r.term + "|repeat" : ""}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
