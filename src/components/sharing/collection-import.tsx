@@ -34,6 +34,8 @@ import {
 } from "@/lib/saved/exchange";
 import { importLocalItems, readLocalItems } from "@/lib/saved/local";
 import { withSavedMutation } from "@/lib/saved/mutations";
+import { groupSharedItems } from "@/lib/saved/share-groups";
+import { courseAcademicCareerLabel } from "@/lib/catalog/presentation";
 import styles from "@/components/ui/workspace.module.css";
 export function CollectionImport({
   snapshot,
@@ -149,6 +151,7 @@ export function CollectionImport({
     setSelected(next);
     setImported(false);
   };
+  const groups = groupSharedItems(filtered.slice(0, limit), snapshot.items);
   return (
     <section
       className={gallery.workspace}
@@ -352,106 +355,199 @@ export function CollectionImport({
             {result}
           </p>
         ) : null}
-        <ul className={gallery.grid}>
-          {filtered.slice(0, limit).map((item) => {
-            const key = itemKey(item),
-              href = itemHref(item),
-              content = renderItem?.(item),
-              courseCard = !!renderItem && item.kind === "course";
-            return (
-              <li
-                key={key}
-                className={courseCard ? gallery.courseItem : gallery.item}
-                data-selected={selected.has(key) || undefined}
-              >
-                {courseCard ? (
-                  <label
-                    className={gallery.courseSelect}
-                    title={text(locale, "Select ", "选择 ") + itemTitle(item)}
-                  >
-                    <input
-                      className={styles.checkbox}
-                      type="checkbox"
-                      disabled={disabled || busy}
-                      checked={selected.has(key)}
-                      aria-label={
-                        text(locale, "Select ", "选择 ") + itemTitle(item)
-                      }
-                      onChange={() => {
-                        const next = new Set(selected);
-                        if (next.has(key)) next.delete(key);
-                        else next.add(key);
-                        changeSelection(next);
-                      }}
-                    />
-                  </label>
-                ) : (
-                  <div className={gallery.itemHeading}>
-                    <label>
-                      <input
-                        className={styles.checkbox}
-                        type="checkbox"
-                        disabled={disabled || busy}
-                        checked={selected.has(key)}
-                        onChange={() => {
-                          const next = new Set(selected);
-                          if (next.has(key)) next.delete(key);
-                          else next.add(key);
-                          changeSelection(next);
-                        }}
-                      />
-                      <span>
-                        <strong>{itemTitle(item)}</strong>
-                        <small>{itemContext(item)}</small>
-                      </span>
-                    </label>
-                    <span className={gallery.kind}>
-                      {itemKindName(item.kind, locale)}
-                    </span>
-                    {onOpen && href ? (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={
-                          text(locale, "Preview ", "预览 ") + itemTitle(item)
-                        }
-                        onClick={() => onOpen(item)}
-                      >
-                        <ExternalLink size={15} />
-                      </Button>
-                    ) : href ? (
-                      <Link
-                        href={href as Route}
-                        aria-label={text(locale, "Open item", "打开项目")}
-                      >
-                        <ExternalLink size={15} />
-                      </Link>
-                    ) : null}
-                  </div>
-                )}
-                {content ? (
-                  <div
-                    className={
-                      courseCard ? gallery.courseContent : gallery.itemBody
-                    }
-                  >
-                    {content}
-                  </div>
-                ) : null}
-                {existing.has(key) ? (
-                  <span className={gallery.already}>
-                    <Check size={11} />
-                    {text(
-                      locale,
-                      "Already in your favorites",
-                      "已在你的收藏中",
+        <div className={gallery.groups}>
+          {groups.map((group) => (
+            <section key={group.id} className={gallery.contentGroup}>
+              <header className={gallery.groupHeading}>
+                <div>
+                  <h3>
+                    {group.kind === "course" ? (
+                      <BookOpen size={17} />
+                    ) : (
+                      <Users size={17} />
                     )}
-                  </span>
+                    {group.kind === "course"
+                      ? group.label
+                      : text(locale, "Teachers", "教师")}
+                  </h3>
+                  {group.kind === "course" && group.title ? (
+                    <p>{group.title}</p>
+                  ) : null}
+                </div>
+                {group.kind === "course" ? (
+                  <div className={gallery.groupContext}>
+                    <span>
+                      <CalendarDays size={13} />
+                      {group.term ||
+                        group.termCode ||
+                        text(locale, "Term unspecified", "未标明学期")}
+                    </span>
+                    <span>
+                      {group.campus ||
+                        group.campusCode ||
+                        text(locale, "Campus unspecified", "未标明校区")}
+                    </span>
+                  </div>
                 ) : null}
-              </li>
-            );
-          })}
-        </ul>
+              </header>
+              <ul className={gallery.groupItems}>
+                {group.items.map((item) => {
+                  const key = itemKey(item),
+                    href = itemHref(item);
+                  const title =
+                    item.kind === "course"
+                      ? text(locale, "Course overview", "课程概览")
+                      : item.kind === "instructor"
+                        ? item.payload.name
+                        : `${item.kind === "section" ? item.payload.section.component : text(locale, "Section", "班次")} ${item.payload.section.section} · #${item.payload.section.classNumber}`;
+                  const career =
+                    item.kind === "course"
+                      ? courseAcademicCareerLabel(item.payload, locale)
+                      : "";
+                  const content =
+                    renderItem?.(item) ??
+                    (item.kind === "instructor" ? (
+                      item.payload.courses.length ? (
+                        <div className={gallery.teacherContext}>
+                          <strong>
+                            {text(locale, "Related courses", "相关课程")}
+                          </strong>
+                          <ul>
+                            {item.payload.courses.map((course) => (
+                              <li key={course.id}>
+                                <span>
+                                  {course.label}
+                                  <small>{course.title}</small>
+                                </span>
+                                <span>
+                                  {[
+                                    course.term || course.termCode,
+                                    course.campusCode,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : item.payload.rmp ? (
+                        <p>
+                          {text(
+                            locale,
+                            "Rate My Professors profile",
+                            "Rate My Professors 资料",
+                          )}
+                        </p>
+                      ) : null
+                    ) : item.kind === "syllabus" ? (
+                      <p>
+                        {[
+                          item.payload.section.component,
+                          item.payload.section.session,
+                          item.payload.entry.subtitle,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    ) : item.kind === "section" ? (
+                      <p>{item.payload.section.session}</p>
+                    ) : null);
+                  return (
+                    <li
+                      key={key}
+                      className={gallery.item}
+                      data-kind={item.kind}
+                      data-selected={selected.has(key) || undefined}
+                    >
+                      <div className={gallery.itemHeading}>
+                        <label>
+                          <input
+                            className={styles.checkbox}
+                            type="checkbox"
+                            disabled={disabled || busy}
+                            checked={selected.has(key)}
+                            aria-label={
+                              text(locale, "Select ", "选择 ") + itemTitle(item)
+                            }
+                            onChange={() => {
+                              const next = new Set(selected);
+                              if (next.has(key)) next.delete(key);
+                              else next.add(key);
+                              changeSelection(next);
+                            }}
+                          />
+                          <span>
+                            <strong>{title}</strong>
+                            {item.kind === "course" ? (
+                              <small>
+                                {item.payload.creditsMin}
+                                {item.payload.creditsMax !==
+                                item.payload.creditsMin
+                                  ? `–${item.payload.creditsMax}`
+                                  : ""}{" "}
+                                {text(locale, "credits", "学分")}
+                                {career ? ` · ${career}` : ""}
+                              </small>
+                            ) : null}
+                          </span>
+                        </label>
+                        <span className={gallery.kind} data-kind={item.kind}>
+                          {item.kind === "course" ? (
+                            <BookOpen size={12} />
+                          ) : item.kind === "section" ? (
+                            <CalendarDays size={12} />
+                          ) : item.kind === "instructor" ? (
+                            <Users size={12} />
+                          ) : (
+                            <FileText size={12} />
+                          )}
+                          {itemKindName(item.kind, locale)}
+                        </span>
+                        {onOpen && href ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={
+                              text(locale, "Preview ", "预览 ") +
+                              itemTitle(item)
+                            }
+                            onClick={() => onOpen(item)}
+                          >
+                            <ExternalLink size={15} />
+                          </Button>
+                        ) : href ? (
+                          <Link
+                            className={gallery.openItem}
+                            href={href as Route}
+                            aria-label={
+                              text(locale, "Open ", "打开 ") + itemTitle(item)
+                            }
+                          >
+                            <ExternalLink size={15} />
+                          </Link>
+                        ) : null}
+                      </div>
+                      {content ? (
+                        <div className={gallery.itemBody}>{content}</div>
+                      ) : null}
+                      {existing.has(key) ? (
+                        <span className={gallery.already}>
+                          <Check size={11} />
+                          {text(
+                            locale,
+                            "Already in your favorites",
+                            "已在你的收藏中",
+                          )}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
         {!filtered.length ? (
           <div className={gallery.empty}>
             <Search size={24} />

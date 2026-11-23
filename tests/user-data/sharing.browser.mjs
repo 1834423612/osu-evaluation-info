@@ -161,8 +161,9 @@ try {
       path: resolve(output, "recipient-" + width + ".png"),
     });
     await p
-      .getByRole("button", { name: "Open item", exact: true })
+      .locator('main li[data-kind="course"]')
       .first()
+      .getByRole("button", { name: /^Preview / })
       .click();
     await p
       .locator(".course-detail-panel, .course-detail-drawer")

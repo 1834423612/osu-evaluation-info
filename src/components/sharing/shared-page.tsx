@@ -119,6 +119,10 @@ export function SharedPage({ id }: { id?: string }) {
   function openItem(item: ExchangeItem) {
     const href = itemHref(item);
     if (!href) return;
+    if (href.startsWith("/rmp/")) {
+      router.push(href as Route);
+      return;
+    }
     const params = new URL(href, location.origin).searchParams;
     params.delete("q");
     setFocused(item);
@@ -148,9 +152,6 @@ export function SharedPage({ id }: { id?: string }) {
                 <FolderOpen size={28} />
               </span>
               <div>
-                <span className={gallery.eyebrow}>
-                  {text(locale, "SHARED COLLECTION", "分享的收藏清单")}
-                </span>
                 <h1>{snapshot.title}</h1>
                 <div className={gallery.meta}>
                   <span>
@@ -267,30 +268,14 @@ export function SharedPage({ id }: { id?: string }) {
               locale={locale}
               renderItem={(item) =>
                 item.kind === "course" ? (
-                  <SharedCourseCard
-                    course={item.payload}
-                    locale={locale}
-                    saved={preferences.saved.some(
-                      (course) => course.id === item.payload.id,
-                    )}
-                    onSave={preferences.toggleSaved}
-                    refreshPreview
-                    enrollmentWatch={preferences.enrollmentWatch}
-                    enrollmentWatchInterval={
-                      preferences.enrollmentWatchInterval
-                    }
-                    onEnrollmentWatchChange={preferences.setEnrollmentWatch}
-                    onEnrollmentWatchIntervalChange={
-                      preferences.setEnrollmentWatchInterval
-                    }
-                  />
+                  item.payload.description ? (
+                    <p className={gallery.courseSummary}>
+                      {item.payload.description}
+                    </p>
+                  ) : null
                 ) : item.kind === "section" ? (
                   <div>
-                    <p>
-                      {item.payload.section.component} ·{" "}
-                      {item.payload.section.section} ·{" "}
-                      {item.payload.section.session}
-                    </p>
+                    <p>{item.payload.section.session}</p>
                     {item.payload.section.meetings.map((meeting, index) => (
                       <MeetingStrip
                         key={index}
