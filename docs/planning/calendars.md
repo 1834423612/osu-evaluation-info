@@ -10,9 +10,19 @@ Three official sources appear automatically: **Terms & exams**, **Holidays & bre
 
 Save a semester simulation as a separate group, or replace a selected saved group. Course changes mark the original group stale; they do not silently replace its sections. Open **My calendars** to rename it, edit individual events, choose its icon/color, view a week or agenda, and export ICS. Each calendar has a miniature preview. The mobile grid keeps all seven weekday headings on one row. Times use America/New_York, including daylight saving.
 
+On desktop, the source list and selected calendar occupy two bounded columns with independent scrolling. Adding source cards does not stretch the main calendar to match the list. Narrow screens stack the regions. Stable event colors distinguish types and course/content identities. Dense overlapping events have a count control and an expandable full-title list; select any item there to open its details rather than relying on a narrow grid tile.
+
 Import ICS files locally, subscribe to an HTTPS/webcal ICS URL after sign-in, or combine existing calendars. A combined calendar refers to its sources; source changes appear in the combined view. Subscribed events are read-only; create an editable copy before changing them. Imports are limited to 2 MB and 3,000 expanded events; unsupported or excessive recurrence fails explicitly. A workspace supports 40 calendars. Browser storage limits may be lower; export a backup if saving reports a storage error.
 
 Remote sources refresh after one hour when the workspace is open. A shared feed request can also refresh up to two stale sources, protected by a database lease and owner rate budget. Refresh failure keeps the last successful events. Remote fetches allow public HTTPS destinations only, revalidate redirects, pin DNS results, and bound duration and response size. Private feeds requiring cookies or an interactive login are unsupported.
+
+## Reminders and timetable alternatives
+
+Set up to five reminder times in calendar settings. Editable events can use those defaults, override them with their own times, or turn reminders off. An explicit event setting takes precedence. A combined calendar's explicit defaults propagate through nested sources; when it has no defaults, source-calendar defaults apply. An empty reminder list disables the inherited defaults without changing the source events.
+
+ICS exports and shared device subscriptions include supported relative-to-start `VALARM` entries with `ACTION:DISPLAY`. Imports retain supported display alarms; unsupported alarm actions or absolute/end-relative triggers are not converted into executable actions. Multiple reminders can therefore travel with the calendar, but the receiving calendar app, its subscription behavior and notification permissions determine delivery. All-day reminders are relative to midnight at the start of the date. Reimporting an exported ICS is a snapshot; a subscribed device controls when it refreshes changed reminders.
+
+Semester simulation starts with automatic section choices, including courses that already have an imported section. Fix a particular component only when desired, or return it to automatic selection. The weekly preview scales to the available space and uses distinct course colors. Compare the generated alternatives with **Previous timetable** / **Next timetable**, or focus the alternatives control and use the left/right arrow keys. Editing a selector or text input keeps its normal keyboard behavior. Saving uses the alternative currently displayed.
 
 ## Sharing and subscriptions
 

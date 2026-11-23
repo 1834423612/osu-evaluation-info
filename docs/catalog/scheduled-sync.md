@@ -24,6 +24,12 @@ node scripts/catalog/backfill_changes.mjs --max-batches 1 --max-seconds 60
 
 This writes pending change history; it does not refetch or delete course snapshots. See [retention and term lifecycle](lifecycle.md) for source removals, current heads and archived terms.
 
+### Diagnose a failed run
+
+Open the run's **Summarize catalog maintenance** output. Its summary lists configuration, checkout, runtime, dependencies, catalog, RMP evidence, change history, search indexes and calendar outcomes separately, with a link to the complete step logs. Expand a stage for its last 40 captured lines, bounded to 1,000 characters per line. Setup failures have a fallback summary when the Node reporter cannot start. Captured summaries redact database URLs, credentials and token fields and keep log content separate from workflow commands and Markdown.
+
+Structured catalog failures retain their stage and error code. GitHub error annotations surface the reason directly. A `CATALOG_COVERAGE_REGRESSION` rejection also produces a term/campus/subject table comparing accepted and candidate section counts, plus the total number of affected comparisons. This rejection deliberately leaves the run failed: incomplete official data must not be published or disguised as a successful refresh. The last accepted catalog and its accepted indexes remain available. When dependencies were installed and the run was not cancelled, search-index repair and academic-calendar refresh still run independently; inspect their own outcomes rather than inferring them from the catalog failure.
+
 ## Syllabus refresh
 
 Migration 5 adds `osu_syllabus.document_checks`, separate from permanent index observations and document versions. It records the last conclusive network check and the exact index metadata checked. Cache reuse never advances that timestamp; transient failures never count as successful checks.

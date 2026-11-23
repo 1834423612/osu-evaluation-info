@@ -61,12 +61,15 @@ RMP_RESEARCH_DATABASE_TEST=1 python3 -m unittest tests.test_identity_research_db
 
 先启动开发服务，或 build 后 start。`.browser.mjs` 是独立脚本，不包含在 `pnpm test` 中；需安装 Playwright、Chromium 及其系统依赖。环境无法解析模块时，`PLAYWRIGHT_MODULE` 可指定绝对模块文件 URL，`PLAYWRIGHT_CHROMIUM_EXECUTABLE` 可指定浏览器程序。
 
-| 分类 | 地址／输出变量                                   | 数据与网络                                           |
-| ---- | ------------------------------------------------ | ---------------------------------------------------- |
-| 导航 | `NAV_TEST_BASE_URL`、`NAV_TEST_OUTPUT`           | 模拟数据不可用，真实操作导航、表单和键盘             |
-| RMP  | `RMP_TEST_BASE_URL`、`RMP_TEST_OUTPUT`           | 教师库／线索读取真实本地 API；分区布局使用夹具       |
-| 大纲 | `SYLLABUS_TEST_BASE_URL`、`SYLLABUS_TEST_OUTPUT` | 体验使用夹具，真实布局读取保存正文，字体直连官方 CDN |
-| 搜索 | `SEARCH_TEST_BASE_URL`、`SEARCH_TEST_OUTPUT`     | 精确直连／索引回退使用确定性响应                     |
+| 分类           | 地址／输出变量                                                 | 数据与网络                                              |
+| -------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| 导航           | `NAV_TEST_BASE_URL`、`NAV_TEST_OUTPUT`                         | 模拟数据不可用，真实操作导航、表单和键盘                |
+| RMP            | `RMP_TEST_BASE_URL`、`RMP_TEST_OUTPUT`                         | 教师库／线索读取真实本地 API；分区布局使用夹具          |
+| 大纲           | `SYLLABUS_TEST_BASE_URL`、`SYLLABUS_TEST_OUTPUT`               | 体验使用夹具，真实布局读取保存正文，字体直连官方 CDN    |
+| 搜索           | `SEARCH_TEST_BASE_URL`、`SEARCH_TEST_OUTPUT`                   | 精确直连／索引回退使用确定性响应                        |
+| 日历工作区     | `CALENDAR_TEST_BASE_URL`、`CALENDAR_SCREENSHOT_DIR`            | 隔离的合成日历，全部 API 请求使用模拟响应               |
+| 模拟排课       | `PLANNING_TEST_BASE_URL`、`PLANNING_SCREENSHOT_DIR`            | 合成可选班次，全部 API 请求使用模拟响应                 |
+| 独立规划工作区 | `PLANNING_TEST_BASE_URL`、`PLANNING_WORKSPACES_SCREENSHOT_DIR` | 独立方案、收藏及公开方案转存，全部 API 请求使用模拟响应 |
 
 其他脚本的专用变量在文件开头列出，默认通常为 localhost:3000 与临时输出目录。使用独立浏览器上下文：测试会更改本机收藏／偏好、拦截请求，并可能下载文件，不会发布评价或投票。翻译和引导使用受控模型响应，模型下载相关检查应使用隔离浏览器配置。
 
@@ -82,6 +85,31 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 ## 逐脚本目录
 
 每行说明一个脚本的主要目的。完整夹具、断言和启用条件在源文件内；某些集成文件同时含有确定性单元检查和受开关控制的数据库检查。
+
+### 新增规划、日历与分享检查
+
+| 脚本                                                                                             | 类型   | 目的                                                                         |
+| ------------------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------- |
+| [tests/planning/scenarios.test.mjs](../../tests/planning/scenarios.test.mjs)                     | 单元   | 独立方案隔离、合并恢复、账号日历归属、公开副本白名单及旧版读取／新版写入兼容 |
+| [tests/planning/sharing.test.mjs](../../tests/planning/sharing.test.mjs)                         | 集成   | 内存 PGlite 验证能力链接权限、所有者撤销、过期、容量与规划快照脱敏           |
+| [tests/planning/favorites.test.mjs](../../tests/planning/favorites.test.mjs)                     | 单元   | 混合收藏导入课程、避免重复移动及保留历史课程事实                             |
+| [tests/planning/favorites-export.test.mjs](../../tests/planning/favorites-export.test.mjs)       | 单元   | 收藏与分类的原子转存、容量校验及本地存储失败回滚                             |
+| [tests/planning/course-status.test.mjs](../../tests/planning/course-status.test.mjs)             | 单元   | 个人注册标注独立保存、原状态保留及刷新报告后保留标注                         |
+| [tests/user-data/share-groups.test.mjs](../../tests/user-data/share-groups.test.mjs)             | 单元   | 课程／学期／校区分组、教师身份隔离及旧版父课程上下文的保守恢复               |
+| [tests/catalog/workflow-diagnostics.test.mjs](../../tests/catalog/workflow-diagnostics.test.mjs) | 单元   | 可定位的工作流注解与摘要、覆盖率差异表、日志上限及凭据／命令注入保护         |
+| [tests/calendar/workspace.browser.mjs](../../tests/calendar/workspace.browser.mjs)               | 浏览器 | 来源与日历受限滚动、密集日程点选、颜色及多次提醒保存／导出                   |
+| [tests/planning/simulation.browser.mjs](../../tests/planning/simulation.browser.mjs)             | 浏览器 | 自动／固定班次、方案切换、适应空间的周视图及响应式课表保存                   |
+| [tests/planning/workspaces.browser.mjs](../../tests/planning/workspaces.browser.mjs)             | 浏览器 | 独立方案、按学期导入／转存收藏、个人标注及跨响应式布局转存分享方案           |
+
+上述七个 `.test.mjs` 文件通过 `pnpm test` 运行，也可用 `node --test <脚本>` 单独执行。它们使用受控本地输入，不请求网络服务。分享集成测试在内存 PGlite 数据库中执行迁移与权限、过期、容量检查，不需要外部数据库或启用开关。工作流诊断测试创建并删除临时日志和摘要文件；其他单元测试使用内存存储，不做持久写入。
+
+三个浏览器脚本需要已启动的本地应用，以及上文的 Playwright／Chromium 配置。它们使用独立浏览器上下文，全部 API 请求均为模拟响应，只写入合成浏览器存储和截图产物，不写生产数据或请求外部来源。地址与输出变量见上表；workspaces 使用的输出变量与模拟排课不同。
+
+```sh
+node tests/calendar/workspace.browser.mjs
+node tests/planning/simulation.browser.mjs
+node tests/planning/workspaces.browser.mjs
+```
 
 ### 新增账号与大纲检查
 
