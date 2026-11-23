@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Validate database configuration
+        id: configuration
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         shell: bash
@@ -29,20 +30,26 @@ jobs:
           fi
 
       - name: Check out repository
+        id: checkout
         shell: bash
         run: |
-          git init --quiet .
-          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
-          git -c protocol.version=2 fetch --no-tags --depth=1 origin "$GITHUB_SHA"
-          git checkout --detach --quiet FETCH_HEAD
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          {
+            git init --quiet .
+            git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+            git -c protocol.version=2 fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+            git checkout --detach --quiet FETCH_HEAD
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          } 2>&1 | tee "$RUNNER_TEMP/catalog-checkout.log"
 
       - name: Set up Node.js 24 and pinned pnpm
-        run: bash scripts/ci/setup-catalog-runtime.sh
+        id: runtime
+        shell: bash
+        run: bash scripts/ci/setup-catalog-runtime.sh 2>&1 | tee "$RUNNER_TEMP/catalog-runtime.log"
 
       - name: Install runtime dependencies
         id: dependencies
-        run: pnpm install --prod --frozen-lockfile
+        shell: bash
+        run: pnpm install --prod --frozen-lockfile 2>&1 | tee "$RUNNER_TEMP/catalog-dependencies.log"
 
       - name: Sync the official OSU catalog
         id: catalog
@@ -57,9 +64,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         shell: bash
         run: |
-          python3 -m venv "$RUNNER_TEMP/rmp-mapping-runtime"
-          "$RUNNER_TEMP/rmp-mapping-runtime/bin/pip" install --disable-pip-version-check -r scripts/rmp/requirements.txt
-          "$RUNNER_TEMP/rmp-mapping-runtime/bin/python" scripts/rmp/sync_rmp_mappings.py --require-schema
+          {
+            python3 -m venv "$RUNNER_TEMP/rmp-mapping-runtime"
+            "$RUNNER_TEMP/rmp-mapping-runtime/bin/pip" install --disable-pip-version-check -r scripts/rmp/requirements.txt
+            "$RUNNER_TEMP/rmp-mapping-runtime/bin/python" scripts/rmp/sync_rmp_mappings.py --require-schema
+          } 2>&1 | tee "$RUNNER_TEMP/rmp-mapping.log"
 
       - name: Complete pending course change history
         id: changes
@@ -86,8 +95,13 @@ jobs:
         run: node scripts/calendar/sync.mjs --apply 2>&1 | tee "$RUNNER_TEMP/calendar-sync.log"
 
       - name: Summarize catalog maintenance
-        if: ${{ !cancelled() }}
+        if: ${{ always() }}
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CONFIGURATION_OUTCOME: ${{ steps.configuration.outcome }}
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.dependencies.outcome }}
           CATALOG_OUTCOME: ${{ steps.catalog.outcome }}
           MAPPING_OUTCOME: ${{ steps.mapping.outcome }}
           CHANGES_OUTCOME: ${{ steps.changes.outcome }}
@@ -95,15 +109,13 @@ jobs:
           CALENDAR_OUTCOME: ${{ steps.calendar.outcome }}
         shell: bash
         run: |
-          {
-            printf 'Catalog: %s. RMP evidence: %s. Change history: %s. Search indexes: %s. Calendar: %s.\n' "$CATALOG_OUTCOME" "$MAPPING_OUTCOME" "$CHANGES_OUTCOME" "$INDEX_OUTCOME" "$CALENDAR_OUTCOME"
-            echo 'Rejected or incomplete refreshes retain the last accepted catalog and its indexes.'
-            for log in catalog-sync change-backfill search-prepare calendar-sync; do
-              if [[ -f "$RUNNER_TEMP/$log.log" ]]; then
-                printf '\n### %s\n' "$log"
-                echo '```text'
-                tail -n 20 "$RUNNER_TEMP/$log.log"
-                echo '```'
-              fi
-            done
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f scripts/catalog/workflow-diagnostics.mjs ]] && command -v node >/dev/null; then
+            node scripts/catalog/workflow-diagnostics.mjs
+          else
+            echo '::error title=Catalog setup failed::The diagnostic reporter could not start. Open the failed configuration, checkout or runtime step for its full log.'
+            {
+              echo '## Catalog maintenance setup failed'
+              printf 'Configuration: %s. Checkout: %s. Runtime: %s. Dependencies: %s.\n' "$CONFIGURATION_OUTCOME" "$CHECKOUT_OUTCOME" "$RUNTIME_OUTCOME" "$DEPENDENCIES_OUTCOME"
+              printf '\n[Open complete step logs](%s/%s/actions/runs/%s)\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
