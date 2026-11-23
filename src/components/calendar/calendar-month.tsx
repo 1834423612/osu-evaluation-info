@@ -3,6 +3,8 @@ import type { CalendarEvent } from "@/lib/calendar/model";
 import type { Locale } from "@/lib/i18n";
 import { newYorkDate } from "@/lib/calendar/dates";
 import styles from "./calendar-month.module.css";
+import { eventColors } from "@/lib/calendar/week";
+import type { CSSProperties } from "react";
 
 export function CalendarMonth({
   date,
@@ -22,6 +24,7 @@ export function CalendarMonth({
     new Date(+first + index * 86400000).toISOString().slice(0, 10),
   );
   const today = newYorkDate();
+  const colors = eventColors(events);
   return (
     <div className={styles.month}>
       <div className={styles.head}>
@@ -60,6 +63,11 @@ export function CalendarMonth({
                   key={event.id}
                   type="button"
                   data-category={event.category}
+                  style={
+                    {
+                      "--event-color": colors[event.id],
+                    } as CSSProperties
+                  }
                   title={event.title}
                   onClick={(click) => onEvent(event, click.currentTarget)}
                 >
@@ -75,6 +83,11 @@ export function CalendarMonth({
                     <button
                       key={event.id}
                       type="button"
+                      style={
+                        {
+                          "--event-color": colors[event.id],
+                        } as CSSProperties
+                      }
                       onClick={(click) => onEvent(event, click.currentTarget)}
                     >
                       {event.title.split(" | ")[0]}

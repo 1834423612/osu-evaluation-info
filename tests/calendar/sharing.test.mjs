@@ -64,6 +64,7 @@ test("calendar feeds stay current without exposing private sources, revoke old t
         title: "With official dates",
         kind: "combined",
         sourceIds: ["osu-official-holidays"],
+        reminders: [60, 1440],
         includeAcademic: true,
         range: { start: "2027-01-01", end: "2027-02-01" },
         events: [],
@@ -86,6 +87,10 @@ test("calendar feeds stay current without exposing private sources, revoke old t
       1,
       "overlay and reference do not duplicate the same date",
     );
+    assert.deepEqual(
+      officialShared.calendars[0].events[0].reminders,
+      [60, 1440],
+    );
     await query("UPDATE osu_planning_dev.academic_calendar SET data=$1", [
       JSON.stringify({ ...official, title: "Updated official date" }),
     ]);
@@ -102,6 +107,7 @@ test("calendar feeds stay current without exposing private sources, revoke old t
         kind: "feed",
         feedUrl: "https://example.edu/private-feed",
         refreshedAt: new Date().toISOString(),
+        reminders: [10, 30],
         events: [
           {
             id: "event",
@@ -126,6 +132,18 @@ test("calendar feeds stay current without exposing private sources, revoke old t
     assert.equal(link.expiresAt, null);
     const shared = await publicCalendar(link.id, link.token);
     assert.equal(shared.calendars[0].events.length, 1);
+    assert.deepEqual(shared.calendars[0].events[0].reminders, [10, 30]);
+    const { exportCalendar } = await import("../../src/lib/calendar/ical.ts");
+    assert.equal(
+      (
+        exportCalendar(
+          "Device subscription",
+          shared.calendars[0].events,
+          shared.id,
+        ).match(/BEGIN:VALARM/g) ?? []
+      ).length,
+      2,
+    );
     assert.doesNotMatch(
       JSON.stringify(shared),
       /private-feed|account-a|fingerprint|feedUrl/,
@@ -169,6 +187,7 @@ test("calendar feeds stay current without exposing private sources, revoke old t
     );
     assert.equal(refreshed[0].events[0].title, "Updated subscription");
     assert.equal(refreshed[0].title, "Synthetic calendar");
+    assert.deepEqual(refreshed[0].reminders, [10, 30]);
     await refreshStoredFeeds(
       "refresh-owner",
       ["calendar-a"],

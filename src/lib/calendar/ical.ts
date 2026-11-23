@@ -106,6 +106,38 @@ export async function parseCalendar(
         .find((value) =>
           ["class", "assignment", "exam", "holiday", "event"].includes(value),
         ) as CalendarEvent["category"] | undefined;
+      // Only preserve bounded, passive display alarms before DTSTART. Never
+      // carry email/procedure actions or external alarm attachments into exports.
+      const reminders = [
+        ...new Set(
+          detail.item.component
+            .getAllSubcomponents("valarm")
+            .filter(
+              (alarm) =>
+                String(alarm.getFirstPropertyValue("action")).toUpperCase() ===
+                "DISPLAY",
+            )
+            .flatMap((alarm) => {
+              const trigger = alarm.getFirstProperty("trigger");
+              const duration = trigger?.getFirstValue();
+              if (
+                String(
+                  trigger?.getParameter("related") ?? "START",
+                ).toUpperCase() !== "START" ||
+                !(duration instanceof ICAL.Duration)
+              )
+                return [];
+              const minutes = -duration.toSeconds() / 60;
+              return Number.isInteger(minutes) &&
+                minutes >= 0 &&
+                minutes <= 43200
+                ? [minutes]
+                : [];
+            }),
+        ),
+      ]
+        .sort((a, b) => a - b)
+        .slice(0, 5);
       events.push(
         calendarEventSchema.parse({
           id: "pending",
@@ -122,6 +154,7 @@ export async function parseCalendar(
             .replace(/<[^>]*>/g, "")
             .slice(0, 4000),
           location: detail.item.location ?? "",
+          ...(reminders.length ? { reminders } : {}),
           ...(/^https?:\/\//i.test(url) ? { url } : {}),
         }),
       );
@@ -187,6 +220,19 @@ export function exportCalendar(
       !/[\r\n]/.test(event.url ?? "")
         ? [`URL:${event.url}`]
         : []),
+      ...[...new Set(event.reminders ?? [])]
+        .filter(
+          (value) => Number.isInteger(value) && value >= 0 && value <= 43200,
+        )
+        .sort((a, b) => a - b)
+        .slice(0, 5)
+        .flatMap((minutes) => [
+          "BEGIN:VALARM",
+          "ACTION:DISPLAY",
+          `TRIGGER:${minutes ? "-" : ""}PT${minutes}M`,
+          `DESCRIPTION:${escape(event.title || "Reminder")}`,
+          "END:VALARM",
+        ]),
       "END:VEVENT",
     );
   }

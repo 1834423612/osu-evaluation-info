@@ -23,6 +23,136 @@ import { newYorkDate, eventInDateRange } from "../../src/lib/calendar/dates.ts";
 const envelope = (events) =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${events}\r\nEND:VCALENDAR\r\n`;
 const bounds = [new Date("2027-01-01"), new Date("2028-01-01")];
+test("multiple display reminders survive ICS export and import without duplicate alarms", async () => {
+  const event = calendarEventSchema.parse({
+    id: "reminders",
+    title: "Class",
+    start: "2027-01-12T14:00:00Z",
+    end: "2027-01-12T15:00:00Z",
+    allDay: false,
+    category: "class",
+    reminders: [1440, 10, 10, 0],
+  });
+  const text = exportCalendar("Test", [event], "test");
+  assert.equal((text.match(/BEGIN:VALARM/g) ?? []).length, 3);
+  assert.ok(text.includes("TRIGGER:-PT1440M"));
+  assert.ok(text.includes("TRIGGER:PT0M"));
+  const [parsed] = await parseCalendar(text, ...bounds);
+  assert.deepEqual(parsed.reminders, [0, 10, 1440]);
+});
+test("combined calendars inherit source reminders, honor event overrides and preserve refresh preferences", () => {
+  const event = {
+    id: "one",
+    title: "Class",
+    start: "2027-01-12T14:00:00Z",
+    end: "2027-01-12T15:00:00Z",
+    allDay: false,
+    category: "class",
+  };
+  const source = calendarSchema.parse({
+    id: "source",
+    title: "Source",
+    kind: "personal",
+    events: [event, { ...event, id: "muted", reminders: [] }],
+    reminders: [30, 10],
+    updatedAt: "now",
+  });
+  const combined = calendarSchema.parse({
+    id: "combined",
+    title: "Combined",
+    kind: "combined",
+    sourceIds: ["source"],
+    events: [],
+    updatedAt: "now",
+  });
+  assert.deepEqual(
+    combinedEvents([source, combined], combined).map((item) => item.reminders),
+    [[10, 30], []],
+  );
+  assert.deepEqual(
+    applyCalendarRefresh(source, { ...source, reminders: [] }).reminders,
+    [10, 30],
+  );
+  assert.equal(
+    calendarEventSchema.safeParse({ ...event, reminders: [-1] }).success,
+    false,
+  );
+  assert.equal(
+    calendarEventSchema.safeParse({ ...event, reminders: [43201] }).success,
+    false,
+  );
+});
+test("nested combined calendars carry middle reminder defaults and preserve explicit event overrides", () => {
+  const event = {
+    id: "inherited",
+    title: "Class",
+    start: "2027-01-12T14:00:00Z",
+    end: "2027-01-12T15:00:00Z",
+    allDay: false,
+    category: "class",
+  };
+  const leaf = calendarSchema.parse({
+    id: "leaf",
+    title: "Leaf",
+    kind: "personal",
+    reminders: [15],
+    events: [event, { ...event, id: "explicit", reminders: [5] }],
+    updatedAt: "now",
+  });
+  const middle = calendarSchema.parse({
+    id: "middle",
+    title: "Middle",
+    kind: "combined",
+    reminders: [],
+    sourceIds: ["leaf"],
+    events: [],
+    updatedAt: "now",
+  });
+  const outer = calendarSchema.parse({
+    id: "outer",
+    title: "Outer",
+    kind: "combined",
+    sourceIds: ["middle"],
+    events: [],
+    updatedAt: "now",
+  });
+  const reminders = (mid = middle, root = outer) =>
+    combinedEvents([leaf, mid, root], root).map((item) => item.reminders);
+  assert.deepEqual(
+    reminders(),
+    [[], [5]],
+    "a middle calendar can keep its entire subtree silent",
+  );
+  assert.deepEqual(
+    reminders({ ...middle, reminders: [30] }),
+    [[30], [5]],
+    "a middle default reaches nested sources",
+  );
+  assert.deepEqual(
+    reminders(middle, { ...outer, reminders: [60] }),
+    [[60], [5]],
+    "outer explicit defaults take priority while event overrides still win",
+  );
+});
+test("imported alarms retain only bounded passive display reminders before the start", async () => {
+  const alarm = (action, trigger, extra = "") =>
+    `BEGIN:VALARM\r\nACTION:${action}\r\nTRIGGER${trigger}\r\n${extra}END:VALARM\r\n`;
+  const text = envelope(
+    "BEGIN:VEVENT\r\nUID:alarm-safety\r\nDTSTART:20270112T140000Z\r\nDTEND:20270112T150000Z\r\nSUMMARY:Safe reminders\r\n" +
+      alarm("DISPLAY", ":-PT10M") +
+      alarm("DISPLAY", ":-PT10M") +
+      alarm("EMAIL", ":-PT5M", "ATTENDEE:mailto:test@example.edu\r\n") +
+      alarm("DISPLAY", ";RELATED=END:-PT30M") +
+      alarm("DISPLAY", ":PT15M") +
+      alarm("DISPLAY", ";VALUE=DATE-TIME:20270112T130000Z") +
+      "END:VEVENT",
+  );
+  const [event] = await parseCalendar(text, ...bounds);
+  assert.deepEqual(event.reminders, [10]);
+  const exported = exportCalendar("Safe", [event], "safe");
+  assert.equal((exported.match(/BEGIN:VALARM/g) ?? []).length, 1);
+  assert.ok(!exported.includes("ATTENDEE"));
+});
 test("ICS export rejects URL property injection while preserving ordinary URI punctuation", async () => {
   const event = {
     id: "one",

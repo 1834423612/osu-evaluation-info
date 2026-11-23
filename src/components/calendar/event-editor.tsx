@@ -8,6 +8,7 @@ import { newYorkTime } from "@/lib/calendar/schedules";
 import type { Locale } from "@/lib/i18n";
 import { DateField } from "./date-field";
 import styles from "./calendar-forms.module.css";
+import { ReminderSettings } from "./reminder-settings";
 const day = (value: string) =>
   value.length === 10
     ? value
@@ -58,6 +59,7 @@ export function CalendarEventEditor({
     to: time(event.end, "10:00"),
     allDay: event.allDay,
     category: event.category,
+    reminders: event.reminders as number[] | undefined,
   };
   const [draft, setDraft] = useState(initial),
     [message, setMessage] = useState(""),
@@ -97,6 +99,7 @@ export function CalendarEventEditor({
           location: draft.location,
           allDay: draft.allDay,
           category: draft.category,
+          reminders: draft.reminders,
           start: draft.allDay ? draft.start : instant(draft.start, draft.from),
           end: draft.allDay ? draft.end : instant(draft.end, draft.to),
         });
@@ -234,6 +237,13 @@ export function CalendarEventEditor({
           )}
         </ChoiceSelect>
       </label>
+      <ReminderSettings
+        locale={locale}
+        value={draft.reminders}
+        onChange={(reminders) => update({ reminders })}
+        inherit
+        disabled={readOnly}
+      />
       <label>
         <span>
           <MapPin size={12} />

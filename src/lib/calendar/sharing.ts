@@ -157,7 +157,12 @@ export async function publicCalendar(id: string, provided: string) {
             ...academicForCalendar(c, combinedEvents(sources, c), days),
           ].map((event) => [event.id, event]),
         ).values(),
-      ].filter((e) => row.categories.includes(e.category)),
+      ]
+        .filter((e) => row.categories.includes(e.category))
+        .map((event) => ({
+          ...event,
+          reminders: event.reminders ?? c.reminders,
+        })),
     })),
   };
 }

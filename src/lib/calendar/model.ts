@@ -1,5 +1,10 @@
 import { z } from "zod";
 const id = z.string().min(1).max(100);
+/** Minutes before the start. Empty means no alarms; missing inherits defaults. */
+export const reminderSchema = z
+  .array(z.number().int().min(0).max(43200))
+  .max(5)
+  .transform((values) => [...new Set(values)].sort((a, b) => a - b));
 const date = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z)?$/)
@@ -22,6 +27,7 @@ export const calendarEventSchema = z
     location: z.string().max(500).default(""),
     url: z.string().url().max(1500).optional(),
     session: z.string().max(100).optional(),
+    reminders: reminderSchema.optional(),
   })
   .strip()
   .refine(
@@ -54,6 +60,7 @@ export const calendarSchema = z
     feedUrl: z.string().url().max(2000).optional(),
     refreshedAt: z.string().max(40).optional(),
     events: z.array(calendarEventSchema).max(3000),
+    reminders: reminderSchema.optional(),
     active: z.boolean().default(true),
     updatedAt: z.string().max(40),
   })
@@ -90,10 +97,14 @@ export function combinedEvents(
 ): CalendarEvent[] {
   const visited = new Set<string>(),
     rows = new Map<string, CalendarEvent>();
-  function add(calendar: UserCalendar) {
+  function add(calendar: UserCalendar, inheritedReminders?: number[]) {
     if (visited.has(calendar.id)) return;
     visited.add(calendar.id);
-    for (const event of calendar.events)
+    const defaults = inheritedReminders ?? calendar.reminders;
+    for (const original of calendar.events) {
+      const reminders = original.reminders ?? defaults;
+      const event =
+        reminders === undefined ? original : { ...original, reminders };
       rows.set(
         event.id.startsWith("official-")
           ? event.id
@@ -102,9 +113,10 @@ export function combinedEvents(
           ? event
           : { ...event, id: JSON.stringify([calendar.id, event.id]) },
       );
+    }
     for (const child of calendar.sourceIds) {
       const source = calendars.find((c) => c.id === child);
-      if (source) add(source);
+      if (source) add(source, defaults);
     }
   }
   add(selected);

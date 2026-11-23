@@ -13,6 +13,7 @@ import type { UserCalendar } from "@/lib/calendar/model";
 import { availableSourceIds } from "@/lib/calendar/model";
 import type { Locale } from "@/lib/i18n";
 import styles from "./calendar-settings.module.css";
+import { ReminderSettings } from "./reminder-settings";
 
 const icons = {
   calendar: CalendarDays,
@@ -162,6 +163,11 @@ export function CalendarSettings({
             </div>
           </fieldset>
         </div>
+        <ReminderSettings
+          locale={locale}
+          value={value.reminders ?? []}
+          onChange={(reminders) => onChange({ ...value, reminders })}
+        />
         <label className={styles.option}>
           <input
             type="checkbox"

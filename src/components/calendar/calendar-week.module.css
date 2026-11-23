@@ -53,9 +53,13 @@
   justify-content: flex-start;
   color: var(--ink);
   cursor: pointer;
-  border: 0;
-  background: color-mix(in srgb, #d3a34e 13%, var(--surface));
-  border-left: 2px solid #b78d40;
+  background: color-mix(
+    in srgb,
+    var(--event-color, #9b7223) 13%,
+    var(--surface)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--event-color, #9b7223) 40%, var(--line));
   border-radius: 3px;
   font-size: 9px;
   padding: 3px;
@@ -70,14 +74,6 @@
   border-radius: 0 0 10px 10px;
   position: relative;
   margin-top: 8px;
-}
-.banner[data-category="assignment"] {
-  background: color-mix(in srgb, #b39ad3 15%, var(--surface));
-  border-left-color: #9070b4;
-}
-.banner[data-category="exam"] {
-  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
-  border-left-color: var(--primary);
 }
 .times {
   position: relative;
@@ -117,7 +113,6 @@
   box-sizing: border-box;
   border: 1px solid
     color-mix(in srgb, var(--event-color, #4784bb) 40%, var(--line));
-  border-left: 3px solid var(--event-color, #4784bb);
   border-radius: 5px;
   background: color-mix(
     in srgb,
@@ -148,12 +143,16 @@
   z-index: 3;
 }
 .event strong {
-  display: block;
   flex-shrink: 0;
   width: 100%;
   min-width: 0;
   text-align: left;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: normal;
   font-size: 11px;
   line-height: 1.4;
 }
@@ -174,20 +173,181 @@
   color: var(--muted);
 }
 .event[data-online="true"] {
-  border-left-style: dashed;
+  border-style: dashed;
 }
-.event[data-category="assignment"] {
-  border-left-color: #9070b4;
-  background: color-mix(in srgb, #b39ad3 15%, var(--surface));
+.week .crowded {
+  position: absolute;
+  inset-inline: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 2px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 4px;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line));
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--subtle-surface);
+  cursor: pointer;
+  font-size: 10px;
 }
-.event[data-category="exam"] {
-  border-left-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+.crowded strong {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.crowded small {
+  color: var(--primary);
+  font-size: 10px;
+}
+.shortLabel {
+  display: none;
+}
+.colorDots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+:is(.colorDots i, .eventDot) {
+  display: block;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.eventDot {
+  background: var(--event-color);
+  margin-top: 4px;
+}
+.overlaps {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.overlaps details {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.overlaps summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.overlaps summary:focus-visible,
+.week .crowded:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.overlapItems {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+.week .overlapItems button {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--event-color) 40%, var(--line));
+  background: color-mix(in srgb, var(--event-color) 8%, var(--surface));
+  border-radius: 7px;
+  color: var(--ink);
+}
+.overlapItems button > span:last-child {
+  min-width: 0;
+}
+.overlapItems strong {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  font-size: 12px;
+}
+.overlapItems small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.5;
 }
 .caption {
   color: var(--muted);
   font-size: 10px;
   margin: 10px 0 0;
+}
+.week[data-fit="true"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.week[data-fit="true"] .head {
+  flex-shrink: 0;
+}
+.week[data-fit="true"] .head strong {
+  padding: 6px 2px;
+}
+.week[data-fit="true"] .allDay {
+  flex-shrink: 0;
+  max-height: 52px;
+  overflow-y: auto;
+}
+.week[data-fit="true"] .grid {
+  flex: 1;
+  min-height: 180px;
+  margin-top: 5px;
+}
+.week[data-fit="true"] .column {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(100% / var(--hour-count) - 1px),
+    color-mix(in srgb, var(--line) 65%, transparent)
+      calc(100% / var(--hour-count) - 1px),
+    color-mix(in srgb, var(--line) 65%, transparent)
+      calc(100% / var(--hour-count))
+  );
+}
+.week[data-fit="true"] .event {
+  padding: 3px 4px;
+  gap: 1px;
+}
+.week[data-fit="true"] .event strong {
+  font-size: 10px;
+  line-height: 1.25;
+  -webkit-line-clamp: 1;
+}
+.week[data-fit="true"] .event span {
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.week[data-fit="true"] .event span:nth-of-type(n + 2),
+.week[data-fit="true"] .event small {
+  display: none;
+}
+.week[data-fit="true"] .caption {
+  flex-shrink: 0;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.week[data-fit="true"] .overlaps {
+  flex-shrink: 0;
+  max-height: 28%;
+  overflow: auto;
+  margin-top: 8px;
+}
+.legend {
+  display: none;
 }
 @media (max-width: 600px) {
   .week {
@@ -209,7 +369,7 @@
   }
   .event strong {
     font-size: 9px;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
   }
   .event span {
     font-size: 8px;
@@ -224,5 +384,52 @@
   }
   .times span {
     right: 3px;
+  }
+  .week .crowded {
+    inset-inline: 1px;
+    padding: 4px 2px;
+    gap: 3px;
+  }
+  .crowded strong {
+    font-size: 9px;
+  }
+  .crowded small {
+    font-size: 8px;
+  }
+  .fullLabel {
+    display: none;
+  }
+  .shortLabel {
+    display: inline;
+  }
+  .colorDots {
+    gap: 2px;
+  }
+  .colorDots i {
+    width: 6px;
+    height: 6px;
+  }
+  .week[data-fit="true"] .legend {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding-top: 6px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .week[data-fit="true"] .caption {
+    display: none;
   }
 }

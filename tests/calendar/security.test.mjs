@@ -5,7 +5,13 @@ import {
   readRemoteCalendar,
   pinnedCalendarLookup,
 } from "../../src/lib/calendar/remote.ts";
-import { weekSegments } from "../../src/lib/calendar/week.ts";
+import {
+  weekSegments,
+  weekOverlapGroups,
+  eventColor,
+  eventColors,
+  calendarTimeBounds,
+} from "../../src/lib/calendar/week.ts";
 import { parseCalendar } from "../../src/lib/calendar/ical.ts";
 test("pinned DNS lookup supports Node auto-family selection without resolving unverified addresses", () => {
   const addresses = [
@@ -69,6 +75,87 @@ test("overnight events split at Eastern midnight while preserving the original e
     ],
   );
   assert.equal(rows[0].event, event);
+});
+test("dense overlapping events form one readable group without merging adjacent meetings", () => {
+  const base = {
+    allDay: false,
+    category: "class",
+    title: "Course",
+    description: "",
+    location: "",
+  };
+  const events = [0, 1, 2, 3].map((id) => ({
+    ...base,
+    id: String(id),
+    start: "2027-01-12T22:00:00Z",
+    end: "2027-01-12T22:50:00Z",
+  }));
+  events.push({
+    ...base,
+    id: "later",
+    start: "2027-01-12T22:50:00Z",
+    end: "2027-01-12T23:50:00Z",
+  });
+  const groups = weekOverlapGroups(weekSegments(events, ["2027-01-12"]));
+  assert.deepEqual(
+    groups.map((group) => group.items.length),
+    [4, 1],
+  );
+  assert.equal(groups[0].lanes, 4);
+  assert.deepEqual(
+    new Set(groups[0].items.map((item) => item.lane)),
+    new Set([0, 1, 2, 3]),
+  );
+  assert.equal(groups[1].lanes, 1);
+});
+test("course colors remain stable across section labels and categories stay distinct", () => {
+  assert.equal(
+    eventColor("PSYCH 1100 · Lecture"),
+    eventColor("PSYCH 1100 · Laboratory"),
+  );
+  assert.notEqual(
+    eventColor("Reading", "assignment"),
+    eventColor("Reading", "exam"),
+  );
+});
+test("a displayed set of courses avoids color collisions and ignores event order", () => {
+  const events = ["CSE 1111", "CSE 2222", "CSE 3333", "PSYCH 1100"].map(
+    (title, id) => ({ id: String(id), title, category: "class" }),
+  );
+  const colors = eventColors(events);
+  assert.equal(new Set(Object.values(colors)).size, 4);
+  assert.deepEqual(eventColors([...events].reverse()), colors);
+});
+test("saved timetable comparisons keep a common hour scale and include early, late and overnight classes", () => {
+  const base = {
+    id: "one",
+    title: "Class",
+    category: "class",
+    allDay: false,
+    description: "",
+    location: "",
+  };
+  const ordinary = {
+    ...base,
+    start: "2027-01-12T14:00:00Z",
+    end: "2027-01-12T15:00:00Z",
+  };
+  assert.deepEqual(calendarTimeBounds([ordinary]), { start: 480, end: 1080 });
+  const earlyLate = {
+    ...base,
+    start: "2027-01-12T12:00:00Z",
+    end: "2027-01-13T01:00:00Z",
+  };
+  assert.deepEqual(calendarTimeBounds([ordinary, earlyLate]), {
+    start: 420,
+    end: 1200,
+  });
+  const overnight = {
+    ...base,
+    start: "2027-01-13T03:00:00Z",
+    end: "2027-01-13T07:00:00Z",
+  };
+  assert.deepEqual(calendarTimeBounds([overnight]), { start: 0, end: 1440 });
 });
 test("old unbounded recurrence fails explicitly instead of silently importing an empty partial calendar", async () => {
   await assert.rejects(

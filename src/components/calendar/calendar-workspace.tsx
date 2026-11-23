@@ -8,6 +8,8 @@ import {
   useState,
   useSyncExternalStore,
   useMemo,
+  useCallback,
+  type CSSProperties,
 } from "react";
 import {
   CalendarDays,
@@ -63,6 +65,7 @@ import {
 } from "@/lib/calendar/academic";
 import { browserUuid } from "@/lib/uuid";
 import { newYorkDate, eventInDateRange } from "@/lib/calendar/dates";
+import { eventColors, calendarTimeBounds } from "@/lib/calendar/week";
 import styles from "./calendar.module.css";
 type CalendarDraft = UserCalendar & {
   editorSession: string;
@@ -100,9 +103,82 @@ export function CalendarWorkspace() {
   );
   const [selectedId, setSelectedId] = useState("");
   const selected = calendars.find((c) => c.id === selectedId) ?? calendars[0];
+  const simulationSelected = selected?.kind === "simulation";
+  const simulationCalendars = useMemo(
+    () => privateCalendars.filter((calendar) => calendar.kind === "simulation"),
+    [privateCalendars],
+  );
+  const comparisonBounds = useMemo(
+    () =>
+      simulationSelected
+        ? calendarTimeBounds(
+            simulationCalendars
+              .filter(
+                (calendar) =>
+                  calendar.term === selected?.term &&
+                  calendar.campus === selected?.campus,
+              )
+              .flatMap((calendar) => calendar.events),
+          )
+        : undefined,
+    [simulationSelected, simulationCalendars, selected?.term, selected?.campus],
+  );
+  const contentRef = useRef<HTMLElement>(null);
   const officialSelected = !!selected && isOfficialCalendar(selected.id);
   const [week, setWeek] = useState(() => monday(newYorkDate()));
   const [view, setView] = useState("week");
+  const cycleSimulation = useCallback(
+    (direction: number) => {
+      const index = simulationCalendars.findIndex(
+        (calendar) => calendar.id === selected?.id,
+      );
+      const next =
+        simulationCalendars[
+          (index + direction + simulationCalendars.length) %
+            simulationCalendars.length
+        ];
+      if (!next) return;
+      setSelectedId(next.id);
+      setView("week");
+      contentRef.current?.scrollTo({ top: 0 });
+    },
+    [simulationCalendars, selected?.id],
+  );
+  useEffect(() => {
+    if (
+      !simulationSelected ||
+      view !== "week" ||
+      simulationCalendars.length < 2
+    )
+      return;
+    const navigate = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        !["ArrowLeft", "ArrowRight"].includes(event.key)
+      )
+        return;
+      const target =
+        event.target instanceof Element ? event.target : document.activeElement;
+      if (
+        target?.closest(
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="combobox"], [role="listbox"], [role="slider"], [role="spinbutton"], [role="radiogroup"], [role="tablist"], [role="menu"]',
+        ) ||
+        document.querySelector(
+          '[role="dialog"], [role="alertdialog"], [role="listbox"], [role="menu"]',
+        )
+      )
+        return;
+      event.preventDefault();
+      cycleSimulation(event.key === "ArrowRight" ? 1 : -1);
+    };
+    window.addEventListener("keydown", navigate);
+    return () => window.removeEventListener("keydown", navigate);
+  }, [simulationSelected, view, simulationCalendars.length, cycleSimulation]);
   const [message, setMessage] = useActionNotice();
   const [eventPreview, setEventPreview] = useState<CalendarEventPreview | null>(
     null,
@@ -322,10 +398,22 @@ export function CalendarWorkspace() {
   }, [calendars, account, now]);
   const events = selected ? combinedEvents(calendars, selected) : [];
   const initialCalendar = useRef("");
+  const previousCalendar = useRef<UserCalendar | undefined>(undefined);
   useEffect(() => {
     const key = account + "|" + (selected?.id ?? "");
     if (!ready || !selected || initialCalendar.current === key) return;
     initialCalendar.current = key;
+    const previous = previousCalendar.current;
+    previousCalendar.current = selected;
+    if (
+      previous?.kind === "simulation" &&
+      selected.kind === "simulation" &&
+      previous.term === selected.term &&
+      previous.campus === selected.campus
+    ) {
+      queueMicrotask(() => setView("week"));
+      return;
+    }
     if (isOfficialCalendar(selected.id)) {
       queueMicrotask(() => {
         setView("month");
@@ -381,6 +469,7 @@ export function CalendarWorkspace() {
   const visible = allEvents.filter((event) =>
     eventInDateRange(event, rangeStart, rangeEnd),
   );
+  const colors = eventColors(allEvents);
   function navigate(offset: number) {
     setWeek(
       officialSelected && view !== "week"
@@ -412,7 +501,10 @@ export function CalendarWorkspace() {
               ...academicForCalendar(selected, events, academic).filter(
                 (event) => !events.some((item) => item.id === event.id),
               ),
-            ],
+            ].map((event) => ({
+              ...event,
+              reminders: event.reminders ?? selected.reminders,
+            })),
             selected.id,
           ),
         ],
@@ -434,6 +526,7 @@ export function CalendarWorkspace() {
         className={`${styles.root} rr-block`}
         data-telemetry-private
         data-analytics-area="calendar"
+        data-simulation={simulationSelected || undefined}
       >
         <header className={styles.top}>
           <div>
@@ -523,37 +616,39 @@ export function CalendarWorkspace() {
               : message}
           </p>
         )}
-        <div className={styles.sourceStatus}>
-          <ShieldCheck size={15} />
-          <span>
-            {t("Official calendar", "官方校历")} · OSU University Registrar
-          </span>
-          <small>
-            {academicStatus === "loading"
-              ? t("Loading dates…", "正在加载日期…")
-              : academicStatus === "ready"
-                ? `${academic.length} ${t("dates", "项日期")}${academicUpdated ? " · " + t("Updated ", "更新于 ") + new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" }).format(new Date(academicUpdated)) : ""}`
-                : t("Dates unavailable", "日期暂不可用")}
-          </small>
-          {academicStatus === "error" || academicStatus === "empty" ? (
-            <button
-              onClick={() => {
-                setAcademicStatus("loading");
-                setAcademicRetry((value) => value + 1);
-              }}
+        {!simulationSelected && (
+          <div className={styles.sourceStatus}>
+            <ShieldCheck size={15} />
+            <span>
+              {t("Official calendar", "官方校历")} · OSU University Registrar
+            </span>
+            <small>
+              {academicStatus === "loading"
+                ? t("Loading dates…", "正在加载日期…")
+                : academicStatus === "ready"
+                  ? `${academic.length} ${t("dates", "项日期")}${academicUpdated ? " · " + t("Updated ", "更新于 ") + new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" }).format(new Date(academicUpdated)) : ""}`
+                  : t("Dates unavailable", "日期暂不可用")}
+            </small>
+            {academicStatus === "error" || academicStatus === "empty" ? (
+              <button
+                onClick={() => {
+                  setAcademicStatus("loading");
+                  setAcademicRetry((value) => value + 1);
+                }}
+              >
+                {t("Retry", "重新加载")}
+              </button>
+            ) : null}
+            <a
+              href="https://registrar.osu.edu/academic-calendar/"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              {t("Retry", "重新加载")}
-            </button>
-          ) : null}
-          <a
-            href="https://registrar.osu.edu/academic-calendar/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t("View source", "查看来源")}
-            <ExternalLink size={12} />
-          </a>
-        </div>
+              {t("View source", "查看来源")}
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        )}
         <div className={styles.layout}>
           <aside
             className={styles.sidebar}
@@ -567,6 +662,16 @@ export function CalendarWorkspace() {
                 data-color={c.color}
                 onClick={() => {
                   setSelectedId(c.id);
+                  if (
+                    simulationSelected &&
+                    c.kind === "simulation" &&
+                    selected.term === c.term &&
+                    selected.campus === c.campus
+                  ) {
+                    setView("week");
+                    contentRef.current?.scrollTo({ top: 0 });
+                    return;
+                  }
                   const today = newYorkDate();
                   const all = combinedEvents(calendars, c);
                   const next =
@@ -611,7 +716,13 @@ export function CalendarWorkspace() {
               </button>
             ))}
           </aside>
-          <section className={styles.content}>
+          <section
+            ref={contentRef}
+            className={styles.content}
+            data-simulation={
+              (simulationSelected && view === "week") || undefined
+            }
+          >
             {selected ? (
               <>
                 <div className={styles.toolbar}>
@@ -681,7 +792,45 @@ export function CalendarWorkspace() {
                     )}
                   </p>
                 )}
-                <div className={styles.toolbar}>
+                <div
+                  className={`${styles.toolbar} ${simulationSelected ? styles.comparisonToolbar : ""}`}
+                >
+                  {simulationSelected && (
+                    <nav
+                      className={styles.groupNavigation}
+                      aria-label={t("Saved timetable groups", "已保存课表组")}
+                    >
+                      <button
+                        aria-label={t(
+                          "Previous saved timetable",
+                          "上一组已保存课表",
+                        )}
+                        disabled={simulationCalendars.length < 2}
+                        onClick={() => cycleSimulation(-1)}
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <span aria-live="polite">
+                        {simulationCalendars.findIndex(
+                          (calendar) => calendar.id === selected.id,
+                        ) + 1}{" "}
+                        / {simulationCalendars.length}
+                      </span>
+                      <button
+                        aria-label={t(
+                          "Next saved timetable",
+                          "下一组已保存课表",
+                        )}
+                        disabled={simulationCalendars.length < 2}
+                        onClick={() => cycleSimulation(1)}
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                      <small>
+                        <kbd>←</kbd> <kbd>→</kbd> {t("Compare", "切换课表")}
+                      </small>
+                    </nav>
+                  )}
                   <div className={styles.actions}>
                     <button
                       aria-label={
@@ -749,6 +898,8 @@ export function CalendarWorkspace() {
                     dates={dates}
                     locale={locale}
                     onEvent={previewEvent}
+                    fit={simulationSelected}
+                    timeBounds={comparisonBounds}
                   />
                 ) : (
                   <div className={styles.agenda}>
@@ -767,6 +918,11 @@ export function CalendarWorkspace() {
                           key={event.id + index}
                           className={styles.event}
                           data-category={event.category}
+                          style={
+                            {
+                              "--event-color": colors[event.id],
+                            } as CSSProperties
+                          }
                           onClick={(click) =>
                             previewEvent(event, click.currentTarget)
                           }

@@ -57,9 +57,13 @@
   display: block;
   padding: 4px 6px;
   margin-bottom: 3px;
-  border: 0;
-  border-left: 2px solid #5282b6;
-  background: color-mix(in srgb, #5282b6 10%, var(--surface));
+  border: 1px solid
+    color-mix(in srgb, var(--event-color, #326fa4) 35%, var(--line));
+  background: color-mix(
+    in srgb,
+    var(--event-color, #326fa4) 10%,
+    var(--surface)
+  );
   color: var(--ink);
   text-align: left;
   font: inherit;
@@ -70,14 +74,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.day button[data-category="holiday"] {
-  border-left-color: #ad8435;
-  background: color-mix(in srgb, #d2b567 15%, var(--surface));
-}
-.day button[data-category="exam"] {
-  border-left-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
 }
 .day button:hover {
   filter: brightness(0.96);

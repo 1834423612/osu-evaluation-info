@@ -1,8 +1,11 @@
 "use client";
 import type { CalendarEvent } from "@/lib/calendar/model";
 import styles from "./calendar.module.css";
+import { eventColors } from "@/lib/calendar/week";
+import type { CSSProperties } from "react";
 /** Same miniature appears in simulation groups, the calendar list and shared previews. */
 export function CalendarPreview({ events }: { events: CalendarEvent[] }) {
+  const colors = eventColors(events);
   const format = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     weekday: "short",
@@ -48,23 +51,29 @@ export function CalendarPreview({ events }: { events: CalendarEvent[] }) {
             .map((event, index) => (
               <i
                 key={event.id}
-                style={{
-                  left: "3%",
-                  top: `${8 + index * 26}%`,
-                  height: "14%",
-                  width: `${90 - index * 9}%`,
-                }}
+                style={
+                  {
+                    "--event-color": colors[event.id],
+                    left: "3%",
+                    top: `${8 + index * 26}%`,
+                    height: "14%",
+                    width: `${90 - index * 9}%`,
+                  } as CSSProperties
+                }
               />
             ))}
         {positions.slice(0, 40).map((event, index) => (
           <i
             key={index}
-            style={{
-              left: `${(event.day * 100) / 7}%`,
-              top: `${(Math.max(0, event.minute - 420) / 900) * 100}%`,
-              height: `${(Math.min(event.duration, 240) / 900) * 100}%`,
-              width: `${100 / 7 - 1}%`,
-            }}
+            style={
+              {
+                "--event-color": colors[event.id],
+                left: `${(event.day * 100) / 7}%`,
+                top: `${(Math.max(0, event.minute - 420) / 900) * 100}%`,
+                height: `${(Math.min(event.duration, 240) / 900) * 100}%`,
+                width: `${100 / 7 - 1}%`,
+              } as CSSProperties
+            }
           />
         ))}
       </div>
