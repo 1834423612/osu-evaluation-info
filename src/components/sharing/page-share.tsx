@@ -154,11 +154,7 @@ export function PageShare({
                   window.dispatchEvent(
                     new CustomEvent("course-atlas:toast", {
                       detail: {
-                        message: text(
-                          locale,
-                          "Link copied. Share it with a friend.",
-                          "链接已复制，发给好友一起看看。",
-                        ),
+                        message: text(locale, "Link copied.", "链接已复制。"),
                       },
                     }),
                   );
