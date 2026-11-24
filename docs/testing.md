@@ -63,15 +63,15 @@ Course-update scripts use `CHANGES_TEST_BASE_URL` / `CHANGES_TEST_OUTPUT`; `CATA
 
 Start `pnpm dev`, or `pnpm build` followed by `pnpm start`. Browser scripts are standalone `.browser.mjs` files and are not run by `pnpm test`. Install Playwright and its Chromium/runtime dependencies in the testing environment. The scripts accept `PLAYWRIGHT_MODULE` as an absolute module file URL when it is not resolvable from the project, plus optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
 
-| Area                | Base URL / output variables                                    | Data and network                                                                       |
-| ------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Navigation          | `NAV_TEST_BASE_URL`, `NAV_TEST_OUTPUT`                         | Mocked unavailable data; real navigation, forms and keyboard                           |
-| RMP                 | `RMP_TEST_BASE_URL`, `RMP_TEST_OUTPUT`                         | Library/course-lead checks read real local APIs; period-layout uses fixtures           |
-| Syllabus            | `SYLLABUS_TEST_BASE_URL`, `SYLLABUS_TEST_OUTPUT`               | Experience uses fixtures; source-layout uses source content; fonts uses the public CDN |
-| Search              | `SEARCH_TEST_BASE_URL`, `SEARCH_TEST_OUTPUT`                   | Deterministic direct/index routing and rendering fixtures                              |
-| Calendar workspace  | `CALENDAR_TEST_BASE_URL`, `CALENDAR_SCREENSHOT_DIR`            | Isolated synthetic calendars; all API requests mocked                                  |
-| Planning simulation | `PLANNING_TEST_BASE_URL`, `PLANNING_SCREENSHOT_DIR`            | Synthetic section alternatives; all API requests mocked                                |
-| Planning workspaces | `PLANNING_TEST_BASE_URL`, `PLANNING_WORKSPACES_SCREENSHOT_DIR` | Independent plans, favorites and public-plan copies; all API requests mocked           |
+| Area                | Base URL / output variables                                                | Data and network                                                                       |
+| ------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Navigation          | `NAV_TEST_BASE_URL`, `NAV_TEST_OUTPUT`                                     | Mocked unavailable data; real navigation, forms and keyboard                           |
+| RMP                 | `RMP_TEST_BASE_URL`, `RMP_TEST_OUTPUT`                                     | Library/course-lead checks read real local APIs; period-layout uses fixtures           |
+| Syllabus            | `SYLLABUS_TEST_BASE_URL`, `SYLLABUS_TEST_OUTPUT`                           | Experience uses fixtures; source-layout uses source content; fonts uses the public CDN |
+| Search              | `SEARCH_TEST_BASE_URL`, `SEARCH_TEST_OUTPUT`                               | Deterministic direct/index routing and rendering fixtures                              |
+| Calendar workspace  | `CALENDAR_TEST_BASE_URL`, `CALENDAR_SCREENSHOT_DIR`, `CALENDAR_TEST_WIDTH` | Isolated synthetic calendars; all API requests mocked                                  |
+| Planning simulation | `PLANNING_TEST_BASE_URL`, `PLANNING_SCREENSHOT_DIR`                        | Synthetic section alternatives; all API requests mocked                                |
+| Planning workspaces | `PLANNING_TEST_BASE_URL`, `PLANNING_WORKSPACES_SCREENSHOT_DIR`             | Independent plans, favorites and public-plan copies; all API requests mocked           |
 
 Other browser files declare their own variables at the top. Defaults generally target localhost:3000 and temporary artifact directories. Check that declaration before choosing another server. Use a separate browser context: tests change local favorites/preferences, mock requests and may trigger downloads. They do not publish reviews or vote. Translation/onboarding checks use controlled browser/model responses; model-download tests should run in an isolated browser profile.
 
@@ -90,20 +90,22 @@ Each row identifies the script's primary check. Open the file for fixtures, exac
 
 ### Planning, calendars and sharing additions
 
-| Script                                                                                        | Type        | Purpose                                                                                                                                    |
-| --------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| [tests/planning/scenarios.test.mjs](../tests/planning/scenarios.test.mjs)                     | Unit        | Independent-plan isolation, merge/recovery, account-calendar ownership, public-copy allowlists and old-reader/current-writer compatibility |
-| [tests/planning/sharing.test.mjs](../tests/planning/sharing.test.mjs)                         | Integration | In-memory PGlite capability access, owner revocation, expiry, quotas and sanitized planning snapshots                                      |
-| [tests/planning/favorites.test.mjs](../tests/planning/favorites.test.mjs)                     | Unit        | Mixed-favorite course imports, duplicate-safe placement and preservation of historical course facts                                        |
-| [tests/planning/favorites-export.test.mjs](../tests/planning/favorites-export.test.mjs)       | Unit        | Atomic favorite/folder export, capacity validation and rollback on local storage failure                                                   |
-| [tests/planning/course-status.test.mjs](../tests/planning/course-status.test.mjs)             | Unit        | Separate personal enrollment labels, preserved source statuses and labels retained across report refresh                                   |
-| [tests/user-data/share-groups.test.mjs](../tests/user-data/share-groups.test.mjs)             | Unit        | Course/term/campus grouping, isolated teacher identities and conservative recovery of legacy parent context                                |
-| [tests/catalog/workflow-diagnostics.test.mjs](../tests/catalog/workflow-diagnostics.test.mjs) | Unit        | Actionable workflow annotations/summaries, coverage tables, bounded output and credential/command-injection protection                     |
-| [tests/calendar/workspace.browser.mjs](../tests/calendar/workspace.browser.mjs)               | Browser     | Bounded source/calendar scrolling, dense-event selection, colors and multiple reminder persistence/export                                  |
-| [tests/planning/simulation.browser.mjs](../tests/planning/simulation.browser.mjs)             | Browser     | Automatic/fixed section choices, alternative navigation, fitted weekly preview and responsive timetable saving                             |
-| [tests/planning/workspaces.browser.mjs](../tests/planning/workspaces.browser.mjs)             | Browser     | Independent plans, semester-bound favorites import/export, manual labels and shared-plan copying across responsive layouts                 |
+| Script                                                                                        | Type        | Purpose                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [tests/planning/scenarios.test.mjs](../tests/planning/scenarios.test.mjs)                     | Unit        | Independent-plan isolation, merge/recovery, account-calendar ownership, public-copy allowlists and old-reader/current-writer compatibility                                                         |
+| [tests/planning/sharing.test.mjs](../tests/planning/sharing.test.mjs)                         | Integration | In-memory PGlite capability access, owner revocation, expiry, quotas and sanitized planning snapshots                                                                                              |
+| [tests/planning/favorites.test.mjs](../tests/planning/favorites.test.mjs)                     | Unit        | Mixed-favorite course imports, duplicate-safe placement and preservation of historical course facts                                                                                                |
+| [tests/planning/favorites-export.test.mjs](../tests/planning/favorites-export.test.mjs)       | Unit        | Atomic favorite/folder export, capacity validation and rollback on local storage failure                                                                                                           |
+| [tests/planning/course-status.test.mjs](../tests/planning/course-status.test.mjs)             | Unit        | Separate personal enrollment labels, preserved source statuses and labels retained across report refresh                                                                                           |
+| [tests/user-data/share-groups.test.mjs](../tests/user-data/share-groups.test.mjs)             | Unit        | Course/term/campus grouping, isolated teacher identities and conservative recovery of legacy parent context                                                                                        |
+| [tests/catalog/workflow-diagnostics.test.mjs](../tests/catalog/workflow-diagnostics.test.mjs) | Unit        | Actionable workflow annotations/summaries, coverage tables, bounded output and credential/command-injection protection                                                                             |
+| [tests/calendar/workspace.browser.mjs](../tests/calendar/workspace.browser.mjs)               | Browser     | Bounded scrolling, persistent mixed-source thumbnails, initial-focus keyboard navigation, private-card shortcuts, compact mobile details, reminders and mocked authenticated share/revoke ordering |
+| [tests/planning/simulation.browser.mjs](../tests/planning/simulation.browser.mjs)             | Browser     | Primary-action hover contrast, initial Close-focus arrows, fresh seat/waitlist reads, automatic/fixed alternatives and fitted responsive saving                                                    |
+| [tests/planning/workspaces.browser.mjs](../tests/planning/workspaces.browser.mjs)             | Browser     | Independent plans, semester-bound favorites import/export, manual labels and shared-plan copying across responsive layouts                                                                         |
 
 The seven `.test.mjs` files above run through `pnpm test` or individually with `node --test <script>`. They use controlled local inputs and no network service. The sharing integration test runs migrations and permission/expiry/quota checks in an in-memory PGlite database; it needs no external database or opt-in flag. The workflow diagnostic test creates and removes temporary log/summary files. The other unit tests use in-memory storage without persistent writes.
+
+For a focused calendar layout check, set `CALENDAR_TEST_WIDTH` to `320`, `375`, `390`, `768` or `1440`. Leave it unset for all five viewports. The mocked authenticated sharing lifecycle still runs.
 
 The three browser scripts require a running local app and the shared Playwright/Chromium configuration described above. They use separate browser contexts and mock every API request; they write synthetic browser storage and screenshot artifacts, without production writes or external-source requests. Configure their base URL and output variables from the table above; the workspaces output variable differs from the simulation output variable.
 
@@ -136,6 +138,8 @@ node tests/planning/workspaces.browser.mjs
 
 | Script                                                                                                  | Type        | Purpose                                                                                                         |
 | ------------------------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| [tests/calendar/presentation.test.mjs](../tests/calendar/presentation.test.mjs)                         | Unit        | Full mobile course labels, compact same-day/all-day ranges and active-share expiry boundaries                   |
+| [tests/planning/simulation-availability.test.mjs](../tests/planning/simulation-availability.test.mjs)   | Unit        | Fresh per-run official reads, bounded concurrency, cancellation, stale-value clearing and seat/waitlist states  |
 | [tests/catalog/availability.test.mjs](../tests/catalog/availability.test.mjs)                           | Unit        | live-only enrollment availability                                                                               |
 | [tests/catalog/browser-transport.test.mjs](../tests/catalog/browser-transport.test.mjs)                 | Unit        | normalizes direct search data and enriches it only from the local evaluation database                           |
 | [tests/catalog/detail-refresh.test.mjs](../tests/catalog/detail-refresh.test.mjs)                       | Unit        | course metadata loads once, retains identifiers and never validates search placeholders                         |
@@ -555,7 +559,7 @@ Browser regression: open a new collection, search in both languages, filter cate
 
 - `tests/planning/import-profile.test.mjs` checks minimal report selection, explicit Official/Planned mode and program headers. Run `node --test tests/planning/import-profile.test.mjs`. Synthetic input, no network or writes.
 
-- `tests/planning/course-catalog.test.mjs` checks identifier allowlists, shared reads, variable credits and inherited prerequisite prefixes. Run `node --test tests/planning/course-catalog.test.mjs`. Mock transport, no network or writes.
+- `tests/planning/course-catalog.test.mjs` checks identifier allowlists, shared reads, failure retries without evicting successful metadata, variable credits and inherited prerequisite prefixes. Run `node --test tests/planning/course-catalog.test.mjs`. Mock transport, no network or writes.
 
 - `tests/planning/workspace.test.mjs` checks duplicate-safe placement, protected records across sources and semester defaults. Run `node --test tests/planning/workspace.test.mjs`. Synthetic input, no network or writes.
 

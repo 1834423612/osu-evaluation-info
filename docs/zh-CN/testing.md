@@ -61,15 +61,15 @@ RMP_RESEARCH_DATABASE_TEST=1 python3 -m unittest tests.test_identity_research_db
 
 先启动开发服务，或 build 后 start。`.browser.mjs` 是独立脚本，不包含在 `pnpm test` 中；需安装 Playwright、Chromium 及其系统依赖。环境无法解析模块时，`PLAYWRIGHT_MODULE` 可指定绝对模块文件 URL，`PLAYWRIGHT_CHROMIUM_EXECUTABLE` 可指定浏览器程序。
 
-| 分类           | 地址／输出变量                                                 | 数据与网络                                              |
-| -------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
-| 导航           | `NAV_TEST_BASE_URL`、`NAV_TEST_OUTPUT`                         | 模拟数据不可用，真实操作导航、表单和键盘                |
-| RMP            | `RMP_TEST_BASE_URL`、`RMP_TEST_OUTPUT`                         | 教师库／线索读取真实本地 API；分区布局使用夹具          |
-| 大纲           | `SYLLABUS_TEST_BASE_URL`、`SYLLABUS_TEST_OUTPUT`               | 体验使用夹具，真实布局读取保存正文，字体直连官方 CDN    |
-| 搜索           | `SEARCH_TEST_BASE_URL`、`SEARCH_TEST_OUTPUT`                   | 精确直连／索引回退使用确定性响应                        |
-| 日历工作区     | `CALENDAR_TEST_BASE_URL`、`CALENDAR_SCREENSHOT_DIR`            | 隔离的合成日历，全部 API 请求使用模拟响应               |
-| 模拟排课       | `PLANNING_TEST_BASE_URL`、`PLANNING_SCREENSHOT_DIR`            | 合成可选班次，全部 API 请求使用模拟响应                 |
-| 独立规划工作区 | `PLANNING_TEST_BASE_URL`、`PLANNING_WORKSPACES_SCREENSHOT_DIR` | 独立方案、收藏及公开方案转存，全部 API 请求使用模拟响应 |
+| 分类           | 地址／输出变量                                                             | 数据与网络                                              |
+| -------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 导航           | `NAV_TEST_BASE_URL`、`NAV_TEST_OUTPUT`                                     | 模拟数据不可用，真实操作导航、表单和键盘                |
+| RMP            | `RMP_TEST_BASE_URL`、`RMP_TEST_OUTPUT`                                     | 教师库／线索读取真实本地 API；分区布局使用夹具          |
+| 大纲           | `SYLLABUS_TEST_BASE_URL`、`SYLLABUS_TEST_OUTPUT`                           | 体验使用夹具，真实布局读取保存正文，字体直连官方 CDN    |
+| 搜索           | `SEARCH_TEST_BASE_URL`、`SEARCH_TEST_OUTPUT`                               | 精确直连／索引回退使用确定性响应                        |
+| 日历工作区     | `CALENDAR_TEST_BASE_URL`、`CALENDAR_SCREENSHOT_DIR`、`CALENDAR_TEST_WIDTH` | 隔离的合成日历，全部 API 请求使用模拟响应               |
+| 模拟排课       | `PLANNING_TEST_BASE_URL`、`PLANNING_SCREENSHOT_DIR`                        | 合成可选班次，全部 API 请求使用模拟响应                 |
+| 独立规划工作区 | `PLANNING_TEST_BASE_URL`、`PLANNING_WORKSPACES_SCREENSHOT_DIR`             | 独立方案、收藏及公开方案转存，全部 API 请求使用模拟响应 |
 
 其他脚本的专用变量在文件开头列出，默认通常为 localhost:3000 与临时输出目录。使用独立浏览器上下文：测试会更改本机收藏／偏好、拦截请求，并可能下载文件，不会发布评价或投票。翻译和引导使用受控模型响应，模型下载相关检查应使用隔离浏览器配置。
 
@@ -88,22 +88,24 @@ Windows 测试进程无法解析 Linux 包链接时，`FONT_TEST_DOCUMENT_FILE` 
 
 ### 新增规划、日历与分享检查
 
-| 脚本                                                                                             | 类型   | 目的                                                                         |
-| ------------------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------- |
-| [tests/planning/scenarios.test.mjs](../../tests/planning/scenarios.test.mjs)                     | 单元   | 独立方案隔离、合并恢复、账号日历归属、公开副本白名单及旧版读取／新版写入兼容 |
-| [tests/planning/sharing.test.mjs](../../tests/planning/sharing.test.mjs)                         | 集成   | 内存 PGlite 验证能力链接权限、所有者撤销、过期、容量与规划快照脱敏           |
-| [tests/planning/favorites.test.mjs](../../tests/planning/favorites.test.mjs)                     | 单元   | 混合收藏导入课程、避免重复移动及保留历史课程事实                             |
-| [tests/planning/favorites-export.test.mjs](../../tests/planning/favorites-export.test.mjs)       | 单元   | 收藏与分类的原子转存、容量校验及本地存储失败回滚                             |
-| [tests/planning/course-status.test.mjs](../../tests/planning/course-status.test.mjs)             | 单元   | 个人注册标注独立保存、原状态保留及刷新报告后保留标注                         |
-| [tests/user-data/share-groups.test.mjs](../../tests/user-data/share-groups.test.mjs)             | 单元   | 课程／学期／校区分组、教师身份隔离及旧版父课程上下文的保守恢复               |
-| [tests/catalog/workflow-diagnostics.test.mjs](../../tests/catalog/workflow-diagnostics.test.mjs) | 单元   | 可定位的工作流注解与摘要、覆盖率差异表、日志上限及凭据／命令注入保护         |
-| [tests/calendar/workspace.browser.mjs](../../tests/calendar/workspace.browser.mjs)               | 浏览器 | 来源与日历受限滚动、密集日程点选、颜色及多次提醒保存／导出                   |
-| [tests/planning/simulation.browser.mjs](../../tests/planning/simulation.browser.mjs)             | 浏览器 | 自动／固定班次、方案切换、适应空间的周视图及响应式课表保存                   |
-| [tests/planning/workspaces.browser.mjs](../../tests/planning/workspaces.browser.mjs)             | 浏览器 | 独立方案、按学期导入／转存收藏、个人标注及跨响应式布局转存分享方案           |
+| 脚本                                                                                             | 类型   | 目的                                                                                               |
+| ------------------------------------------------------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------- |
+| [tests/planning/scenarios.test.mjs](../../tests/planning/scenarios.test.mjs)                     | 单元   | 独立方案隔离、合并恢复、账号日历归属、公开副本白名单及旧版读取／新版写入兼容                       |
+| [tests/planning/sharing.test.mjs](../../tests/planning/sharing.test.mjs)                         | 集成   | 内存 PGlite 验证能力链接权限、所有者撤销、过期、容量与规划快照脱敏                                 |
+| [tests/planning/favorites.test.mjs](../../tests/planning/favorites.test.mjs)                     | 单元   | 混合收藏导入课程、避免重复移动及保留历史课程事实                                                   |
+| [tests/planning/favorites-export.test.mjs](../../tests/planning/favorites-export.test.mjs)       | 单元   | 收藏与分类的原子转存、容量校验及本地存储失败回滚                                                   |
+| [tests/planning/course-status.test.mjs](../../tests/planning/course-status.test.mjs)             | 单元   | 个人注册标注独立保存、原状态保留及刷新报告后保留标注                                               |
+| [tests/user-data/share-groups.test.mjs](../../tests/user-data/share-groups.test.mjs)             | 单元   | 课程／学期／校区分组、教师身份隔离及旧版父课程上下文的保守恢复                                     |
+| [tests/catalog/workflow-diagnostics.test.mjs](../../tests/catalog/workflow-diagnostics.test.mjs) | 单元   | 可定位的工作流注解与摘要、覆盖率差异表、日志上限及凭据／命令注入保护                               |
+| [tests/calendar/workspace.browser.mjs](../../tests/calendar/workspace.browser.mjs)               | 浏览器 | 受限滚动、混合来源缩略图、初始焦点方向键、卡片快捷操作、手机详情、多次提醒及模拟登录分享／撤销时序 |
+| [tests/planning/simulation.browser.mjs](../../tests/planning/simulation.browser.mjs)             | 浏览器 | 主按钮悬停对比度、关闭按钮焦点方向键、实时余位／候补、自动／固定方案与响应式保存                   |
+| [tests/planning/workspaces.browser.mjs](../../tests/planning/workspaces.browser.mjs)             | 浏览器 | 独立方案、按学期导入／转存收藏、个人标注及跨响应式布局转存分享方案                                 |
 
 上述七个 `.test.mjs` 文件通过 `pnpm test` 运行，也可用 `node --test <脚本>` 单独执行。它们使用受控本地输入，不请求网络服务。分享集成测试在内存 PGlite 数据库中执行迁移与权限、过期、容量检查，不需要外部数据库或启用开关。工作流诊断测试创建并删除临时日志和摘要文件；其他单元测试使用内存存储，不做持久写入。
 
 三个浏览器脚本需要已启动的本地应用，以及上文的 Playwright／Chromium 配置。它们使用独立浏览器上下文，全部 API 请求均为模拟响应，只写入合成浏览器存储和截图产物，不写生产数据或请求外部来源。地址与输出变量见上表；workspaces 使用的输出变量与模拟排课不同。
+
+只检查某个日历布局时，可将 `CALENDAR_TEST_WIDTH` 设为 `320`、`375`、`390`、`768` 或 `1440`。完整验收时不设置此变量，以执行五个尺寸；模拟登录的分享生命周期仍会执行。
 
 ```sh
 node tests/calendar/workspace.browser.mjs
@@ -132,38 +134,40 @@ node tests/planning/workspaces.browser.mjs
 
 ### catalog
 
-| 脚本                                                                                                       | 类型   | 用途                                               |
-| ---------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------- |
-| [tests/catalog/availability.test.mjs](../../tests/catalog/availability.test.mjs)                           | 单元   | 实时席位与归档数据隔离                             |
-| [tests/catalog/browser-transport.test.mjs](../../tests/catalog/browser-transport.test.mjs)                 | 单元   | 官方直连、发现配置与副本回退                       |
-| [tests/catalog/detail-refresh.test.mjs](../../tests/catalog/detail-refresh.test.mjs)                       | 单元   | 详情去重、取消和过期响应隔离                       |
-| [tests/catalog/empty-card.browser.mjs](../../tests/catalog/empty-card.browser.mjs)                         | 浏览器 | 搜索卡片无数据时只显示文本                         |
-| [tests/catalog/exact-search.test.mjs](../../tests/catalog/exact-search.test.mjs)                           | 单元   | 完整课程代码解析与学科筛选                         |
-| [tests/catalog/experience.browser.mjs](../../tests/catalog/experience.browser.mjs)                         | 浏览器 | 完整页面操作、响应式布局与滚动                     |
-| [tests/catalog/filters.browser.mjs](../../tests/catalog/filters.browser.mjs)                               | 浏览器 | 课程筛选层级、选中与移动布局                       |
-| [tests/catalog/floating-controls.test.mjs](../../tests/catalog/floating-controls.test.mjs)                 | 单元   | 回顶等悬浮控件的视口避让                           |
-| [tests/catalog/live-sync.integration.test.mjs](../../tests/catalog/live-sync.integration.test.mjs)         | 集成   | 真实官方全量同步到隔离存储                         |
-| [tests/catalog/official-availability.test.mjs](../../tests/catalog/official-availability.test.mjs)         | 单元   | 固定官方空位地址、限流与匿名请求                   |
-| [tests/catalog/official-exact.test.mjs](../../tests/catalog/official-exact.test.mjs)                       | 单元   | 精确编号、筛选、跨页和校区边界                     |
-| [tests/catalog/permanent-archive.test.mjs](../../tests/catalog/permanent-archive.test.mjs)                 | 单元   | 永久副本不会被旧清理选项删除                       |
-| [tests/catalog/presentation.test.mjs](../../tests/catalog/presentation.test.mjs)                           | 单元   | 学生层级与线上授课显示证据                         |
-| [tests/catalog/ranked-search.test.mjs](../../tests/catalog/ranked-search.test.mjs)                         | 单元   | 字段相关性、排序与分页边界                         |
-| [tests/catalog/related-search.test.mjs](../../tests/catalog/related-search.test.mjs)                       | 单元   | 近似学科与官方请求次数边界                         |
-| [tests/catalog/request-pool.test.mjs](../../tests/catalog/request-pool.test.mjs)                           | 单元   | 请求并发、去重、优先级与取消                       |
-| [tests/catalog/search-debug.browser.mjs](../../tests/catalog/search-debug.browser.mjs)                     | 浏览器 | 调试模拟与真实搜索隔离                             |
-| [tests/catalog/search-query.test.mjs](../../tests/catalog/search-query.test.mjs)                           | 单元   | 学科名、简称、歧义和筛选冲突                       |
-| [tests/catalog/search.browser.mjs](../../tests/catalog/search.browser.mjs)                                 | 浏览器 | 检索页面的匹配、分页与来源                         |
-| [tests/catalog/section-availability.test.mjs](../../tests/catalog/section-availability.test.mjs)           | 单元   | 班次实时空位与课程身份                             |
-| [tests/catalog/active-filters.test.mjs](../../tests/catalog/active-filters.test.mjs)                       | 单元   | 默认校区、取消校区限制与实际筛选计数；无服务或写入 |
-| [tests/catalog/section-filters.test.mjs](../../tests/catalog/section-filters.test.mjs)                     | 单元   | 多个筛选必须匹配同一班次                           |
-| [tests/catalog/smart-search.test.mjs](../../tests/catalog/smart-search.test.mjs)                           | 单元   | 检索规划、回退与原输入保留                         |
-| [tests/catalog/snapshots.integration.test.mjs](../../tests/catalog/snapshots.integration.test.mjs)         | 集成   | 不可变版本、发布与失败恢复                         |
-| [tests/catalog/sync-cli.integration.test.mjs](../../tests/catalog/sync-cli.integration.test.mjs)           | 集成   | 真实命令的断点恢复和损坏数据拒绝                   |
-| [tests/catalog/sync-safety.test.mjs](../../tests/catalog/sync-safety.test.mjs)                             | 单元   | 同步分页、计数和安全发布                           |
-| [tests/catalog/term-archives.integration.test.mjs](../../tests/catalog/term-archives.integration.test.mjs) | 集成   | 学期消失、删改和历史恢复                           |
-| [tests/catalog/transactions.test.mjs](../../tests/catalog/transactions.test.mjs)                           | 单元   | 事务提交、回滚与版本边界                           |
-| [tests/catalog/watch-selection.test.mjs](../../tests/catalog/watch-selection.test.mjs)                     | 单元   | 班次监控选择与本机偏好                             |
-| [tests/catalog/workflow.test.mjs](../../tests/catalog/workflow.test.mjs)                                   | 单元   | 计划任务和同步运行约束                             |
+| 脚本                                                                                                       | 类型   | 用途                                                       |
+| ---------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------- |
+| [tests/calendar/presentation.test.mjs](../../tests/calendar/presentation.test.mjs)                         | 单元   | 手机完整课号、同日／全天紧凑时间和有效分享过期边界         |
+| [tests/planning/simulation-availability.test.mjs](../../tests/planning/simulation-availability.test.mjs)   | 单元   | 每次模拟实时读取、受限并发、取消、清除旧值及余位／候补状态 |
+| [tests/catalog/availability.test.mjs](../../tests/catalog/availability.test.mjs)                           | 单元   | 实时席位与归档数据隔离                                     |
+| [tests/catalog/browser-transport.test.mjs](../../tests/catalog/browser-transport.test.mjs)                 | 单元   | 官方直连、发现配置与副本回退                               |
+| [tests/catalog/detail-refresh.test.mjs](../../tests/catalog/detail-refresh.test.mjs)                       | 单元   | 详情去重、取消和过期响应隔离                               |
+| [tests/catalog/empty-card.browser.mjs](../../tests/catalog/empty-card.browser.mjs)                         | 浏览器 | 搜索卡片无数据时只显示文本                                 |
+| [tests/catalog/exact-search.test.mjs](../../tests/catalog/exact-search.test.mjs)                           | 单元   | 完整课程代码解析与学科筛选                                 |
+| [tests/catalog/experience.browser.mjs](../../tests/catalog/experience.browser.mjs)                         | 浏览器 | 完整页面操作、响应式布局与滚动                             |
+| [tests/catalog/filters.browser.mjs](../../tests/catalog/filters.browser.mjs)                               | 浏览器 | 课程筛选层级、选中与移动布局                               |
+| [tests/catalog/floating-controls.test.mjs](../../tests/catalog/floating-controls.test.mjs)                 | 单元   | 回顶等悬浮控件的视口避让                                   |
+| [tests/catalog/live-sync.integration.test.mjs](../../tests/catalog/live-sync.integration.test.mjs)         | 集成   | 真实官方全量同步到隔离存储                                 |
+| [tests/catalog/official-availability.test.mjs](../../tests/catalog/official-availability.test.mjs)         | 单元   | 固定官方空位地址、限流与匿名请求                           |
+| [tests/catalog/official-exact.test.mjs](../../tests/catalog/official-exact.test.mjs)                       | 单元   | 精确编号、筛选、跨页和校区边界                             |
+| [tests/catalog/permanent-archive.test.mjs](../../tests/catalog/permanent-archive.test.mjs)                 | 单元   | 永久副本不会被旧清理选项删除                               |
+| [tests/catalog/presentation.test.mjs](../../tests/catalog/presentation.test.mjs)                           | 单元   | 学生层级与线上授课显示证据                                 |
+| [tests/catalog/ranked-search.test.mjs](../../tests/catalog/ranked-search.test.mjs)                         | 单元   | 字段相关性、排序与分页边界                                 |
+| [tests/catalog/related-search.test.mjs](../../tests/catalog/related-search.test.mjs)                       | 单元   | 近似学科与官方请求次数边界                                 |
+| [tests/catalog/request-pool.test.mjs](../../tests/catalog/request-pool.test.mjs)                           | 单元   | 请求并发、去重、优先级与取消                               |
+| [tests/catalog/search-debug.browser.mjs](../../tests/catalog/search-debug.browser.mjs)                     | 浏览器 | 调试模拟与真实搜索隔离                                     |
+| [tests/catalog/search-query.test.mjs](../../tests/catalog/search-query.test.mjs)                           | 单元   | 学科名、简称、歧义和筛选冲突                               |
+| [tests/catalog/search.browser.mjs](../../tests/catalog/search.browser.mjs)                                 | 浏览器 | 检索页面的匹配、分页与来源                                 |
+| [tests/catalog/section-availability.test.mjs](../../tests/catalog/section-availability.test.mjs)           | 单元   | 班次实时空位与课程身份                                     |
+| [tests/catalog/active-filters.test.mjs](../../tests/catalog/active-filters.test.mjs)                       | 单元   | 默认校区、取消校区限制与实际筛选计数；无服务或写入         |
+| [tests/catalog/section-filters.test.mjs](../../tests/catalog/section-filters.test.mjs)                     | 单元   | 多个筛选必须匹配同一班次                                   |
+| [tests/catalog/smart-search.test.mjs](../../tests/catalog/smart-search.test.mjs)                           | 单元   | 检索规划、回退与原输入保留                                 |
+| [tests/catalog/snapshots.integration.test.mjs](../../tests/catalog/snapshots.integration.test.mjs)         | 集成   | 不可变版本、发布与失败恢复                                 |
+| [tests/catalog/sync-cli.integration.test.mjs](../../tests/catalog/sync-cli.integration.test.mjs)           | 集成   | 真实命令的断点恢复和损坏数据拒绝                           |
+| [tests/catalog/sync-safety.test.mjs](../../tests/catalog/sync-safety.test.mjs)                             | 单元   | 同步分页、计数和安全发布                                   |
+| [tests/catalog/term-archives.integration.test.mjs](../../tests/catalog/term-archives.integration.test.mjs) | 集成   | 学期消失、删改和历史恢复                                   |
+| [tests/catalog/transactions.test.mjs](../../tests/catalog/transactions.test.mjs)                           | 单元   | 事务提交、回滚与版本边界                                   |
+| [tests/catalog/watch-selection.test.mjs](../../tests/catalog/watch-selection.test.mjs)                     | 单元   | 班次监控选择与本机偏好                                     |
+| [tests/catalog/workflow.test.mjs](../../tests/catalog/workflow.test.mjs)                                   | 单元   | 计划任务和同步运行约束                                     |
 
 | [tests/catalog/changes.test.mjs](../../tests/catalog/changes.test.mjs) | 单元 | 变化筛选和固定游标校验 |
 | [tests/catalog/changes.integration.test.mjs](../../tests/catalog/changes.integration.test.mjs) | 集成 | 完整快照变化、基线、噪声和只追加保护 |
@@ -548,7 +552,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 
 - `tests/planning/import-profile.test.mjs` 验证最小报告组合、明确的 Official/Planned 视图及专业标题。运行 `node --test tests/planning/import-profile.test.mjs`，仅合成输入，无网络或写入。
 
-- `tests/planning/course-catalog.test.mjs` 验证公开标识白名单、重复查询合并、浮动学分和先修前缀继承。运行 `node --test tests/planning/course-catalog.test.mjs`，模拟传输，无网络或写入。
+- `tests/planning/course-catalog.test.mjs` 验证公开标识白名单、重复查询合并、失败重试与成功元数据缓存、浮动学分和先修前缀继承。运行 `node --test tests/planning/course-catalog.test.mjs`，模拟传输，无网络或写入。
 
 - `tests/planning/workspace.test.mjs` 验证课程位置复用、跨来源修读保护和学期默认值。运行 `node --test tests/planning/workspace.test.mjs`，仅合成输入，无网络或写入。
 
