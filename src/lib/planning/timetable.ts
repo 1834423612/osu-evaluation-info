@@ -83,6 +83,7 @@ export function timetableMeetings(choices: SimulationChoice[]) {
         id: `${choice.key}|${section.classNumber}|${index}`,
         key: choice.key,
         section: section.section,
+        classNumber: section.classNumber,
         component: section.component,
         startDate: meeting?.startDate?.slice(0, 10) ?? null,
         endDate: meeting?.endDate?.slice(0, 10) ?? null,

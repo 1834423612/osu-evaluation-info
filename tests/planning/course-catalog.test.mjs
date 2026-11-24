@@ -103,3 +103,41 @@ test("prerequisite navigation inherits subject prefixes and excludes restriction
     ],
   );
 });
+
+test("failed planning metadata retries while successful course reads stay cached", async () => {
+  const calls = [];
+  let unavailable = true;
+  const reader = createPlanningCatalog(async (url) => {
+    const number = new URL(url, "https://local.test").searchParams.get(
+      "catalog",
+    );
+    calls.push(number);
+    if (number === "4444" && unavailable)
+      return new Response(null, { status: 503 });
+    return Response.json({
+      course: {
+        subject: "CSE",
+        catalogNumber: number,
+        creditsMin: 3,
+        creditsMax: 3,
+      },
+    });
+  });
+  const query = (number) => ({
+    subject: "CSE",
+    number,
+    term: "1272",
+    campus: "COL",
+  });
+  const signal = new AbortController().signal;
+  await reader.read(query("1111"), signal);
+  await assert.rejects(reader.read(query("4444"), signal));
+  unavailable = false;
+  const [cached, retried] = await Promise.all([
+    reader.read(query("1111"), signal),
+    reader.read(query("4444"), signal),
+  ]);
+  assert.equal(cached.course.catalogNumber, "1111");
+  assert.equal(retried.course.catalogNumber, "4444");
+  assert.deepEqual(calls, ["1111", "4444", "4444"]);
+});

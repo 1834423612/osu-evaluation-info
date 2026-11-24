@@ -23,6 +23,11 @@ import { SessionTimeline } from "@/components/calendar/session-timeline";
 import { sessionWeeks } from "@/lib/calendar/session-weeks";
 import { isNoClassDate, type AcademicDay } from "@/lib/calendar/academic";
 import { simulationCourseColors } from "@/lib/planning/simulation-colors";
+import {
+  simulationAvailability,
+  simulationAvailabilityLabel,
+  simulationAvailabilityName,
+} from "@/lib/planning/simulation-availability";
 
 const timeLabel = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -63,6 +68,15 @@ export function SimulationTimetable({
     locale === "zh"
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const sections = new Map(
+    choices.flatMap((choice) =>
+      choice.sections.map(
+        (section) => [`${choice.key}|${section.classNumber}`, section] as const,
+      ),
+    ),
+  );
+  const sectionFor = (meeting: { key: string; classNumber: string }) =>
+    sections.get(`${meeting.key}|${meeting.classNumber}`)!;
   const meetings = timetableMeetings(choices);
   const events = timetableLanes(
     meetings.flatMap((meeting) =>
@@ -210,6 +224,9 @@ export function SimulationTimetable({
                     <div
                       key={meeting.id}
                       className={styles.unscheduledRow}
+                      data-availability={simulationAvailability(
+                        sectionFor(meeting),
+                      )}
                       style={courseStyle(meeting.key)}
                     >
                       <strong>
@@ -227,6 +244,17 @@ export function SimulationTimetable({
                         {meeting.selfPaced
                           ? t("Self-paced online", "线上自主学习")
                           : t("Time TBA", "时间待公布")}
+                      </span>
+                      <span
+                        className={styles.enrollment}
+                        data-availability={simulationAvailability(
+                          sectionFor(meeting),
+                        )}
+                      >
+                        {simulationAvailabilityLabel(
+                          sectionFor(meeting),
+                          locale,
+                        )}
                       </span>
                     </div>
                   );
@@ -273,7 +301,12 @@ export function SimulationTimetable({
               .map((event) => {
                 const split = event.key.lastIndexOf(" "),
                   Icon = deliveryIcons[event.delivery];
-                const label = `${event.key} · ${day} ${timeLabel(event.start)}–${timeLabel(event.end)} · ${deliveryLabel(event.delivery)} · ${courseTitle(event.key) ?? ""} · ${event.location ?? ""} · ${event.section} ${event.session} ${event.sessionDates}`;
+                const state = simulationAvailability(sectionFor(event));
+                const enrollment = simulationAvailabilityLabel(
+                  sectionFor(event),
+                  locale,
+                );
+                const label = `${enrollment} · ${event.key} · ${day} ${timeLabel(event.start)}–${timeLabel(event.end)} · ${deliveryLabel(event.delivery)} · ${courseTitle(event.key) ?? ""} · ${event.location ?? ""} · ${event.section} ${event.session} ${event.sessionDates}`;
                 return (
                   <button
                     type="button"
@@ -287,6 +320,7 @@ export function SimulationTimetable({
                       width: `calc(${100 / event.lanes}% - 4px)`,
                     }}
                     data-delivery={event.delivery}
+                    data-availability={state}
                     data-conflict={conflicted.has(event.key)}
                     data-short={event.end - event.start < 60}
                     data-narrow={event.lanes > 1}
@@ -304,6 +338,11 @@ export function SimulationTimetable({
                       </span>
                       {event.key.slice(split + 1)}
                     </strong>
+                    {state !== "open" && (
+                      <span className={styles.blockAvailability}>
+                        {simulationAvailabilityName(sectionFor(event), locale)}
+                      </span>
+                    )}
                     <span className={styles.blockTime}>
                       {timeLabel(event.start)}–{timeLabel(event.end)}
                     </span>
@@ -322,12 +361,38 @@ export function SimulationTimetable({
         className={styles.courseLegend}
         aria-label={t("Course colors", "课程颜色")}
       >
-        {choices.map((choice) => (
-          <span key={choice.key} style={courseStyle(choice.key)}>
-            <i />
-            {choice.key}
-          </span>
-        ))}
+        {choices.map((choice) => {
+          const states = [
+            ...new Set(choice.sections.map(simulationAvailability)),
+          ];
+          const state =
+            states.find((value) => value === "full" || value === "waitlist") ??
+            states.find((value) => value === "unknown") ??
+            "open";
+          return (
+            <span
+              key={choice.key}
+              style={courseStyle(choice.key)}
+              data-availability={state}
+              title={choice.sections
+                .map(
+                  (section) =>
+                    `${section.section} · ${simulationAvailabilityLabel(section, locale)}`,
+                )
+                .join(" · ")}
+            >
+              <i />
+              {choice.key} ·{" "}
+              {[
+                ...new Set(
+                  choice.sections.map((section) =>
+                    simulationAvailabilityName(section, locale),
+                  ),
+                ),
+              ].join(" / ")}
+            </span>
+          );
+        })}
       </div>
       {selected && (
         <section
@@ -355,6 +420,12 @@ export function SimulationTimetable({
             {selected.key} · {t("Section", "班次")} {selected.section}
           </strong>
           <p>{courseTitle(selected.key)}</p>
+          <span
+            className={styles.enrollment}
+            data-availability={simulationAvailability(sectionFor(selected))}
+          >
+            {simulationAvailabilityLabel(sectionFor(selected), locale)}
+          </span>
           <span>
             <Clock3 size={13} />
             {days[selected.day]} {timeLabel(selected.start)}–

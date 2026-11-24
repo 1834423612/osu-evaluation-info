@@ -49,6 +49,13 @@ import type { AcademicDay } from "@/lib/calendar/academic";
 import { browserUuid } from "@/lib/uuid";
 import { simulationCourseColors } from "@/lib/planning/simulation-colors";
 import { calendarTimeBounds } from "@/lib/calendar/week";
+import { availabilityStore } from "@/lib/catalog/availability-store";
+import { withoutCourseAvailability } from "@/lib/catalog/availability";
+import {
+  refreshSimulationAvailability,
+  simulationAvailability,
+  simulationAvailabilityLabel,
+} from "@/lib/planning/simulation-availability";
 type Result = ReturnType<typeof simulateSchedule>;
 const timeLabel = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -114,6 +121,7 @@ export function SemesterSimulation({
   const [view, setView] = useState("settings");
   const [replaceId, setReplaceId] = useState("");
   const [preview, setPreview] = useState<UserCalendar | null>(null);
+  const root = useRef<HTMLDivElement>(null);
   const navigation = useRef<HTMLElement>(null);
   const previewNavigation = useRef<HTMLElement>(null);
   const savedGroups = useMemo(
@@ -172,6 +180,9 @@ export function SemesterSimulation({
       .catch(() => {});
     return () => controller.abort();
   }, []);
+  const [phase, setPhase] = useState<"courses" | "availability" | "simulation">(
+    "courses",
+  );
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [result, setResult] = useState<{
@@ -196,6 +207,35 @@ export function SemesterSimulation({
   const output = simulation
     ? { ...simulation, ...simulation.alternatives[activeIndex] }
     : null;
+  useEffect(() => {
+    if (preview || !simulation || simulation.alternatives.length < 2) return;
+    const navigate = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const dialog = root.current?.closest('[role="dialog"]');
+      if (
+        !target ||
+        !dialog ||
+        target.closest('[role="dialog"], [role="alertdialog"]') !== dialog ||
+        dialog.closest('[aria-hidden="true"], [inert]') ||
+        target.closest('[role="menu"], [role="menubar"]')
+      )
+        return;
+      const step = navigationStep(event);
+      if (!step) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOptionIndex(
+        Math.max(
+          0,
+          Math.min(simulation.alternatives.length - 1, activeIndex + step),
+        ),
+      );
+      navigation.current?.focus({ preventScroll: true });
+    };
+    // The dialog's default Close focus is a sibling of this component, not its descendant.
+    window.addEventListener("keydown", navigate, true);
+    return () => window.removeEventListener("keydown", navigate, true);
+  }, [preview, simulation, activeIndex]);
   useEffect(
     () => () => {
       request.current?.abort();
@@ -246,11 +286,17 @@ export function SemesterSimulation({
     request.current?.abort();
     worker.current?.terminate();
     setBusy(true);
+    setPhase("courses");
     setMessage("");
+    setResult(null);
     const controller = new AbortController();
     request.current = controller;
     let data = loaded;
-    if (data?.scope !== scope) {
+    if (data?.scope === scope) {
+      data = { ...data, courses: data.courses.map(withoutCourseAvailability) };
+      setLoaded(data);
+    }
+    if (data?.scope !== scope || data.failed.length) {
       const responses = await Promise.allSettled(
         codes.map(async (code) => {
           const split = code.lastIndexOf(" ");
@@ -275,13 +321,34 @@ export function SemesterSimulation({
       data = {
         scope,
         courses: responses.flatMap((r) =>
-          r.status === "fulfilled" ? [r.value] : [],
+          r.status === "fulfilled" ? [withoutCourseAvailability(r.value)] : [],
         ),
         failed: codes.filter((_, i) => responses[i].status === "rejected"),
       };
       setLoaded(data);
     }
     if (controller.signal.aborted) return;
+    setPhase("availability");
+    try {
+      data = {
+        ...data,
+        courses: await refreshSimulationAvailability(
+          data.courses,
+          controller.signal,
+          availabilityStore,
+        ),
+      };
+    } catch {
+      if (controller.signal.aborted) return;
+      setBusy(false);
+      setMessage(
+        t("Could not refresh sections. Try again.", "班次刷新失败，请重试。"),
+      );
+      return;
+    }
+    if (controller.signal.aborted) return;
+    setLoaded(data);
+    setPhase("simulation");
     const selected = fixed;
     const runFingerprint = JSON.stringify([scope, preferences, selected]);
     try {
@@ -334,6 +401,14 @@ export function SemesterSimulation({
     locale === "zh"
       ? ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
       : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const unknownSeats =
+    output?.choices
+      .filter((choice) =>
+        choice.sections.some(
+          (section) => simulationAvailability(section) === "unknown",
+        ),
+      )
+      .map((choice) => choice.key) ?? [];
   const notices = output
     ? [
         ...output.conflicts.map(
@@ -352,6 +427,9 @@ export function SemesterSimulation({
           ? [
               `${t("Closed or waitlisted", "已满或候补班次")} · ${output.restricted.join(" · ")}`,
             ]
+          : []),
+        ...(unknownSeats.length
+          ? [`${t("Seats unknown", "余位未知")} · ${unknownSeats.join(" · ")}`]
           : []),
         ...(output.linked.length
           ? [
@@ -372,19 +450,7 @@ export function SemesterSimulation({
     <div
       className={styles.root}
       data-analytics-area="planning_simulation"
-      onKeyDown={(event) => {
-        if (preview) return;
-        const step = navigationStep(event);
-        if (!step || !output || output.alternatives.length < 2) return;
-        event.preventDefault();
-        setOptionIndex(
-          Math.max(
-            0,
-            Math.min(output.alternatives.length - 1, activeIndex + step),
-          ),
-        );
-        navigation.current?.focus({ preventScroll: true });
-      }}
+      ref={root}
     >
       <div className={styles.heading}>
         <CalendarClock size={20} />
@@ -546,6 +612,7 @@ export function SemesterSimulation({
             </div>
           </section>
           <button
+            type="button"
             className={styles.run}
             data-analytics-action="planning_simulation_run"
             onClick={() => void run()}
@@ -553,7 +620,11 @@ export function SemesterSimulation({
           >
             <RefreshCw size={15} />
             {busy
-              ? t("Simulating…", "正在模拟…")
+              ? phase === "availability"
+                ? t("Updating live seats…", "正在更新官方余位…")
+                : phase === "courses"
+                  ? t("Fetching sections…", "正在获取班次…")
+                  : t("Simulating…", "正在模拟…")
               : t("Fetch sections & simulate", "获取班次并模拟排课")}
           </button>
           <p role="status">
@@ -647,29 +718,40 @@ export function SemesterSimulation({
                                 (m) =>
                                   `${m.days.map((d) => days[d]).join("/")} ${m.startTime && m.endTime ? `${m.startTime}–${m.endTime}` : /distance learning|^DL$/i.test(s.instructionMode) ? t("Self-paced online", "线上自主学习") : t("Time TBA", "时间待定")} · ${{ online: t("Online", "线上"), "in-person": t("In person", "线下"), unknown: t("Mode TBA", "方式待定") }[meetingDelivery(m, s.instructionMode)]} · ${s.session}`,
                               )
-                              .join(" · ")}
+                              .join(" · ") ||
+                              (/distance learning|^DL$/i.test(s.instructionMode)
+                                ? t("Self-paced online", "线上自主学习")
+                                : t("Time TBA", "时间待定"))}
+                            {" · "}
+                            {simulationAvailabilityLabel(s, locale)}
                           </option>
                         ))}
                       </ChoiceSelect>
                       <small className={styles.choiceHint}>
-                        {(fixed[key] ?? []).some((id) =>
-                          group.sections.some((s) => s.classNumber === id),
-                        )
-                          ? t("Pinned section", "已固定班次")
-                          : output?.choices
+                        {(() => {
+                          const pinned = group.sections.filter((section) =>
+                            (fixed[key] ?? []).includes(section.classNumber),
+                          );
+                          const current =
+                            output?.choices
                               .find((choice) => choice.key === key)
-                              ?.sections.filter((s) =>
+                              ?.sections.filter((section) =>
                                 group.sections.some(
-                                  (section) =>
-                                    section.classNumber === s.classNumber,
+                                  (candidate) =>
+                                    candidate.classNumber ===
+                                    section.classNumber,
                                 ),
-                              )
-                              .map(
-                                (s) =>
-                                  `${t("Current", "当前方案")} · ${s.section}`,
-                              )
-                              .join(" · ") ||
-                            t("Any available section", "比较所有可用班次")}
+                              ) ?? [];
+                          const selected = pinned.length ? pinned : current;
+                          return selected.length
+                            ? selected
+                                .map(
+                                  (section) =>
+                                    `${pinned.length ? t("Pinned", "已固定") : t("Current", "当前方案")} · ${section.section} · ${simulationAvailabilityLabel(section, locale)}`,
+                                )
+                                .join(" · ")
+                            : t("Any available section", "比较所有可用班次");
+                        })()}
                       </small>
                     </label>
                   ))}
@@ -766,7 +848,8 @@ export function SemesterSimulation({
                     output.unavailable.length ||
                     output.incomplete.length ||
                     output.restricted.length ||
-                    loaded?.failed.length,
+                    loaded?.failed.length ||
+                    unknownSeats.length,
                   )}
                   data-conflict={output.conflicts.length > 0}
                   role="status"
@@ -776,7 +859,8 @@ export function SemesterSimulation({
                   output.incomplete.length ||
                   output.restricted.length ||
                   output.unavailable.length ||
-                  loaded?.failed.length ? (
+                  loaded?.failed.length ||
+                  unknownSeats.length ? (
                     <AlertTriangle size={18} />
                   ) : (
                     <CheckCircle2 size={18} />
@@ -788,7 +872,8 @@ export function SemesterSimulation({
                           loaded?.failed.length ||
                           output.unavailable.length ||
                           output.incomplete.length ||
-                          output.restricted.length
+                          output.restricted.length ||
+                          unknownSeats.length
                         ? t(
                             "No known conflicts · review details",
                             "已知时间无冲突 · 详情需核对",

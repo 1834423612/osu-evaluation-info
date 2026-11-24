@@ -227,6 +227,18 @@ test("invalid dates do not crash the simulator and closed sections remain flagge
     endDate: "invalid",
   });
   a.enrollmentStatus = "Closed";
+  a.availabilityState = "ready";
+  a.availability = {
+    source: "official-availability",
+    fetchedAt: "2026-11-23T12:00:00Z",
+    isOpen: false,
+    enrollmentStatus: "Closed",
+    enrollmentCapacity: null,
+    enrollmentTotal: null,
+    availableSeats: 0,
+    waitlistCapacity: null,
+    waitlistTotal: null,
+  };
   const result = simulateSchedule(
     [course("1111", [a]), course("2222", [section("b", "09:30", "10:30")])],
     {},
@@ -234,4 +246,35 @@ test("invalid dates do not crash the simulator and closed sections remain flagge
   );
   assert.equal(result.conflicts.length, 1);
   assert.deepEqual(result.restricted, ["CSE 1111"]);
+});
+
+test("verified zero seats and waitlists remain restricted even with missing status text", () => {
+  const current = (id, availability) => ({
+    ...section(id, "09:00", "10:00"),
+    enrollmentStatus: "Open",
+    availabilityState: "ready",
+    availability: {
+      source: "official-availability",
+      fetchedAt: "2026-11-23T12:00:00Z",
+      isOpen: null,
+      enrollmentStatus: "",
+      enrollmentCapacity: 30,
+      enrollmentTotal: 30,
+      availableSeats: 0,
+      waitlistCapacity: 10,
+      waitlistTotal: 0,
+      ...availability,
+    },
+  });
+  const result = simulateSchedule(
+    [
+      course("1111", [current("full", {})]),
+      course("2222", [
+        current("wait", { enrollmentStatus: "Wait List", waitlistTotal: 3 }),
+      ]),
+    ],
+    {},
+    { ...preferences, buffer: 0 },
+  );
+  assert.deepEqual(result.restricted, ["CSE 1111", "CSE 2222"]);
 });

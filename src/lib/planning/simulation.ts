@@ -4,6 +4,7 @@ import type {
   CatalogSection,
 } from "../catalog/types";
 import { minuteOfDay } from "../catalog/section-filters.ts";
+import { simulationAvailability } from "./simulation-availability.ts";
 export type BlockedTime = { days: number[]; start: number; end: number };
 export type SimulationPreferences = {
   blocked: BlockedTime[];
@@ -161,7 +162,8 @@ function scheduleCost(
     diagnostics.unknown.length * 10000 +
     choices
       .flatMap((c) => c.sections)
-      .filter((s) => /closed|wait/i.test(s.enrollmentStatus)).length *
+      .filter((s) => ["full", "waitlist"].includes(simulationAvailability(s)))
+      .length *
       1000 +
     (preferences.compact ? gaps + days * 30 : 0)
   );
@@ -220,7 +222,9 @@ export function simulateSchedule(
     ...simulationDiagnostics(choices, preferences),
     restricted: choices
       .filter((choice) =>
-        choice.sections.some((s) => /closed|wait/i.test(s.enrollmentStatus)),
+        choice.sections.some((s) =>
+          ["full", "waitlist"].includes(simulationAvailability(s)),
+        ),
       )
       .map((choice) => choice.key),
   }));

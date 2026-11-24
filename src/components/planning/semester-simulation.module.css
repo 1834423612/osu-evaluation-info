@@ -53,8 +53,16 @@
   border-color: transparent;
   color: white;
 }
-.root .run:hover {
-  filter: brightness(1.1);
+.root button.run:hover,
+.root button.run:focus-visible,
+.root button.run:active {
+  background: color-mix(in srgb, var(--primary) 90%, black);
+  color: white;
+}
+.root button.run:disabled {
+  background: var(--primary);
+  color: white;
+  opacity: 1;
 }
 .root [data-conflict="true"] {
   background: #fff0ee;
@@ -547,6 +555,27 @@
   font-size: 10px;
   font-weight: 650;
 }
+.blockAvailability {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+  font-weight: 600;
+}
+.enrollment {
+  font-size: 10px;
+  color: var(--muted);
+}
+.enrollment[data-availability="full"],
+.enrollment[data-availability="waitlist"],
+.courseLegend [data-availability="full"],
+.courseLegend [data-availability="waitlist"] {
+  color: #a4352a;
+}
+.enrollment[data-availability="unknown"] {
+  color: #966817;
+}
 .blockTime {
   display: block;
   font-size: 9px;
@@ -562,6 +591,9 @@
 .timeBlock[data-delivery="online"] {
   border-style: dashed;
 }
+.timeBlock[data-availability="full"] .blockTime,
+.timeBlock[data-availability="waitlist"] .blockTime,
+.timeBlock[data-availability="unknown"] .blockTime,
 .timeBlock[data-short="true"] .blockTime,
 .timeBlock[data-short="true"] .blockDelivery,
 .timeBlock[data-narrow="true"] .blockSubject {

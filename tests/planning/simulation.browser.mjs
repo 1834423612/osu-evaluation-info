@@ -8,6 +8,7 @@ import {
 } from "../../src/lib/planning/model.ts";
 import { addPlanningCourse } from "../../src/lib/planning/workspace.ts";
 import { easternMinutes } from "../../src/lib/calendar/week.ts";
+import { officialEndpointPlan } from "../../src/lib/catalog/official-endpoints.ts";
 import { course, section } from "../user-data/fixtures.mjs";
 
 const { chromium } = await import(
@@ -33,14 +34,16 @@ for (const number of ["1111", "2222", "3333", "4444"])
 // An imported section must not silently pin the simulation's automatic choice.
 plan.semesters[0].courses[1].section = "LATE";
 plan = planSchema.parse(plan);
-const timed = (id, start, end) => ({
+const timed = (id, start, end, days = [0, 2]) => ({
   ...section,
   classNumber: id,
   section: id.toUpperCase(),
+  courseOfferingNumber: "1",
+  termCode: "1272",
   meetings: [
     {
       ...section.meetings[0],
-      days: [0, 2],
+      days,
       startTime: start,
       endTime: end,
       startDate: "2027-01-11",
@@ -58,6 +61,8 @@ const catalog = [
         ...section,
         classNumber: "online",
         section: "online",
+        courseOfferingNumber: "1",
+        termCode: "1272",
         instructionMode: "Distance Learning",
         meetings: [],
       },
@@ -80,6 +85,8 @@ const catalog = [
           },
         ],
       },
+      // Keep the added component on a separate day so Near/Late ranking stays unchanged.
+      { ...timed("lab", "14:00", "15:00", [1]), component: "Laboratory" },
     ],
   ],
 ].map(([number, sections]) => ({
@@ -88,6 +95,7 @@ const catalog = [
   subject: "CSE",
   subjectName: "Computer Science and Engineering",
   catalogNumber: number,
+  courseId: number,
   title: `Course ${number} with a long, readable title`,
   termCode: "1272",
   term: "Spring 2027",
@@ -113,6 +121,10 @@ try {
     const consoleErrors = [];
     const workerUrls = [],
       failedAssets = [];
+    let availabilityRound = 0;
+    const availabilityReads = [];
+    let unavailableMetadata = width === 1440;
+    const courseReads = [];
     await context.addInitScript(
       ({ plan, key, locale }) => {
         localStorage.setItem("course-atlas:locale:v1", locale);
@@ -126,16 +138,55 @@ try {
     );
     await context.route("**/*", (route) => {
       const url = new URL(route.request().url());
-      if (url.origin !== base.origin || url.pathname.startsWith("/_vercel"))
-        return route.abort();
-      if (url.pathname === "/api/catalog/course")
+      if (
+        url.href.startsWith("https://content.osu.edu/v2/classes/availability?")
+      ) {
+        const selected = url.searchParams.get("classSection");
+        availabilityReads.push({ round: availabilityRound, section: selected });
+        if (availabilityRound === 1 && selected === "LATE")
+          return route.fulfill({
+            status: 503,
+            json: { error: "Live read failed" },
+          });
+        const full = availabilityRound === 1 && selected === "FIXED";
+        const waitlist = availabilityRound === 1 && selected === "online";
         return route.fulfill({
           json: {
-            course: catalog.find(
-              (c) => c.catalogNumber === url.searchParams.get("catalog"),
-            ),
+            status: "success",
+            data: {
+              availability: {
+                isOpen: !full && !waitlist,
+                enrollmentStatus: waitlist
+                  ? "Wait List"
+                  : full
+                    ? "Closed"
+                    : "Open",
+                enrollmentCapacity: 30,
+                enrollmentTotal: full || waitlist ? 30 : 22,
+                availableSeats: full || waitlist ? 0 : 8,
+                waitlistCapacity: 10,
+                waitlistTotal: waitlist ? 3 : 0,
+              },
+            },
           },
         });
+      }
+      if (url.origin !== base.origin || url.pathname.startsWith("/_vercel"))
+        return route.abort();
+      if (url.pathname === "/api/catalog/course") {
+        const number = url.searchParams.get("catalog");
+        if (number) courseReads.push(number);
+        if (unavailableMetadata && number === "4444")
+          return route.fulfill({
+            status: 503,
+            json: { error: "Course metadata temporarily unavailable" },
+          });
+        return route.fulfill({
+          json: { course: catalog.find((c) => c.catalogNumber === number) },
+        });
+      }
+      if (url.pathname === "/api/catalog/availability")
+        return route.fulfill({ json: officialEndpointPlan("availability") });
       if (url.pathname === "/api/calendar/academic")
         return route.fulfill({ json: { days: [] } });
       if (url.pathname.startsWith("/api/"))
@@ -204,6 +255,75 @@ try {
       );
       throw error;
     });
+    const close = dialog
+      .getByRole("button", {
+        name: t("Close", "关闭"),
+        exact: true,
+      })
+      .last();
+    if (width > 600)
+      assert.equal(
+        await close.evaluate((element) => document.activeElement === element),
+        true,
+        "main simulation initially focuses its Close button",
+      );
+    const runBackground = await run.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    );
+    await run.hover();
+    await run.evaluate(async (element) => {
+      await new Promise(requestAnimationFrame);
+      await Promise.all(
+        element
+          .getAnimations()
+          .filter((animation) =>
+            Number.isFinite(animation.effect?.getComputedTiming().endTime),
+          )
+          .map((animation) => animation.finished.catch(() => {})),
+      );
+    });
+    const hovered = await run.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      const channel = (value) => {
+        const x = value / 255;
+        return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+      };
+      const luminance = (color) => {
+        const values = color
+          .match(/[\d.]+/g)
+          .slice(0, 3)
+          .map(Number)
+          .map((value) =>
+            color.startsWith("color(srgb") ? value * 255 : value,
+          )
+          .map(channel);
+        return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722;
+      };
+      const light = luminance(style.color),
+        dark = luminance(style.backgroundColor);
+      return {
+        background: style.backgroundColor,
+        contrast:
+          (Math.max(light, dark) + 0.05) / (Math.min(light, dark) + 0.05),
+        visible:
+          box.width > 0 &&
+          box.height > 0 &&
+          style.visibility === "visible" &&
+          Number(style.opacity) > 0,
+        hit: element.contains(
+          document.elementFromPoint(
+            box.x + box.width / 2,
+            box.y + box.height / 2,
+          ),
+        ),
+      };
+    });
+    assert.ok(
+      hovered.visible && hovered.hit && hovered.contrast >= 4.5,
+      `simulate action remains visible and readable on hover: ${JSON.stringify({ runBackground, ...hovered })}`,
+    );
+    assert.equal(await dialog.isVisible(), true);
     await run.click();
     const options = dialog.getByRole("navigation", {
       name: t("Timetable alternatives", "可选时间表"),
@@ -230,6 +350,51 @@ try {
         );
         throw error;
       });
+    if (unavailableMetadata) {
+      assert.match(
+        await dialog.innerText(),
+        /This semester's sections are unavailable for.*CSE 4444/,
+      );
+      assert.equal(await dialog.getByLabel(/CSE 4444.*17:00–18:00/).count(), 0);
+      const failedReads = courseReads.filter(
+        (number) => number === "4444",
+      ).length;
+      const successfulReads = courseReads.filter((number) => number !== "4444");
+      unavailableMetadata = false;
+      availabilityReads.length = 0;
+      await run.click();
+      await dialog.getByLabel(/CSE 4444.*17:00–18:00/).waitFor();
+      assert.ok(
+        courseReads.filter((number) => number === "4444").length > failedReads,
+        "a second run retries failed course metadata in the same semester scope",
+      );
+      assert.deepEqual(
+        courseReads.filter((number) => number !== "4444"),
+        successfulReads,
+        "successful course metadata stays cached while failed courses retry",
+      );
+      await options
+        .getByText(t("Schedule 1 / 2", "方案 1 / 2"), { exact: true })
+        .waitFor();
+    }
+    await close.focus();
+    await page.keyboard.press("ArrowRight");
+    await options
+      .getByText(t("Schedule 2 / 2", "方案 2 / 2"), { exact: true })
+      .waitFor();
+    await close.focus();
+    await page.keyboard.press("ArrowLeft");
+    await options
+      .getByText(t("Schedule 1 / 2", "方案 1 / 2"), { exact: true })
+      .waitFor();
+    assert.deepEqual(
+      availabilityReads
+        .filter((read) => read.round === 0)
+        .map((read) => read.section)
+        .sort(),
+      ["FIXED", "LAB", "LATE", "NEAR", "SESSION2", "online"],
+      "first simulation refreshes every section including fixed and asynchronous courses",
+    );
     const frame = dialog.locator("[data-simulation-timetable]");
     const initialFrame = await frame.evaluate((element) => [
       element.dataset.timeStart,
@@ -389,11 +554,41 @@ try {
       .getByRole("option")
       .filter({ hasText: /^LATE ·/ })
       .click();
+    availabilityRound = 1;
     await run.click();
     await options
       .getByText(t("Schedule 1 / 1", "方案 1 / 1"), { exact: true })
       .waitFor();
     assert.equal(await next.isDisabled(), true);
+    assert.deepEqual(
+      availabilityReads
+        .filter((read) => read.round === 1)
+        .map((read) => read.section)
+        .sort(),
+      ["FIXED", "LAB", "LATE", "NEAR", "SESSION2", "online"],
+      "each run refreshes all sections and every selected component",
+    );
+    assert.equal(
+      (await frame.locator('[data-availability="full"]').count()) >= 1,
+      true,
+      "full fixed sections are visibly marked on the timetable",
+    );
+    assert.equal(
+      (await frame.locator('[data-availability="waitlist"]').count()) >= 1,
+      true,
+      "asynchronous waitlisted sections stay visible in the timetable legend",
+    );
+    assert.equal(
+      (await frame.locator('[data-availability="unknown"]').count()) >= 1,
+      true,
+      "failed reads replace previously open seats with unknown",
+    );
+    await frame.locator("summary").click();
+    assert.match(
+      await frame.innerText(),
+      /Waitlist available · 0 seats · 3\/10|可候补 · 余位 0 · 3\/10/,
+    );
+    await frame.locator("summary").click();
     if (width <= 850)
       await dialog
         .getByRole("button", {
@@ -408,6 +603,7 @@ try {
       })
       .click();
     assert.match(await select.innerText(), /Automatic|自动/);
+    availabilityRound = 2;
     await run.click();
     await options
       .getByText(t("Schedule 1 / 2", "方案 1 / 2"), { exact: true })
@@ -443,6 +639,11 @@ try {
         exact: true,
       })
       .locator("..");
+    const retainedOptions = dialog.getByRole("navigation", {
+      name: t("Timetable alternatives", "可选时间表"),
+      includeHidden: true,
+    });
+    const mainCandidate = await retainedOptions.textContent();
     await savedGroups.getByRole("button").first().click();
     const savedOptions = page.getByRole("navigation", {
       name: t("Saved schedule alternatives", "已保存课表切换"),
@@ -477,6 +678,15 @@ try {
     await page.screenshot({
       path: resolve(out, `saved-simulation-${width}-${locale}.png`),
     });
+    await savedDialog
+      .getByRole("button", { name: t("Close", "关闭"), exact: true })
+      .last()
+      .click();
+    assert.equal(
+      await retainedOptions.textContent(),
+      mainCandidate,
+      "saved-preview arrow keys cannot also move the underlying main simulation",
+    );
     assert.deepEqual(errors, []);
     await context.close();
     console.log(
