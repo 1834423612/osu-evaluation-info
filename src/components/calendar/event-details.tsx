@@ -1,6 +1,6 @@
 "use client";
 import { Popover } from "radix-ui";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import {
   CalendarDays,
   Clock3,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { CalendarEvent } from "@/lib/calendar/model";
 import type { Locale } from "@/lib/i18n";
+import { calendarEventWhen } from "@/lib/calendar/presentation";
 import { Button } from "@/components/ui/button";
 import styles from "./event-details.module.css";
 export type CalendarEventPreview = {
@@ -36,28 +37,15 @@ export function EventDetails({
   onCopy?: (event: CalendarEvent) => void;
 }) {
   const openingEditor = useRef(false);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
   const opener = useRef<HTMLElement | undefined>(undefined);
   useEffect(() => {
     if (preview?.opener) opener.current = preview.opener;
   }, [preview]);
   const event = preview?.event,
     zh = locale === "zh";
-  const date = (value: string) =>
-    new Intl.DateTimeFormat(zh ? "zh-CN" : "en-US", {
-      timeZone: event?.allDay ? "UTC" : "America/New_York",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      weekday: "short",
-      ...(event?.allDay ? {} : { hour: "numeric", minute: "2-digit" }),
-    }).format(new Date(value));
-  const end = event?.allDay
-    ? new Date(
-        Date.parse(event.end) + (event.end > event.start ? -86400000 : 0),
-      )
-        .toISOString()
-        .slice(0, 10)
-    : event?.end;
+  const when = event ? calendarEventWhen(event, locale) : null;
   const online =
     !!event && /online|distance learning|zoom/i.test(event.location);
   return (
@@ -79,6 +67,10 @@ export function EventDetails({
         <Popover.Content
           className={`${styles.panel} rr-block`}
           data-telemetry-private
+          onOpenAutoFocus={(opening) => {
+            opening.preventDefault();
+            closeButton.current?.focus();
+          }}
           onCloseAutoFocus={(close) => {
             close.preventDefault();
             if (!openingEditor.current && opener.current?.isConnected)
@@ -89,7 +81,7 @@ export function EventDetails({
           collisionPadding={12}
           align="start"
           role="dialog"
-          aria-label={event?.title}
+          aria-labelledby={titleId}
         >
           {event && (
             <>
@@ -125,6 +117,7 @@ export function EventDetails({
                     <Button
                       variant="ghost"
                       size="icon-sm"
+                      ref={closeButton}
                       aria-label={zh ? "关闭日程详情" : "Close event details"}
                     >
                       <X size={16} />
@@ -132,7 +125,7 @@ export function EventDetails({
                   </Popover.Close>
                 </div>
               </header>
-              <h2>{event.title}</h2>
+              <h2 id={titleId}>{event.title}</h2>
               {preview?.readOnly &&
                 !event.id.startsWith("official-") &&
                 onCopy && (
@@ -152,10 +145,10 @@ export function EventDetails({
               <div className={styles.fact}>
                 <Clock3 size={16} />
                 <div>
-                  <strong>
-                    {date(event.start)}
-                    {end && end !== event.start ? " — " + date(end) : ""}
-                  </strong>
+                  <strong>{when?.date}</strong>
+                  {when?.time && (
+                    <span className={styles.time}>{when.time}</span>
+                  )}
                   <small>
                     {event.allDay
                       ? zh

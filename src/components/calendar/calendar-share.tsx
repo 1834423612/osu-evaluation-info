@@ -26,6 +26,7 @@ import { copyLink } from "@/lib/saved/share-links";
 import { notify } from "@/lib/notify";
 import type { UserCalendar } from "@/lib/calendar/model";
 import type { Locale } from "@/lib/i18n";
+import type { CalendarShareStatus } from "@/lib/calendar/presentation";
 import styles from "./calendar-share.module.css";
 const categories = ["class", "assignment", "exam", "holiday", "event"];
 const labels = ["课程", "作业", "考试", "假日", "个人日程"];
@@ -40,14 +41,19 @@ export function CalendarShare({
   selected,
   locale,
   persist,
+  onClose,
+  onSharesChange,
 }: {
   calendars: UserCalendar[];
   selected: string;
   locale: Locale;
   persist: () => Promise<boolean>;
+  onClose: () => void;
+  onSharesChange: (links: CalendarShareStatus[]) => void;
 }) {
   const t = (en: string, zh: string) => (locale === "zh" ? zh : en);
   const generation = useRef(0);
+  const listRevision = useRef(0);
   const initialSettings = useRef({
     kinds: [...categories],
     nickname: "",
@@ -59,35 +65,44 @@ export function CalendarShare({
     },
     [],
   );
-  const [open, setOpen] = useState(false),
-    [ids, setIds] = useState<string[]>([]),
+  const [ids, setIds] = useState<string[]>(
+      calendars.some((calendar) => calendar.id === selected) ? [selected] : [],
+    ),
     [kinds, setKinds] = useState([...categories]),
     [nickname, setNickname] = useState(""),
     [expiry, setExpiry] = useState("604800");
   const [links, setLinks] = useState<SavedLink[]>([]),
     [current, setCurrent] = useState<SavedLink | null>(null),
     [busy, setBusy] = useState(false),
-    [loading, setLoading] = useState(false),
+    [loading, setLoading] = useState(true),
     [failed, setFailed] = useState(false),
     [revision, setRevision] = useState(0),
     [copied, setCopied] = useState(false),
     [dirty, setDirty] = useState(false);
   useEffect(() => {
-    if (!open) return;
     const c = new AbortController();
+    const request = ++listRevision.current;
+    const currentRead = () =>
+      !c.signal.aborted && request === listRevision.current;
     fetch("/api/calendar/links", { signal: c.signal, cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        if (!c.signal.aborted) setLinks(d.links);
+        if (currentRead()) setLinks(d.links);
       })
       .catch(() => {
-        if (!c.signal.aborted) setFailed(true);
+        if (currentRead()) setFailed(true);
       })
       .finally(() => {
-        if (!c.signal.aborted) setLoading(false);
+        if (currentRead()) setLoading(false);
       });
     return () => c.abort();
-  }, [open, revision]);
+  }, [revision]);
+  useEffect(() => {
+    if (!loading && !failed)
+      onSharesChange(
+        links.map(({ calendarIds, expiresAt }) => ({ calendarIds, expiresAt })),
+      );
+  }, [links, loading, failed, onSharesChange]);
   const feed = (link: SavedLink) =>
     `${location.origin}/api/calendar/feed?` +
     new URLSearchParams({ id: link.id, key: link.token });
@@ -106,7 +121,7 @@ export function CalendarShare({
     );
   }
   async function publish() {
-    if (busy) return;
+    if (busy || loading) return;
     const session = generation.current;
     setBusy(true);
     try {
@@ -133,6 +148,9 @@ export function CalendarShare({
       if (session !== generation.current) return;
       if (!response.ok) throw Error(data.error);
       const link = { ...data, calendarIds: [...ids] };
+      listRevision.current++;
+      setLoading(false);
+      setFailed(false);
       setCurrent(link);
       setLinks((rows) => [link, ...rows.filter((r) => r.id !== link.id)]);
       setDirty(false);
@@ -168,7 +186,7 @@ export function CalendarShare({
     }
   }
   async function revoke(link: SavedLink) {
-    if (busy) return;
+    if (busy || loading) return;
     const session = generation.current;
     setBusy(true);
     try {
@@ -179,6 +197,9 @@ export function CalendarShare({
       });
       if (!r.ok) throw Error();
       if (session !== generation.current) return;
+      listRevision.current++;
+      setLoading(false);
+      setFailed(false);
       setLinks((rows) => rows.filter((l) => l.id !== link.id));
       if (current?.id === link.id) setCurrent(null);
       notify(t("Share revoked", "分享已撤销"), "success");
@@ -191,27 +212,8 @@ export function CalendarShare({
   }
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          generation.current++;
-          initialSettings.current = { kinds: [...kinds], nickname, expiry };
-          setLoading(true);
-          setFailed(false);
-          setIds(calendars.some((c) => c.id === selected) ? [selected] : []);
-          setCurrent(null);
-          setCopied(false);
-          setDirty(false);
-          setOpen(true);
-        }}
-        data-analytics-action="calendar_share_open"
-      >
-        <Share2 size={14} />
-        {t("Share & subscribe", "分享与订阅")}
-      </Button>
       <WorkspaceDialog
-        open={open}
+        open
         onOpenChange={(next) => {
           if (!next) {
             generation.current++;
@@ -223,7 +225,7 @@ export function CalendarShare({
               setDirty(false);
             }
           }
-          setOpen(next);
+          if (!next) onClose();
         }}
         title={t("Share calendars", "分享日历")}
         description={t(
@@ -355,7 +357,9 @@ export function CalendarShare({
             </div>
           </fieldset>
           <Button
-            disabled={busy || !ids.length || ids.length > 30 || !kinds.length}
+            disabled={
+              busy || loading || !ids.length || ids.length > 30 || !kinds.length
+            }
             onClick={() => void publish()}
             data-analytics-action="calendar_share_publish"
           >
@@ -484,7 +488,7 @@ export function CalendarShare({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    disabled={busy}
+                    disabled={busy || loading}
                     aria-label={t("Revoke calendar share", "撤销日历分享")}
                     onClick={() => void revoke(link)}
                   >

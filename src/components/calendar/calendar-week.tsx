@@ -1,6 +1,7 @@
 "use client";
 import { Clock3, MapPin, Globe2 } from "lucide-react";
 import type { CalendarEvent } from "@/lib/calendar/model";
+import { compactCourseCode } from "@/lib/calendar/presentation";
 import type { Locale } from "@/lib/i18n";
 import styles from "./calendar-week.module.css";
 import {
@@ -218,9 +219,23 @@ export function CalendarWeek({
                     event.location + " " + event.description,
                   );
                 const editable = !!onEvent;
+                const courseCode = compactCourseCode(event.title);
+                const numberStart = courseCode?.search(/\d/) ?? 0;
                 const content = (
                   <>
-                    <strong>{event.title}</strong>
+                    <strong
+                      className={styles.eventTitle}
+                      data-has-code={!!courseCode || undefined}
+                    >
+                      {event.title}
+                    </strong>
+                    {courseCode && (
+                      <strong className={styles.courseCode} data-compact-code>
+                        {courseCode.slice(0, numberStart)}
+                        <wbr />
+                        {courseCode.slice(numberStart)}
+                      </strong>
+                    )}
                     <span>
                       <Clock3 size={10} />
                       {time(event.start)}
@@ -245,11 +260,14 @@ export function CalendarWeek({
                 return editable ? (
                   <button
                     key={event.id}
+                    type="button"
                     className={styles.event}
                     data-category={event.category}
+                    data-lanes={lanes}
                     data-online={online}
                     data-point={event.start === event.end || undefined}
                     title={`${event.title}\n${time(event.start)}–${time(event.end)}\n${event.location}`}
+                    aria-label={`${event.title}, ${time(event.start)}–${time(event.end)}${event.location ? ", " + event.location : ""}`}
                     style={position}
                     onClick={(click) => onEvent?.(event, click.currentTarget)}
                   >
@@ -260,6 +278,7 @@ export function CalendarWeek({
                     key={event.id}
                     className={styles.event}
                     data-category={event.category}
+                    data-lanes={lanes}
                     data-online={online}
                     data-point={event.start === event.end || undefined}
                     style={position}

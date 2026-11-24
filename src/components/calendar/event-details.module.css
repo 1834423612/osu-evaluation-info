@@ -59,7 +59,13 @@
   overflow-wrap: anywhere;
 }
 .fact strong {
+  display: block;
   font-weight: 550;
+}
+.time {
+  display: block;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
 }
 .fact small {
   display: block;
@@ -83,4 +89,39 @@
 }
 .arrow {
   fill: var(--surface);
+}
+@media (max-width: 600px) {
+  .panel {
+    width: min(360px, calc(100vw - 24px));
+    max-height: min(380px, calc(100dvh - 32px));
+    padding: 14px;
+    border-radius: 12px;
+  }
+  .panel header {
+    margin-bottom: 8px;
+  }
+  .panel header button {
+    width: 36px;
+    height: 36px;
+  }
+  .panel h2 {
+    margin-bottom: 12px;
+    font-size: 17px;
+    line-height: 1.4;
+  }
+  .category {
+    font-size: 10px;
+  }
+  .fact {
+    gap: 9px;
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .fact p {
+    max-height: 120px;
+  }
+  .link {
+    margin-top: 12px;
+  }
 }

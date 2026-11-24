@@ -29,6 +29,8 @@ import {
   Star,
   ExternalLink,
   ShieldCheck,
+  Share2,
+  Trash2,
 } from "lucide-react";
 import { usePreferences } from "@/hooks/use-preferences";
 import {
@@ -40,6 +42,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { ChoiceSelect } from "@/components/ui/choice-select";
+import { Button } from "@/components/ui/button";
 import { CalendarPreview } from "./calendar-preview";
 import { CalendarShare } from "./calendar-share";
 import { CalendarWeek } from "./calendar-week";
@@ -66,6 +69,10 @@ import {
 import { browserUuid } from "@/lib/uuid";
 import { newYorkDate, eventInDateRange } from "@/lib/calendar/dates";
 import { eventColors, calendarTimeBounds } from "@/lib/calendar/week";
+import {
+  activeSharedCalendarIds,
+  type CalendarShareStatus,
+} from "@/lib/calendar/presentation";
 import styles from "./calendar.module.css";
 type CalendarDraft = UserCalendar & {
   editorSession: string;
@@ -124,9 +131,29 @@ export function CalendarWorkspace() {
     [simulationSelected, simulationCalendars, selected?.term, selected?.campus],
   );
   const contentRef = useRef<HTMLElement>(null);
-  const officialSelected = !!selected && isOfficialCalendar(selected.id);
+  const officialSelected =
+    !!selected &&
+    (selected.kind === "official" || isOfficialCalendar(selected.id));
   const [week, setWeek] = useState(() => monday(newYorkDate()));
   const [view, setView] = useState("week");
+  const navigate = useCallback(
+    (offset: number) => {
+      setWeek((current) =>
+        officialSelected && view !== "week"
+          ? new Date(
+              Date.UTC(
+                Number(current.slice(0, 4)),
+                Number(current.slice(5, 7)) - 1 + offset,
+                1,
+              ),
+            )
+              .toISOString()
+              .slice(0, 10)
+          : shift(current, offset * 7),
+      );
+    },
+    [officialSelected, view],
+  );
   const cycleSimulation = useCallback(
     (direction: number) => {
       const index = simulationCalendars.findIndex(
@@ -145,13 +172,8 @@ export function CalendarWorkspace() {
     [simulationCalendars, selected?.id],
   );
   useEffect(() => {
-    if (
-      !simulationSelected ||
-      view !== "week" ||
-      simulationCalendars.length < 2
-    )
-      return;
-    const navigate = (event: KeyboardEvent) => {
+    if (!ready || !selected) return;
+    const navigateKey = (event: KeyboardEvent) => {
       if (
         event.defaultPrevented ||
         event.isComposing ||
@@ -166,7 +188,7 @@ export function CalendarWorkspace() {
         event.target instanceof Element ? event.target : document.activeElement;
       if (
         target?.closest(
-          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="combobox"], [role="listbox"], [role="slider"], [role="spinbutton"], [role="radiogroup"], [role="tablist"], [role="menu"]',
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="combobox"], [role="listbox"], [role="slider"], [role="spinbutton"], [role="radiogroup"], [role="tablist"], [role="menu"], [role="checkbox"], [role="radio"], [role="searchbox"]',
         ) ||
         document.querySelector(
           '[role="dialog"], [role="alertdialog"], [role="listbox"], [role="menu"]',
@@ -174,11 +196,26 @@ export function CalendarWorkspace() {
       )
         return;
       event.preventDefault();
-      cycleSimulation(event.key === "ArrowRight" ? 1 : -1);
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      if (
+        simulationSelected &&
+        view === "week" &&
+        simulationCalendars.length > 1
+      )
+        cycleSimulation(direction);
+      else navigate(direction);
     };
-    window.addEventListener("keydown", navigate);
-    return () => window.removeEventListener("keydown", navigate);
-  }, [simulationSelected, view, simulationCalendars.length, cycleSimulation]);
+    window.addEventListener("keydown", navigateKey);
+    return () => window.removeEventListener("keydown", navigateKey);
+  }, [
+    ready,
+    selected,
+    simulationSelected,
+    view,
+    simulationCalendars.length,
+    cycleSimulation,
+    navigate,
+  ]);
   const [message, setMessage] = useActionNotice();
   const [eventPreview, setEventPreview] = useState<CalendarEventPreview | null>(
     null,
@@ -206,6 +243,106 @@ export function CalendarWorkspace() {
     const timer = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(timer);
   }, []);
+  const [shareTarget, setShareTarget] = useState<{
+    id: string;
+    account: typeof account;
+  } | null>(null);
+  const shareCalendar =
+    shareTarget?.account === account
+      ? privateCalendars.find(
+          (calendar) =>
+            calendar.id === shareTarget.id &&
+            calendar.kind !== "official" &&
+            !isOfficialCalendar(calendar.id),
+        )
+      : undefined;
+  const [shareSnapshot, setShareSnapshot] = useState<{
+    account: typeof account;
+    links: CalendarShareStatus[];
+  }>({ account: null, links: [] });
+  const shareGeneration = useRef(0);
+  const updateShares = useCallback(
+    (links: CalendarShareStatus[]) => {
+      if (planningScope() !== account) return;
+      shareGeneration.current++;
+      setShareSnapshot({ account, links });
+    },
+    [account],
+  );
+  useEffect(() => {
+    if (!account) return;
+    const controller = new AbortController();
+    const load = () => {
+      const request = ++shareGeneration.current;
+      fetch("/api/calendar/links", {
+        signal: controller.signal,
+        cache: "no-store",
+      })
+        .then((response) => (response.ok ? response.json() : Promise.reject()))
+        .then((data) => {
+          if (controller.signal.aborted || request !== shareGeneration.current)
+            return;
+          setShareSnapshot({
+            account,
+            links: data.links.map(
+              ({ calendarIds, expiresAt }: CalendarShareStatus) => ({
+                calendarIds,
+                expiresAt,
+              }),
+            ),
+          });
+        })
+        .catch(() => {
+          if (!controller.signal.aborted && request === shareGeneration.current)
+            setShareSnapshot({ account, links: [] });
+        });
+    };
+    load();
+    window.addEventListener("focus", load);
+    return () => {
+      controller.abort();
+      window.removeEventListener("focus", load);
+    };
+  }, [account]);
+  const sharedIds = useMemo(
+    () =>
+      account && shareSnapshot.account === account
+        ? activeSharedCalendarIds(
+            shareSnapshot.links,
+            privateCalendars.map((c) => c.id),
+            now,
+          )
+        : new Set<string>(),
+    [account, shareSnapshot, privateCalendars, now],
+  );
+  useEffect(() => {
+    if (!account || shareSnapshot.account !== account) return;
+    const nextExpiry = Math.min(
+      ...shareSnapshot.links
+        .map((link) => (link.expiresAt ? Date.parse(link.expiresAt) : Infinity))
+        .filter((expiry) => expiry > now),
+    );
+    if (!Number.isFinite(nextExpiry)) return;
+    const timer = setTimeout(
+      () => setNow(Date.now()),
+      Math.min(2147483647, Math.max(0, nextExpiry - Date.now() + 1)),
+    );
+    return () => clearTimeout(timer);
+  }, [account, shareSnapshot, now]);
+  const [removal, setRemoval] = useState<{
+    id: string;
+    account: typeof account;
+  } | null>(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const removingCalendar =
+    removal?.account === account
+      ? privateCalendars.find(
+          (calendar) =>
+            calendar.id === removal.id &&
+            calendar.kind !== "official" &&
+            !isOfficialCalendar(calendar.id),
+        )
+      : undefined;
   const [editor, setEditor] = useState<CalendarDraft | null>(null);
   const [editorBaseline, setEditorBaseline] = useState("");
   const [creating, setCreating] = useState(false);
@@ -235,6 +372,8 @@ export function CalendarWorkspace() {
     return () => c.abort();
   }, [academicRetry]);
   function save(calendar: UserCalendar) {
+    if (calendar.kind === "official" || isOfficialCalendar(calendar.id))
+      return false;
     try {
       const value = calendarSchema.parse({
         ...calendar,
@@ -271,6 +410,7 @@ export function CalendarWorkspace() {
     }
   }
   function openCalendar(calendar: UserCalendar, existing = false) {
+    if (calendar.kind === "official" || isOfficialCalendar(calendar.id)) return;
     const draft = {
       ...structuredClone(calendar),
       editorSession: browserUuid(),
@@ -278,6 +418,26 @@ export function CalendarWorkspace() {
     };
     setEditorBaseline(JSON.stringify(draft));
     setEditor(draft);
+  }
+  async function removeCalendar(id: string) {
+    if (
+      planningScope() !== account ||
+      isOfficialCalendar(id) ||
+      !privateCalendars.some(
+        (calendar) => calendar.id === id && calendar.kind !== "official",
+      )
+    )
+      throw Error("calendar");
+    setPlan((current) => ({
+      ...current,
+      schedule: {
+        ...current.schedule,
+        calendars: current.schedule.calendars?.filter(
+          (calendar) => calendar.id !== id,
+        ),
+      },
+    }));
+    if (!(await persist())) throw Error("storage");
   }
   function editEvent(event: CalendarEvent, copyFeed = false) {
     if (event.id.startsWith("official-")) {
@@ -470,21 +630,6 @@ export function CalendarWorkspace() {
     eventInDateRange(event, rangeStart, rangeEnd),
   );
   const colors = eventColors(allEvents);
-  function navigate(offset: number) {
-    setWeek(
-      officialSelected && view !== "week"
-        ? new Date(
-            Date.UTC(
-              Number(week.slice(0, 4)),
-              Number(week.slice(5, 7)) - 1 + offset,
-              1,
-            ),
-          )
-            .toISOString()
-            .slice(0, 10)
-        : shift(week, offset * 7),
-    );
-  }
   const stale =
     selected?.kind === "simulation" &&
     selected.term &&
@@ -654,67 +799,124 @@ export function CalendarWorkspace() {
             className={styles.sidebar}
             aria-label={t("Calendars", "日历清单")}
           >
-            {calendars.map((c) => (
-              <button
-                key={c.id}
-                className={styles.calendar}
-                data-active={c.id === selected?.id}
-                data-color={c.color}
-                onClick={() => {
-                  setSelectedId(c.id);
-                  if (
-                    simulationSelected &&
-                    c.kind === "simulation" &&
-                    selected.term === c.term &&
-                    selected.campus === c.campus
-                  ) {
-                    setView("week");
-                    contentRef.current?.scrollTo({ top: 0 });
-                    return;
-                  }
-                  const today = newYorkDate();
-                  const all = combinedEvents(calendars, c);
-                  const next =
-                    all.find((event) => event.end.slice(0, 10) >= today) ??
-                    all.at(-1);
-                  setView(isOfficialCalendar(c.id) ? "month" : "week");
-                  setWeek(
-                    isOfficialCalendar(c.id)
-                      ? today
-                      : next
-                        ? monday(next.start.slice(0, 10))
-                        : monday(today),
-                  );
-                }}
-              >
-                <strong>
-                  {(() => {
-                    const Icon = {
-                      calendar: CalendarDays,
-                      book: BookOpen,
-                      graduation: GraduationCap,
-                      star: Star,
-                    }[c.icon];
-                    return <Icon size={14} />;
-                  })()}{" "}
-                  <span>{c.title}</span>
-                </strong>
-                <CalendarPreview events={combinedEvents(calendars, c)} />
-                <small>
-                  {combinedEvents(calendars, c).length} {t("events", "个日程")}{" "}
-                  ·{" "}
-                  {
-                    {
-                      simulation: t("Schedule", "课表"),
-                      personal: t("Personal", "个人"),
-                      feed: t("Subscription", "订阅"),
-                      combined: t("Combined", "组合"),
-                      official: t("Automatically updated", "自动更新"),
-                    }[c.kind]
-                  }
-                </small>
-              </button>
-            ))}
+            {calendars.map((c) => {
+              const official =
+                c.kind === "official" || isOfficialCalendar(c.id);
+              const items = combinedEvents(calendars, c);
+              const Icon = official
+                ? ShieldCheck
+                : {
+                    calendar: CalendarDays,
+                    book: BookOpen,
+                    graduation: GraduationCap,
+                    star: Star,
+                  }[c.icon];
+              return (
+                <div
+                  key={c.id}
+                  className={styles.calendar}
+                  data-calendar-id={c.id}
+                  data-active={c.id === selected?.id}
+                  data-color={c.color}
+                  data-official={official || undefined}
+                >
+                  <button
+                    type="button"
+                    className={styles.calendarSelect}
+                    aria-pressed={c.id === selected?.id}
+                    onClick={() => {
+                      setSelectedId(c.id);
+                      if (
+                        simulationSelected &&
+                        c.kind === "simulation" &&
+                        selected.term === c.term &&
+                        selected.campus === c.campus
+                      ) {
+                        setView("week");
+                        contentRef.current?.scrollTo({ top: 0 });
+                        return;
+                      }
+                      const today = newYorkDate();
+                      const next =
+                        items.find(
+                          (event) => event.end.slice(0, 10) >= today,
+                        ) ?? items.at(-1);
+                      setView(official ? "month" : "week");
+                      setWeek(
+                        official
+                          ? today
+                          : next
+                            ? monday(next.start.slice(0, 10))
+                            : monday(today),
+                      );
+                    }}
+                  >
+                    <strong>
+                      <Icon size={14} aria-hidden="true" />
+                      <span>{c.title}</span>
+                      {sharedIds.has(c.id) && (
+                        <span
+                          className={styles.sharedMark}
+                          role="img"
+                          aria-label={t("Shared calendar", "已分享日历")}
+                        >
+                          <Share2 size={12} aria-hidden="true" />
+                        </span>
+                      )}
+                    </strong>
+                    <CalendarPreview events={items} />
+                    <small>
+                      {items.length} {t("events", "个日程")} ·{" "}
+                      {official ? (
+                        <span className={styles.officialBadge}>
+                          {t("Official", "官方")}
+                        </span>
+                      ) : (
+                        {
+                          simulation: t("Schedule", "课表"),
+                          personal: t("Personal", "个人"),
+                          feed: t("Subscription", "订阅"),
+                          combined: t("Combined", "组合"),
+                          official: t("Official", "官方"),
+                        }[c.kind]
+                      )}
+                    </small>
+                  </button>
+                  {!official && (
+                    <div
+                      className={styles.cardActions}
+                      role="group"
+                      aria-label={t("Calendar actions", "日历操作")}
+                    >
+                      <button
+                        type="button"
+                        aria-label={t("Edit " + c.title, "编辑 " + c.title)}
+                        title={t("Edit calendar", "编辑日历")}
+                        onClick={() => openCalendar(c, true)}
+                      >
+                        <Pencil size={13} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={t("Share " + c.title, "分享 " + c.title)}
+                        title={t("Share calendar", "分享日历")}
+                        onClick={() => setShareTarget({ id: c.id, account })}
+                      >
+                        <Share2 size={13} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={t("Remove " + c.title, "移除 " + c.title)}
+                        title={t("Remove calendar", "移除日历")}
+                        onClick={() => setRemoval({ id: c.id, account })}
+                      >
+                        <Trash2 size={13} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </aside>
           <section
             ref={contentRef}
@@ -727,17 +929,30 @@ export function CalendarWorkspace() {
               <>
                 <div className={styles.toolbar}>
                   <div>
-                    <h2>{selected.title}</h2>
+                    <h2>
+                      {selected.title}
+                      {sharedIds.has(selected.id) && (
+                        <span
+                          className={styles.sharedMark}
+                          role="img"
+                          aria-label={t("Shared calendar", "已分享日历")}
+                        >
+                          <Share2 size={14} aria-hidden="true" />
+                        </span>
+                      )}
+                    </h2>
                     <p>{selected.description}</p>
                   </div>
                   <div className={styles.actions}>
                     {!officialSelected && (
-                      <CalendarShare
-                        calendars={privateCalendars}
-                        selected={selected.id}
-                        locale={locale}
-                        persist={persist}
-                      />
+                      <button
+                        onClick={() =>
+                          setShareTarget({ id: selected.id, account })
+                        }
+                      >
+                        <Share2 size={14} />
+                        {t("Share & subscribe", "分享与订阅")}
+                      </button>
                     )}
                     {!officialSelected && (
                       <button
@@ -1019,6 +1234,73 @@ export function CalendarWorkspace() {
             </button>
           </div>
         </WorkspaceDialog>
+        {shareCalendar && (
+          <CalendarShare
+            key={(account ?? "local") + ":" + shareCalendar.id}
+            calendars={privateCalendars.filter(
+              (calendar) =>
+                calendar.kind !== "official" &&
+                !isOfficialCalendar(calendar.id),
+            )}
+            selected={shareCalendar.id}
+            locale={locale}
+            persist={persist}
+            onClose={() => setShareTarget(null)}
+            onSharesChange={updateShares}
+          />
+        )}
+        <WorkspaceDialog
+          open={!!removingCalendar}
+          onOpenChange={(open) => {
+            if (!open && !removeBusy) setRemoval(null);
+          }}
+          title={t("Remove calendar", "移除日历")}
+          description={removingCalendar?.title ?? ""}
+          closeLabel={t("Close", "关闭")}
+          guard={false}
+          detectFormChanges={false}
+        >
+          <p className={styles.removalText}>
+            {t(
+              "Remove this calendar and its own events? Source calendars remain available.",
+              "移除此日历及其中的日程？组合来源日历仍会保留。",
+            )}
+          </p>
+          <div className={styles.actions}>
+            <Button
+              variant="outline"
+              disabled={removeBusy}
+              onClick={() => setRemoval(null)}
+            >
+              {t("Cancel", "取消")}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={removeBusy}
+              onClick={async () => {
+                if (!removingCalendar || removeBusy) return;
+                setRemoveBusy(true);
+                try {
+                  await removeCalendar(removingCalendar.id);
+                  setRemoval(null);
+                } catch {
+                  setMessage(
+                    t(
+                      "Could not remove the calendar. Try again.",
+                      "移除日历失败，请重试。",
+                    ),
+                  );
+                } finally {
+                  setRemoveBusy(false);
+                }
+              }}
+            >
+              {removeBusy
+                ? t("Removing…", "正在移除…")
+                : t("Remove calendar", "移除日历")}
+            </Button>
+          </div>
+        </WorkspaceDialog>
         <WorkspaceDialog
           open={!!editor}
           onOpenChange={(open) => {
@@ -1061,16 +1343,7 @@ export function CalendarWorkspace() {
                 editor.existing
                   ? async () => {
                       const session = editor.editorSession;
-                      setPlan((current) => ({
-                        ...current,
-                        schedule: {
-                          ...current.schedule,
-                          calendars: current.schedule.calendars?.filter(
-                            (calendar) => calendar.id !== editor.id,
-                          ),
-                        },
-                      }));
-                      if (!(await persist())) throw Error("storage");
+                      await removeCalendar(editor.id);
                       setEditor((current) =>
                         current?.editorSession === session ? null : current,
                       );

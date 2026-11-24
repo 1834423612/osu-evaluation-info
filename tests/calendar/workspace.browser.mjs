@@ -45,7 +45,9 @@ plan.schedule.calendars = Array.from({ length: 20 }, (_, index) =>
     title:
       index === 0
         ? "Synthetic busy calendar"
-        : `Synthetic calendar ${index + 1}`,
+        : index === 1
+          ? "Synthetic calendar with a deliberately long two-line source title"
+          : `Synthetic calendar ${index + 1}`,
     kind: "personal",
     includeAcademic: false,
     events:
@@ -67,16 +69,361 @@ const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
   args: ["--no-sandbox"],
 });
+async function verifyShareLifecycle() {
+  const account = "calendar-sharing-fixture";
+  const privateCalendar = calendarSchema.parse({
+    id: "sharing-owned",
+    title: "Share lifecycle calendar",
+    kind: "personal",
+    events: [events[0]],
+    includeAcademic: false,
+    updatedAt: "2027-01-01",
+  });
+  const sharingPlan = emptyPlan();
+  sharingPlan.schedule.calendars = [privateCalendar];
+  const published = {
+    id: "db86554a-e4ad-42ca-a781-89ec78f1909c",
+    token: "S".repeat(43),
+    calendarIds: [privateCalendar.id],
+    expiresAt: null,
+  };
+  let serverLinks = [
+    {
+      ...published,
+      id: "3c58e159-e17c-4610-9a7a-96e8cd5b2042",
+      token: "E".repeat(43),
+      expiresAt: "2000-01-01T00:00:00Z",
+    },
+  ];
+  let holdNextList = false,
+    heldRead = null,
+    readReady = null;
+  const pauseList = () => {
+    holdNextList = true;
+    return new Promise((resolve) => {
+      readReady = resolve;
+    });
+  };
+  const releaseList = async () => {
+    assert.ok(heldRead, "the delayed list request was observed");
+    const held = heldRead;
+    heldRead = null;
+    const response = page.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/calendar/links",
+    );
+    await held.route.fulfill({ json: { links: held.snapshot } });
+    await (await response).finished();
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+  };
+  const publications = [],
+    revocations = [],
+    errors = [];
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    permissions: ["clipboard-read", "clipboard-write"],
+  });
+  await context.route("**/*", async (route) => {
+    const request = route.request(),
+      url = new URL(request.url());
+    if (url.origin !== base.origin || url.pathname.startsWith("/_vercel"))
+      return route.abort();
+    if (url.pathname === "/qa-calendar-seed")
+      return route.fulfill({
+        contentType: "text/html",
+        body: "<!doctype html><body></body>",
+      });
+    if (url.pathname === "/api/auth/get-session")
+      return route.fulfill({
+        json: {
+          user: {
+            id: account,
+            email: "calendar-fixture@example.test",
+            emailVerified: true,
+            name: "Calendar fixture",
+            createdAt: "2026-01-01T00:00:00Z",
+            updatedAt: "2026-01-01T00:00:00Z",
+          },
+          session: {
+            id: "calendar-fixture-session",
+            userId: account,
+            token: "synthetic",
+            expiresAt: new Date(Date.now() + 86400000).toISOString(),
+          },
+        },
+      });
+    if (url.pathname === "/api/calendar/academic")
+      return route.fulfill({ json: { days: [], fetchedAt: "2027-01-01" } });
+    if (url.pathname === "/api/planning/backup")
+      return route.fulfill({
+        json: { accountId: account, version: 1, plan: sharingPlan },
+      });
+    if (url.pathname === "/api/calendar/links") {
+      if (request.method() === "GET") {
+        const snapshot = structuredClone(serverLinks);
+        if (holdNextList) {
+          holdNextList = false;
+          heldRead = { route, snapshot };
+          readReady?.();
+          return;
+        }
+        return route.fulfill({ json: { links: snapshot } });
+      }
+      if (request.method() === "POST") {
+        publications.push(request.postDataJSON());
+        serverLinks = [
+          published,
+          ...serverLinks.filter((link) => link.id !== published.id),
+        ];
+        return route.fulfill({
+          json: {
+            id: published.id,
+            token: published.token,
+            expiresAt: published.expiresAt,
+          },
+        });
+      }
+      if (request.method() === "DELETE") {
+        const body = request.postDataJSON();
+        revocations.push(body);
+        serverLinks = serverLinks.filter((link) => link.id !== body.id);
+        return route.fulfill({ json: { ok: true } });
+      }
+    }
+    if (url.pathname.startsWith("/api/"))
+      return route.fulfill({
+        status: 503,
+        json: { error: "Isolated calendar sharing fixture" },
+      });
+    return route.continue();
+  });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15_000);
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(new URL("/qa-calendar-seed", base).href);
+    await page.evaluate(
+      async ({ account, key, plan }) => {
+        localStorage.setItem("course-atlas:locale:v1", "en");
+        localStorage.setItem("course-atlas:translation-guide:v1", "done");
+        localStorage.setItem(
+          key + ":account:" + account,
+          JSON.stringify({
+            plan,
+            base: plan,
+            cloud: plan,
+            version: 1,
+          }),
+        );
+        const db = await new Promise((resolve, reject) => {
+          const request = indexedDB.open("waho-user-data", 2);
+          request.onupgradeneeded = () => {
+            request.result.createObjectStore("sync", { keyPath: "accountId" });
+            request.result.createObjectStore("telemetry", { keyPath: "id" });
+          };
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction("sync", "readwrite");
+          tx.objectStore("sync").put({
+            version: 1,
+            accountId: account,
+            enabled: true,
+            initialized: true,
+            features: { favorites: false, planning: false, calendars: true },
+            once: false,
+            cursor: 0,
+            baseline: {},
+            seen: {},
+            outbox: [],
+            conflicts: [],
+            needsReview: false,
+            lastSyncAt: null,
+          });
+          tx.oncomplete = resolve;
+          tx.onabort = () => reject(tx.error);
+        });
+        db.close();
+      },
+      { account, key: PLAN_STORAGE_KEY, plan: sharingPlan },
+    );
+    const initialList = page.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/calendar/links",
+    );
+    await page.goto(new URL("/calendar", base).href, {
+      waitUntil: "domcontentloaded",
+    });
+    await (await initialList).finished();
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+    const card = page.locator('[data-calendar-id="sharing-owned"]');
+    await card.waitFor();
+    const mark = card.getByRole("img", {
+      name: "Shared calendar",
+      exact: true,
+    });
+    const backgroundMark = card.locator(
+      '[role="img"][aria-label="Shared calendar"]',
+    );
+    assert.equal(
+      await mark.count(),
+      0,
+      "expired links do not mark the calendar shared",
+    );
+
+    await card.hover();
+    const delayed = pauseList();
+    await card.hover();
+    await card
+      .getByRole("button", {
+        name: "Share Share lifecycle calendar",
+        exact: true,
+      })
+      .click();
+    await delayed;
+    const shares = page.getByRole("dialog").filter({
+      has: page.getByRole("heading", {
+        name: "Share calendars",
+        exact: true,
+      }),
+    });
+    const publish = shares.getByRole("button", {
+      name: "Create or update link",
+      exact: true,
+    });
+    assert.equal(
+      await publish.isDisabled(),
+      true,
+      "publishing waits for the current link read",
+    );
+    assert.equal(
+      publications.length,
+      0,
+      "a delayed list read cannot race a publish",
+    );
+    await releaseList();
+    await publish.click();
+    await shares
+      .getByRole("heading", { name: "Share link ready", exact: true })
+      .waitFor();
+    await backgroundMark.waitFor();
+    assert.deepEqual(
+      publications.map((body) => body.calendarIds),
+      [[privateCalendar.id]],
+    );
+    await shares
+      .getByRole("button", { name: "Close", exact: true })
+      .last()
+      .click();
+    await shares.waitFor({ state: "hidden" });
+    await mark.waitFor();
+    await page.screenshot({
+      path: resolve(out, "sharing-active-1440.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+
+    await card.hover();
+    await card
+      .getByRole("button", {
+        name: "Share Share lifecycle calendar",
+        exact: true,
+      })
+      .click();
+    const revoke = shares
+      .getByRole("button", { name: "Revoke calendar share", exact: true })
+      .first();
+    await revoke.waitFor();
+    const staleActiveList = pauseList();
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await staleActiveList;
+    await revoke.click();
+    await backgroundMark.waitFor({ state: "hidden" });
+    await releaseList();
+    await page.waitForFunction(
+      () =>
+        !document.querySelector(
+          '[data-calendar-id="sharing-owned"] [role="img"]',
+        ),
+    );
+    assert.equal(
+      await backgroundMark.count(),
+      0,
+      "an older active-list read cannot revive a revoked mark",
+    );
+    await shares
+      .getByRole("button", { name: "Close", exact: true })
+      .last()
+      .click();
+    await shares.waitFor({ state: "hidden" });
+    assert.equal(
+      await mark.count(),
+      0,
+      "the revoked mark stays absent after closing the dialog",
+    );
+    assert.deepEqual(revocations, [{ id: published.id }]);
+    assert.equal(
+      await page.evaluate(
+        (token) =>
+          Object.values(localStorage).some((value) => value.includes(token)),
+        published.token,
+      ),
+      false,
+      "share capability tokens are not persisted in browser storage",
+    );
+    assert.deepEqual(errors, []);
+    console.log(
+      "PASS calendar sharing: delayed read guard, active/expired marks, revocation and stale-read isolation",
+    );
+  } catch (error) {
+    await page
+      .screenshot({
+        path: resolve(out, "sharing-failure-1440.png"),
+        fullPage: true,
+      })
+      .catch(() => {});
+    throw error;
+  } finally {
+    if (heldRead) await heldRead.route.abort().catch(() => {});
+    await context.close();
+  }
+}
+
+const calendarViewports = [
+  [1440, 900, "en"],
+  [768, 1024, "en"],
+  [390, 844, "zh"],
+  [375, 693, "zh"],
+  [320, 740, "en"],
+];
+const requestedWidth = process.env.CALENDAR_TEST_WIDTH;
+assert.ok(
+  !requestedWidth ||
+    calendarViewports.some(([width]) => String(width) === requestedWidth),
+  "CALENDAR_TEST_WIDTH must match an existing test viewport",
+);
 try {
-  for (const [width, height, locale] of [
-    [1440, 900, "en"],
-    [768, 1024, "en"],
-    [390, 844, "zh"],
-    [320, 740, "en"],
-  ]) {
+  for (const [width, height, locale] of calendarViewports.filter(
+    ([width]) => !requestedWidth || String(width) === requestedWidth,
+  )) {
     console.log(`calendar ${width}px ${locale}: isolated fixture`);
     const context = await browser.newContext({
       viewport: { width, height },
+      hasTouch: width <= 600,
+      isMobile: width <= 600,
       acceptDownloads: true,
     });
     const errors = [],
@@ -128,10 +475,40 @@ try {
         name: /4 overlapping events|4 项重叠日程/,
       });
       await dense.waitFor({ timeout: 30_000 });
+      const initialRange = content.getByText("2027-01-11 — 01-17", {
+        exact: true,
+      });
+      await initialRange.waitFor();
       assert.equal(
-        await sidebar.getByRole("button").count(),
+        await page.evaluate(() => document.activeElement?.tagName),
+        "BODY",
+      );
+      await page.keyboard.press("ArrowRight");
+      await content.getByText("2027-01-18 — 01-24", { exact: true }).waitFor();
+      await page.keyboard.press("ArrowLeft");
+      await initialRange.waitFor();
+      assert.equal(
+        await sidebar.locator("[aria-pressed]").count(),
         23,
         "20 private and 3 official calendar sources remain accessible",
+      );
+      assert.equal(
+        await sidebar.locator("button button").count(),
+        0,
+        "calendar selection and quick actions never nest buttons",
+      );
+      const officialCards = sidebar.locator('[data-official="true"]');
+      assert.equal(await officialCards.count(), 3);
+      assert.equal(
+        await officialCards.getByRole("group").count(),
+        0,
+        "official calendars have no edit, share or remove quick actions",
+      );
+      assert.equal(
+        await officialCards
+          .getByText(t("Official", "官方"), { exact: true })
+          .count(),
+        3,
       );
       const layout = await workspace.evaluate((node) => ({
         height: node.getBoundingClientRect().height,
@@ -219,12 +596,52 @@ try {
         await details
           .getByRole("heading", { name: titles[index], exact: true })
           .waitFor();
+        if (width <= 600) {
+          const detailLayout = await details.evaluate((node) => {
+            const box = node.getBoundingClientRect();
+            const title = node.querySelector("h2");
+            return {
+              x: box.x,
+              y: box.y,
+              width: box.width,
+              height: box.height,
+              titleSize: parseFloat(getComputedStyle(title).fontSize),
+              text: node.innerText,
+            };
+          });
+          assert.ok(
+            detailLayout.x >= 0 && detailLayout.x + detailLayout.width <= width,
+          );
+          assert.ok(
+            detailLayout.y >= 0 &&
+              detailLayout.y + detailLayout.height <= height,
+          );
+          assert.ok(
+            detailLayout.height < height * 0.6,
+            "mobile event details stay compact",
+          );
+          assert.ok(
+            detailLayout.titleSize <= 18,
+            "mobile details use a restrained title scale",
+          );
+          assert.equal(
+            (detailLayout.text.match(/Jan 12|1月12日/g) ?? []).length,
+            1,
+            "same-day details show the date once",
+          );
+        }
         await details
           .getByRole("button", {
             name: t("Close event details", "关闭日程详情"),
             exact: true,
           })
           .click();
+        await details.waitFor({ state: "hidden" });
+        assert.equal(
+          await rows[index].evaluate((node) => document.activeElement === node),
+          true,
+          "closing event details restores focus to its event",
+        );
       }
       assert.equal(
         new Set(colors).size,
@@ -392,7 +809,7 @@ try {
       const alternatives = [
         [540, 780, 1020],
         [420, 720, 1140],
-        [600, 840, 1080],
+        [600, 600, 1080],
       ].map((starts, index) =>
         calendarSchema.parse({
           id: `simulation-${index}`,
@@ -406,7 +823,9 @@ try {
           events: ["2027-01-12", "2027-01-19"].flatMap((date) =>
             starts.map((minute, course) => ({
               id: `simulation-${index}-${date}-${course}`,
-              title: ["CSE 1111", "PSYCH 1100", "MATH 1151"][course],
+              title: (index === 2
+                ? ["ECON 2001.01", "ACCTMIS 2200", "MATH 1151"]
+                : ["CSE 2111", "ECON 2001.01", "MATH 1151"])[course],
               category: "class",
               allDay: false,
               start: newYorkTime(date, minute),
@@ -417,19 +836,194 @@ try {
           ),
         }),
       );
+      const mixedSources = [
+        calendarSchema.parse({
+          id: "empty-personal",
+          title: "Empty personal calendar",
+          kind: "personal",
+          events: [],
+          includeAcademic: false,
+          updatedAt: "2027-01-01",
+        }),
+        calendarSchema.parse({
+          id: "mixed-combined",
+          title: "Mixed combined calendar",
+          kind: "combined",
+          sourceIds: ["calendar-0", "simulation-0"],
+          events: [],
+          includeAcademic: false,
+          updatedAt: "2027-01-01",
+        }),
+      ];
       await page.evaluate(
-        ({ key, alternatives }) => {
+        ({ key, alternatives, mixedSources }) => {
           const plan = JSON.parse(localStorage.getItem(key));
-          plan.schedule.calendars.push(...alternatives);
+          plan.schedule.calendars.push(...alternatives, ...mixedSources);
           localStorage.setItem(key, JSON.stringify(plan));
         },
-        { key: PLAN_STORAGE_KEY, alternatives },
+        { key: PLAN_STORAGE_KEY, alternatives, mixedSources },
       );
       await page.reload({ waitUntil: "domcontentloaded" });
-      await sidebar.getByRole("button", { name: /^Saved timetable 1/ }).click();
       const currentTitle = () => content.locator("h2").first().innerText();
+      const previewsVisible = () =>
+        sidebar.evaluate((node) =>
+          [...node.children].every((card) => {
+            const preview = card.querySelector('div[aria-hidden="true"]');
+            if (!preview || getComputedStyle(preview).display === "none")
+              return false;
+            const cardBox = card.getBoundingClientRect();
+            const previewBox = preview.getBoundingClientRect();
+            const title = card.querySelector('strong > span:not([role="img"])');
+            const titleBox = title?.getBoundingClientRect();
+            const metadata = card.querySelector("small");
+            return (
+              previewBox.height >= 40 &&
+              previewBox.top >= cardBox.top &&
+              previewBox.bottom <= cardBox.bottom &&
+              previewBox.left >= cardBox.left &&
+              previewBox.right <= cardBox.right &&
+              (!titleBox || titleBox.bottom <= previewBox.top) &&
+              (!metadata || metadata.scrollHeight <= metadata.clientHeight)
+            );
+          }),
+        );
+      await sidebar
+        .getByRole("button", { name: /^Empty personal calendar/ })
+        .click();
+      assert.equal(
+        await previewsVisible(),
+        true,
+        "all mixed-source thumbnails show for a personal selection",
+      );
+      await sidebar.getByRole("button", { name: /^Saved timetable 1/ }).click();
+      assert.equal(
+        await previewsVisible(),
+        true,
+        "selecting a simulation keeps every source thumbnail",
+      );
+      await page.keyboard.press("ArrowRight");
+      assert.equal(
+        await currentTitle(),
+        "Saved timetable 2",
+        "comparison shortcuts work immediately while the source card keeps focus",
+      );
+      await page.keyboard.press("ArrowLeft");
+      assert.equal(await currentTitle(), "Saved timetable 1");
+      await sidebar
+        .getByRole("button", { name: /^Mixed combined calendar/ })
+        .click();
+      assert.equal(
+        await previewsVisible(),
+        true,
+        "combined selection keeps every thumbnail",
+      );
+      await sidebar.getByRole("button", { name: /^Saved timetable 1/ }).click();
       const fitWeek = content.locator('[data-fit="true"]');
       await fitWeek.waitFor();
+      if (width <= 600) {
+        const labels = fitWeek.locator("[data-compact-code]");
+        assert.ok((await labels.count()) >= 3);
+        const labelGeometry = [];
+        for (const code of ["CSE2111", "ECON2001.01"]) {
+          const label = labels.filter({ hasText: code }).first();
+          await label.waitFor({ state: "visible" });
+          assert.equal(await label.innerText(), code);
+          labelGeometry.push(
+            await label.evaluate((node) => {
+              const box = node.getBoundingClientRect();
+              const event = node.closest("button");
+              const eventBox = event.getBoundingClientRect();
+              const style = getComputedStyle(node);
+              const eventStyle = getComputedStyle(event);
+              return {
+                code: node.textContent,
+                label: box.toJSON(),
+                event: eventBox.toJSON(),
+                fontSize: style.fontSize,
+                lineHeight: style.lineHeight,
+                fontFamily: style.fontFamily,
+                minHeight: eventStyle.minHeight,
+                padding: eventStyle.padding,
+                alignItems: eventStyle.alignItems,
+                lanes: event.dataset.lanes,
+                contained:
+                  parseFloat(style.fontSize) <= 9 &&
+                  style.textOverflow !== "ellipsis" &&
+                  box.x >= eventBox.x &&
+                  box.right <= eventBox.right + 1 &&
+                  box.bottom <= eventBox.bottom + 1,
+              };
+            }),
+          );
+        }
+        if (requestedWidth || labelGeometry.some((label) => !label.contained))
+          console.log(
+            "Calendar course geometry",
+            width,
+            JSON.stringify(labelGeometry),
+          );
+        assert.equal(
+          labelGeometry.every((label) => label.contained),
+          true,
+          "the full course code stays readable inside a narrow event block",
+        );
+      }
+      if (width <= 600) {
+        await sidebar
+          .getByRole("button", { name: /^Saved timetable 3/ })
+          .click();
+        for (const code of ["ECON2001.01", "ACCTMIS2200"]) {
+          const label = fitWeek
+            .locator("[data-compact-code]")
+            .filter({ hasText: code })
+            .first();
+          await label.waitFor({ state: "visible" });
+          assert.equal(await label.innerText(), code);
+          assert.equal(
+            await label.evaluate((node) => {
+              const tile = node.closest("button");
+              if (tile.dataset.lanes !== "2") return false;
+              const bounds = tile.getBoundingClientRect();
+              const walker = document.createTreeWalker(
+                node,
+                NodeFilter.SHOW_TEXT,
+              );
+              for (
+                let text = walker.nextNode();
+                text;
+                text = walker.nextNode()
+              ) {
+                for (let index = 0; index < text.textContent.length; index++) {
+                  const range = document.createRange();
+                  range.setStart(text, index);
+                  range.setEnd(text, index + 1);
+                  const glyph = range.getBoundingClientRect();
+                  if (!(
+                    glyph.width > 0 &&
+                    glyph.height > 0 &&
+                    glyph.top >= bounds.top &&
+                    glyph.bottom <= bounds.bottom &&
+                    glyph.left >= bounds.left &&
+                    glyph.right <= bounds.right
+                  ))
+                    return false;
+                }
+              }
+              return true;
+            }),
+            true,
+            "every character of a two-lane course code stays inside its event",
+          );
+        }
+        await page.screenshot({
+          path: resolve(out, `narrow-overlap-${width}.png`),
+          fullPage: true,
+          animations: "disabled",
+        });
+        await sidebar
+          .getByRole("button", { name: /^Saved timetable 1/ })
+          .click();
+      }
       const frame = fitWeek
         .locator(":scope > div")
         .filter({ has: page.getByText("07:00", { exact: true }) });
@@ -533,6 +1127,200 @@ try {
         })
         .click();
       assert.equal(await currentTitle(), "Saved timetable 2");
+      const firstCard = sidebar.locator('[data-calendar-id="simulation-0"]');
+      const quickEdit = firstCard.getByRole("button", {
+        name: t("Edit Saved timetable 1", "编辑 Saved timetable 1"),
+        exact: true,
+      });
+      await firstCard.hover();
+      const primary = firstCard.locator(":scope > button");
+      assert.equal(
+        await primary.evaluate((node) => {
+          const button = node.getBoundingClientRect();
+          const card = node.parentElement.getBoundingClientRect();
+          return [button, card].every((rect) =>
+            node.contains(
+              document.elementFromPoint(
+                rect.x + rect.width / 2,
+                rect.y + rect.height / 2,
+              ),
+            ),
+          );
+        }),
+        true,
+        "the card and primary button centers always select the source, even with tools visible",
+      );
+      assert.equal(
+        await firstCard.getByRole("group").evaluate((node) => {
+          const card = node.parentElement.getBoundingClientRect();
+          const primary = node.parentElement
+            .querySelector(":scope > button")
+            .getBoundingClientRect();
+          return [...node.querySelectorAll("button")].every((button) => {
+            const box = button.getBoundingClientRect();
+            return (
+              box.left >= primary.right &&
+              box.left >= card.left &&
+              box.right <= card.right &&
+              box.top >= card.top &&
+              box.bottom <= card.bottom
+            );
+          });
+        }),
+        true,
+        "the three quick actions occupy a separate contained column",
+      );
+      await quickEdit.focus();
+      if (width <= 600) {
+        assert.equal(
+          await page.evaluate(
+            () => matchMedia("(hover: none) and (pointer: coarse)").matches,
+          ),
+          true,
+          "phone fixtures use touch and a coarse pointer",
+        );
+        const target = await quickEdit.boundingBox();
+        assert.ok(
+          target.width >= 44 && target.height >= 44,
+          "touch source actions have a 44px target",
+        );
+      }
+      assert.equal(
+        await quickEdit
+          .locator("..")
+          .evaluate((node) => getComputedStyle(node).opacity),
+        "1",
+        "keyboard focus reveals the quick actions",
+      );
+      await quickEdit.click();
+      await settings.waitFor();
+      assert.equal(
+        await currentTitle(),
+        "Saved timetable 2",
+        "quick edit does not activate its source card",
+      );
+      await settings
+        .getByRole("textbox", {
+          name: t("Calendar name", "日历名称"),
+          exact: true,
+        })
+        .fill("Unsaved card edit");
+      await page.keyboard.press("ArrowRight");
+      assert.equal(
+        await currentTitle(),
+        "Saved timetable 2",
+        "quick edit isolates navigation keys",
+      );
+      let discardRequests = 0;
+      page.once("dialog", async (dialog) => {
+        assert.match(dialog.message(), /unsaved|尚未保存/);
+        discardRequests++;
+        await dialog.dismiss();
+      });
+      await settings
+        .getByRole("button", { name: t("Close", "关闭"), exact: true })
+        .last()
+        .click();
+      assert.equal(
+        discardRequests,
+        1,
+        "quick edit uses the existing draft guard",
+      );
+      assert.equal(await settings.isVisible(), true);
+      page.once("dialog", (dialog) => dialog.accept());
+      await settings
+        .getByRole("button", { name: t("Close", "关闭"), exact: true })
+        .last()
+        .click();
+      await settings.waitFor({ state: "hidden" });
+
+      await firstCard.hover();
+      assert.equal(
+        await firstCard
+          .getByRole("group")
+          .evaluate((node) => getComputedStyle(node).pointerEvents),
+        "auto",
+        "hover reveals clickable source actions",
+      );
+      await firstCard
+        .getByRole("button", {
+          name: t("Share Saved timetable 1", "分享 Saved timetable 1"),
+          exact: true,
+        })
+        .click();
+      const shares = page.getByRole("dialog").filter({
+        has: page.getByRole("heading", {
+          name: t("Share calendars", "分享日历"),
+          exact: true,
+        }),
+      });
+      await shares.waitFor();
+      assert.equal(
+        await shares
+          .getByRole("checkbox", { name: /^Saved timetable 1/ })
+          .getAttribute("aria-checked"),
+        "true",
+      );
+      assert.equal(
+        await shares
+          .getByRole("checkbox", { name: /^Saved timetable 2/ })
+          .getAttribute("aria-checked"),
+        "false",
+      );
+      assert.equal(
+        await currentTitle(),
+        "Saved timetable 2",
+        "quick share does not activate its source card",
+      );
+      await shares
+        .getByRole("button", { name: t("Close", "关闭"), exact: true })
+        .last()
+        .click();
+      await shares.waitFor({ state: "hidden" });
+
+      const emptyCard = sidebar.locator('[data-calendar-id="empty-personal"]');
+      const quickRemove = emptyCard.getByRole("button", {
+        name: t(
+          "Remove Empty personal calendar",
+          "移除 Empty personal calendar",
+        ),
+        exact: true,
+      });
+      await emptyCard.hover();
+      await quickRemove.click();
+      const removal = page.getByRole("dialog").filter({
+        has: page.getByRole("heading", {
+          name: t("Remove calendar", "移除日历"),
+          exact: true,
+        }),
+      });
+      await removal
+        .getByRole("button", { name: t("Cancel", "取消"), exact: true })
+        .click();
+      assert.equal(await emptyCard.count(), 1, "cancel keeps the calendar");
+      await emptyCard.hover();
+      await quickRemove.click();
+      await removal
+        .getByRole("button", {
+          name: t("Remove calendar", "移除日历"),
+          exact: true,
+        })
+        .click();
+      await removal.waitFor({ state: "hidden" });
+      assert.equal(await emptyCard.count(), 0);
+      assert.equal(
+        (await stored()).schedule.calendars.some(
+          (calendar) => calendar.id === "empty-personal",
+        ),
+        false,
+        "quick removal persists only the owned target",
+      );
+      assert.equal(
+        await currentTitle(),
+        "Saved timetable 2",
+        "quick removal does not change the active calendar",
+      );
+      assert.equal(await sidebar.locator('[data-official="true"]').count(), 3);
       await page.screenshot({
         path: resolve(out, `saved-timetable-${width}.png`),
         fullPage: true,
@@ -548,9 +1336,11 @@ try {
       assert.equal(await currentTitle(), "Synthetic busy calendar");
       assert.equal(
         await content.getByText(ordinaryDate, { exact: true }).count(),
-        1,
-        "ordinary-calendar dates do not change on comparison shortcuts",
+        0,
+        "ordinary-calendar arrows navigate the week immediately from its source card",
       );
+      await page.keyboard.press("ArrowLeft");
+      await content.getByText(ordinaryDate, { exact: true }).waitFor();
       assert.equal(
         await fitWeek.count(),
         0,
@@ -589,6 +1379,7 @@ try {
       await context.close();
     }
   }
+  await verifyShareLifecycle();
 } finally {
   await browser.close();
 }

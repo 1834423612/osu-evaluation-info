@@ -156,6 +156,9 @@
   font-size: 11px;
   line-height: 1.4;
 }
+.event .courseCode {
+  display: none;
+}
 .event span {
   flex-shrink: 0;
   min-width: 0;
@@ -370,6 +373,43 @@
   .event strong {
     font-size: 9px;
     overflow-wrap: normal;
+  }
+  .week .event .eventTitle[data-has-code="true"] {
+    display: none;
+  }
+  .week .event:has(.courseCode) {
+    min-height: min-content;
+    padding: 2px 1px;
+    gap: 0;
+  }
+  .week .event:has(.courseCode) > span {
+    display: none;
+  }
+  .week .event strong.courseCode,
+  .week[data-fit="true"] .event strong.courseCode {
+    display: block;
+    min-height: 20px;
+    font-size: 8px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    -webkit-line-clamp: unset;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    text-overflow: clip;
+    overflow: visible;
+  }
+  .week .event[data-point="true"] strong.courseCode {
+    min-height: 24px;
+  }
+  .week .event[data-lanes="2"]:has(.courseCode) {
+    padding: 2px 0;
+    border-left-width: 1px;
+  }
+  .week .event[data-lanes="2"] strong.courseCode,
+  .week[data-fit="true"] .event[data-lanes="2"] strong.courseCode {
+    font-size: 7px;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
   }
   .event span {
     font-size: 8px;
