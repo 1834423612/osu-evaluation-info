@@ -30,6 +30,19 @@ Open the run's **Summarize catalog maintenance** output. Its summary lists confi
 
 Structured catalog failures retain their stage and error code. GitHub error annotations surface the reason directly. A `CATALOG_COVERAGE_REGRESSION` rejection also produces a term/campus/subject table comparing accepted and candidate section counts, plus the total number of affected comparisons. This rejection deliberately leaves the run failed: incomplete official data must not be published or disguised as a successful refresh. The last accepted catalog and its accepted indexes remain available. When dependencies were installed and the run was not cancelled, search-index repair and academic-calendar refresh still run independently; inspect their own outcomes rather than inferring them from the catalog failure.
 
+Ingestion errors also identify the operation (`official-request`, `page-validation` or `page-write`), candidate run, partition, page, official URL, JSON field, expected/actual values and course/class IDs. Annotations carry the validator's repository file and line. Transport diagnostics preserve HTTP status, attempt and the underlying cause. The candidate's stored error retains the same bounded, redacted context. Query text, response bodies and SQL parameters are omitted.
+
+Verified parent/section differences appear in a separate summary table even when later progress moves them out of the last 40 log lines. A subject/catalog disagreement is reconciled only when selected-facet and explicit section evidence agree; the original parent identity is retained. Unverified disagreements remain errors. The [November 25 comparison](source-audit-2026-11-25.md) records the observed AIRSCI and MILSCI cases and full-source/archive counts.
+
+Reproduce one subject locally without writing checkpoints or publications:
+
+```sh
+node scripts/catalog/inspect-official.mjs --term 1272 --subject airsci
+node scripts/catalog/inspect-official.mjs --term 1272 --subject airsci --compare-archive
+```
+
+Inspection uses installed runtime dependencies and official requests, with a two-minute budget and fewer than 10,000 hits. Optional `--campus col` narrows the source. Without `--compare-archive` it does not load database configuration; with that flag it loads `DATABASE_URL` from the environment or `.env.local` and compares the latest accepted archive in a read-only transaction. The JSON result distinguishes additions, records not returned in this subject traversal, identity changes and broken archived parent links. These are dated differences, not proof of deletion or source correctness. Invalid responses exit nonzero with structured field diagnostics.
+
 ## Syllabus refresh
 
 Migration 5 adds `osu_syllabus.document_checks`, separate from permanent index observations and document versions. It records the last conclusive network check and the exact index metadata checked. Cache reuse never advances that timestamp; transient failures never count as successful checks.

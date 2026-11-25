@@ -27,6 +27,7 @@
 - [课程搜索引擎](catalog/search.md)
 - [课程同步隔离基准：2026-11-05](catalog/sync-benchmark-2026-11-05.md)
 - [课程同步可靠性审计：2026-11-07](catalog/sync-reliability.md)
+- [官方来源与存档对比：2026-11-25](catalog/source-audit-2026-11-25.md)
 
 ## 教学大纲
 

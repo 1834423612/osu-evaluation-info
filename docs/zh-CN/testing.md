@@ -14,6 +14,8 @@
 
 `tests/catalog/sync-safety.test.mjs` 还覆盖 null 学期占位、异常筛选项分类、受限重试日志和维护错误凭据脱敏；使用合成响应，不请求网络。
 
+课程诊断回归还覆盖父子身份核验与依据缺失／矛盾时拒绝处理、来源 JSON 路径、校验代码位置、传输底层原因，以及 Actions 摘要保留身份差异。运行 `node --test tests/catalog/sync-safety.test.mjs tests/catalog/workflow-diagnostics.test.mjs tests/catalog/inspection.test.mjs`。检查脚本测试按学期／班级比较身份，用注入的官方响应启动 CLI，并在内存 PGlite 中执行 SQL，验证校区变化仍能关联旧身份。它创建和删除临时预加载文件，不请求网络或连接外部数据库。`CATALOG_DATABASE_TEST=1 node --test tests/catalog/sync-cli.integration.test.mjs` 额外在隔离 PostgreSQL schema 中发布核验后的合成记录，再通过检查 CLI 的只读事务比对该存档。它需要 `DATABASE_URL`，只创建和删除随机测试 schema，不请求官方服务。
+
 规划审查回归覆盖失败修读后的重修、独立审计记录、重复占位项、JSONB 键顺序变化后的重试，以及仅含明确可选课程的通用模板。`tests/planning/import-profile.test.mjs` 还使用 PDF.js 提取浏览器合成 PDF 后验证自动识别。浏览器工作区脚本通过自定义选择框选项操作，并在刷新后核对恢复的标签。私有 HAR 对比遇到学分冲突会失败。统计隐私测试覆盖规划页面访问、元数据白名单、弹窗与私密选择器浮层回放屏蔽、自定义选择器埋点和分享路径脱敏。可通过 `pnpm test` 执行，浏览器与私有文件脚本仍按下文说明显式运行。
 
 在仓库根目录使用 Node.js 24+ 并安装依赖后运行：
@@ -147,6 +149,7 @@ node tests/planning/workspaces.browser.mjs
 | [tests/catalog/filters.browser.mjs](../../tests/catalog/filters.browser.mjs)                               | 浏览器 | 课程筛选层级、选中与移动布局                               |
 | [tests/catalog/floating-controls.test.mjs](../../tests/catalog/floating-controls.test.mjs)                 | 单元   | 回顶等悬浮控件的视口避让                                   |
 | [tests/catalog/live-sync.integration.test.mjs](../../tests/catalog/live-sync.integration.test.mjs)         | 集成   | 真实官方全量同步到隔离存储                                 |
+| [tests/catalog/inspection.test.mjs](../../tests/catalog/inspection.test.mjs) | 单元 | 稳定身份差异、校区变化及失败上下文；注入 HTTP、内存 SQL、临时文件，无外部服务 |
 | [tests/catalog/official-availability.test.mjs](../../tests/catalog/official-availability.test.mjs)         | 单元   | 固定官方空位地址、限流与匿名请求                           |
 | [tests/catalog/official-exact.test.mjs](../../tests/catalog/official-exact.test.mjs)                       | 单元   | 精确编号、筛选、跨页和校区边界                             |
 | [tests/catalog/permanent-archive.test.mjs](../../tests/catalog/permanent-archive.test.mjs)                 | 单元   | 永久副本不会被旧清理选项删除                               |

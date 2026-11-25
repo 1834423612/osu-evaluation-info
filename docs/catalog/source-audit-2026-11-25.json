@@ -1,0 +1,1083 @@
+{
+  "observedAt": {
+    "startedAt": "2026-11-25T23:39:24.542Z",
+    "completedAt": "2026-11-25T23:42:31.603Z"
+  },
+  "readOnly": true,
+  "comparisonFields": [
+    "term_code",
+    "class_number",
+    "course_id",
+    "offering_number",
+    "campus_code",
+    "subject",
+    "catalog_number"
+  ],
+  "baseline": [
+    {
+      "term": "1264",
+      "snapshotAt": "2026-11-24T23:09:18.863Z",
+      "sections": 15386
+    },
+    {
+      "term": "1272",
+      "snapshotAt": "2026-11-24T23:09:18.863Z",
+      "sections": 27123
+    },
+    {
+      "term": "1268",
+      "snapshotAt": "2026-11-24T23:09:18.863Z",
+      "sections": 28054
+    }
+  ],
+  "source": {
+    "endpoint": "https://content.osu.edu/v2/classes/search",
+    "partitions": 714,
+    "pages": 895,
+    "expectedHits": 70613,
+    "fetchedHits": 70613,
+    "distinctSections": 70600
+  },
+  "validation": {
+    "archivedParentLinkFailures": 0,
+    "partitionErrors": 0
+  },
+  "counts": {
+    "added": 63,
+    "notReturned": 26,
+    "changed": 1,
+    "unchanged": 70536
+  },
+  "parentSectionDifferences": [
+    {
+      "term": "1272",
+      "partition": "subject=airsci&term=1272",
+      "page": 1,
+      "path": "courses[4].course",
+      "courseId": "165133",
+      "classNumber": "14598",
+      "parentSubject": "KNSFHP",
+      "parentCatalogNumber": "1155.03",
+      "subject": "AIRSCI",
+      "catalogNumber": "1155.01",
+      "subjectDesc": "Air Force Aerospace Studies"
+    },
+    {
+      "term": "1272",
+      "partition": "subject=milsci&term=1272",
+      "page": 1,
+      "path": "courses[2].course",
+      "courseId": "148067",
+      "classNumber": "13381",
+      "parentSubject": "KNSFHP",
+      "parentCatalogNumber": "1155.01",
+      "subject": "MILSCI",
+      "catalogNumber": "1155.01",
+      "subjectDesc": "Military Science"
+    }
+  ],
+  "coverageDifferences": [
+    {
+      "query": {
+        "term": "1272",
+        "subject": "afamast"
+      },
+      "previous": 41,
+      "official": 40
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "airsci"
+      },
+      "previous": 22,
+      "official": 23
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "anatomy"
+      },
+      "previous": 111,
+      "official": 112
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "arteduc"
+      },
+      "previous": 116,
+      "official": 112
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "chem"
+      },
+      "previous": 828,
+      "official": 829
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "civicll"
+      },
+      "previous": 42,
+      "official": 44
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "comm"
+      },
+      "previous": 278,
+      "official": 279
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "eeob"
+      },
+      "previous": 294,
+      "official": 295
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "english"
+      },
+      "previous": 360,
+      "official": 361
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "essped"
+      },
+      "previous": 98,
+      "official": 100
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "gened"
+      },
+      "previous": 623,
+      "official": 633
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "hcs"
+      },
+      "previous": 282,
+      "official": 285
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "hthrhsc"
+      },
+      "previous": 432,
+      "official": 434
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "italian"
+      },
+      "previous": 31,
+      "official": 30
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "jewshst"
+      },
+      "previous": 5,
+      "official": 6
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "knsfhp"
+      },
+      "previous": 202,
+      "official": 201
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "math"
+      },
+      "previous": 497,
+      "official": 492
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "milsci"
+      },
+      "previous": 21,
+      "official": 22
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "nelc"
+      },
+      "previous": 13,
+      "official": 14
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "pubhepi"
+      },
+      "previous": 22,
+      "official": 23
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "pubhlth"
+      },
+      "previous": 45,
+      "official": 44
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "spanish"
+      },
+      "previous": 206,
+      "official": 207
+    },
+    {
+      "query": {
+        "term": "1272",
+        "subject": "theatre"
+      },
+      "previous": 154,
+      "official": 153
+    }
+  ],
+  "added": [
+    {
+      "term_code": "1272",
+      "class_number": "38037",
+      "course_id": "163548",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "AFAMAST",
+      "catalog_number": "8193"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "14598",
+      "course_id": "165133",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "AIRSCI",
+      "catalog_number": "1155.01"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38036",
+      "course_id": "157961",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ANATOMY",
+      "catalog_number": "2300"
+    },
+    {
+      "term_code": "1264",
+      "class_number": "4252",
+      "course_id": "149796",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CBE",
+      "catalog_number": "4999"
+    },
+    {
+      "term_code": "1264",
+      "class_number": "4253",
+      "course_id": "149796",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CBE",
+      "catalog_number": "4999"
+    },
+    {
+      "term_code": "1264",
+      "class_number": "4254",
+      "course_id": "149796",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CBE",
+      "catalog_number": "4999"
+    },
+    {
+      "term_code": "1264",
+      "class_number": "8114",
+      "course_id": "149796",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CBE",
+      "catalog_number": "4999"
+    },
+    {
+      "term_code": "1264",
+      "class_number": "13815",
+      "course_id": "149896",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "4999"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16764",
+      "course_id": "149734",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1220"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16767",
+      "course_id": "149734",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1220"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16772",
+      "course_id": "149734",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1220"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16773",
+      "course_id": "149734",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1220"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16778",
+      "course_id": "149734",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1220"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "20160",
+      "course_id": "149734",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1220"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38017",
+      "course_id": "149735",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "1250"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16861",
+      "course_id": "149892",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "16869",
+      "course_id": "149892",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CHEM",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "31279",
+      "course_id": "166514",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CIVICLL",
+      "catalog_number": "3193"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38034",
+      "course_id": "166216",
+      "offering_number": "5",
+      "campus_code": "NWK",
+      "subject": "CIVICLL",
+      "catalog_number": "2120"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38020",
+      "course_id": "152316",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "COMM",
+      "catalog_number": "7998"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "6507",
+      "course_id": "149181",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "6999"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "6508",
+      "course_id": "149181",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "6999"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "6513",
+      "course_id": "149181",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "6999"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "6517",
+      "course_id": "149181",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "6999"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "6518",
+      "course_id": "149181",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "6999"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38028",
+      "course_id": "152063",
+      "offering_number": "5",
+      "campus_code": "NWK",
+      "subject": "EEOB",
+      "catalog_number": "4998"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "18161",
+      "course_id": "150566",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ENGLISH",
+      "catalog_number": "2367.02"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38022",
+      "course_id": "164714",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ESSPED",
+      "catalog_number": "5124"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38023",
+      "course_id": "164714",
+      "offering_number": "2",
+      "campus_code": "COL",
+      "subject": "ESSPED",
+      "catalog_number": "5124"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30090",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30093",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30096",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30098",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30100",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30106",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "30111",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "30675",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38033",
+      "course_id": "164978",
+      "offering_number": "4",
+      "campus_code": "MRN",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "30606",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "30613",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "30684",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "30759",
+      "course_id": "164978",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "1201"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "30979",
+      "course_id": "165814",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "2601.01"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "31213",
+      "course_id": "165505",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "4001"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "37886",
+      "course_id": "165505",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "4001"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "37887",
+      "course_id": "165505",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "GENED",
+      "catalog_number": "4001"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38002",
+      "course_id": "159884",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "HCS",
+      "catalog_number": "5194"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38003",
+      "course_id": "159884",
+      "offering_number": "2",
+      "campus_code": "COL",
+      "subject": "HCS",
+      "catalog_number": "5194"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38005",
+      "course_id": "159884",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "HCS",
+      "catalog_number": "5194"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38024",
+      "course_id": "153792",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "HTHRHSC",
+      "catalog_number": "7998"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38025",
+      "course_id": "153792",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "HTHRHSC",
+      "catalog_number": "7998"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38027",
+      "course_id": "161288",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "JEWSHST",
+      "catalog_number": "3241"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "21764",
+      "course_id": "159714",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "NELC",
+      "catalog_number": "5193"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "15309",
+      "course_id": "155037",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "PHR",
+      "catalog_number": "8999"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "23656",
+      "course_id": "147687",
+      "offering_number": "5",
+      "campus_code": "NWK",
+      "subject": "PHYSICS",
+      "catalog_number": "1250"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "20026",
+      "course_id": "147769",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "PHYSICS",
+      "catalog_number": "8999"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "29822",
+      "course_id": "152424",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "POLITSC",
+      "catalog_number": "7264"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38018",
+      "course_id": "166910",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "PUBHEPI",
+      "catalog_number": "2410H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38026",
+      "course_id": "150846",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "SPANISH",
+      "catalog_number": "3404"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "38031",
+      "course_id": "150717",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "SPANISH",
+      "catalog_number": "1103"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "26889",
+      "course_id": "147479",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "STAT",
+      "catalog_number": "6193"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "26890",
+      "course_id": "147479",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "STAT",
+      "catalog_number": "6193"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "26898",
+      "course_id": "147479",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "STAT",
+      "catalog_number": "6193"
+    }
+  ],
+  "notReturned": [
+    {
+      "term_code": "1264",
+      "class_number": "4577",
+      "course_id": "149265",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "8999"
+    },
+    {
+      "term_code": "1264",
+      "class_number": "4582",
+      "course_id": "149265",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ECE",
+      "catalog_number": "8999"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "11005",
+      "course_id": "150588",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CSE",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "11010",
+      "course_id": "150588",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CSE",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "7013",
+      "course_id": "150588",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CSE",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "7014",
+      "course_id": "150588",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "CSE",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "24585",
+      "course_id": "151620",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MATH",
+      "catalog_number": "1075"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "24586",
+      "course_id": "151620",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MATH",
+      "catalog_number": "1075"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "35672",
+      "course_id": "151749",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "POLITSC",
+      "catalog_number": "4192"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "18600",
+      "course_id": "151927",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MATH",
+      "catalog_number": "1151"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "18601",
+      "course_id": "151927",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MATH",
+      "catalog_number": "1151"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "35451",
+      "course_id": "152792",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ARTEDUC",
+      "catalog_number": "7795"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "24456",
+      "course_id": "153060",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MATH",
+      "catalog_number": "3345"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "5277",
+      "course_id": "153878",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "HTHRHSC",
+      "catalog_number": "4998H"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "28436",
+      "course_id": "155787",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "THEATRE",
+      "catalog_number": "2100"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "19833",
+      "course_id": "156183",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "SOCIOL",
+      "catalog_number": "8999"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "26709",
+      "course_id": "160086",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "SPANISH",
+      "catalog_number": "1102"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "35621",
+      "course_id": "160171",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ARTEDUC",
+      "catalog_number": "3681"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "35446",
+      "course_id": "161758",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ARTEDUC",
+      "catalog_number": "5795"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "35447",
+      "course_id": "161758",
+      "offering_number": "2",
+      "campus_code": "COL",
+      "subject": "ARTEDUC",
+      "catalog_number": "5795"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "37002",
+      "course_id": "162346",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "PUBHLTH",
+      "catalog_number": "3550"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "26200",
+      "course_id": "163400",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "ITALIAN",
+      "catalog_number": "1101.03"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "37547",
+      "course_id": "166580",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "AFAMAST",
+      "catalog_number": "5030"
+    },
+    {
+      "term_code": "1272",
+      "class_number": "37548",
+      "course_id": "166580",
+      "offering_number": "2",
+      "campus_code": "COL",
+      "subject": "AFAMAST",
+      "catalog_number": "5030"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "8907",
+      "course_id": "149639",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MECHENG",
+      "catalog_number": "8999"
+    },
+    {
+      "term_code": "1268",
+      "class_number": "8928",
+      "course_id": "149639",
+      "offering_number": "1",
+      "campus_code": "COL",
+      "subject": "MECHENG",
+      "catalog_number": "8999"
+    }
+  ],
+  "changed": [
+    {
+      "term": "1272",
+      "classNumber": "13381",
+      "differences": [
+        {
+          "field": "subject",
+          "previous": "KNSFHP",
+          "official": "MILSCI"
+        }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 - [Course search engine](catalog/search.md)
 - [Catalog sync dry-run benchmark — November 5, 2026](catalog/sync-benchmark-2026-11-05.md)
 - [Catalog sync reliability audit — November 7, 2026](catalog/sync-reliability.md)
+- [Official source and archive comparison — November 25, 2026](catalog/source-audit-2026-11-25.md)
 
 ## Syllabi
 

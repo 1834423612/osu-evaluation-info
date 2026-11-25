@@ -30,6 +30,19 @@ node scripts/catalog/backfill_changes.mjs --max-batches 1 --max-seconds 60
 
 结构化课程同步错误保留失败阶段与错误代码，GitHub 错误注解直接显示原因。`CATALOG_COVERAGE_REGRESSION` 拒绝还提供学期、校区、学科的差异表，比较上次通过与候选数据的班次数量，同时显示受影响比较总数。这类拒绝有意保留红色失败状态：不完整官方数据不会发布，也不会伪装为更新成功。上次通过的课程目录及其已接受索引继续可用。依赖安装成功且运行未取消时，索引修复与校历更新仍独立执行，应分别查看其结果，不要根据课程同步失败推断其他步骤状态。
 
+入库错误还指出操作（`official-request`、`page-validation` 或 `page-write`）、候选运行、分区、页码、官方网址、JSON 字段、期望／实际值以及课程和班级 ID。注解包含校验器的仓库文件与行号。传输诊断保留 HTTP 状态、尝试次数和底层原因。候选运行保存的错误包含相同的受限脱敏上下文，不输出查询文本、响应正文或 SQL 参数。
+
+已核验的父子身份差异单独列入摘要表，后续进度超出最后 40 行也仍可查看。只有选中筛选项与显式班级依据一致时才调和学科／课号分歧，并保留原父级身份。无法核验的分歧仍报错。[11 月 25 日对比](source-audit-2026-11-25.md)记录了 AIRSCI、MILSCI 实例及全量来源／存档数量。
+
+在本地复现一个学科，不写断点或发布：
+
+```sh
+node scripts/catalog/inspect-official.mjs --term 1272 --subject airsci
+node scripts/catalog/inspect-official.mjs --term 1272 --subject airsci --compare-archive
+```
+
+检查需要已安装运行依赖及官方请求，两分钟预算，命中数须低于 10,000。可附加 `--campus col` 缩小来源范围。不加 `--compare-archive` 时不加载数据库配置；加上该开关后，从环境或 `.env.local` 加载 `DATABASE_URL`，在只读事务中比较最新已接受存档。JSON 结果区分新增、本次学科遍历未返回、身份变化和存档父子关联异常。这些是带日期的差异，不代表确认删除或来源一定正确。异常响应以非零状态退出并提供字段诊断。
+
 ## 大纲刷新
 
 迁移 5 新增 `osu_syllabus.document_checks`，与永久保存的索引观察及正文版本分离，记录上次有明确结论的网络检查和当时的完整索引元数据。复用缓存不会推进检查时间；临时失败不会计为成功检查。
