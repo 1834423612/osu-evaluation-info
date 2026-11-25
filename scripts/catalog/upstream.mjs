@@ -1,7 +1,42 @@
 import { setTimeout as delay } from "node:timers/promises";
+import { redactCatalogText } from "./diagnostics.mjs";
 
-export function catalogError(message, code = "CATALOG_DATA_INVALID") {
-  return Object.assign(new Error(message), { code });
+export const officialSearchPath = (query) =>
+  `search?${new URLSearchParams({ q: "", client: "class-search-ui", sort: "subject", ...query })}`;
+
+export function officialRequestContext(path) {
+  const [endpoint, query] = path.split("?");
+  const scope = Object.fromEntries(
+    [...new URLSearchParams(query)].filter(
+      ([key, value]) =>
+        [
+          "term",
+          "campus",
+          "subject",
+          "p",
+          "component",
+          "catalog-number",
+          "academic-career",
+        ].includes(key) && /^[\w.-]{1,32}$/.test(value),
+    ),
+  );
+  const params = new URLSearchParams(
+    endpoint === "search"
+      ? { q: "", client: "class-search-ui", sort: "subject", ...scope }
+      : scope,
+  );
+  return {
+    endpoint,
+    ...scope,
+    requestUrl: `https://content.osu.edu/v2/classes/${endpoint}${params.size ? `?${params}` : ""}`,
+  };
+}
+
+export function catalogError(message, code = "CATALOG_DATA_INVALID", details) {
+  return Object.assign(new Error(message), {
+    code,
+    ...(details ? { details } : {}),
+  });
 }
 
 /** Retry transport failures and temporary HTTP errors, with bounded Retry-After. */
@@ -14,14 +49,7 @@ export async function fetchOfficialJson(
     report = (event) => console.warn(JSON.stringify(event)),
   } = {},
 ) {
-  const [endpoint, query] = path.split("?");
-  const scope = Object.fromEntries(
-    [...new URLSearchParams(query)].filter(
-      ([key, value]) =>
-        ["term", "campus", "subject", "p"].includes(key) &&
-        /^[\w.-]{1,32}$/.test(value),
-    ),
-  );
+  const scope = officialRequestContext(path);
   for (let attempt = 0; ; attempt++) {
     signal?.throwIfAborted();
     let response;
@@ -54,11 +82,22 @@ export async function fetchOfficialJson(
       return value.data;
     } catch (error) {
       const detail = {
-        endpoint,
         ...scope,
         attempt: attempt + 1,
         status: response?.status ?? null,
         code: error.code ?? "CATALOG_TRANSPORT_ERROR",
+      };
+      error.details = {
+        ...error.details,
+        requestUrl: scope.requestUrl,
+        status: detail.status,
+        attempt: detail.attempt,
+        cause: redactCatalogText(
+          error.cause
+            ? `${error.cause.code ?? error.cause.name}: ${error.cause.message}`
+            : error.message,
+          500,
+        ),
       };
       if (
         signal?.aborted ||
@@ -90,10 +129,7 @@ export async function fetchOfficialJson(
 }
 
 export const searchOfficial = (query, options) =>
-  fetchOfficialJson(
-    `search?${new URLSearchParams({ q: "", client: "class-search-ui", sort: "subject", ...query })}`,
-    options,
-  );
+  fetchOfficialJson(officialSearchPath(query), options);
 
 export function hitCount(value, label = "hit count") {
   if (!Number.isSafeInteger(value) || value < 0)

@@ -15,6 +15,8 @@ import {
   actualCount,
   facet,
   catalogError,
+  officialRequestContext,
+  officialSearchPath,
 } from "./upstream.mjs";
 import { discoverPlan, samePlan } from "./plan.mjs";
 import { selectRun } from "./checkpoints.mjs";
@@ -25,6 +27,10 @@ import { publishCatalogSnapshot } from "./snapshots.mjs";
 import { assertCatalogCoverage } from "./coverage.mjs";
 import { catalogFailure } from "./diagnostics.mjs";
 const context = { stage: "configuration" };
+function stage(name, details = {}) {
+  for (const key of Object.keys(context)) delete context[key];
+  Object.assign(context, { stage: name }, details);
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -64,7 +70,22 @@ async function main() {
     runId;
   const deadline = Date.now() + 20 * 60 * 1000;
   const signal = AbortSignal.timeout(20 * 60 * 1000);
-  const search = (query) => searchOfficial(query, { signal });
+  const search = (query) => {
+    for (const key of [
+      "term",
+      "subject",
+      "campus",
+      "p",
+      "component",
+      "catalog-number",
+      "academic-career",
+    ])
+      delete context[key];
+    Object.assign(context, officialRequestContext(officialSearchPath(query)), {
+      operation: "official-request",
+    });
+    return searchOfficial(query, { signal });
+  };
   let processed = 0;
   let stopping = false;
   const stop = () => {
@@ -74,7 +95,9 @@ async function main() {
   process.once("SIGINT", stop);
   try {
     if (client) {
+      stage("database-connection");
       await client.connect();
+      stage("database-lock");
       locked = (
         await client.query("SELECT pg_try_advisory_lock($1) AS locked", [
           CATALOG_LOCK,
@@ -86,9 +109,10 @@ async function main() {
         );
         return;
       }
+      stage("database-schema");
       await requireCatalogSchema(client);
     }
-    context.stage = "term-discovery";
+    stage("term-discovery", officialRequestContext("searchableTermsV2"));
     const available = searchableTerms(
       await fetchOfficialJson("searchableTermsV2", { signal }),
     );
@@ -120,21 +144,23 @@ async function main() {
     // At most one automatic restart when the live index moves during traversal.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        context.stage = "partition-discovery";
+        stage("partition-discovery");
         const plan = await discoverPlan(terms, available, search);
+        stage("checkpoint-selection");
         runId = await selectRun(
           client,
           termCodes,
           plan,
           args.includes("--new-run") || attempt > 0,
         );
+        context.run = runId;
         const partitions = (
           await client.query(
             "SELECT * FROM osu_catalog.sync_partitions WHERE run_id=$1 AND NOT complete ORDER BY partition_key",
             [runId],
           )
         ).rows;
-        context.stage = "snapshot-ingestion";
+        stage("snapshot-ingestion", { run: runId });
         for (const partition of partitions) {
           for (let page = partition.next_page; ; page++) {
             if (processed >= maxPages || stopping || Date.now() >= deadline) {
@@ -144,11 +170,27 @@ async function main() {
               if (stopping) process.exitCode = 1;
               return;
             }
+            stage("snapshot-ingestion", {
+              run: runId,
+              partition: partition.partition_key,
+              page,
+              expectedSections: partition.expected_sections,
+            });
             const data = await search({
               ...partition.query,
               p: String(page),
             });
+            context.operation = "page-validation";
             const prepared = preparePage(data, partition, page);
+            for (const resolution of prepared.identityResolutions)
+              console.warn(
+                JSON.stringify({
+                  event: "catalog.parent_identity_reconciled",
+                  ...context,
+                  ...resolution,
+                }),
+              );
+            context.operation = "page-write";
             await writePage(client, runId, partition, page, prepared);
             processed++;
             console.log(
@@ -165,6 +207,7 @@ async function main() {
           if (stopping) process.exitCode = 1;
           return;
         }
+        stage("final-plan-validation", { run: runId });
         const finalPlan = await discoverPlan(terms, available, search);
         if (!samePlan(plan.partitions, finalPlan.partitions))
           throw catalogError(
@@ -178,6 +221,7 @@ async function main() {
           process.exitCode = 1;
           return;
         }
+        stage("snapshot-reconciliation", { run: runId });
         const count = Number(
           (
             await client.query(
@@ -186,7 +230,7 @@ async function main() {
             )
           ).rows[0].n,
         );
-        context.stage = "coverage-validation";
+        stage("coverage-validation", { run: runId });
         await assertCatalogCoverage(client, runId);
         // Keep the old publication visible until every term has a complete index.
         // A failed preparation cannot expose a new generation to visitors.
@@ -195,7 +239,7 @@ async function main() {
           label: term.descr,
         }));
         for (const term of termCodes) {
-          context.stage = "search-preparation";
+          stage("search-preparation", { run: runId, term });
           await prepareSearchGeneration(client, {
             run: runId,
             term,
@@ -203,7 +247,7 @@ async function main() {
             snapshotAt: new Date().toISOString(),
           });
         }
-        context.stage = "publication";
+        stage("publication", { run: runId });
         await publishCatalogSnapshot(
           client,
           runId,
@@ -227,7 +271,10 @@ async function main() {
               "UPDATE osu_catalog.sync_runs SET status='failed',error=$2 WHERE id=$1 AND status<>'complete'",
               [
                 runId,
-                `${error.code ?? "ERROR"}: ${error.message}`.slice(0, 1000),
+                `${error.code ?? "ERROR"}: ${JSON.stringify(catalogFailure("catalog.sync_failed", error, context))}`.slice(
+                  0,
+                  6000,
+                ),
               ],
             )
             .catch(() => {});

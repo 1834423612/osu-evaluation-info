@@ -27,7 +27,7 @@ export async function selectRun(client, terms, plan, forceNew = false) {
       age >= 0 &&
       age < MAX_CHECKPOINT_AGE_MS &&
       previous.expected_sections === plan.expectedTotal &&
-      !/^CATALOG_(?:DATA_INVALID|IDENTITY_CONFLICT|INDEX_CHANGED|CHECKPOINT_INVALID)/.test(
+      !/^CATALOG_(?:DATA_INVALID|SUBJECT_MISMATCH|IDENTITY_CONFLICT|INDEX_CHANGED|CHECKPOINT_INVALID)/.test(
         previous.error ?? "",
       ) &&
       samePlan(saved, plan.partitions) &&

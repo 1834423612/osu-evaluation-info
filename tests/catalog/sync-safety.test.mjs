@@ -59,6 +59,132 @@ function fixture() {
   };
 }
 
+// Minimal, non-personal fields observed at the official endpoint on 2026-11-25.
+function mixedIdentity() {
+  const data = fixture();
+  data.totalItems = 1;
+  data.filters = [
+    {
+      slug: "subject",
+      items: [
+        {
+          term: "airsci",
+          title: "Air Force Aerospace Studies",
+          count: 1,
+          selected: true,
+        },
+      ],
+    },
+  ];
+  data.courses[0].course = {
+    courseId: "165133",
+    offeringNumber: "1",
+    subject: "KNSFHP",
+    subjectDesc: "Kinesiology:Sprt, Ftns & Hlth Pr",
+    catalogNumber: "1155.03",
+    title: "Physical Fitness Training for the ROTC: Air Force",
+  };
+  data.courses[0].sections = [
+    {
+      termCode: "1272",
+      classNumber: "14598",
+      courseId: "165133",
+      courseOfferingNumber: "1",
+      secCampus: "COL",
+      _parent: "165133-1-1272",
+      subject: "Air Force Aerospace Studies",
+      subjectDesc: "Air Force Aerospace Studies",
+      catalogNumber: "1155.01",
+      secCatalogNumber: "1155.01",
+    },
+  ];
+  return data;
+}
+const airPartition = {
+  query: { term: "1272", subject: "airsci" },
+  partition_key: "subject=airsci&term=1272",
+  expected_sections: 1,
+};
+
+it("reconciles an official parent/section mismatch only from verified section and selected-facet evidence", () => {
+  const page = preparePage(mixedIdentity(), airPartition, 1);
+  assert.equal(page.courses[0].subject, "AIRSCI");
+  assert.equal(page.courses[0].catalog_number, "1155.01");
+  assert.equal(page.sections[0].subject, "AIRSCI");
+  assert.equal(page.courses[0].data.subjectDesc, "Air Force Aerospace Studies");
+  assert.deepEqual(page.courses[0].data.officialParentIdentity, {
+    subject: "KNSFHP",
+    catalogNumber: "1155.03",
+    subjectDesc: "Kinesiology:Sprt, Ftns & Hlth Pr",
+  });
+  assert.equal(page.identityResolutions.length, 1);
+  assert.equal(page.identityResolutions[0].path, "courses[0].course");
+  assert.equal(page.identityResolutions[0].classNumber, "14598");
+});
+
+it("rejects unproven subject reconciliation with the exact record and expected/actual field", () => {
+  for (const alter of [
+    (d) => {
+      d.filters = [];
+    },
+    (d) => {
+      d.filters[0].items[0].selected = false;
+    },
+    (d) => {
+      d.courses[0].sections[0].subject = "Mathematics";
+    },
+    (d) => {
+      d.courses[0].sections[0].subjectDesc = "Mathematics";
+    },
+    (d) => {
+      d.courses[0].sections[0]._parent = "999-1-1272";
+    },
+    (d) => {
+      d.courses[0].sections[0].secCatalogNumber = "9999";
+    },
+    (d) => {
+      delete d.courses[0].sections[0].catalogNumber;
+    },
+    (d) => {
+      delete d.courses[0].sections[0].courseId;
+    },
+  ]) {
+    const data = mixedIdentity();
+    alter(data);
+    assert.throws(
+      () => preparePage(data, airPartition, 1),
+      (error) => {
+        assert.ok(error.details?.path, "failure must identify its JSON field");
+        assert.ok(Object.hasOwn(error.details, "expected"));
+        assert.ok(Object.hasOwn(error.details, "actual"));
+        assert.equal(error.details.courseId, "165133");
+        assert.equal(error.details.classNumber, "14598");
+        return true;
+      },
+    );
+  }
+});
+
+it("records missing identity fields and wrong terms without dropping their source location", () => {
+  const data = fixture();
+  delete data.courses[0].sections[1].classNumber;
+  assert.throws(
+    () => preparePage(data, partition, 1),
+    (error) => {
+      assert.equal(error.details?.path, "courses[0].sections[1].classNumber");
+      assert.equal(error.details.actual, null);
+      const failure = catalogFailure("catalog.sync_failed", error, {
+        stage: "snapshot-ingestion",
+        page: 1,
+      });
+      assert.equal(failure.details.path, error.details.path);
+      assert.equal(failure.location.file, "scripts/catalog/rows.mjs");
+      assert.ok(failure.location.line > 0);
+      return true;
+    },
+  );
+});
+
 it("derives missing course offering/campus from official sections and strips volatile metadata", () => {
   const page = preparePage(fixture(), partition, 1);
   assert.equal(page.courses[0].offering_number, "1");
@@ -253,6 +379,39 @@ it("upstream diagnostics report retries and terminal failures without query text
   assert.equal(events[0].campus, "col");
   assert.equal(events[0].status, 503);
   assert.ok(!JSON.stringify(events).includes("private-text"));
+});
+
+it("terminal HTTP/transport errors retain reproducible safe scope and the underlying cause", async () => {
+  for (const fetcher of [
+    async () => new Response("private response body", { status: 403 }),
+    async () => {
+      throw new TypeError("fetch failed", {
+        cause: Object.assign(new Error("DNS lookup failed"), {
+          code: "EAI_AGAIN",
+        }),
+      });
+    },
+  ]) {
+    await assert.rejects(
+      fetchOfficialJson(
+        "search?term=1272&subject=airsci&p=1&component=lec&q=private-query&token=private-token",
+        {
+          fetcher,
+          wait: async () => {},
+          report: () => {},
+        },
+      ),
+      (error) => {
+        assert.ok(error.details?.requestUrl.includes("subject=airsci"));
+        assert.ok(error.details.requestUrl.includes("component=lec"));
+        assert.ok(!JSON.stringify(error.details).includes("private"));
+        if (error.details.status === null)
+          assert.match(error.details.cause, /EAI_AGAIN.*DNS lookup failed/);
+        else assert.equal(error.details.status, 403);
+        return true;
+      },
+    );
+  }
 });
 it("malformed official facet and term entries fail with a classified data error", () => {
   for (const filters of [

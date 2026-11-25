@@ -130,6 +130,77 @@ it("does not annotate a successful refresh as a failure", async () => {
   assert.match(result.summary, /88000/);
 });
 
+it("retains verified parent/section differences in the summary after later progress scrolls past them", async () => {
+  const result = await report(
+    {
+      "catalog-sync": [
+        JSON.stringify({
+          event: "catalog.parent_identity_reconciled",
+          term: "1272",
+          courseId: "165133",
+          classNumber: "14598",
+          parentSubject: "KNSFHP",
+          parentCatalogNumber: "1155.03",
+          subject: "AIRSCI",
+          catalogNumber: "1155.01",
+        }),
+        ...Array.from({ length: 100 }, (_, i) => `page ${i}`),
+      ].join("\n"),
+    },
+    { CATALOG_OUTCOME: "success" },
+  );
+  assert.match(result.summary, /Verified parent\/section differences/);
+  assert.match(result.summary, /14598/);
+  assert.match(result.summary, /KNSFHP/);
+  assert.match(result.summary, /AIRSCI/);
+  assert.doesNotMatch(result.stdout, /::error/);
+});
+
+it("pinpoints the request, source field, identities and validator line for ingestion failures", async () => {
+  const result = await report(
+    {
+      "catalog-sync": JSON.stringify({
+        event: "catalog.sync_failed",
+        stage: "snapshot-ingestion",
+        operation: "page-validation",
+        code: "CATALOG_SUBJECT_MISMATCH",
+        message: "Official subject evidence does not agree.",
+        run: "candidate-run",
+        partition: "subject=airsci&term=1272",
+        term: "1272",
+        subject: "airsci",
+        page: 1,
+        requestUrl:
+          "https://content.osu.edu/v2/classes/search?term=1272&subject=airsci&p=1",
+        location: { file: "scripts/catalog/rows.mjs", line: 88, column: 7 },
+        details: {
+          path: "courses[4].sections[0].subject",
+          expected: "Air Force Aerospace Studies",
+          actual: "Mathematics",
+          courseId: "165133",
+          classNumber: "14598",
+        },
+      }),
+    },
+    { CATALOG_OUTCOME: "failure" },
+  );
+  assert.match(result.stdout, /file=scripts\/catalog\/rows.mjs,line=88,col=7/);
+  for (const value of [
+    "courses[4].sections[0].subject",
+    "Air Force Aerospace Studies",
+    "Mathematics",
+    "165133",
+    "14598",
+    "candidate-run",
+    "page-validation",
+    "subject=airsci",
+    "p=1",
+  ])
+    assert.ok(result.summary.includes(value), value);
+  assert.match(result.summary, /Expected/);
+  assert.match(result.summary, /Actual/);
+});
+
 it("removes package-download credentials and token fields from captured setup errors", async () => {
   const result = await report(
     {

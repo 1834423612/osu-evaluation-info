@@ -79,7 +79,11 @@ it(
         if(mode==='conflict'&&page&&subject==='physics')sections[0].classNumber='100';
         if(mode==='variants'&&page)sections[1]={...sections[1],courseOfferingNumber:'2',secCampus:'MNS'};
         const course={courseId:subject==='math'?'1':'2',subject:subjects[subject]??'MATH',catalogNumber:'1151',title:'Fixture',description:'Test',enrollmentTotal:5};
-        return Response.json({data:{totalItems:count,totalPages:1,filters:[{slug:'subject',items:Object.entries(counts).map(([term,count])=>({term,count,selected:false}))}],courses:page?[{course,sections}]:[]}});
+        if(mode==='section-identity'&&subject==='math'){
+          course.subject='KNSFHP';course.catalogNumber='1155.03';
+          for(const section of sections)Object.assign(section,{subject:'Mathematics',subjectDesc:'Mathematics',catalogNumber:'1151',secCatalogNumber:'1151',_parent:'1-1-1272'});
+        }
+        return Response.json({data:{totalItems:count,totalPages:1,filters:[{slug:'subject',items:Object.entries(counts).map(([term,count])=>({term,count,title:term==='math'?'Mathematics':'Physics',selected:mode==='section-identity'&&term===subject}))}],courses:page?[{course,sections}]:[]}});
       };
     `,
       );
@@ -118,6 +122,49 @@ it(
           )
         ).rows[0].n;
       let stable;
+      await t.test(
+        "publishes verified section identities with provenance and compares the accepted archive read-only",
+        async () => {
+          assert.match(
+            (await run("section-identity", ["--new-run"])).stdout,
+            /Complete: 4 official hits/,
+          );
+          const normalized = (
+            await client.query(
+              `SELECT subject,catalog_number,data->'officialParentIdentity' AS source FROM ${schema}.course_snapshots WHERE last_seen_run=$1 AND course_id='1'`,
+              [await published()],
+            )
+          ).rows;
+          assert.ok(normalized.length > 0);
+          assert.ok(
+            normalized.every(
+              (row) =>
+                row.subject === "MATH" &&
+                row.catalog_number === "1151" &&
+                row.source.subject === "KNSFHP",
+            ),
+          );
+          const result = await exec(
+            process.execPath,
+            [
+              "--import",
+              preload,
+              join(root, "scripts/catalog/inspect-official.mjs"),
+              "--term",
+              "1272",
+              "--subject",
+              "math",
+              "--compare-archive",
+            ],
+            { cwd: root, env: { ...process.env, CATALOG_CLI_MODE: "normal" } },
+          );
+          const inspection = JSON.parse(result.stdout.trim());
+          assert.equal(inspection.archive.readOnly, true);
+          assert.equal(inspection.archive.parentLinkFailures, 0);
+          assert.equal(inspection.archive.unchanged, 2);
+          assert.equal(inspection.archive.changed.length, 0);
+        },
+      );
       await t.test(
         "publishes missing-parent-field and multi-campus/offer variants without volatile fields",
         async () => {

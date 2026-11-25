@@ -24,8 +24,8 @@ function text(value, length = 1200) {
   ).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "");
 }
 
-function cell(value) {
-  return text(value ?? "—", 160)
+function cell(value, length = 160) {
+  return text(value ?? "—", length)
     .replace(/[\r\n]+/g, " ")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -34,13 +34,22 @@ function cell(value) {
     .replaceAll("`", "&#96;");
 }
 
-function annotation(title, message) {
+function annotation(title, message, location) {
   // Every message occupies one command line, even when an upstream error contains commands.
   const escaped = text(message, 800)
     .replaceAll("%", "%25")
     .replaceAll("\r", "%0D")
     .replaceAll("\n", "%0A");
-  console.log(`::error title=${title}::${escaped}`);
+  const source =
+    /^[\w./-]+$/.test(location?.file ?? "") &&
+    !location.file.includes("..") &&
+    Number.isSafeInteger(location.line) &&
+    location.line > 0 &&
+    Number.isSafeInteger(location.column) &&
+    location.column > 0
+      ? `,file=${location.file},line=${location.line},col=${location.column}`
+      : "";
+  console.log(`::error title=${title}${source}::${escaped}`);
 }
 
 async function readLog(name) {
@@ -109,7 +118,8 @@ async function main() {
         coverageRejected
           ? "Catalog refresh rejected"
           : "Catalog refresh failed",
-        `${failed?.stage || "catalog"}: ${failed?.code || "CATALOG_OPERATION_FAILED"}. ${cause}`,
+        `${failed?.stage || "catalog"}: ${failed?.code || "CATALOG_OPERATION_FAILED"}. ${cause}${failed?.details?.path ? ` Field: ${failed.details.path}; expected ${failed.details.expected}; actual ${failed.details.actual}.` : ""}${failed?.subject ? ` Term ${failed.term}, subject ${failed.subject}, page ${failed.page ?? "—"}.` : ""}`,
+        failed?.location,
       );
     } else
       annotation(
@@ -118,6 +128,28 @@ async function main() {
       );
   }
   output.push("");
+  const resolutions = catalogEvents.filter(
+    (entry) => entry.event === "catalog.parent_identity_reconciled",
+  );
+  if (resolutions.length) {
+    output.push(
+      "### Verified parent/section differences",
+      "",
+      "Selected subject facets and explicit section links verified these section identities. Original parent fields remain in snapshot provenance. This does not establish why the source metadata differs.",
+      "",
+      "| Term | Class | Course ID | Parent subject | Parent catalog | Section subject | Section catalog |",
+      "| --- | --- | --- | --- | --- | --- | --- |",
+    );
+    for (const row of resolutions.slice(0, 20))
+      output.push(
+        `| ${[row.term, row.classNumber, row.courseId, row.parentSubject, row.parentCatalogNumber, row.subject, row.catalogNumber].map((value) => cell(value)).join(" | ")} |`,
+      );
+    output.push(
+      "",
+      `Showing ${Math.min(20, resolutions.length)} of ${resolutions.length} captured differences. Full events remain in the sync step log.`,
+      "",
+    );
+  }
   if (coverageRejected) {
     output.push(
       "### Catalog refresh rejected",
@@ -137,7 +169,7 @@ async function main() {
       );
       for (const row of rejected.regressions.slice(0, 20))
         output.push(
-          `| ${[row.term_code, row.campus_code, row.subject, row.previous_sections, row.candidate_sections].map(cell).join(" | ")} |`,
+          `| ${[row.term_code, row.campus_code, row.subject, row.previous_sections, row.candidate_sections].map((value) => cell(value)).join(" | ")} |`,
         );
       output.push("");
     }
@@ -149,6 +181,48 @@ async function main() {
       cell(failed.message),
       "",
     );
+  if (failed) {
+    output.push(
+      "### Failure location and official comparison",
+      "",
+      "| Context | Value |",
+      "| --- | --- |",
+    );
+    for (const name of [
+      "operation",
+      "run",
+      "partition",
+      "term",
+      "subject",
+      "campus",
+      "page",
+      "expectedSections",
+      "requestUrl",
+    ])
+      if (failed[name] != null)
+        output.push(`| ${cell(name)} | ${cell(failed[name], 1200)} |`);
+    if (failed.location)
+      output.push(
+        `| Validator | ${cell(failed.location.file)}:${cell(failed.location.line)}:${cell(failed.location.column)} |`,
+      );
+    for (const [name, label] of [
+      ["path", "JSON field"],
+      ["expected", "Expected"],
+      ["actual", "Actual"],
+      ["courseId", "Course ID"],
+      ["classNumber", "Class number"],
+      ["status", "HTTP status"],
+      ["attempt", "Attempt"],
+      ["cause", "Transport cause"],
+    ])
+      if (Object.hasOwn(failed.details ?? {}, name))
+        output.push(`| ${label} | ${cell(failed.details[name], 800)} |`);
+    output.push(
+      "",
+      "A failed candidate is not published. Page validation runs before its write; inspect the operation, request and field comparison before retrying.",
+      "",
+    );
+  }
   const server = process.env.GITHUB_SERVER_URL || "https://github.com";
   const repository = process.env.GITHUB_REPOSITORY;
   const run = process.env.GITHUB_RUN_ID;
