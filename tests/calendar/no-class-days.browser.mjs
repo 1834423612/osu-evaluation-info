@@ -224,6 +224,14 @@ try {
       assert.ok(secondBox.y + secondBox.height < followingBox.y);
       assert.equal(await first.getAttribute("data-lanes"), "2");
       assert.match(await first.getAttribute("aria-label"), /9:00 AM–9:50 AM/);
+      if (width === 1440)
+        assert.notEqual(
+          await first
+            .locator('[class*="eventTime"]')
+            .evaluate((node) => getComputedStyle(node).display),
+          "none",
+          "wide 50-minute classes keep exact time visible without inflating height",
+        );
       await first.focus();
       assert.equal(
         await first.evaluate((node) => node === document.activeElement),

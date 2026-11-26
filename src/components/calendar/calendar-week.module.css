@@ -426,7 +426,7 @@
 }
 
 /* Information follows each event's actual lane width and duration. */
-@container calendar-event (min-width: 55px) and (min-height: 42px) {
+@container calendar-event (min-width: 55px) and (min-height: 26px) {
   .event .eventTime {
     display: flex;
     font-size: 9px;
