@@ -1,6 +1,6 @@
 {
   "name": "osu-eval",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -45,7 +45,11 @@
     "user-data:migrate": "node scripts/user-data/migrate.mjs",
     "user-data:maintain": "node scripts/user-data/maintain.mjs",
     "user-data:backup": "node scripts/user-data/backup.mjs",
-    "search:prepare": "node scripts/search/prepare.mjs"
+    "search:prepare": "node scripts/search/prepare.mjs",
+    "account:admin": "node scripts/user-data/admin-roles.mjs",
+    "rmp:admin:migrate": "node scripts/rmp/setup_admin.mjs",
+    "rmp:reconcile": "python3 scripts/rmp/reconcile_courses.py",
+    "rmp:assistance": "node scripts/rmp/assistance-client.mjs"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.23",
