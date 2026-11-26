@@ -15,11 +15,11 @@ from pathlib import Path
 from typing import Any
 
 if __package__:
-    from .course_matching import SubjectLexicon, course_token, resolve_course
+    from .course_matching import SubjectLexicon, course_token, course_parts, resolve_course
     from .matching_data import reference_data, review_groups, audit_course_links, save_course_links, load_professors, execute_json_batches
     from .mapping_coverage import stored_profile_coverage
 else:
-    from course_matching import SubjectLexicon, course_token, resolve_course
+    from course_matching import SubjectLexicon, course_token, course_parts, resolve_course
     from matching_data import reference_data, review_groups, audit_course_links, save_course_links, load_professors, execute_json_batches
     from mapping_coverage import stored_profile_coverage
 
@@ -572,6 +572,10 @@ def catalog_candidates(
                 matches = professor_courses & same_campus_courses
                 if subject_lexicon:
                     for raw in sorted(raw_courses):
+                        # A candidate's own teaching history cannot verify its
+                        # identity by supplying the missing numeric subject.
+                        if (parsed := course_parts(raw)) and not parsed[0]:
+                            continue
                         resolved = resolve_course(raw, same_campus_courses, subject_lexicon,
                                                   department=str(profile.get("department") or ""), taught=same_campus_courses)
                         if resolved["state"] == "accepted":
