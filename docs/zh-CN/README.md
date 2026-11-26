@@ -7,6 +7,7 @@
 ## 从这里开始
 
 - [测试说明](testing.md)
+- [Release 与版本管理](releases.md)
 - [账号、收藏与分享](user-data.md)
 - [开发工具与本地数据](development-tools.md)
 - [开发账号关联](development-account.md)
