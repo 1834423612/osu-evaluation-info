@@ -611,6 +611,7 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 | `tests/rmp/admin-list.test.mjs` | 组合筛选校验与有上限的分页。 |
 | `tests/rmp/admin-batch.test.mjs` | 批量变更的必填源指纹、版本冲突、官方目标校验、原子回滚和逐组审计。 |
 | `tests/rmp/official-courses.test.mjs` | 精确课程和校区匹配、已发布目录学期范围、官方授课历史及批量查询。 |
+| `tests/rmp/library-overlay.test.mjs` | PGlite 中核验没有有效评论的档案级课程搜索、人工绑定/解绑/排除优先级、校区隔离及原始评论精确搜索回退；`node --test tests/rmp/library-overlay.test.mjs`，无网络或持久写入。 |
 | `tests/rmp/assistance.test.mjs` · `tests/rmp/assistance-queue.test.mjs` | 任务范围、短期令牌、不可变提案、分页、部分审核、重放及实时授课证据变化失效；PGlite 中执行真实 SQL。 |
 | `tests/rmp/assistance-evidence.test.mjs` | 批量导出、校区隔离、抽样标识、公开证据裁剪和 Unicode 边界。 |
 | `tests/rmp/assistance-client.test.mjs` | 显式目标、TLS/内网范围、令牌保密及拒绝重定向；模拟传输。 |

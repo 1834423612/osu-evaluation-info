@@ -618,6 +618,7 @@ The default JavaScript suite includes these additional rules and real SQL checks
 | `tests/rmp/admin-list.test.mjs` | Validated combined filters and bounded pagination. |
 | `tests/rmp/admin-batch.test.mjs` | Required source fingerprints, version conflicts, official targets, atomic rollback and per-group audit. |
 | `tests/rmp/official-courses.test.mjs` | Exact course/campus matching, published term scope, official teaching history and batched lookups. |
+| `tests/rmp/library-overlay.test.mjs` | Profile-only course search, manual bind/unbind/reject precedence, campus isolation and raw-review exact fallback in PGlite; `node --test tests/rmp/library-overlay.test.mjs`, without network or persistent writes. |
 | `tests/rmp/assistance.test.mjs` · `tests/rmp/assistance-queue.test.mjs` | Scoped tokens, immutable proposals, paging, partial review, replay and invalidation when live teaching evidence changes; real SQL in PGlite. |
 | `tests/rmp/assistance-evidence.test.mjs` | Batched export, campus isolation, sampling flags, public evidence clipping and Unicode boundaries. |
 | `tests/rmp/assistance-client.test.mjs` | Explicit destinations, TLS/private-network boundaries, token privacy and rejected redirects; mocked transport. |
