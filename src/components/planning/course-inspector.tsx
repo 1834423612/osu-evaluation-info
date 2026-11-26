@@ -35,7 +35,7 @@ export function CourseInspector({
   inspect: (code: { subject: string; number: string }) => void;
 }) {
   const t = (en: string, zh: string) => text(locale, en, zh);
-  const lookup = usePlanningCourse(code.subject, code.number);
+  const lookup = usePlanningCourse(code.subject, code.number, true);
   const preferences = usePreferences();
   const course = lookup.detail?.course;
   const prereq = course ? prerequisiteText(course.description) : null;
@@ -74,6 +74,36 @@ export function CourseInspector({
             ? t("Loading course…", "正在查询课程…")
             : t("Course details unavailable", "课程详情暂不可用"))}
       </h3>
+      {!!lookup.variants.length && (
+        <section
+          aria-label={t("Available course variants", "可选的小数点课程")}
+          className={styles.searchPanel}
+        >
+          <p>
+            {t(
+              "Details for this base number could not be loaded. The catalog archive has these specific variants; choose the one you want to inspect.",
+              "未能取得此基础课号的详情。目录存档提供以下具体课程版本，请选择要查看的一门。",
+            )}
+          </p>
+          {lookup.variants.map((variant) => (
+            <button
+              className={styles.searchResult}
+              key={variant.id}
+              onClick={() =>
+                inspect({
+                  subject: variant.subject,
+                  number: variant.catalogNumber,
+                })
+              }
+            >
+              <strong>
+                {variant.subject} {variant.catalogNumber}
+              </strong>
+              <span>{variant.title}</span>
+            </button>
+          ))}
+        </section>
+      )}
       {course && (
         <p className={styles.detailFacts}>
           {creditLabel(
@@ -89,6 +119,15 @@ export function CourseInspector({
               {rating.instrument} {rating.score?.toFixed(2)} / 5
             </span>
           )}
+        </p>
+      )}
+      {lookup.variantError && (
+        <p role="alert">
+          {t(
+            "Could not load the complete course family",
+            "未能读取完整课程版本",
+          )}{" "}
+          · {lookup.variantError}
         </p>
       )}
       {lookup.status === "error" && (

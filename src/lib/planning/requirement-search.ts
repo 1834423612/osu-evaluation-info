@@ -1,3 +1,4 @@
+import type { CatalogCourse, CatalogResponse } from "../catalog/types";
 /** Public GEN facet names, verified against the OSU catalog. No student data. */
 const categories: [RegExp, string][] = [
   [
@@ -87,4 +88,64 @@ export function courseFamilyQueries(
       suggestions.map((s) => s.query).filter((q) => q.startsWith(prefix)),
     ),
   ].slice(0, 4);
+}
+
+/** A missing base number offers choices; it never silently selects a decimal variant. */
+export function courseFamilyCandidates<
+  T extends { subject: string; catalogNumber: string },
+>(subject: string, number: string, courses: T[]): T[] {
+  if (!/^\d{3,5}$/.test(number)) return [];
+  const family = new RegExp(`^${number}\\.\\d{1,3}[A-Z]{0,2}$`, "i");
+  return [
+    ...new Map(
+      courses
+        .filter(
+          (course) =>
+            course.subject.toUpperCase() === subject.toUpperCase() &&
+            family.test(course.catalogNumber),
+        )
+        .map((course) => [`${course.subject}:${course.catalogNumber}`, course]),
+    ).values(),
+  ];
+}
+
+export async function readCourseFamilyCandidates(
+  scope: { subject: string; number: string; campus: string; term: string },
+  search: (url: string, init?: RequestInit) => Promise<CatalogResponse>,
+  signal: AbortSignal,
+): Promise<CatalogCourse[]> {
+  const params = new URLSearchParams({
+    q: `${scope.subject} ${scope.number}`,
+    campus: scope.campus.toLowerCase(),
+    term: scope.term,
+    limit: "24",
+    searchMode: "index",
+  });
+  const seen = new Set<string>();
+  const courses: CatalogCourse[] = [];
+  for (let page = 0; page < 100; page++) {
+    signal.throwIfAborted();
+    const result = await search("/api/catalog?" + params, { signal });
+    signal.throwIfAborted();
+    if (result.sourceMode !== "index")
+      throw new Error(
+        "A complete course-family archive is unavailable. Retry catalog search.",
+      );
+    courses.push(...result.courses);
+    if (!result.hasMore)
+      return courseFamilyCandidates(scope.subject, scope.number, courses);
+    if (
+      !result.nextCursor ||
+      !result.nextCursor.startsWith("s:") ||
+      seen.has(result.nextCursor)
+    )
+      throw new Error(
+        "Course-family pagination could not continue. Retry catalog search.",
+      );
+    seen.add(result.nextCursor);
+    params.set("cursor", result.nextCursor);
+  }
+  throw new Error(
+    "This course family is too large to preview. Narrow your catalog search.",
+  );
 }

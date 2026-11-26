@@ -1,3 +1,7 @@
+import {
+  parseCourseQuery,
+  matchesCourseQuery,
+} from "../catalog/course-query.ts";
 import { createHash } from "node:crypto";
 import { CatalogInputError } from "../catalog/official-client.ts";
 import type { CatalogResponse, CatalogSearch } from "../catalog/types";
@@ -5,7 +9,7 @@ import type { CatalogCorpus } from "./catalog-source";
 import { matchingSections } from "./filters.ts";
 import type { SearchEvidence } from "./types";
 
-export const SEARCH_VERSION = "bm25-1";
+export const SEARCH_VERSION = "bm25-2";
 export function searchSignature(input: CatalogSearch) {
   return createHash("sha256")
     .update(
@@ -60,18 +64,52 @@ export function searchCorpus(
     throw new CatalogInputError(
       "Search generation changed. Start the search again.",
     );
+  const query = parseCourseQuery(input.q ?? "");
+  const metadataQuery = {
+    ...query,
+    filters: query.filters.filter((f) => f.field !== "instructor"),
+  };
+  const instructorQuery = {
+    ...query,
+    filters: query.filters.filter((f) => f.field === "instructor"),
+  };
   const campus = (input.campus ?? "col").toUpperCase(),
     subject = input.subject?.toUpperCase();
   const scope = new Map<string, ReturnType<typeof matchingSections>>();
   for (const course of corpus.courses.values())
     if (
       (campus === "ALL" || campus === course.campusCode) &&
-      (!subject || subject === course.subject)
+      (!subject || subject === course.subject) &&
+      matchesCourseQuery(course, metadataQuery)
     ) {
-      const sections = matchingSections(corpus, course, input.filters);
+      const sections = matchingSections(corpus, course, input.filters).filter(
+        (section) =>
+          matchesCourseQuery(
+            { ...course, sections: [section] },
+            instructorQuery,
+          ),
+      );
       if (sections.length) scope.set(course.id, sections);
     }
-  const found = corpus.engine.search(input.q ?? "", (doc) => scope.has(doc.id));
+  const found =
+    query.text || !query.filters.length
+      ? corpus.engine.search(query.text, (doc) => scope.has(doc.id))
+      : {
+          kind: "keyword" as const,
+          subjects: [],
+          alternatives: [],
+          hits: [...scope.keys()].sort().map((id) => ({
+            id,
+            score: 1,
+            evidence: {
+              mode: "exact" as const,
+              coverage: 1,
+              fields: query.filters.map((f) => f.field),
+              corrections: [],
+              snippet: corpus.courses.get(id)!.title,
+            },
+          })),
+        };
   if (input.sort && input.sort !== "relevance")
     found.hits.sort((a, b) => {
       const x = corpus.courses.get(a.id)!,

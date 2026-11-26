@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { registry } from "@/lib/diagnostics/protocol";
@@ -69,7 +70,7 @@ export function ReportDetail({
           </div>
           <label className={styles.detailSearch}>
             {text(locale, "Find a field", "查找字段")}
-            <input
+            <SearchField
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

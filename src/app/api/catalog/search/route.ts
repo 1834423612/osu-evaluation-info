@@ -1,3 +1,4 @@
+import { CourseQueryError, parseCourseQuery } from "@/lib/catalog/course-query";
 import {
   CatalogInputError,
   parseCatalogSearch,
@@ -12,6 +13,7 @@ export async function GET(request: Request) {
   const started = performance.now();
   try {
     const input = parseCatalogSearch(new URL(request.url).searchParams);
+    parseCourseQuery(input.q ?? "");
     if (!input.q?.trim())
       throw new CatalogInputError("A search query is required.");
     if (
@@ -37,7 +39,8 @@ export async function GET(request: Request) {
     const status =
       error instanceof SearchCapacityError
         ? 429
-        : error instanceof CatalogInputError
+        : error instanceof CatalogInputError ||
+            error instanceof CourseQueryError
           ? 400
           : error instanceof UnsupportedSearchFilter
             ? 422

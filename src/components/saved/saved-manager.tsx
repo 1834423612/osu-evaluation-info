@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useDraftGuard } from "@/components/forms/draft-guard";
 import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { useSavedWorkspace } from "./saved-workspace";
@@ -346,7 +347,7 @@ function SavedManagerBody({ locale }: { locale: Locale }) {
     <div className={layout.filters} data-draft-ignore>
       <label>
         {text(locale, "Find saved items or tags", "查找收藏或标签")}
-        <input
+        <SearchField
           className={styles.input}
           type="search"
           value={query}

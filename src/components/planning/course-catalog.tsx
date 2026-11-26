@@ -1,5 +1,8 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { searchCatalogWithRelated } from "@/lib/catalog/search-client";
+import { readCourseFamilyCandidates } from "@/lib/planning/requirement-search";
+import type { CatalogCourse } from "@/lib/catalog/types";
 import { fetchCatalogResource } from "@/lib/catalog/browser-transport";
 import {
   createPlanningCatalog,
@@ -38,12 +41,15 @@ export function PlanningCatalogProvider({
 export function usePlanningCourse(
   subject: string | null,
   number: string | null,
+  familyFallback = false,
 ) {
   const context = useContext(CatalogContext);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{
     key: string;
     detail?: PlanningCourseDetail;
+    variants?: CatalogCourse[];
+    variantError?: string;
     status: "loading" | "ready" | "error";
   } | null>(null);
   const key = context
@@ -61,13 +67,37 @@ export function usePlanningCourse(
         if (!controller.signal.aborted)
           setState({ key, detail, status: "ready" });
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ key, status: "error" });
+      .catch(async () => {
+        let variants: CatalogCourse[] = [];
+        let variantError = "";
+        if (
+          !controller.signal.aborted &&
+          familyFallback &&
+          /^\d{3,5}$/.test(number)
+        ) {
+          try {
+            variants = await readCourseFamilyCandidates(
+              { subject, number, campus: context.campus, term: context.term },
+              searchCatalogWithRelated,
+              controller.signal,
+            );
+          } catch (error) {
+            if (!controller.signal.aborted)
+              variantError =
+                error instanceof Error
+                  ? error.message
+                  : "Course variants are unavailable.";
+          }
+        }
+        if (!controller.signal.aborted)
+          setState({ key, status: "error", variants, variantError });
       });
     return () => controller.abort();
-  }, [context, subject, number, key, attempt]);
+  }, [context, subject, number, key, attempt, familyFallback]);
   return {
     detail: state?.key === key ? state.detail : undefined,
+    variants: state?.key === key ? (state.variants ?? []) : [],
+    variantError: state?.key === key ? state.variantError : undefined,
     status:
       !context || !subject || !number
         ? "idle"

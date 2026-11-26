@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useState } from "react";
 import {
@@ -160,7 +161,7 @@ export function CurriculumDirectory({
             <Search size={14} />
             {t("Search documents or versions", "搜索文档或版本")}
           </span>
-          <input
+          <SearchField
             value={query}
             maxLength={100}
             onChange={(e) => {

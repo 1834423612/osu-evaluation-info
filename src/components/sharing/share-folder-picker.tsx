@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useId, useState } from "react";
 import { ChevronDown, FolderOpen, Search, X } from "lucide-react";
 import { CollectionIcon } from "@/components/saved/collection-icon";
@@ -84,7 +85,7 @@ export function ShareFolderPicker({
       </div>
       <label className={styles.search}>
         <Search size={16} />
-        <input
+        <SearchField
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={text(

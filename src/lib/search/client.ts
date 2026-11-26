@@ -1,3 +1,4 @@
+import { parseCourseQuery } from "../catalog/course-query.ts";
 import type { CatalogResponse } from "../catalog/types";
 
 export function createIndexedCatalogSearch(
@@ -11,13 +12,24 @@ export function createIndexedCatalogSearch(
   ): Promise<CatalogResponse> => {
     const url = new URL(input, "https://catalog.invalid"),
       cursor = url.searchParams.get("cursor");
+    const advanced =
+      parseCourseQuery(url.searchParams.get("q") ?? "").filters.length > 0;
+    if (advanced && url.searchParams.get("searchMode") === "live")
+      throw new Error(
+        "Field filters require indexed catalog search. Switch to catalog search.",
+      );
     if (
       !url.searchParams.get("q")?.trim() ||
       url.searchParams.get("searchMode") === "live" ||
       (cursor && !cursor.startsWith("s:"))
     )
       return live(input, init);
-    if (!cursor && direct && url.searchParams.get("searchMode") !== "index") {
+    if (
+      !advanced &&
+      !cursor &&
+      direct &&
+      url.searchParams.get("searchMode") !== "index"
+    ) {
       const fresh = await direct(input, init);
       if (fresh) return fresh;
     }
@@ -51,6 +63,10 @@ export function createIndexedCatalogSearch(
     }
     if (init?.signal?.aborted) throw init.signal.reason;
     // A pinned generation cannot be replaced by live results mid-pagination.
+    if (advanced)
+      throw new Error(
+        "Field filters need the indexed catalog, which is unavailable. Retry shortly.",
+      );
     if (cursor) throw new Error("Search index unavailable for this page");
     const result = await live(input, init);
     return result.searchInfo
