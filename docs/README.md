@@ -9,6 +9,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 - [Testing](testing.md)
 - [Releases and versioning](releases.md)
 - [Accounts, favorites and sharing](user-data.md)
+- [Database-backed administrator roles](admin-roles.md)
 - [Development tools and local data](development-tools.md)
 - [Development account pairing](development-account.md)
 - [Calendars, subscriptions and saved schedule groups](planning/calendars.md)
@@ -33,6 +34,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 ## Syllabi
 
 - [Simple Syllabus: protocol, matching and operations](syllabus/operations.md)
+- [Syllabus history and comparisons](syllabus/history.md)
 
 ## Official evaluations
 
@@ -48,6 +50,8 @@ Run commands from the repository root. English is the default; the Chinese tree 
 ## Rate My Professors
 
 - [RMP course reconciliation](rmp/course-matching.md)
+- [RMP review workspace](rmp/administration.md)
+- [AI review assistance](rmp/assistance.md)
 - [Source-assisted identity research](rmp/identity-research.md)
 - [Rate My Professors OSU Collection](rmp/import.md)
 - [RMP faculty library and unconfirmed reviews](rmp/library.md)
@@ -61,6 +65,7 @@ Run commands from the repository root. English is the default; the Chinese tree 
 
 - [WahO! branding](design/branding.md)
 - [Interface motion](design/interface-motion.md)
+- [Reconciliation interface references](design/reconciliation.md)
 - [Sharing, saved items and telemetry design — proposal, November 14, 2026](design/sharing-sync-analytics.md)
 
 ## Analytics

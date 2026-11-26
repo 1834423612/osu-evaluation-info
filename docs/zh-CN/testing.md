@@ -594,3 +594,43 @@ PGLITE_MODULE=/absolute/path/to/pglite/dist/index.js node --test tests/search/pr
 ## 同步、版本与完整性回归
 
 `node --test tests/planning/sync-selection.test.mjs tests/syllabus/diff.test.mjs tests/calendar/security.test.mjs tests/calendar/ical.test.mjs tests/planning/requirement-catalog.test.mjs` 检查暂停恢复同步基线、学期分块、订阅刷新时间合并、并发字段修改、准确且有内存上限的大纲差异、Node DNS 回调约定、Canvas 作业／类别往返及官方要求属性。这些测试使用内存中的受控输入，不写应用数据，也不请求外部服务。`node scripts/user-data/audit.mjs` 是需配置数据库并主动运行的只读审计；参数、输出和失败行为见[用户数据](user-data.md#完整性审计只读)。不要将私密 SQL 导出作为测试语句执行。
+
+## 数据关联、历史比对与工作区交互
+
+默认 JavaScript 测试包含以下规则与真实 SQL 检查：
+
+| 测试 | 覆盖内容 |
+| --- | --- |
+| `tests/auth/admin-roles.test.mjs` | 现有账号授权、前缀隔离、不可修改审计、显式 CLI 授权、同源校验和最后一个管理员保护；使用 PGlite。 |
+| `tests/auth/admin-roles-postgres.integration.test.mjs` | 可选的真实 PostgreSQL 锁、并发撤销最后管理员、等待锁期间撤销操作人权限。设置 `ADMIN_ROLES_DATABASE_TEST=1`；只创建并清理隔离临时 schema，不在应用命名空间给真实用户授权。 |
+| `tests/calendar/no-class-days.test.mjs` | 官方停课标记、日历校验、日期型节假日结束边界。 |
+| `tests/gestures/tab-swipe.test.mjs` | 已注册可见标签的顺序、滑动方向和不应触发滑动的目标。 |
+| `tests/rmp/admin-auth.test.mjs` | 生产账号、即时角色、近期会话和二次解锁；生产不允许开发绕过。 |
+| `tests/rmp/dev-ingress.test.mjs` | 真实 HTTP socket 签名、替换伪造请求头、签名过期和可信内网范围。 |
+| `tests/rmp/admin-decisions.test.mjs` | 人工覆盖、过期写入冲突、审计保留、事务回滚、重建后人工决定仍有效；使用 PGlite。 |
+| `tests/rmp/admin-list.test.mjs` | 组合筛选校验与有上限的分页。 |
+| `tests/rmp/admin-batch.test.mjs` | 批量变更的必填源指纹、版本冲突、官方目标校验、原子回滚和逐组审计。 |
+| `tests/rmp/official-courses.test.mjs` | 精确课程和校区匹配、已发布目录学期范围、官方授课历史及批量查询。 |
+| `tests/rmp/assistance.test.mjs` · `tests/rmp/assistance-queue.test.mjs` | 任务范围、短期令牌、不可变提案、分页、部分审核、重放及实时授课证据变化失效；PGlite 中执行真实 SQL。 |
+| `tests/rmp/assistance-evidence.test.mjs` | 批量导出、校区隔离、抽样标识、公开证据裁剪和 Unicode 边界。 |
+| `tests/rmp/assistance-client.test.mjs` | 显式目标、TLS/内网范围、令牌保密及拒绝重定向；模拟传输。 |
+| `tests/search/advanced-query.test.mjs` | 先修要求、标题和单个教师的精确筛选；小数点边界、合并先修标题、语法错误与禁止语义不同的兜底。 |
+| `tests/syllabus/revisions.test.mjs` | 语义文档差异、来源与格式分类、重复版本合并和不完整旧归档。 |
+| `tests/syllabus/revision-storage.test.mjs` | PGlite 中的真实归档插入与去重，不重写已有内容。 |
+
+`tests/rmp/test_numeric_reconciliation.py` 检查数字课号的官方学科证据、校区核验和多学科同号冲突；`tests/rmp/test_reconciliation_plan.py` 检查仅课程关联的变更计划与摘要。除默认测试外运行 `pnpm test:python`。
+
+浏览器脚本使用受控 API 样例和本地已安装浏览器，不给生产账号授权，也不修改生产 RMP 记录。配置脚本的基础 URL；需要时通过 `PLAYWRIGHT_MODULE` 与 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` 指向已安装运行环境。
+
+| 浏览器脚本 | 检查内容 |
+| --- | --- |
+| `tests/auth/admin-users.browser.mjs` | 桌面和手机账号搜索、理由校验、授权请求、审计预览、最后管理员报错和无权限状态隐私。 |
+| `tests/rmp/admin.browser.mjs` | 中英文 320/390/768/1440px 紧凑列表、筛选、分页、分组详情、人工决定与开发警示。 |
+| `tests/rmp/admin-batch.browser.mjs` | 中英双语的批量选择、唯一候选预填、原因模板、确认及冲突恢复，覆盖 320–1440px。 |
+| `tests/rmp/assistance.browser.mjs` | 导出、一次性凭证、待审队列、编辑和部分确认、实际结果与原始建议区分及手机布局。 |
+| `tests/calendar/no-class-days.browser.mjs` | 整列节假日斜纹、保留全天标题、排除仅办公室关闭、非美国时区和响应式信息密度。 |
+| `tests/gestures/course-tabs.browser.mjs` | 实际触摸切换大纲标签、醒目的官方/RMP 来源及数量。 |
+| `tests/gestures/scroll-chain.browser.mjs` | 原生与同源 iframe 的滚轮、触摸边界衔接，以及模态框不带动背景。 |
+| `tests/planning/search.browser.mjs` | 桌面和手机的小数点课程候选、明确选择、返回整体搜索的面包屑与规划高级搜索。 |
+
+`tests/planning/simulation.browser.mjs` 还会在班次全部完成前观察进度变化，检查足够宽的课程块确实显示准确时间，并继续覆盖余位刷新、排课方案切换、保存和响应式布局。`tests/syllabus/experience.browser.mjs` 增加文档/逐行切换、语义表格、颜色可区分、零文字变化说明和手机焦点/布局检查。

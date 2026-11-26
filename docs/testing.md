@@ -601,3 +601,43 @@ The saved-preview entry point is covered by `tests/catalog/detail-refresh.test.m
 ## Sync, revision and integrity regressions
 
 `node --test tests/planning/sync-selection.test.mjs tests/syllabus/diff.test.mjs tests/calendar/security.test.mjs tests/calendar/ical.test.mjs tests/planning/requirement-catalog.test.mjs` checks paused-domain resume baselines, semester chunks, feed freshness metadata, competing field edits, exact bounded syllabus diffs, Node DNS callback contracts, Canvas assignment/category round trips, and official requirement attributes. These tests use controlled in-memory inputs and do not write application data or call external services. `node scripts/user-data/audit.mjs` is an opt-in, configured-database read-only audit; see [User data](user-data.md#integrity-audit-read-only) for flags, output and failure behavior. Never run private SQL exports as test fixtures.
+
+## Reconciliation, history and workspace controls
+
+The default JavaScript suite includes these additional rules and real SQL checks:
+
+| Tests | Coverage |
+| --- | --- |
+| `tests/auth/admin-roles.test.mjs` | Existing-account roles, prefix isolation, immutable audit, explicit CLI grants, origin checks and final-administrator protection in PGlite. |
+| `tests/auth/admin-roles-postgres.integration.test.mjs` | Opt-in real PostgreSQL locks, concurrent final-admin revocation and actor-role recheck while waiting. Set `ADMIN_ROLES_DATABASE_TEST=1`; it creates and removes an isolated temporary schema, without granting roles in application namespaces. |
+| `tests/calendar/no-class-days.test.mjs` | Official no-class metadata, calendar validation and exclusive date-only holiday boundaries. |
+| `tests/gestures/tab-swipe.test.mjs` | Registered visible tab order, gesture direction and non-swipe targets. |
+| `tests/rmp/admin-auth.test.mjs` | Production account, current role, recent session and second unlock; no production dev bypass. |
+| `tests/rmp/dev-ingress.test.mjs` | Real HTTP socket proof, header replacement, HMAC expiry and private-network ranges. |
+| `tests/rmp/admin-decisions.test.mjs` | Manual overlays, rejection of stale writes, audit retention, transaction rollback and schema rebuild persistence in PGlite. |
+| `tests/rmp/admin-list.test.mjs` | Validated combined filters and bounded pagination. |
+| `tests/rmp/admin-batch.test.mjs` | Required source fingerprints, version conflicts, official targets, atomic rollback and per-group audit. |
+| `tests/rmp/official-courses.test.mjs` | Exact course/campus matching, published term scope, official teaching history and batched lookups. |
+| `tests/rmp/assistance.test.mjs` · `tests/rmp/assistance-queue.test.mjs` | Scoped tokens, immutable proposals, paging, partial review, replay and invalidation when live teaching evidence changes; real SQL in PGlite. |
+| `tests/rmp/assistance-evidence.test.mjs` | Batched export, campus isolation, sampling flags, public evidence clipping and Unicode boundaries. |
+| `tests/rmp/assistance-client.test.mjs` | Explicit destinations, TLS/private-network boundaries, token privacy and rejected redirects; mocked transport. |
+| `tests/search/advanced-query.test.mjs` | Exact prerequisite, title and individual-instructor filters; decimal boundaries, combined prerequisite headings, syntax errors and no semantic fallback. |
+| `tests/syllabus/revisions.test.mjs` | Semantic rendered diff, source/format categories, duplicate folding and incomplete historical rendering. |
+| `tests/syllabus/revision-storage.test.mjs` | Real PGlite archive insertion/deduplication without rewriting existing content. |
+
+`tests/rmp/test_numeric_reconciliation.py` checks official-subject numeric candidates, campus verification and multi-subject collisions. `tests/rmp/test_reconciliation_plan.py` checks course-only diff and plan fingerprints. Run with `pnpm test:python` alongside the default suite.
+
+Browser scripts use controlled API fixtures and existing local browser tooling; they do not grant production roles or modify production RMP records. Set the script's base URL and, where necessary, `PLAYWRIGHT_MODULE` and `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to your installed browser runtime.
+
+| Browser script | Checks |
+| --- | --- |
+| `tests/auth/admin-users.browser.mjs` | Desktop/mobile account search, reason validation, role mutation payloads, audit preview, final-admin errors and forbidden-state privacy. |
+| `tests/rmp/admin.browser.mjs` | English/Chinese compact tables at 320/390/768/1440px, filters, pagination, detail scope, manual decisions and development warning. |
+| `tests/rmp/admin-batch.browser.mjs` | English/Chinese bulk selection, unique-candidate prefills, reason templates, confirmation and conflict recovery at 320–1440px. |
+| `tests/rmp/assistance.browser.mjs` | Exports, one-time credentials, pending queue, edits, partial approval, original-versus-applied outcomes and mobile layouts. |
+| `tests/calendar/no-class-days.browser.mjs` | Full-height holiday stripes, preserved all-day items, office-only exclusions, non-US timezone and responsive event density. |
+| `tests/gestures/course-tabs.browser.mjs` | Actual touch navigation to/from syllabus and visible official/RMP source counts. |
+| `tests/gestures/scroll-chain.browser.mjs` | Native and same-origin iframe wheel/touch handoff at boundaries, including modal background containment. |
+| `tests/planning/search.browser.mjs` | Published decimal choices, explicit variant selection, return-to-all-search breadcrumb and advanced planning search on desktop/mobile. |
+
+`tests/planning/simulation.browser.mjs` additionally observes progress before all section reads complete and verifies that a sufficiently wide event retains its exact time. It continues to cover refreshed seat states, schedule alternatives, saved groups and responsive fitting. `tests/syllabus/experience.browser.mjs` additionally checks rendered/line comparison, semantic tables, color distinction, zero-text explanations and mobile focus/layout.

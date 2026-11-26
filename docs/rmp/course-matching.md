@@ -16,7 +16,7 @@ ratings must retain exact catalog numbers, decimals and honors/track suffixes.
   need a unique interpretation compatible with the RMP academic department or
   the identified teacher's official taught subjects. A number existing under an
   unrelated subject is insufficient evidence.
-- Number-only labels require a catalog-backed academic department. No digit
+- Number-only labels require verified same-campus official taught-subject evidence and exact catalog candidates; department-only guesses remain pending. No digit
   substitution, reversal, old-to-new numbering conversion or suffix removal is
   used to assign ratings.
 - Teacher links require exact observed names, the same campus, academic evidence,
@@ -125,3 +125,6 @@ the independent selected-teacher and course-history scopes. The real-data browse
 flow is `tests/rmp/course.browser.mjs`; it uses the existing Playwright environment
 variables and `GUIDE_TEST_BASE_URL` to check course → RMP tab → database → rendered
 reviews at desktop/mobile widths. API responses are not mocked.
+
+
+[Administration, durable manual overrides and operational audit](administration.md)

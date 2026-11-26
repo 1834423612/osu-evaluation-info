@@ -9,6 +9,7 @@
 - [测试说明](testing.md)
 - [Release 与版本管理](releases.md)
 - [账号、收藏与分享](user-data.md)
+- [数据库管理员角色与授权](admin-roles.md)
 - [开发工具与本地数据](development-tools.md)
 - [开发账号关联](development-account.md)
 - [日历、订阅与保存的课表组](planning/calendars.md)
@@ -33,6 +34,7 @@
 ## 教学大纲
 
 - [Simple Syllabus：接口、关联与运维](syllabus/operations.md)
+- [大纲历史版本与比对](syllabus/history.md)
 
 ## 官方教学评价
 
@@ -48,6 +50,8 @@
 ## RMP 教师数据
 
 - [RMP 课程关联](rmp/course-matching.md)
+- [RMP 数据核对后台](rmp/administration.md)
+- [AI 辅助核对](rmp/assistance.md)
 - [教师身份来源核验](rmp/identity-research.md)
 - [RMP 采集与维护](rmp/import.md)
 - [RMP 教师库与待确认评价](rmp/library.md)
@@ -61,6 +65,7 @@
 
 - [品牌资源与元数据](design/branding.md)
 - [界面动效与焦点](design/interface-motion.md)
+- [数据关联后台交互参考](design/reconciliation.md)
 - [分享、收藏同步与统计设计：2026-11-14 待实施方案](design/sharing-sync-analytics.md)
 
 ## 访问统计

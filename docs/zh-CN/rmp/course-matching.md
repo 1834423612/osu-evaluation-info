@@ -4,6 +4,8 @@
 
 保留 RMP 原始课程标注，通过完整官方课程词汇、教师任课证据、校区与编号进行可重复关联。大小写、空格和缩写可用于候选发现，但不能仅删除标点或写死几个别名就确认关系。
 
+纯数字标签需要同校区已核验教授的官方授课学科与精确课程候选；单凭院系名称只列线索，多学科同号仍保持歧义。数字课号推断不能反过来证明教授身份。
+
 课程号、小数及 Honors 后缀保留；不同校区分别判断。多个同等级候选保持歧义，不强行选一个；课程与教师身份是两个独立确认层级。未知身份的原始评论仍保留，并在课程线索或教师库中标注状态。
 
 运行脚本会刷新证据支持的映射与审计，显式人工接受／拒绝决定保留。正常重复采集后可重新执行，不需要人工逐条修补数据库。dry-run 只读，写入前先完成必要的增量 schema 安装。
@@ -27,3 +29,6 @@ pnpm rmp:mappings --audit-report /tmp/rmp-applied.json
 python3 -m unittest discover -s tests/rmp -p 'test_*.py'
 RMP_INTEGRATION_TESTS=1 node --env-file=.env.local --test tests/rmp/course-matching.integration.test.mjs
 ```
+
+
+[管理后台、持久人工覆盖与运维核对](administration.md)
