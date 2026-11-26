@@ -233,3 +233,32 @@ test("waitlist labels distinguish available, exhausted, absent, and unreported p
     assert.ok(simulationAvailabilityLabel(item, "en").endsWith(want));
   }
 });
+
+test("section refresh reports monotonic completion including failed and missing identifiers", async () => {
+  const progress = [];
+  const courses = [
+    offering("1111", [
+      enrollmentSection("OK"),
+      enrollmentSection("FAILED"),
+      enrollmentSection("MISSING", { courseOfferingNumber: undefined }),
+    ]),
+  ];
+  await refreshSimulationAvailability(
+    courses,
+    new AbortController().signal,
+    {
+      read: async (q) => {
+        if (q.classSection === "FAILED") throw Error("offline");
+        return live();
+      },
+    },
+    (value) => progress.push({ ...value }),
+  );
+  assert.equal(progress[0].completed, 0);
+  assert.deepEqual(
+    progress.map((p) => p.completed),
+    [0, 1, 2, 3],
+  );
+  assert.ok(progress.every((p) => p.total === 3));
+  assert.equal(progress.at(-1).failed, 2);
+});

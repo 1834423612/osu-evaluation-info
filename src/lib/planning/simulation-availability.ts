@@ -18,26 +18,38 @@ type AvailabilityReader = {
   ) => Promise<SectionAvailability>;
 };
 
+export type SimulationFetchProgress = {
+  completed: number;
+  total: number;
+  failed: number;
+};
+
 /** Fresh per-run reads, including pinned, asynchronous and unchosen components. */
 export async function refreshSimulationAvailability(
   courses: CatalogCourse[],
   signal: AbortSignal,
   reader: AvailabilityReader,
+  onProgress?: (progress: SimulationFetchProgress) => void,
 ): Promise<CatalogCourse[]> {
   signal.throwIfAborted();
   const refreshed = courses.map(withoutCourseAvailability);
   const sections = refreshed.flatMap((course) =>
     course.sections.map((section) => ({ course, section })),
   );
-  let next = 0;
+  let next = 0,
+    completed = 0,
+    failed = 0;
+  const report = () =>
+    onProgress?.({ completed, total: sections.length, failed });
+  report();
   const readNext = async () => {
     while (next < sections.length) {
       signal.throwIfAborted();
       const { course, section } = sections[next++];
       const query = sectionAvailabilityQuery(section, course);
       section.availabilityState = "error";
-      if (!query) continue;
       try {
+        if (!query) continue;
         const availability = await reader.read(query, { signal });
         signal.throwIfAborted();
         if (!isVerifiedSectionAvailability(availability)) continue;
@@ -48,6 +60,12 @@ export async function refreshSimulationAvailability(
         section.waitlistTotal = availability.waitlistTotal;
       } catch {
         signal.throwIfAborted();
+      } finally {
+        if (!signal.aborted) {
+          completed++;
+          if (section.availabilityState !== "ready") failed++;
+          report();
+        }
       }
     }
   };

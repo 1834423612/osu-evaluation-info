@@ -543,6 +543,7 @@
   color: var(--ink);
   text-align: left;
   line-height: 1.1;
+  container: simulation-event / size;
 }
 .root .timeBlock:hover {
   background: color-mix(in srgb, var(--course-color) 26%, var(--surface));
@@ -556,7 +557,7 @@
   font-weight: 650;
 }
 .blockAvailability {
-  display: block;
+  display: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -577,7 +578,7 @@
   color: #966817;
 }
 .blockTime {
-  display: block;
+  display: none;
   font-size: 9px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -590,17 +591,6 @@
 }
 .timeBlock[data-delivery="online"] {
   border-style: dashed;
-}
-.timeBlock[data-availability="full"] .blockTime,
-.timeBlock[data-availability="waitlist"] .blockTime,
-.timeBlock[data-availability="unknown"] .blockTime,
-.timeBlock[data-short="true"] .blockTime,
-.timeBlock[data-short="true"] .blockDelivery,
-.timeBlock[data-narrow="true"] .blockSubject {
-  display: none;
-}
-.root .timeBlock[data-short="true"] {
-  padding: 0 2px;
 }
 .root .timeBlock[data-conflict="true"] {
   border-color: #a4352a;
@@ -689,6 +679,52 @@
   color: var(--primary);
   text-underline-offset: 3px;
 }
+
+.loadingIcon {
+  animation: simulation-spin 1s linear infinite;
+}
+@keyframes simulation-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.fetchProgress {
+  height: 3px;
+  overflow: hidden;
+  background: var(--line);
+  margin: 6px 0;
+}
+.fetchProgress > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 160ms linear;
+}
+/* Density follows each actual event rectangle, including split lanes. */
+.blockSubject,
+.blockTitle,
+.blockLocation,
+.blockSection {
+  display: none;
+}
+.timeSeparator {
+  display: none;
+}
+.root .timeBlock[data-availability="full"],
+.root .timeBlock[data-availability="waitlist"] {
+  border: 2px solid #b23b31;
+  border-top-width: 4px;
+  background: color-mix(in srgb, #b23b31 8%, var(--surface));
+}
+.root .timeBlock[data-availability="unknown"] {
+  border-top: 3px solid #a47320;
+}
+.unscheduledRow[data-availability="full"],
+.unscheduledRow[data-availability="waitlist"] {
+  border: 1px solid #b23b31;
+  border-left-width: 4px;
+}
+
 @media (max-width: 850px) {
   .layout {
     grid-template-columns: 1fr;
@@ -774,8 +810,6 @@
   .root .timeBlock {
     padding: 0;
   }
-  .blockSubject,
-  .blockTime,
   .blockDelivery {
     display: none;
   }
@@ -823,5 +857,81 @@
 @media (prefers-reduced-motion: reduce) {
   .switchTrack i {
     transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
+  }
+  .fetchProgress > span {
+    transition: none;
+  }
+}
+
+@container simulation-event (min-height: 32px) {
+  .blockTime {
+    display: flex;
+    flex-direction: column;
+    font-size: 8px;
+    line-height: 1.15;
+  }
+}
+@container simulation-event (min-width: 64px) and (min-height: 20px) {
+  .blockTime {
+    display: flex;
+    flex-direction: row;
+    font-size: 9px;
+  }
+  .timeSeparator {
+    display: inline;
+  }
+  .blockSubject {
+    display: inline;
+  }
+}
+@container simulation-event (min-height: 62px) {
+  .blockAvailability {
+    display: block;
+    font-size: 8px;
+    color: #a4352a;
+    margin-top: 2px;
+  }
+}
+@container simulation-event (min-width: 94px) and (min-height: 44px) {
+  .blockTitle {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+    margin-top: 2px;
+  }
+}
+@container simulation-event (min-width: 94px) and (min-height: 90px) {
+  .blockTitle {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1.25;
+    margin-top: 4px;
+  }
+  .blockLocation {
+    display: block;
+    font-size: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 3px;
+  }
+}
+@container simulation-event (min-width: 110px) and (min-height: 124px) {
+  .blockSection {
+    display: block;
+    font-size: 9px;
+    margin-top: 3px;
   }
 }

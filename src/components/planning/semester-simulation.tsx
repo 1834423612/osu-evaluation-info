@@ -55,6 +55,7 @@ import {
   refreshSimulationAvailability,
   simulationAvailability,
   simulationAvailabilityLabel,
+  type SimulationFetchProgress,
 } from "@/lib/planning/simulation-availability";
 type Result = ReturnType<typeof simulateSchedule>;
 const timeLabel = (minute: number) =>
@@ -183,6 +184,11 @@ export function SemesterSimulation({
   const [phase, setPhase] = useState<"courses" | "availability" | "simulation">(
     "courses",
   );
+  const [progress, setProgress] = useState<SimulationFetchProgress>({
+    completed: 0,
+    total: 0,
+    failed: 0,
+  });
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [result, setResult] = useState<{
@@ -287,6 +293,7 @@ export function SemesterSimulation({
     worker.current?.terminate();
     setBusy(true);
     setPhase("courses");
+    setProgress({ completed: 0, total: codes.length, failed: 0 });
     setMessage("");
     setResult(null);
     const controller = new AbortController();
@@ -299,22 +306,27 @@ export function SemesterSimulation({
     if (data?.scope !== scope || data.failed.length) {
       const responses = await Promise.allSettled(
         codes.map(async (code) => {
-          const split = code.lastIndexOf(" ");
-          const response = await context.reader.read(
-            {
-              subject: code.slice(0, split),
-              number: code.slice(split + 1),
-              campus,
-              term: catalogTerm,
-            },
-            controller.signal,
-          );
-          if (
-            response.course.termCode !== catalogTerm ||
-            response.course.campusCode.toUpperCase() !== campus
-          )
-            throw Error();
-          return response.course;
+          try {
+            const split = code.lastIndexOf(" ");
+            const response = await context.reader.read(
+              {
+                subject: code.slice(0, split),
+                number: code.slice(split + 1),
+                campus,
+                term: catalogTerm,
+              },
+              controller.signal,
+            );
+            if (
+              response.course.termCode !== catalogTerm ||
+              response.course.campusCode.toUpperCase() !== campus
+            )
+              throw Error();
+            return response.course;
+          } finally {
+            if (!controller.signal.aborted)
+              setProgress((p) => ({ ...p, completed: p.completed + 1 }));
+          }
         }),
       );
       if (controller.signal.aborted) return;
@@ -329,6 +341,11 @@ export function SemesterSimulation({
     }
     if (controller.signal.aborted) return;
     setPhase("availability");
+    setProgress({
+      completed: 0,
+      total: data.courses.reduce((n, c) => n + c.sections.length, 0),
+      failed: 0,
+    });
     try {
       data = {
         ...data,
@@ -336,6 +353,9 @@ export function SemesterSimulation({
           data.courses,
           controller.signal,
           availabilityStore,
+          (value) => {
+            if (!controller.signal.aborted) setProgress(value);
+          },
         ),
       };
     } catch {
@@ -616,30 +636,67 @@ export function SemesterSimulation({
             className={styles.run}
             data-analytics-action="planning_simulation_run"
             onClick={() => void run()}
+            aria-busy={busy}
             disabled={busy || !codes.length}
           >
-            <RefreshCw size={15} />
+            <RefreshCw
+              size={15}
+              className={busy ? styles.loadingIcon : undefined}
+            />
             {busy
               ? phase === "availability"
-                ? t("Updating live seats…", "正在更新官方余位…")
+                ? t(
+                    `Updating live seats (${progress.completed}/${progress.total})…`,
+                    `正在更新官方余位（${progress.completed}/${progress.total}）…`,
+                  )
                 : phase === "courses"
-                  ? t("Fetching sections…", "正在获取班次…")
+                  ? t(
+                      `Fetching sections (${progress.completed}/${progress.total})…`,
+                      `正在获取班次信息（${progress.completed}/${progress.total}）…`,
+                    )
                   : t("Simulating…", "正在模拟…")
               : t("Fetch sections & simulate", "获取班次并模拟排课")}
           </button>
-          <p role="status">
-            {message ||
-              (!codes.length
-                ? t(
-                    "Choose actual courses before simulating.",
-                    "请先选择实际课程，再模拟时间安排。",
+          {busy && phase !== "simulation" && (
+            <div
+              className={styles.fetchProgress}
+              role="progressbar"
+              aria-label={
+                phase === "courses"
+                  ? t("Fetching course sections", "正在获取课程班次")
+                  : t("Checking live seats", "正在核对官方余位")
+              }
+              aria-valuemin={0}
+              aria-valuemax={Math.max(1, progress.total)}
+              aria-valuenow={progress.completed}
+            >
+              <span
+                style={{
+                  width: `${progress.total ? (progress.completed / progress.total) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          )}
+          <p role="status" aria-live="polite">
+            {busy
+              ? phase === "simulation"
+                ? t("Building schedule options…", "正在生成排课方案…")
+                : t(
+                    `${progress.completed} of ${progress.total} completed${progress.failed ? ` · ${progress.failed} unavailable` : ""}`,
+                    `已完成 ${progress.completed}/${progress.total}${progress.failed ? ` · ${progress.failed} 个余位未能核实` : ""}`,
                   )
-                : !output && !busy
+              : message ||
+                (!codes.length
                   ? t(
-                      "Your saved choices will be used in the next simulation.",
-                      "模拟将使用当前课程、班次和时间偏好。",
+                      "Choose actual courses before simulating.",
+                      "请先选择实际课程，再模拟时间安排。",
                     )
-                  : "")}
+                  : !output && !busy
+                    ? t(
+                        "Your saved choices will be used in the next simulation.",
+                        "模拟将使用当前课程、班次和时间偏好。",
+                      )
+                    : "")}
           </p>
           {loaded?.scope === scope && !!loaded.failed.length && (
             <p className={styles.warning}>

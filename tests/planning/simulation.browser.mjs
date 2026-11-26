@@ -136,11 +136,12 @@ try {
       },
       { plan, key: PLAN_STORAGE_KEY, locale },
     );
-    await context.route("**/*", (route) => {
+    await context.route("**/*", async (route) => {
       const url = new URL(route.request().url());
       if (
         url.href.startsWith("https://content.osu.edu/v2/classes/availability?")
       ) {
+        await new Promise((resolve) => setTimeout(resolve, 90));
         const selected = url.searchParams.get("classSection");
         availabilityReads.push({ round: availabilityRound, section: selected });
         if (availabilityRound === 1 && selected === "LATE")
@@ -324,6 +325,23 @@ try {
       `simulate action remains visible and readable on hover: ${JSON.stringify({ runBackground, ...hovered })}`,
     );
     assert.equal(await dialog.isVisible(), true);
+    await page.evaluate(() => {
+      window.__simulationProgress = [];
+      const record = () => {
+        for (const bar of document.querySelectorAll('[role="progressbar"]')) {
+          window.__simulationProgress.push({
+            completed: Number(bar.getAttribute("aria-valuenow")),
+            total: Number(bar.getAttribute("aria-valuemax")),
+          });
+        }
+      };
+      window.__simulationProgressObserver = new MutationObserver(record);
+      window.__simulationProgressObserver.observe(document.body, {
+        attributes: true,
+        subtree: true,
+        childList: true,
+      });
+    });
     await run.click();
     const options = dialog.getByRole("navigation", {
       name: t("Timetable alternatives", "可选时间表"),
@@ -350,6 +368,14 @@ try {
         );
         throw error;
       });
+    const progress = await page.evaluate(() => {
+      window.__simulationProgressObserver.disconnect();
+      return window.__simulationProgress;
+    });
+    assert.ok(
+      progress.some((p) => p.completed > 0 && p.completed < p.total),
+      "live progress changes before all sections complete",
+    );
     if (unavailableMetadata) {
       assert.match(
         await dialog.innerText(),
@@ -504,6 +530,22 @@ try {
       fitted.visible && fitted.scroll <= 1 && fitted.parentScroll <= 1,
       `whole timetable must fit at ${width}px: ${JSON.stringify(fitted)}`,
     );
+    if (width === 1440) {
+      const detail = await frame
+        .locator('button[data-availability="open"]')
+        .first()
+        .evaluate((button) => ({
+          time: getComputedStyle(button.querySelector('[class*="blockTime"]'))
+            .display,
+          width: button.clientWidth,
+          height: button.clientHeight,
+        }));
+      assert.notEqual(
+        detail.time,
+        "none",
+        `desktop event keeps exact time: ${JSON.stringify(detail)}`,
+      );
+    }
     const colors = await dialog
       .locator('[aria-label="Week at a glance"], [aria-label="一周课程概览"]')
       .locator("button")

@@ -336,15 +336,26 @@ export function SimulationTimetable({
                       <span className={styles.blockSubject}>
                         {event.key.slice(0, split)}{" "}
                       </span>
-                      {event.key.slice(split + 1)}
+                      <span>{event.key.slice(split + 1)}</span>
                     </strong>
+                    <span className={styles.blockTime}>
+                      <span>{timeLabel(event.start)}</span>
+                      <span className={styles.timeSeparator}>–</span>
+                      <span>{timeLabel(event.end)}</span>
+                    </span>
                     {state !== "open" && (
                       <span className={styles.blockAvailability}>
                         {simulationAvailabilityName(sectionFor(event), locale)}
                       </span>
                     )}
-                    <span className={styles.blockTime}>
-                      {timeLabel(event.start)}–{timeLabel(event.end)}
+                    <span className={styles.blockTitle}>
+                      {courseTitle(event.key)}
+                    </span>
+                    <span className={styles.blockLocation}>
+                      {event.location || deliveryLabel(event.delivery)}
+                    </span>
+                    <span className={styles.blockSection}>
+                      {event.component} · {event.section}
                     </span>
                     <Icon
                       size={10}
