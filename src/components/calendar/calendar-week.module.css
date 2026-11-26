@@ -97,19 +97,30 @@
     color-mix(in srgb, var(--line) 65%, transparent) 48px
   );
 }
-.column[data-holiday="true"] {
-  background-color: color-mix(in srgb, #d3a34e 5%, var(--surface));
+.column[data-no-classes="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--no-class-color) 11%, transparent) 0,
+    color-mix(in srgb, var(--no-class-color) 11%, transparent) 7px,
+    color-mix(in srgb, var(--no-class-color) 3%, transparent) 7px,
+    color-mix(in srgb, var(--no-class-color) 3%, transparent) 14px
+  );
 }
 .week .event {
+  container: calendar-event / size;
   position: absolute;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
   min-width: 0;
-  gap: 4px;
+  gap: 2px;
   text-align: left;
-  padding: 6px;
+  padding: 0 2px;
   box-sizing: border-box;
   border: 1px solid
     color-mix(in srgb, var(--event-color, #4784bb) 40%, var(--line));
@@ -122,7 +133,14 @@
   color: var(--ink);
   overflow: hidden;
   cursor: pointer;
-  min-height: 18px;
+  /* Duration controls the rectangle; compact content must not stretch time. */
+  min-height: 0;
+}
+.week .event[data-lanes="2"] {
+  padding-inline: 1px;
+}
+.event[data-lanes="2"] .courseCode {
+  font-size: 7px;
 }
 .week .event[data-point="true"] {
   min-height: 40px;
@@ -157,6 +175,13 @@
   line-height: 1.4;
 }
 .event .courseCode {
+  display: block;
+  font-size: 8px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: unset;
+}
+.event .eventTitle[data-has-code="true"] {
   display: none;
 }
 .event span {
@@ -165,13 +190,14 @@
   max-width: 100%;
   text-align: left;
   font-size: 10px;
-  display: flex;
+  display: none;
   align-items: center;
   gap: 3px;
   color: var(--muted);
   line-height: 1.4;
 }
 .event small {
+  display: none;
   font-size: 9px;
   color: var(--muted);
 }
@@ -320,24 +346,6 @@
       calc(100% / var(--hour-count))
   );
 }
-.week[data-fit="true"] .event {
-  padding: 3px 4px;
-  gap: 1px;
-}
-.week[data-fit="true"] .event strong {
-  font-size: 10px;
-  line-height: 1.25;
-  -webkit-line-clamp: 1;
-}
-.week[data-fit="true"] .event span {
-  font-size: 9px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-.week[data-fit="true"] .event span:nth-of-type(n + 2),
-.week[data-fit="true"] .event small {
-  display: none;
-}
 .week[data-fit="true"] .caption {
   flex-shrink: 0;
   margin-top: 6px;
@@ -361,63 +369,6 @@
   }
   .head small {
     font-size: 9px;
-  }
-  .week .event {
-    padding: 3px 2px;
-    gap: 2px;
-    border-left-width: 2px;
-  }
-  .week .event[data-point="true"] {
-    min-height: 30px;
-  }
-  .event strong {
-    font-size: 9px;
-    overflow-wrap: normal;
-  }
-  .week .event .eventTitle[data-has-code="true"] {
-    display: none;
-  }
-  .week .event:has(.courseCode) {
-    min-height: min-content;
-    padding: 2px 1px;
-    gap: 0;
-  }
-  .week .event:has(.courseCode) > span {
-    display: none;
-  }
-  .week .event strong.courseCode,
-  .week[data-fit="true"] .event strong.courseCode {
-    display: block;
-    min-height: 20px;
-    font-size: 8px;
-    line-height: 1.15;
-    letter-spacing: -0.015em;
-    -webkit-line-clamp: unset;
-    overflow-wrap: anywhere;
-    white-space: normal;
-    text-overflow: clip;
-    overflow: visible;
-  }
-  .week .event[data-point="true"] strong.courseCode {
-    min-height: 24px;
-  }
-  .week .event[data-lanes="2"]:has(.courseCode) {
-    padding: 2px 0;
-    border-left-width: 1px;
-  }
-  .week .event[data-lanes="2"] strong.courseCode,
-  .week[data-fit="true"] .event[data-lanes="2"] strong.courseCode {
-    font-size: 7px;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-  }
-  .event span {
-    font-size: 8px;
-    display: block;
-  }
-  .event span svg,
-  .event small {
-    display: none;
   }
   .times {
     font-size: 8px;
@@ -471,5 +422,37 @@
   }
   .week[data-fit="true"] .caption {
     display: none;
+  }
+}
+
+/* Information follows each event's actual lane width and duration. */
+@container calendar-event (min-width: 55px) and (min-height: 42px) {
+  .event .eventTime {
+    display: flex;
+    font-size: 9px;
+  }
+}
+@container calendar-event (min-width: 82px) and (min-height: 58px) {
+  .event .eventTitle[data-has-code="true"] {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+  }
+  .event .courseCode {
+    display: none;
+  }
+}
+@container calendar-event (min-width: 82px) and (min-height: 88px) {
+  .event .eventLocation {
+    display: flex;
+  }
+}
+@container calendar-event (min-width: 82px) and (min-height: 112px) {
+  .event .eventTitle,
+  .event .eventTitle[data-has-code="true"] {
+    display: block;
+    -webkit-line-clamp: unset;
+  }
+  .event .eventSession {
+    display: block;
   }
 }

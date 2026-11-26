@@ -1,6 +1,20 @@
 import type { CalendarEvent } from "./model.ts";
 import { newYorkTime } from "./schedules.ts";
 import { newYorkDate } from "./dates.ts";
+
+/** Official all-day dates are already local dates, with an exclusive end. */
+export function noClassEventsForDate(events: CalendarEvent[], date: string) {
+  return events.filter(
+    (event) =>
+      event.allDay &&
+      event.noClasses === true &&
+      event.category === "holiday" &&
+      event.id.startsWith("official-") &&
+      event.url === "https://registrar.osu.edu/academic-calendar/" &&
+      event.start <= date &&
+      event.end > date,
+  );
+}
 const palette = [
   "#326fa4",
   "#287363",

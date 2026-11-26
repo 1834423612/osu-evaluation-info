@@ -1,33 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createScrollOwnership } from "../../src/lib/syllabus/scroll-intent.ts";
-test("fast wheel bursts stay in the hovered document, including the event that reaches its edge", () => {
-  const choose = createScrollOwnership(),
-    document = {};
-  assert.equal(choose(240, 100, document, true), "inner");
-  assert.equal(choose(500, 120, document, true), "inner");
-  assert.equal(choose(800, 140, document, false), "inner");
-  assert.equal(choose(160, 400, document, false), "outer");
-  assert.equal(choose(-400, 420, document, true), "inner");
-});
-test("a fresh touch swipe at an exhausted boundary can move the panel on small screens", () => {
-  const choose = createScrollOwnership(),
-    document = {};
-  assert.equal(choose(60, 100, document, true, true), "inner");
-  assert.equal(choose(200, 130, document, false, true), "inner");
-  choose.begin();
-  assert.equal(choose(30, 160, document, false, true), "outer");
-});
-test("pointer changes reset ownership without requiring velocity samples", () => {
-  const choose = createScrollOwnership();
-  assert.equal(choose(200, 100, "one", false), "outer");
-  assert.equal(choose(200, 120, "two", true), "inner");
-  assert.equal(choose(NaN, 121, "two", true), "inner");
+import {
+  attachPreviewScrolling,
+  canScrollBy,
+} from "../../src/lib/syllabus/scroll-intent.ts";
+
+test("an exhausted document hands movement to its parent immediately, even within the same gesture", () => {
+  const document = { scrollTop: 80, scrollHeight: 200, clientHeight: 100 };
+  assert.equal(canScrollBy(document, 240), true);
+  document.scrollTop = 100;
+  assert.equal(canScrollBy(document, 80), false);
+  assert.equal(canScrollBy(document, -80), true);
+  document.scrollTop = 0;
+  assert.equal(canScrollBy(document, -80), false);
+  assert.equal(canScrollBy(document, 0), false);
 });
 
-test("sustained wheel pressure at a boundary hands over without trapping the rest of the burst", () => {
-  const choose = createScrollOwnership();
-  assert.equal(choose(200, 0, "body", true), "inner");
-  assert.equal(choose(120, 20, "body", false), "inner");
-  assert.equal(choose(120, 90, "body", false), "outer");
+test("ordinary nested panels retain native wheel and touch handling", () => {
+  const listeners = [];
+  const reader = {
+    dataset: {},
+    addEventListener: (...args) => listeners.push(args),
+    removeEventListener() {},
+  };
+  const detach = attachPreviewScrolling(reader);
+  assert.equal(
+    listeners.length,
+    0,
+    "in-document scrolling must not install event cancellation traps",
+  );
+  detach();
 });

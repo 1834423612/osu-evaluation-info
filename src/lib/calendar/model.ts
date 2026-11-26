@@ -23,6 +23,8 @@ export const calendarEventSchema = z
     end: date,
     allDay: z.boolean(),
     category: z.enum(["class", "assignment", "exam", "holiday", "event"]),
+    /** Registrar no-class dates; ordinary all-day events do not imply a closure. */
+    noClasses: z.boolean().optional(),
     description: z.string().max(4000).default(""),
     location: z.string().max(500).default(""),
     url: z.string().url().max(1500).optional(),

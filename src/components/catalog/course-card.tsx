@@ -9,12 +9,10 @@ import dynamic from "next/dynamic";
 import { recordHistory } from "@/lib/history/store";
 import { useSearchParams } from "next/navigation";
 import {
-  AlertTriangle,
   GraduationCap,
   MapPin,
   MonitorPlay,
   ArrowUpRight,
-  LucideShieldCheck,
   LoaderCircle,
   FileText,
   X,
@@ -50,6 +48,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { RatingSummary } from "@/components/evaluations/rating-summary";
+import { EvaluationSourcePicker } from "@/components/evaluations/evaluation-source-picker";
 import { InstructorAvatar } from "@/components/people/instructor-avatar";
 import SectionsPanel from "./sections-panel";
 import { TranslateText } from "@/components/translation/translate-text";
@@ -372,7 +371,6 @@ export function CourseCard({
   const isMobile = useMobileViewport();
   const detailId = useId();
   const scrollPanelRef = useNestedPanelScroll();
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const isSelected = searchParams.get("course") === course.id;
   const requestedTab =
     searchParams.get("detailTab") === "syllabus"
@@ -547,43 +545,22 @@ export function CourseCard({
       ref={scrollPanelRef}
       data-scroll-panel
       className="course-details"
-      onTouchStart={(event) => {
-        if (
-          (event.target as HTMLElement).closest(
-            "button, input, select, a, textarea, table, [role='slider'], [data-chart], [data-trend-chart], [data-rmp-review-content], [data-syllabus-reader]",
-          )
-        ) {
-          touchStart.current = null;
-          return;
-        }
-        const touch = event.touches[0];
-        if (touch) touchStart.current = { x: touch.clientX, y: touch.clientY };
-      }}
-      onTouchEnd={(event) => {
-        const start = touchStart.current;
-        const touch = event.changedTouches[0];
-        touchStart.current = null;
-        if (!start || !touch) return;
-        const dx = touch.clientX - start.x;
-        const dy = touch.clientY - start.y;
-        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
-        trackUmamiEvent("ui_interaction", {
-          action: "course_detail_swipe",
-          direction: dx < 0 ? "ratings" : "sections",
-          area: "course_details",
-          path: window.location.pathname,
-        });
-        openTab(dx < 0 ? "ratings" : "sections", true);
-      }}
     >
       <Tabs
         value={tab ?? "sections"}
         className="course-detail-tabs"
-        onValueChange={(value) => {
-          if (value === "sections") void openTab("sections", true);
-          if (value === "ratings") void openTab("ratings", true);
-          if (value === "syllabus") void openTab("syllabus", true);
-        }}
+        swipeable
+        onValueChange={(value) =>
+          void openTab(value as typeof requestedTab, true)
+        }
+        onSwipeChange={(next) =>
+          trackUmamiEvent("ui_interaction", {
+            action: "course_detail_swipe",
+            direction: next,
+            area: "course_details",
+            path: window.location.pathname,
+          })
+        }
       >
         <div className="detail-tabs-row">
           <TabsList
@@ -711,13 +688,15 @@ export function CourseCard({
             role="region"
             aria-label={text(locale, "Course detail", "课程详情")}
           >
-            <p className="detail-note">
-              {text(
-                locale,
-                `Historical course averages from ${course.campus} campus. Instructor results are shown separately below.`,
-                `以下为 ${course.campus} 校区的历届课程汇总；教师个人评价在下方分别展示。`,
-              )}
-            </p>
+            {ratingSource === "official" && (
+              <p className="detail-note">
+                {text(
+                  locale,
+                  `Historical course averages from ${course.campus} campus. Instructor results are shown separately below.`,
+                  `以下为 ${course.campus} 校区的历届课程汇总；教师个人评价在下方分别展示。`,
+                )}
+              </p>
+            )}
             {loading ? (
               <p className="inline-loading" role="status">
                 <LoaderCircle size={16} className="spin" />
@@ -744,18 +723,7 @@ export function CourseCard({
               onValueChange={setRatingSource}
               className="rating-source-tabs"
             >
-              <TabsList
-                aria-label={text(locale, "Evaluation source", "评价来源")}
-              >
-                <TabsTrigger value="official">
-                  <LucideShieldCheck size={13} aria-hidden="true" />
-                  {text(locale, "OSU official", "OSU 官方评价")}
-                </TabsTrigger>
-                <TabsTrigger value="rmp">
-                  <AlertTriangle size={13} aria-hidden="true" />
-                  {text(locale, "RMP · student reviews", "RMP · 学生评论")}
-                </TabsTrigger>
-              </TabsList>
+              <EvaluationSourcePicker course={current} locale={locale} />
               <TabsContent value="official">
                 <EvaluationPanel
                   summary={current.evaluation}

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../styles/scroll-chain.css";
 @theme inline {
   --color-background: var(--surface);
   --color-foreground: var(--ink);
@@ -2089,16 +2090,48 @@ html.rrweb-paused
   min-width: 0;
 }
 .rating-source-tabs > [data-slot="tabs-list"] {
-  width: fit-content;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
   max-width: 100%;
-  background: var(--accent-soft);
-  padding: 4px;
+  height: auto;
+  gap: 8px;
+  background: transparent;
+  padding: 0;
   border-radius: 8px;
 }
+.rating-source-tabs > [data-slot="tabs-list"] [data-slot="tabs-trigger"] {
+  min-width: 0;
+  min-height: 76px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--subtle-surface);
+  color: var(--muted);
+  text-align: left;
+  white-space: normal;
+}
+.rating-source-label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  line-height: 1.4;
+}
+.rating-source-label strong {
+  font-size: 13px;
+}
+.rating-source-label small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
 .rating-source-tabs > [data-slot="tabs-list"] [data-state="active"] {
-  background: white;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
   color: var(--primary);
-  box-shadow: 0 1px 5px color-mix(in srgb, var(--ink) 6%, transparent);
+  box-shadow: none;
 }
 
 /* Shared motion: short compositor animations, with quieter touch feedback. */
@@ -2434,10 +2467,21 @@ html[data-debug-layout] [data-debug-tools] * {
   border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
   background: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
-.catalog-campus-context > svg { color: var(--primary); }
-.catalog-campus-context label { font-size: 13px; font-weight: 650; }
-.catalog-campus-context [role="combobox"] { width: auto; min-width: 180px; }
-.catalog-campus-context small { color: var(--muted); font-size: 12px; }
+.catalog-campus-context > svg {
+  color: var(--primary);
+}
+.catalog-campus-context label {
+  font-size: 13px;
+  font-weight: 650;
+}
+.catalog-campus-context [role="combobox"] {
+  width: auto;
+  min-width: 180px;
+}
+.catalog-campus-context small {
+  color: var(--muted);
+  font-size: 12px;
+}
 @media (min-width: 1500px) {
   .header-inner {
     padding: 0 40px;
