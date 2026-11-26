@@ -23,9 +23,11 @@ export function rmpServingSQL(sql: string) {
   // Production uses the upgraded view. Development can opt into its isolated
   // view after running setup_admin; ordinary development still reads the source.
   return process.env.RMP_ADMIN_SCHEMA
-    ? sql.replaceAll(
-        "osu_rmp.course_review_query",
-        rmpAdminTable("course_review_query"),
-      )
+    ? sql
+        .replaceAll(
+          "osu_rmp.course_review_query",
+          rmpAdminTable("course_review_query"),
+        )
+        .replaceAll("osu_rmp.course_decision", rmpAdminTable("course_decision"))
     : sql;
 }
