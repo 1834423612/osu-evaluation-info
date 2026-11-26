@@ -5,6 +5,7 @@ import {
   lookupOfficialCourseMetadata,
   loadOfficialCourseReferences,
   findExactOfficialCourseReferences,
+  filterOfficialCourseReferences,
 } from "../../src/lib/rmp/official-courses.ts";
 test("official targets use published run JSONB term scope and retain exact active official history", async (t) => {
   const db = new PGlite();
@@ -48,6 +49,21 @@ test("official targets use published run JSONB term scope and retain exact activ
   assert(
     refs.some(
       (row) => row.key === "ASL1101" && row.source === "official_evaluation",
+    ),
+  );
+  assert(
+    !filterOfficialCourseReferences(refs, "ASL", "COL").some(
+      (row) => row.key === "ASL1102",
+    ),
+  );
+  assert(
+    filterOfficialCourseReferences(refs, "ASL", "MNS").some(
+      (row) => row.key === "ASL1102",
+    ),
+  );
+  assert(
+    filterOfficialCourseReferences(refs, "ASL").some(
+      (row) => row.key === "ASL1102",
     ),
   );
   assert(

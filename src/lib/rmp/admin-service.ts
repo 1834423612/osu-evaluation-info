@@ -15,6 +15,7 @@ import {
   lookupOfficialCourseMetadata,
   type OfficialCourseReference,
   findExactOfficialCourseReferences,
+  filterOfficialCourseReferences,
 } from "./official-courses.ts";
 let referenceCache: {
   expires: number;
@@ -118,33 +119,11 @@ export async function searchOfficialCourses(
     campus,
   );
   if (exact !== null) return exact;
-  const references = await officialReferences();
-  const code = search
-      .normalize("NFKC")
-      .toUpperCase()
-      .replace(/[^A-Z0-9.]/g, ""),
-    words = search.trim().toLowerCase(),
-    seen = new Set<string>();
-  return references
-    .filter(
-      (row) =>
-        (!!code && row.key.includes(code)) ||
-        row.title.toLowerCase().includes(words),
-    )
-    .sort(
-      (a, b) =>
-        (a.key === code ? 0 : 1) - (b.key === code ? 0 : 1) ||
-        (a.source === "official_catalog" ? 0 : 1) -
-          (b.source === "official_catalog" ? 0 : 1) ||
-        a.key.localeCompare(b.key) ||
-        a.title.localeCompare(b.title),
-    )
-    .filter((row) => {
-      if (seen.has(row.key)) return false;
-      seen.add(row.key);
-      return true;
-    })
-    .slice(0, 20);
+  return filterOfficialCourseReferences(
+    await officialReferences(),
+    search,
+    campus,
+  );
 }
 export async function decideRmpCourse(
   input: CourseDecisionInput,

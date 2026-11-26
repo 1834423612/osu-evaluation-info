@@ -7,7 +7,39 @@ export type OfficialCourseMetadata = {
     "official_catalog" | "official_catalog_history" | "official_evaluation";
   term: string | null;
 };
-export type OfficialCourseReference = Omit<OfficialCourseMetadata, "campus">;
+export type OfficialCourseReference = OfficialCourseMetadata;
+export function filterOfficialCourseReferences(
+  references: OfficialCourseReference[],
+  search: string,
+  campus: string = "ALL",
+) {
+  const code = search
+      .normalize("NFKC")
+      .toUpperCase()
+      .replace(/[^A-Z0-9.]/g, ""),
+    words = search.trim().toLowerCase(),
+    seen = new Set<string>();
+  return references
+    .filter(
+      (row) =>
+        (campus === "ALL" || row.campus === campus) &&
+        ((!!code && row.key.includes(code)) ||
+          row.title.toLowerCase().includes(words)),
+    )
+    .sort(
+      (a, b) =>
+        (a.key === code ? 0 : 1) - (b.key === code ? 0 : 1) ||
+        (a.source === "official_catalog" ? 0 : 1) -
+          (b.source === "official_catalog" ? 0 : 1) ||
+        a.key.localeCompare(b.key),
+    )
+    .filter((row) => {
+      if (seen.has(row.key)) return false;
+      seen.add(row.key);
+      return true;
+    })
+    .slice(0, 20);
+}
 export async function findExactOfficialCourseReferences(
   query: AdminQuery,
   search: string,
@@ -28,7 +60,7 @@ export async function findExactOfficialCourseReferences(
     ...new Map(
       rows.map((row) => [
         JSON.stringify([row.key, row.title, row.source, row.term]),
-        { key: row.key, title: row.title, source: row.source, term: row.term },
+        row,
       ]),
     ).values(),
   ];
@@ -98,14 +130,14 @@ export async function lookupOfficialCourseMetadata(
 export const OFFICIAL_REFERENCE_SQL = `WITH ${scopes},latest AS (
  SELECT DISTINCT ON(term_code) * FROM scopes ORDER BY term_code,published_at DESC
 ), catalog AS (
- SELECT c.subject||c.catalog_number key,c.title,'official_catalog'::text source,max(c.term_code)::text term
+ SELECT c.campus_code campus,c.subject||c.catalog_number key,c.title,'official_catalog'::text source,max(c.term_code)::text term
  FROM latest s CROSS JOIN LATERAL (
-   SELECT subject,catalog_number,title,term_code FROM osu_catalog.course_snapshots c
+   SELECT campus_code,subject,catalog_number,title,term_code FROM osu_catalog.course_snapshots c
    WHERE c.last_seen_run=s.run_id AND c.term_code=s.term_code OFFSET 0
  ) c
- GROUP BY c.subject,c.catalog_number,c.title
+ GROUP BY c.campus_code,c.subject,c.catalog_number,c.title
 ), history AS (
- SELECT DISTINCT course_key key,''::text title,CASE source WHEN 'official_evaluation' THEN 'official_evaluation' ELSE 'official_catalog_history' END source,NULL::text term
+ SELECT DISTINCT campus_code campus,course_key key,''::text title,CASE source WHEN 'official_evaluation' THEN 'official_evaluation' ELSE 'official_catalog_history' END source,NULL::text term
  FROM osu_rmp.instructor_course WHERE active AND source IN ('official_evaluation','official_catalog')
 ) SELECT * FROM catalog UNION ALL SELECT * FROM history LIMIT 200001`;
 export async function loadOfficialCourseReferences(
@@ -115,6 +147,7 @@ export async function loadOfficialCourseReferences(
   if (result.rows.length > 200000)
     throw Error("Official course reference exceeds its bounded cache");
   return result.rows.map((row) => ({
+    campus: String(row.campus),
     key: String(row.key)
       .normalize("NFKC")
       .toUpperCase()
