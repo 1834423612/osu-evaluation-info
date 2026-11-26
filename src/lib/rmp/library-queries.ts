@@ -17,7 +17,7 @@ export const LIBRARY_SEARCH_SQL = `WITH selected AS (
     AND NOT EXISTS(SELECT 1 FROM unnest($3::text[]) t(token) WHERE
       concat_ws(' ',p.first_name,p.last_name,p.department,m.name_dot_number,p.legacy_id::text) NOT ILIKE '%'||t.token||'%' ESCAPE '\\'
       AND regexp_replace(p.course_codes::text,'[^[:alnum:].]','','g') NOT ILIKE '%'||regexp_replace(t.token,'[ -]','','g')||'%' ESCAPE '\\'
-      AND NOT EXISTS(SELECT 1 FROM osu_rmp.course_identity_match cm WHERE cm.professor_id=p.legacy_id AND cm.state='accepted' AND cm.course_key ILIKE '%'||t.token||'%' ESCAPE '\\')
+      AND NOT EXISTS(SELECT 1 FROM osu_rmp.course_review_query cm WHERE cm.professor_id=p.legacy_id AND cm.matched_course_key ILIKE '%'||t.token||'%' ESCAPE '\\')
       AND NOT EXISTS(SELECT 1 FROM osu_rmp.review r WHERE r.professor_id=p.legacy_id
         AND coalesce(r.class_name,'') ILIKE '%'||t.token||'%' ESCAPE '\\'))
   ORDER BY p.active DESC,p.num_ratings DESC,p.last_name,p.first_name,p.legacy_id
