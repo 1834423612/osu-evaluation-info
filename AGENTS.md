@@ -17,6 +17,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Include feature-specific tests with their feature; keep cross-feature regression suites in a clearly named test commit when appropriate.
 - Give each commit a concrete scope and description so its behavior can be traced later.
 
+## Releases
+
+- Completing a feature or bugfix includes releasing the verified main-branch result according to `docs/releases.md`, unless the user explicitly limits the task or requests a different release boundary. Group related work into a coherent release.
+- Run `pnpm test`, `pnpm lint`, and the relevant type, build, integration or browser checks before publishing. State deliberately skipped external-service checks accurately; do not publish after a required check fails.
+- Choose SemVer from the changes since the previous release: compatible features increase MINOR, compatible fixes increase PATCH, and incompatible documented HTTP or saved-data/import-export changes increase MAJOR. Use normal numeric components without padding or leading zeroes.
+- Align `package.json`, English release history and its Chinese counterpart with the chosen version. Record migration requirements, source boundaries and verification accurately.
+- GitHub Release names must equal their version tags exactly, such as `v1.7.1`. Put the descriptive feature title on the first line of the body as a Markdown level-one heading (`# Title`), followed by bilingual update notes. Never append descriptive text to the Release name.
+- Publish the tag at the verified commit after it is on the main branch. Verify the remote tag, Release name, body and Latest selection before reporting completion.
+- Published version tags keep their original commit targets. Documentation or Release-display-only edits do not require a new software version; update the relevant documentation or Release metadata instead.
+
 ## Product copy
 
 - Use short, concrete labels for state, facts and actions in both languages.

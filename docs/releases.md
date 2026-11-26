@@ -8,6 +8,21 @@ English · [简体中文](zh-CN/releases.md)
 
 Use `vMAJOR.MINOR.PATCH` tags following [Semantic Versioning](https://semver.org/). Compatible feature milestones increase MINOR and reset PATCH to zero; compatible corrections increase PATCH. An incompatible change to documented HTTP contracts or saved-data/import-export formats requires a MAJOR release and upgrade instructions. Internal refactoring, commit counts and dates do not determine version numbers. Required database migrations must be documented even for compatible product upgrades.
 
+## Display and publication
+
+The GitHub Release name equals its tag exactly, for example `v1.7.1`. Numeric components have no fixed width or leading zeroes. The first line of the description is the feature title as a Markdown level-one heading (`# Semester planning`); bilingual update notes, source dates, migration notes and comparison links follow it.
+
+Publishing is part of completing a feature or bugfix unless the task explicitly sets another release boundary:
+
+1. Run `pnpm test`, `pnpm lint` and the relevant type, build, integration or browser checks on the release result. Required failures block publication; identify deliberately skipped external-service checks.
+2. Compare with the previous release, choose the next SemVer and align `package.json` and both language histories. Include operator actions when a migration is required.
+3. Write the feature heading and user-facing changes in the description, with the version-only Release name.
+4. Commit and push the verified result to the main branch, then publish its exact commit under the version tag. Check the remote tag target, name, body and Latest selection.
+
+Documentation or Release-display-only edits can update the relevant text without issuing a new software version. Published tags retain their original commit targets. See [contributor release requirements](../AGENTS.md#releases).
+
+## Historical reconstruction
+
 The existing `v1.0.0` and `v1.1.5` tags and release records are retained. Missing labels `v1.1.0`–`v1.1.4` are not evidence of published releases. Subsequent milestones follow main-branch integration order, including merged feature branches. Historical commits retain their original package metadata.
 
 Eight subsequent Release records were reconstructed on November 26, 2026. Code dates below use `America/New_York`; GitHub publication timestamps record the actual time the records were created. These entries summarize source changes, without claiming that every historical checkout was retested or deployed on its code date. Current `package.json` is aligned with `1.7.1`; build SHA and build time remain the deployment identifiers.
