@@ -268,8 +268,8 @@ function SavedCoursesBody() {
                   <b className={styles.syllabusUpdates}>
                     {text(
                       locale,
-                      `${syllabusUpdates} updates`,
-                      `${syllabusUpdates} 份更新`,
+                      `${syllabusUpdates} source updates`,
+                      `${syllabusUpdates} 份来源更新`,
                     )}
                   </b>
                 ) : null}

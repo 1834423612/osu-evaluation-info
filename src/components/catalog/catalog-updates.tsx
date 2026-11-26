@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -278,7 +279,7 @@ export function CatalogUpdates({ query }: { query: string }) {
           </label>
           <label className={styles.search}>
             {text(locale, "Course", "课程")}
-            <input
+            <SearchField
               name="q"
               defaultValue={params.get("q") || ""}
               maxLength={80}

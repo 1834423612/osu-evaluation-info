@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useDraftGuard } from "@/components/forms/draft-guard";
 import { authClient } from "@/lib/auth/client";
 import { savedScope } from "@/lib/saved/scope";
@@ -263,7 +264,7 @@ export function CollectionImport({
           </div>
           <label className={gallery.search}>
             <Search size={15} />
-            <input
+            <SearchField
               name="shared-search"
               type="search"
               value={query}

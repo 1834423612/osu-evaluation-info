@@ -58,3 +58,13 @@ For local inspection without uploading a file, run `node scripts/calendar/inspec
 Event selection opens an anchored details preview; editing is a separate action for editable calendars. On phones, class blocks use small subject-and-number labels, and the compact details card shows a single date with its time range for same-day events. Official and subscribed events stay read-only. Mobile source cards use matching dimensions, and all seven weekday headings stay on one row. Newly generated share links attempt one automatic clipboard copy; a visible copy field remains available when the browser refuses clipboard access. Sharing lists explicit calendar/category choices and publication state.
 
 Remote DNS pinning supports Node.js single-address and automatic-family lookup contracts. Canvas links with `#assignment_` are recognized as assignments. ICS import keeps the first supported event category (class, assignment, exam, holiday or event); unrecognized categories become event. Export retains that normalized category and HTTP(S) source links; a zero-duration deadline shows a single time rather than an identical start/end range.
+
+## Responsive calendar details and no-class days
+
+Official registrar all-day events explicitly marked as no classes keep their all-day heading and shade the entire corresponding day column with a pale diagonal pattern in the source color. Date-only ends remain exclusive, independent of the viewer's timezone. An office closure without a no-class flag and an ordinary personal all-day event do not gain this treatment.
+
+Each event chooses its information density from its actual width and height. Wider/taller rectangles show the full title, exact time, location and session; narrow lanes retain the course identity and expose full details through the accessible label and detail panel. Duration rectangles preserve the time scale: minimum card heights must not create apparent conflicts between non-overlapping classes. Point events retain their separate target-size policy.
+
+Sitewide native vertical scroll chaining is defined in `src/styles/scroll-chain.css`. Scrollable content yields to its scrollable ancestor at the real boundary, with intentional dialog boundaries retaining background isolation. Same-origin embedded documents use a shared boundary bridge because native scrolling cannot cross those document boundaries reliably. The shared utility replaces page-specific wheel/gesture interception; it cannot access cross-origin document internals.
+
+Course-detail swipe navigation follows registered visible tabs, including syllabus. The evaluation-source selector names official OSU evaluations and RMP reviews separately and labels each source's counts rather than combining unlike metrics.

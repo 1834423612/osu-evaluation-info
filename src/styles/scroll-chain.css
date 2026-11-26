@@ -1,0 +1,17 @@
+/* Nested readers hand vertical movement to their parent at either edge.
+   Keep this policy global so new panels get native chaining automatically. */
+:root body :where(*) {
+  overscroll-behavior-y: auto;
+}
+
+/* Modal content is the final scroll boundary; Radix/Vaul keep the body locked. */
+:root
+  body
+  :is(
+    [data-scroll-boundary],
+    [data-slot="dialog-content"],
+    [data-slot="sheet-content"],
+    [data-slot="drawer-content"]
+  ) {
+  overscroll-behavior-y: contain;
+}

@@ -13,6 +13,7 @@ import SectionsPanel from "@/components/catalog/sections-panel";
 import { EnrollmentWatchControl } from "@/components/catalog/enrollment-watch-control";
 import { SeatWatchPanel } from "@/components/catalog/seat-watch-panel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { EvaluationSourcePicker } from "@/components/evaluations/evaluation-source-picker";
 import styles from "./course-detail-tabs.module.css";
 const EvaluationPanel = dynamic(
   () => import("@/components/evaluations/evaluation-panel"),
@@ -30,6 +31,7 @@ export function CourseDetailTabs({
   locale: Locale;
 }) {
   const [tab, setTab] = useState("sections");
+  const [ratingSource, setRatingSource] = useState("official");
   const preferences = usePreferences();
   const watch = useSectionAvailability(course, {
     visible: true,
@@ -43,16 +45,15 @@ export function CourseDetailTabs({
   return (
     <section className={styles.root}>
       <CourseIdentityFacts course={current} locale={locale} compact />
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={setTab} swipeable>
         <TabsList
           className={styles.tabs}
           aria-label={t("Course information", "课程信息")}
         >
           <TabsTrigger value="sections">{t("Sections", "班次")}</TabsTrigger>
           <TabsTrigger value="ratings">
-            {t("OSU ratings", "官方评价")}
+            {t("Evaluations", "教学评价")}
           </TabsTrigger>
-          <TabsTrigger value="rmp">RMP</TabsTrigger>
           <TabsTrigger value="syllabus">{t("Syllabus", "大纲")}</TabsTrigger>
         </TabsList>
         <TabsContent value="sections">
@@ -93,14 +94,23 @@ export function CourseDetailTabs({
           />
         </TabsContent>
         <TabsContent value="ratings">
-          <EvaluationPanel
-            summary={current.evaluation}
-            locale={locale}
-            subject={current.subject}
-          />
-        </TabsContent>
-        <TabsContent value="rmp">
-          <RmpPanel course={current} locale={locale} />
+          <Tabs
+            value={ratingSource}
+            onValueChange={setRatingSource}
+            className="rating-source-tabs"
+          >
+            <EvaluationSourcePicker course={current} locale={locale} />
+            <TabsContent value="official">
+              <EvaluationPanel
+                summary={current.evaluation}
+                locale={locale}
+                subject={current.subject}
+              />
+            </TabsContent>
+            <TabsContent value="rmp">
+              <RmpPanel course={current} locale={locale} />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         <TabsContent value="syllabus">
           <SyllabusPanel course={current} locale={locale} />

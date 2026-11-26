@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { CollectionIcon } from "./collection-icon";
@@ -40,7 +41,7 @@ export function CollectionIconPicker({
           <small>{text(locale, "Selected icon", "当前图标")}</small>
         </span>
       </div>
-      <input
+      <SearchField
         className={shared.input}
         type="search"
         value={query}

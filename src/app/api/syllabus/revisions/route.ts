@@ -1,6 +1,9 @@
 import { queryDatabase } from "@/lib/db";
 import { validCode } from "@/lib/syllabus/normalize";
-import { syllabusDiff, syllabusLines } from "@/lib/syllabus/diff";
+import {
+  compareSyllabusRevisions,
+  distinctSyllabusRevisions,
+} from "@/lib/syllabus/diff";
 import type { SyllabusDocument } from "@/lib/syllabus/types";
 export const runtime = "nodejs";
 export async function GET(request: Request) {
@@ -32,31 +35,34 @@ export async function GET(request: Request) {
         right = result.rows.find((row) => row.content_hash === after);
       if (!left || !right)
         return Response.json({ error: "missing" }, { status: 404, headers });
-      return Response.json(
-        {
-          lines: syllabusDiff(
-            syllabusLines(left.data),
-            syllabusLines(right.data),
-          ),
-        },
-        { headers },
-      );
+      return Response.json(compareSyllabusRevisions(left.data, right.data), {
+        headers,
+      });
     }
     const result = await queryDatabase<{
       id: string;
-      modified_at: string | null;
+      data: SyllabusDocument;
       fetched_at: Date;
     }>(
-      `SELECT content_hash AS id,data->>'modifiedAt' AS modified_at,first_fetched_at AS fetched_at FROM (SELECT DISTINCT ON(content_hash) content_hash,data,first_fetched_at FROM osu_syllabus.document_versions WHERE code=$1 ORDER BY content_hash,first_fetched_at DESC) revisions ORDER BY osu_syllabus.official_modified(data->>'modifiedAt') DESC NULLS LAST,first_fetched_at DESC LIMIT 30`,
+      `SELECT content_hash AS id,data,first_fetched_at AS fetched_at FROM (SELECT DISTINCT ON(content_hash) content_hash,data,first_fetched_at FROM osu_syllabus.document_versions WHERE code=$1 ORDER BY content_hash,first_fetched_at DESC) revisions ORDER BY osu_syllabus.official_modified(data->>'modifiedAt') DESC NULLS LAST,first_fetched_at DESC,content_hash DESC LIMIT 90`,
       [code],
     );
     return Response.json(
       {
-        versions: result.rows.map((row) => ({
-          id: row.id,
-          modifiedAt: row.modified_at,
-          fetchedAt: row.fetched_at.toISOString(),
-        })),
+        versions: distinctSyllabusRevisions(
+          result.rows.map((row) => ({
+            id: row.id,
+            document: row.data,
+            fetchedAt: row.fetched_at.toISOString(),
+          })),
+        )
+          .slice(0, 30)
+          .map((row) => ({
+            id: row.id,
+            modifiedAt: row.document.modifiedAt,
+            fetchedAt: row.fetchedAt,
+            archivedCopies: row.archivedCopies,
+          })),
       },
       { headers },
     );

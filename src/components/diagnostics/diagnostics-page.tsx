@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { browserUuid } from "@/lib/uuid";
 import { useEffect, useRef, useState } from "react";
 import { Activity, Download, Play, Square, Send, Search } from "lucide-react";
@@ -227,7 +228,7 @@ export function DiagnosticsPage() {
           <div className={styles.toolbar}>
             <label className={styles.search}>
               <Search size={15} />
-              <input
+              <SearchField
                 className={ui.input}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

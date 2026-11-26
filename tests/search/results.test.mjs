@@ -210,3 +210,45 @@ test("bulk decoding fails closed and visible timetable hydration leaves the inde
     /integrity/,
   );
 });
+
+test("field filters are applied before pagination and inspect full prerequisite text", () => {
+  const source = rows(30);
+  for (const [i, row] of source.courses.entries())
+    row.data.description =
+      i % 2
+        ? "Prereq: MATH 1151.01. Not open to students with credit for MATH 1151.02."
+        : "Discusses MATH 1151.01. Prereq: MATH 1151.02.";
+  const corpus = buildCatalogCorpus(source.courses, source.sections, snapshot);
+  const first = searchCorpus(corpus, { q: 'prereq:"MATH 1151.01"', limit: 12 });
+  assert.equal(first.totalCourses, 15);
+  assert.equal(first.courses.length, 12);
+  assert.ok(first.nextCursor);
+  const next = searchCorpus(corpus, {
+    q: 'prereq:"MATH 1151.01"',
+    limit: 12,
+    cursor: first.nextCursor,
+  });
+  assert.equal(next.courses.length, 3);
+  assert.equal(
+    new Set([...first.courses, ...next.courses].map((c) => c.id)).size,
+    15,
+  );
+});
+test("base course recommendation resolves every decimal variant in the selected campus", () => {
+  const source = rows(8);
+  for (const [i, row] of source.courses.entries()) {
+    row.catalog_number = `2200.${String(i + 1).padStart(2, "0")}`;
+    row.data.catalogNumber = row.catalog_number;
+  }
+  for (const row of source.sections)
+    row.catalog_number =
+      source.courses[Number(row.data.classNumber.slice(0, -1))].catalog_number;
+  const corpus = buildCatalogCorpus(source.courses, source.sections, snapshot);
+  const result = searchCorpus(corpus, { q: "EXAMPLE 2200", limit: 24 });
+  assert.equal(result.totalCourses, 8);
+  assert.ok(result.courses.every((c) => c.catalogNumber.startsWith("2200.")));
+  assert.equal(
+    searchCorpus(corpus, { q: "EXAMPLE 2200.02" }).courses[0].catalogNumber,
+    "2200.02",
+  );
+});

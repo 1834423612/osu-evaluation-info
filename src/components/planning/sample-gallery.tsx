@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { useEffect, useState } from "react";
 import {
@@ -213,7 +214,7 @@ export function SampleGallery({
           <div className={styles.filters}>
             <label className={styles.search}>
               <Search size={17} />
-              <input
+              <SearchField
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t("Find a major or college", "搜索专业或学院")}

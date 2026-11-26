@@ -70,6 +70,7 @@ export function academicEvents(
         .toISOString()
         .slice(0, 10),
       allDay: true,
+      noClasses: day.noClasses,
       category:
         day.kind === "exam"
           ? "exam"

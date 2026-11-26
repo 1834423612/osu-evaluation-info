@@ -213,3 +213,17 @@ end-to-end timings against an isolated representative database before deployment
 Public indexed-search responses use a 30-second browser cache, five-minute shared cache and ten-minute stale-while-revalidate window. Filtered URLs and pinned cursors remain distinct cache keys. Failed requests remain uncached. The browser honors these headers unless debug cache bypass is enabled. `Server-Timing` reports origin search duration for distinguishing database/index work from network latency.
 
 Search-index maintenance runs whenever catalog publication succeeds, including after an independent RMP or change-history maintenance failure. Timed-out change-history chunks roll back to a savepoint and retry with fewer courses. The outer transaction still publishes an entire term atomically and honors its runtime budget.
+
+## Shared search controls and exact field filters
+
+Every search input uses `SearchField`, with the parent retaining its domain, icon, labels and layout. Course exploration and academic-planning search both call `searchCatalogWithRelated`; planning no longer has a separate exact-only route with a four-suggestion decimal fallback.
+
+Use `prereq:"MATH 1151.01"`, `title:"Software"`, `instructor:"Jane Smith"`, `subject:CSE` or `number:2221`. Multiple clauses and ordinary keywords combine with AND. Field matches preserve decimal course identities, use whole-word boundaries and apply before pagination. Instructor clauses apply to the same sections as the selected catalog facets. A prerequisite clause searches the published prerequisite wording; it never establishes student eligibility. Ordinary full-text search continues to exclude prerequisite tails from general relevance scoring.
+
+These field filters require the published catalog index. If it is unavailable, the UI reports the failure rather than silently treating the filter as an official keyword query. Syntax errors are reported without a database read. Queries are limited to 200 characters and twelve field clauses.
+
+A base-number search can return the actual decimal variants. Opening an unavailable base code in the planner offers exact published family members for the selected campus and term; the user chooses a variant explicitly. Contextual requirement searches provide an All courses breadcrumb back to general search.
+
+### Checked decimal-course example
+
+On November 26, 2026, the official exact-base lookup for `ECON 2001` had no standalone base course, while the published catalog returned `ECON2001.01` and `ECON2001.03H`. A raw official keyword query also returns courses whose prose mentions that number. Family recovery therefore filters exact subject and catalog-number boundaries, retrieves every bounded page and asks the user to select a real variant. It does not silently pick the first keyword result.

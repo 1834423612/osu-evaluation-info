@@ -8,6 +8,18 @@ import {
 import { normalizeDocument } from "../../src/lib/syllabus/normalize.ts";
 import { documentFixture } from "./fixtures.mjs";
 
+test("refetching random editor IDs does not create a different archived rendering", () => {
+  const first = cleanOfficialSyllabusHtml(
+    '<div id="editor-0.123" class="fr-view"><h2 id="grading">Grading</h2><p>Exam 40%</p></div>',
+  );
+  const second = cleanOfficialSyllabusHtml(
+    '<div id="editor-0.987" class="fr-view"><h2 id="grading">Grading</h2><p>Exam 40%</p></div>',
+  );
+  assert.equal(first, second);
+  assert.match(first, /id="grading"/);
+  assert.match(first, /class="fr-view"/);
+});
+
 test("keeps published layout classes, typography, table widths and image sources", () => {
   const html = cleanOfficialSyllabusHtml(
     '<app-form-editor style="display:block"><div class="fr-view"><p><img src="/ui/account-image/example" alt="The Ohio State University" style="width:300px"></p><h2 class="component-name app-name-view">Schedule</h2><table style="width:100%"><tr><td style="width:10.5%;text-align:left">Week</td><td>Topic</td></tr></table></div></app-form-editor>',

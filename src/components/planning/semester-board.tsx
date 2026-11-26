@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useActionNotice } from "@/hooks/use-action-notice";
 import { trackUmamiEvent } from "@/components/analytics/umami-analytics";
 import { ChoiceSelect } from "@/components/ui/choice-select";
@@ -638,6 +639,23 @@ export function SemesterBoard({
             );
             return (
               <section className={styles.searchPanel}>
+                <nav
+                  aria-label={t("Search path", "搜索路径")}
+                  className={styles.searchBreadcrumbs}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveRequirement(null);
+                      setSearchQuery("");
+                      setReplacing(null);
+                    }}
+                  >
+                    {t("All courses", "全部课程搜索")}
+                  </button>
+                  <span aria-hidden="true">/</span>
+                  <span aria-current="page">{rule.title}</span>
+                </nav>
                 <strong>{rule.title}</strong>
                 {rule.kind === "any" && choices.length ? (
                   choices.map((child) => (
@@ -768,7 +786,7 @@ export function SemesterBoard({
               <div className={styles.toolbar}>
                 <label className={styles.filter}>
                   <Search size={16} />
-                  <input
+                  <SearchField
                     aria-label={t("Filter planned courses", "筛选已规划课程")}
                     placeholder={t("Find in my plan", "在规划中查找")}
                     value={filter}

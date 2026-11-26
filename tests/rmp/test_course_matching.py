@@ -49,7 +49,8 @@ class CourseMatchingTests(unittest.TestCase):
 
     def test_number_only_reviews_need_an_academic_department(self):
         available = {"MATH1151", "BIOLOGY1151"}
-        self.assertEqual(resolve_course("1151", available, self.lexicon, department="Mathematics")["course_key"], "MATH1151")
+        self.assertEqual(resolve_course("1151", available, self.lexicon, department="Mathematics")["candidates"], ["MATH1151"])
+        self.assertIsNone(resolve_course("1151", available, self.lexicon, department="Mathematics")["course_key"])
         self.assertIsNone(resolve_course("1151", available, self.lexicon, department="Mansfield Campus")["course_key"])
         self.assertIsNone(resolve_course("1151", available, self.lexicon)["course_key"])
 

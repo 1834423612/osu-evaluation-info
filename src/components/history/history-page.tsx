@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useActionNotice } from "@/hooks/use-action-notice";
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -187,7 +188,7 @@ export function HistoryPage() {
           <section className={layout.timeline}>
             <label className={layout.search}>
               <Search size={17} />
-              <input
+              <SearchField
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

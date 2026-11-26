@@ -8,7 +8,7 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import Iterable
 
-VERSION = "catalog-evidence-v3"
+VERSION = "catalog-evidence-v4"
 STOP = {"and", "of", "the", "department", "school", "college", "for", "in"}
 
 
@@ -80,8 +80,10 @@ def resolve_course(
     """An alias needs the exact number and a unique catalog-backed subject.
 
     Taught-course evidence can disambiguate abbreviations; known official subject
-    codes never expand into another subject. Number-only values additionally need
-    an academic department. Decimal/honors suffixes are not stripped or guessed.
+    codes never expand into another subject. For an already verified identity,
+    number-only values use official taught subjects before department context.
+    Decimal/honors suffixes are not stripped or guessed. Passing `taught` must
+    never be used to establish that same identity from numeric labels.
     """
     parsed = course_parts(raw)
     result = {"state": "unresolved", "course_key": None, "reason": "invalid_course", "candidates": []}
@@ -93,12 +95,12 @@ def resolve_course(
         if canonical in available:
             return {**result, "state": "accepted", "course_key": canonical, "reason": "exact"}
         return {**result, "reason": "outside_official_evidence"}
-    subjects = lexicon.resolve(prefix) if prefix else lexicon.resolve(department)
+    taught_subjects = {parts[0] for key in taught or set() if (parts := course_parts(key))}
+    subjects = lexicon.resolve(prefix) if prefix else taught_subjects or lexicon.resolve(department)
     if not subjects:
         return {**result, "reason": "unknown_subject" if prefix else "missing_subject"}
     if prefix:
         academic = lexicon.resolve(department)
-        taught_subjects = {parts[0] for key in taught or set() if (parts := course_parts(key))}
         context = academic | taught_subjects
         if context:
             subjects = subjects & context
@@ -110,13 +112,17 @@ def resolve_course(
             return {**result, "state": "ambiguous", "reason": "ambiguous_subject",
                     "candidates": sorted(subject + number for subject in subjects)}
     candidates = {subject + number for subject in subjects} & available
+    if not prefix and not taught_subjects:
+        return {**result, "state": "ambiguous" if len(candidates) > 1 else "unresolved",
+                "reason": "unverified_subject" if candidates else "outside_official_evidence",
+                "candidates": sorted(candidates)}
     supported = candidates & (taught or set())
-    if len(supported) == 1:
+    if prefix and len(supported) == 1:
         candidates = supported
     if len(candidates) == 1:
         return {
             **result, "state": "accepted", "course_key": next(iter(candidates)),
-            "reason": "subject_alias" if prefix else "number_with_department",
+            "reason": "subject_alias" if prefix else "number_with_verified_subject" if taught_subjects else "number_with_department",
             "candidates": sorted(candidates),
         }
     return {

@@ -25,7 +25,7 @@ Documentation or Release-display-only edits can update the relevant text without
 
 The existing `v1.0.0` and `v1.1.5` tags and release records are retained. Missing labels `v1.1.0`–`v1.1.4` are not evidence of published releases. Subsequent milestones follow main-branch integration order, including merged feature branches. Historical commits retain their original package metadata.
 
-Eight subsequent Release records were reconstructed on November 26, 2026. Code dates below use `America/New_York`; GitHub publication timestamps record the actual time the records were created. These entries summarize source changes, without claiming that every historical checkout was retested or deployed on its code date. Current `package.json` is aligned with `1.7.1`; build SHA and build time remain the deployment identifiers.
+Eight subsequent Release records were reconstructed on November 26, 2026. Code dates below use `America/New_York`; GitHub publication timestamps record the actual time the records were created. These entries summarize source changes, without claiming that every historical checkout was retested or deployed on its code date. The current `package.json` version is `1.8.0`; build SHA and build time remain the deployment identifiers.
 
 ## Timeline
 
@@ -41,6 +41,21 @@ Eight subsequent Release records were reconstructed on November 26, 2026. Code d
 | [v1.6.1](https://github.com/1834423612/osu-evaluation-info/releases/tag/v1.6.1) | 2026-11-22 | `246fe50`     | Catalog coverage and search recovery                |
 | [v1.7.0](https://github.com/1834423612/osu-evaluation-info/releases/tag/v1.7.0) | 2026-11-23 | `31f380a`     | Independent plans and timetable controls            |
 | [v1.7.1](https://github.com/1834423612/osu-evaluation-info/releases/tag/v1.7.1) | 2026-11-26 | `v1.7.1`      | November 25 catalog fixes and release metadata      |
+| [v1.8.0](https://github.com/1834423612/osu-evaluation-info/releases/tag/v1.8.0) | 2026-11-26 | `v1.8.0` | Course workspace clarity and audited RMP administration |
+
+## v1.8.0 — Workspace clarity and RMP administration
+
+The November 26 production rollout installed administrator roles and the RMP decision/assistance schemas after verified backups, then applied the reviewed course-only plan. It preserved raw profiles/reviews, identity mappings and manual decisions. Other installations must run the documented migrations; publishing a tag does not migrate a database.
+
+- Rendered syllabus comparisons and explicit source/format change categories, with safe folding of duplicate archived copies.
+- Shared search inputs and catalog pipeline, exact prerequisite/title/instructor filters, complete decimal-course families and return-to-search breadcrumbs.
+- Live section/seat progress, prominent full-course indicators and event details sized to the actual available rectangle.
+- Official no-class day stripes, shared native scroll chaining, registered swipe tabs and more visible official/RMP evaluation choices.
+- Conservative verified-subject numeric RMP reconciliation, durable manual overlays/audit, compact responsive review tools and database-backed account administrator roles.
+- Operator prerequisites: install administrator/identity schemas, review both course-plan fingerprints before applying, and explicitly grant the first existing account through the controlled role CLI. No account receives automatic production authority.
+- Batch course binding with editable reason templates, scoped local/remote AI review jobs, immutable pending suggestions and explicit human subset approval.
+- Preserve canonical course searches for profiles without active reviews and restrict administrator course suggestions to the selected campus.
+
 
 ## v1.7.1 — Catalog synchronization diagnostics
 

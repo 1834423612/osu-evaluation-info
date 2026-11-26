@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import Link from "next/link";
 import { RmpSaveButton } from "./rmp-save-button";
@@ -127,7 +128,7 @@ export function RmpLibrary({
             </span>
             <div>
               <Search size={16} />
-              <input
+              <SearchField
                 name="q"
                 defaultValue={query}
                 maxLength={100}

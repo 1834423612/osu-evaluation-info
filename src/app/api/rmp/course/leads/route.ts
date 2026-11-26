@@ -2,6 +2,7 @@ import { queryDatabase } from "@/lib/db";
 import { normalizeRmpInput, parseRmpScope } from "@/lib/rmp/input";
 import { parseReviewOffset } from "@/lib/rmp/pagination";
 import { COURSE_LEADS_SQL, type RmpCourseLead } from "@/lib/rmp/course-leads";
+import { rmpServingSQL } from "@/lib/rmp/admin-namespace";
 export const runtime = "nodejs";
 export async function GET(request: Request) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     });
     const offset = parseReviewOffset(params.get("offset") ?? "0");
     const result = await queryDatabase<RmpCourseLead & { total: number }>(
-      COURSE_LEADS_SQL,
+      rmpServingSQL(COURSE_LEADS_SQL),
       [
         input.campus,
         `${input.subject}${input.catalogNumber}`.replace(/[\s_-]/g, ""),

@@ -5,9 +5,18 @@ import { WorkspaceDialog } from "@/components/ui/workspace-dialog";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 import { Button } from "@/components/ui/button";
 import { text, type Locale } from "@/lib/i18n";
-import type { SyllabusDiffLine } from "@/lib/syllabus/diff";
+import type {
+  SyllabusDiffLine,
+  SyllabusDiffBlock,
+  SyllabusRevisionChanges,
+} from "@/lib/syllabus/diff";
 import styles from "./revision-history.module.css";
-type Version = { id: string; modifiedAt: string | null; fetchedAt: string };
+type Version = {
+  id: string;
+  modifiedAt: string | null;
+  fetchedAt: string;
+  archivedCopies?: number;
+};
 export function SyllabusRevisionHistory({
   code,
   locale,
@@ -20,6 +29,9 @@ export function SyllabusRevisionHistory({
     [before, setBefore] = useState(""),
     [after, setAfter] = useState(""),
     [lines, setLines] = useState<SyllabusDiffLine[]>([]),
+    [blocks, setBlocks] = useState<SyllabusDiffBlock[]>([]),
+    [changes, setChanges] = useState<SyllabusRevisionChanges | null>(null),
+    [mode, setMode] = useState<"lines" | "document">("document"),
     [loading, setLoading] = useState(false),
     [listing, setListing] = useState(false),
     [failed, setFailed] = useState(false),
@@ -61,7 +73,11 @@ export function SyllabusRevisionHistory({
     )
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        if (!c.signal.aborted) setLines(d.lines);
+        if (!c.signal.aborted) {
+          setLines(d.lines);
+          setBlocks(d.blocks);
+          setChanges(d.changes);
+        }
       })
       .catch(() => {
         if (!c.signal.aborted) setFailed(true);
@@ -79,6 +95,17 @@ export function SyllabusRevisionHistory({
     version.id.slice(0, 7);
   const added = lines.filter((line) => line.kind === "added").length,
     removed = lines.filter((line) => line.kind === "removed").length;
+  const noTextChange = changes && !changes.text;
+  const categories = changes
+    ? [
+        changes.links && t("Links changed", "链接变化"),
+        changes.media && t("Images changed", "图片变化"),
+        changes.presentation && t("Formatting changed", "排版变化"),
+        changes.metadata && t("Source details changed", "来源信息变化"),
+        changes.archiveRepresentation &&
+          t("Archived layout added", "补存原版排版"),
+      ].filter(Boolean)
+    : [];
   return (
     <>
       <Button
@@ -180,28 +207,92 @@ export function SyllabusRevisionHistory({
           ) : (
             <>
               <div className={styles.summary}>
-                <span>
-                  +{added} {t("added", "行新增")}
-                </span>
-                <span>
-                  −{removed} {t("removed", "行删除")}
-                </span>
+                {noTextChange ? (
+                  <p>{t("No text changes", "正文无变化")}</p>
+                ) : (
+                  <>
+                    <span>
+                      +{added} {t("added", "行新增")}
+                    </span>
+                    <span>
+                      −{removed} {t("removed", "行删除")}
+                    </span>
+                  </>
+                )}
+              </div>
+              {categories.length > 0 && (
+                <p className={styles.status}>
+                  {categories.join(t(" · ", " · "))}
+                </p>
+              )}
+              <div
+                className={styles.views}
+                role="group"
+                aria-label={t("Comparison view", "对比视图")}
+              >
                 <Button
                   size="sm"
-                  variant="ghost"
-                  aria-pressed={context}
-                  onClick={() => setContext((value) => !value)}
+                  variant={mode === "document" ? "default" : "outline"}
+                  aria-pressed={mode === "document"}
+                  onClick={() => setMode("document")}
                 >
-                  {context
-                    ? t("Changes with context", "仅查看变更上下文")
-                    : t("Show full document", "显示完整文档")}
+                  {t("Document", "文档")}
                 </Button>
+                <Button
+                  size="sm"
+                  variant={mode === "lines" ? "default" : "outline"}
+                  aria-pressed={mode === "lines"}
+                  onClick={() => setMode("lines")}
+                >
+                  {t("Line diff", "逐行差异")}
+                </Button>
+                {mode === "lines" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-pressed={context}
+                    onClick={() => setContext((value) => !value)}
+                  >
+                    {context
+                      ? t("Changes with context", "仅查看变更上下文")
+                      : t("Show full document", "显示完整文档")}
+                  </Button>
+                )}
               </div>
-              {!added && !removed ? (
+              {mode === "document" ? (
+                <>
+                  <p className={styles.legend}>
+                    <del>{t("Removed", "删除")}</del>
+                    <ins>{t("Added", "新增")}</ins>
+                  </p>
+                  <div
+                    className={styles.document}
+                    role="region"
+                    aria-label={t("Document changes", "文档修改对比")}
+                    tabIndex={0}
+                  >
+                    {blocks.map((block, index) => (
+                      <div
+                        key={index}
+                        data-kind={block.kind}
+                        role={block.kind === "same" ? undefined : "group"}
+                        aria-label={
+                          block.kind === "removed"
+                            ? t("Removed", "删除")
+                            : block.kind === "added"
+                              ? t("Added", "新增")
+                              : undefined
+                        }
+                        dangerouslySetInnerHTML={{ __html: block.html }}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : !added && !removed ? (
                 <p className={styles.status}>
                   {t(
-                    "No text changes between these versions.",
-                    "两个版本的正文内容一致。",
+                    "The archived text is unchanged. Source updates can change formatting or source details.",
+                    "归档正文一致；来源更新可能只涉及排版或来源信息。",
                   )}
                 </p>
               ) : (

@@ -1,4 +1,6 @@
 "use client";
+import { CourseSearchHelp } from "./course-search-help";
+import { SearchField } from "@/components/ui/search-field";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -184,6 +186,7 @@ export function CourseExplorer() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
+  const [searchError, setSearchError] = useState("");
   const [retry, setRetry] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageCursors, setPageCursors] = useState<(string | null)[]>([null]);
@@ -303,6 +306,7 @@ export function CourseExplorer() {
       }
       setLoading(true);
       setError(false);
+      setSearchError("");
       setPageIndex(restoredPage.pageIndex);
       setPageCursors(restoredPage.cursors);
       setLoadingMore(false);
@@ -316,8 +320,9 @@ export function CourseExplorer() {
           setCourses(data.courses);
           trackOutcome(data);
         }
-      } catch {
+      } catch (error) {
         if (!controller.signal.aborted && current === generation.current) {
+          setSearchError(error instanceof Error ? error.message : "");
           setError(true);
           setCourses([]);
           trackOutcome(null);
@@ -536,7 +541,7 @@ export function CourseExplorer() {
           }}
         >
           <Search size={20} />
-          <input
+          <SearchField
             key={searchParams.get("q") ?? ""}
             name="q"
             type="search"
@@ -551,6 +556,7 @@ export function CourseExplorer() {
           <span className="search-shortcut">↵</span>
           <Button type="submit">{text(locale, "Search", "搜索")}</Button>
         </form>
+        <CourseSearchHelp locale={locale} />
         <div className="catalog-campus-context">
           <MapPin size={19} aria-hidden="true" />
           <label htmlFor="search-campus">
@@ -883,6 +889,7 @@ export function CourseExplorer() {
                       "课程数据暂时无法获取",
                     )}
                   </strong>
+                  {searchError && <p>{searchError}</p>}
                   <p>
                     {text(
                       locale,

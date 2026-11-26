@@ -248,7 +248,7 @@ export function SyllabusSectionPicker({
                   </span>
                   {updated ? (
                     <span className={styles.updated}>
-                      {text(locale, "Updated", "有更新")}
+                      {text(locale, "Source updated", "来源版本更新")}
                     </span>
                   ) : null}
                   {!available ? (

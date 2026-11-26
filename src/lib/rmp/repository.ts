@@ -1,4 +1,5 @@
 import { COURSE_SQL, REVIEW_PAGE_SQL } from "./queries";
+import { rmpServingSQL } from "./admin-namespace";
 import { isDatabaseConfigured, queryDatabase } from "@/lib/db";
 import { normalizeRmpInput } from "./input";
 import {
@@ -69,7 +70,7 @@ export async function getCourseRmp(
   const request = (async (): Promise<CourseRmpSummary> => {
     try {
       if (!isDatabaseConfigured()) throw new Error("RMP database unavailable");
-      const result = await queryDatabase<CourseRow>(COURSE_SQL, [
+      const result = await queryDatabase<CourseRow>(rmpServingSQL(COURSE_SQL), [
         input.usernames,
         input.campus,
         `${input.subject}${input.catalogNumber}`.replace(/[\s_-]/g, ""),
@@ -152,7 +153,7 @@ export async function getInstructorRmpReviews(
   if (!input.usernames.length && input.instructorScope !== "course-history")
     return { reviews: [], total: 0, nextOffset: null };
   const result = await queryDatabase<{ total: number; reviews: RmpReview[] }>(
-    REVIEW_PAGE_SQL,
+    rmpServingSQL(REVIEW_PAGE_SQL),
     [
       input.usernames,
       input.campus,

@@ -32,7 +32,10 @@ CREATE TABLE IF NOT EXISTS osu_rmp.course_matching_refresh (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE OR REPLACE VIEW osu_rmp.course_review_query AS
+-- The manual overlay retains ownership across collector/schema rebuilds.
+DO $migration$ BEGIN
+IF to_regclass('osu_rmp.course_decision') IS NULL THEN
+EXECUTE $view$CREATE OR REPLACE VIEW osu_rmp.course_review_query AS
 -- Preserve exact lookups even before a new catalog publication is indexed.
 SELECT r.*,campuses.campus_code,r.course_key AS matched_course_key
 FROM osu_rmp.review_query r
@@ -45,7 +48,9 @@ SELECT r.*,m.campus_code,m.course_key AS matched_course_key
 FROM osu_rmp.course_identity_match m
 JOIN osu_rmp.review_query r ON r.professor_id=m.professor_id
   AND osu_rmp.review_course_token(r.class_name)=m.raw_course_token
-WHERE m.state='accepted' AND m.course_key IS DISTINCT FROM r.course_key;
+WHERE m.state='accepted' AND m.course_key IS DISTINCT FROM r.course_key$view$;
+END IF;
+END $migration$;
 
 INSERT INTO osu_rmp.app_migration (version) VALUES ('rmp-app-v4') ON CONFLICT DO NOTHING;
 COMMIT;

@@ -149,7 +149,8 @@ def audit_course_links(professors, reviews, candidates, identities, schools, inv
         if not campuses:
             outcomes[professor, token].add("missing_campus")
         for campus in campuses:
-            taught = {fact[4] for fact in identities.get(username, {}).get("course_facts", []) if fact[3] == campus}
+            identity_in_scope = professor in manual_profiles or campus in accepted_scopes.get(professor, set())
+            taught = {fact[4] for fact in identities.get(username, {}).get("course_facts", []) if fact[3] == campus} if identity_in_scope else set()
             resolved = resolve_course(token, inventory.get(campus, set()), lexicon,
                                       department=profile.get("department") or "", taught=taught)
             result_state = identity_state if identity_state != "accepted" else resolved["reason"]
@@ -170,7 +171,11 @@ def audit_course_links(professors, reviews, candidates, identities, schools, inv
                     "version": VERSION, "raw_values": sorted(source["names"]),
                     "review_count": source["reviews"], "identity_state": identity_state,
                     "username": username, "department": profile.get("department"),
+                    "verified_identity_campus": identity_in_scope,
                     "taught_course_support": resolved["course_key"] in taught,
+                    "verified_subjects": sorted({parts[0] for key in taught if (parts := course_parts(key))}),
+                    "official_teaching_courses": sorted(taught),
+                    "resolution_kind": "source_label" if resolved["reason"] == "exact" else "inferred_course_label",
                     "before_available": before_available,
                 },
             })

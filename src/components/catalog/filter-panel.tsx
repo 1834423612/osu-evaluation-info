@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 
 import { useId, useState } from "react";
 import {
@@ -110,7 +111,7 @@ function FilterFacet({
       {searchable ? (
         <label className="filter-search" htmlFor={`${id}-search`}>
           <Search aria-hidden="true" />
-          <input
+          <SearchField
             id={`${id}-search`}
             type="search"
             value={search}

@@ -89,6 +89,7 @@ data/raw/**/*.jsonl
 
 # Next.js build output
 .next
+.next-rmp-dev
 out
 
 # Nuxt.js build / generate output

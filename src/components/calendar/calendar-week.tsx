@@ -8,6 +8,7 @@ import {
   weekSegments,
   weekOverlapGroups,
   eventColors,
+  noClassEventsForDate,
 } from "@/lib/calendar/week";
 import { useRef } from "react";
 import type { CSSProperties } from "react";
@@ -141,6 +142,7 @@ export function CalendarWeek({
           ))}
         </div>
         {dates.map((date) => {
+          const noClasses = noClassEventsForDate(events, date);
           const dailyGroups = groups.filter((group) => group.date === date);
           const positioned = dailyGroups
             .filter((group) => group.lanes < 3)
@@ -151,12 +153,15 @@ export function CalendarWeek({
             <div
               key={date}
               className={styles.column}
-              data-holiday={events.some(
-                (event) =>
-                  event.category === "holiday" &&
-                  event.start <= date &&
-                  event.end > date,
-              )}
+              data-calendar-date={date}
+              data-no-classes={noClasses.length > 0 || undefined}
+              style={
+                noClasses.length
+                  ? ({
+                      "--no-class-color": colors[noClasses[0].id],
+                    } as CSSProperties)
+                  : undefined
+              }
             >
               {dailyGroups
                 .filter((group) => group.lanes >= 3)
@@ -236,18 +241,22 @@ export function CalendarWeek({
                         {courseCode.slice(numberStart)}
                       </strong>
                     )}
-                    <span>
+                    <span className={styles.eventTime}>
                       <Clock3 size={10} />
                       {time(event.start)}
                       {event.end !== event.start ? "–" + time(event.end) : ""}
                     </span>
                     {event.location && (
-                      <span>
+                      <span className={styles.eventLocation}>
                         {online ? <Globe2 size={10} /> : <MapPin size={10} />}
                         {event.location}
                       </span>
                     )}
-                    {event.session && <small>{event.session}</small>}
+                    {event.session && (
+                      <small className={styles.eventSession}>
+                        {event.session}
+                      </small>
+                    )}
                   </>
                 );
                 const position = {

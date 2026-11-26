@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { ChoiceSelect } from "@/components/ui/choice-select";
 
 import {
@@ -353,7 +354,7 @@ export const SyllabusViewer = forwardRef<
         </div>
         <div className={styles.search}>
           <Search size={14} />
-          <input
+          <SearchField
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={text(locale, "Find in document…", "查找正文…")}

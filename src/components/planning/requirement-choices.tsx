@@ -1,4 +1,5 @@
 "use client";
+import { SearchField } from "@/components/ui/search-field";
 import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import subjectVocabulary from "../../../data/planning/subjects.json";
@@ -162,7 +163,7 @@ export function RequirementChoices({
           </div>
           {(!suggestions.length || browseAll) && (
             <>
-              <input
+              <SearchField
                 className={styles.subjectQuery}
                 aria-label={t("Find a catalog subject", "查找目录科目")}
                 placeholder={t("Subject code or name", "科目代码或名称")}

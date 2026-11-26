@@ -1,3 +1,4 @@
+import { prerequisiteHeading } from "../catalog/prerequisite-heading.ts";
 import { createRequestPool } from "../catalog/request-pool.ts";
 import type { CatalogCourse } from "../catalog/types";
 import type { PlanCourse } from "./model.ts";
@@ -112,10 +113,8 @@ export function creditLabel(range: CreditRange | null) {
 
 /** Keep the full wording for conjunctions, grades and standing. Codes are navigation aids. */
 export function prerequisiteText(description: string) {
-  const start = description.search(
-    /\b(?:prereq(?:uisites?)?|prerequisites? and corequisites?|prereq or concur)\b\s*[:.]/i,
-  );
-  return start < 0 ? null : description.slice(start).trim();
+  const heading = prerequisiteHeading(description);
+  return heading ? description.slice(heading.start).trim() : null;
 }
 
 /** Only an explicit numeric "or above/higher" range permits a higher same-subject record. */

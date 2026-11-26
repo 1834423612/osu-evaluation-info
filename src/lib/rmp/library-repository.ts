@@ -1,4 +1,5 @@
 import "server-only";
+import { rmpServingSQL } from "./admin-namespace";
 import { getDatabasePool } from "@/lib/db";
 import {
   RMP_LIBRARY_PAGE_SIZE,
@@ -23,7 +24,7 @@ export async function searchRmpLibrary(
   input: RmpLibraryInput,
 ): Promise<RmpLibraryResult> {
   const result = await getDatabasePool().query<RmpProfile & { total: number }>(
-    LIBRARY_SEARCH_SQL,
+    rmpServingSQL(LIBRARY_SEARCH_SQL),
     [
       input.campus,
       input.identity,
