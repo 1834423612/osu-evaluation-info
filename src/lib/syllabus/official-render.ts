@@ -99,6 +99,12 @@ export function cleanOfficialSyllabusHtml(html: string) {
       "textarea",
     ],
     transformTags: {
+      "*": (tag, attributes) => {
+        // Simple Syllabus regenerates editor IDs on every read; they do not identify content.
+        const attrs = { ...attributes };
+        if (/^editor-0\.\d+$/.test(attrs.id ?? "")) delete attrs.id;
+        return { tagName: tag, attribs: attrs };
+      },
       a: (_tag, attrs) => {
         let href = "";
         try {

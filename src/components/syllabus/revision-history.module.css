@@ -37,6 +37,104 @@
 .summary > button {
   margin-left: auto;
 }
+.summary p {
+  margin: 0;
+}
+.views {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.views > button:last-child:nth-child(3) {
+  margin-left: auto;
+}
+.legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 11px;
+  gap: 14px;
+}
+.legend del,
+.document del {
+  color: color-mix(in srgb, #b4233e 85%, var(--ink));
+  background: color-mix(in srgb, #dc7186 15%, var(--surface));
+  text-decoration: line-through;
+}
+.legend ins,
+.document ins {
+  color: color-mix(in srgb, #17643e 85%, var(--ink));
+  background: color-mix(in srgb, #68b38d 15%, var(--surface));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.document {
+  max-height: 60dvh;
+  overflow: auto;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.document > div {
+  margin: 0 auto;
+  max-width: 75ch;
+}
+.document p,
+.document blockquote {
+  margin: 0 0 1em;
+}
+.document h1,
+.document h2,
+.document h3,
+.document h4,
+.document h5,
+.document h6 {
+  font-size: 1.2em;
+  font-weight: 650;
+  margin: 1.5em 0 0.6em;
+  line-height: 1.4;
+}
+.document ul {
+  margin: 0 0 1em;
+  padding-left: 1.6em;
+  list-style: disc;
+}
+.document ol {
+  margin: 0 0 1em;
+  padding-left: 1.6em;
+  list-style: decimal;
+}
+.document table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.document td,
+.document th {
+  border: 1px solid var(--line);
+  padding: 8px;
+  text-align: left;
+}
+.document a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.document > [data-kind="added"] a::after,
+.document > [data-kind="removed"] a::after {
+  content: " (" attr(href) ")";
+  font-size: 0.85em;
+}
+.document:focus-visible,
+.diff:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
 .diff {
   max-height: 60dvh;
   overflow: auto;
@@ -88,5 +186,8 @@
   .line {
     grid-template-columns: 22px 22px 12px minmax(0, 1fr);
     gap: 3px;
+  }
+  .document {
+    padding: 14px;
   }
 }

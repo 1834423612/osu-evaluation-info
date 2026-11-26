@@ -139,8 +139,8 @@ export function SavedSyllabi({ locale }: { locale: Locale }) {
         <p className={styles.unread} role="status">
           {text(
             locale,
-            `${unread} saved syllabi have updates`,
-            `${unread} 份收藏大纲有更新`,
+            `${unread} saved syllabi have source updates`,
+            `${unread} 份收藏大纲的来源版本有更新`,
           )}
         </p>
       ) : null}
@@ -172,7 +172,7 @@ export function SavedSyllabi({ locale }: { locale: Locale }) {
                   </span>
                   {syllabusHasUpdate(item) ? (
                     <b className={styles.updated}>
-                      {text(locale, "Updated", "有更新")}
+                      {text(locale, "Source updated", "来源版本更新")}
                     </b>
                   ) : null}
                 </button>

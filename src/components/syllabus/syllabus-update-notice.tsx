@@ -22,7 +22,11 @@ export function SyllabusUpdateNotice({
   return (
     <div className={styles.updateNotice} role="status" data-syllabus-update>
       <strong>
-        {text(locale, "Updated since you saved it", "收藏后有更新")}
+        {text(
+          locale,
+          "Source updated since you saved it",
+          "收藏后来源版本有更新",
+        )}
       </strong>
       <p>
         {kept

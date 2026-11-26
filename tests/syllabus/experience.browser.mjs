@@ -7,6 +7,7 @@ import {
 } from "../../src/lib/syllabus/saved.ts";
 import { documentFixture, componentId, snapshotId } from "./fixtures.mjs";
 import { DEBUG_SESSION_KEY } from "../../src/lib/debug/flags.ts";
+import { compareSyllabusRevisions } from "../../src/lib/syllabus/diff.ts";
 
 const { chromium } = await import(
   process.env.PLAYWRIGHT_MODULE ?? "playwright"
@@ -170,7 +171,11 @@ async function setup(width = 1440, seed = false, locale = "zh") {
   activePage = page;
   page.setDefaultTimeout(15000);
   const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (error) => {
+    errors.push(error.message);
+    if (process.env.SYLLABUS_REVISIONS_ONLY === "1")
+      console.error(error.message);
+  });
   let currentDocument = structuredClone(document);
   if (seed) currentDocument.snapshotId = "6edc5037-bd43-4e05-8f95-d08385a3976a";
   await page.route("**/*", (route) => {
@@ -183,6 +188,8 @@ async function setup(width = 1440, seed = false, locale = "zh") {
   });
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/api/auth/get-session")
+      return route.fulfill({ json: null });
     if (url.pathname.startsWith("/api/debug/"))
       return route.fulfill({
         json: {
@@ -332,6 +339,130 @@ async function savedData(page) {
   );
 }
 try {
+  if (process.env.SYLLABUS_REVISIONS_ONLY === "1") {
+    for (const width of [1440, 390, 320]) {
+      const fixture = await setup(width, true);
+      const revisionPage = fixture.page;
+      const older = {
+        ...document,
+        components: [
+          {
+            ...document.components[0],
+            html: "<h2>Grading</h2><p>Exam 40%</p><table><tr><th>Week</th><td>One</td></tr></table>",
+          },
+        ],
+      };
+      const newer = {
+        ...older,
+        modifiedAt: "2026-11-20T10:00:00Z",
+        components: [
+          {
+            ...older.components[0],
+            html: "<h2>Grading</h2><p>Exam 50% &amp; project</p><table><tr><th>Week</th><td>One</td></tr></table>",
+          },
+        ],
+      };
+      let metadataOnly = false;
+      await revisionPage.route("**/api/syllabus/revisions?*", (route) => {
+        const params = new URL(route.request().url()).searchParams;
+        return route.fulfill({
+          json: params.has("before")
+            ? compareSyllabusRevisions(
+                older,
+                metadataOnly
+                  ? { ...older, modifiedAt: "2026-11-20T10:00:00Z" }
+                  : newer,
+              )
+            : {
+                versions: [
+                  {
+                    id: "a".repeat(64),
+                    modifiedAt: "2026-11-20T10:00:00Z",
+                    fetchedAt: "2026-11-20T12:00:00Z",
+                  },
+                  {
+                    id: "b".repeat(64),
+                    modifiedAt: "2026-11-01T10:00:00Z",
+                    fetchedAt: "2026-11-01T12:00:00Z",
+                  },
+                ],
+              },
+        });
+      });
+      await openCourse(revisionPage);
+      await revisionPage
+        .getByRole("button", { name: "内容修改历史", exact: true })
+        .click();
+      const dialog = revisionPage.getByRole("dialog", {
+        name: "大纲内容修改记录",
+      });
+      const rendered = dialog.getByRole("region", { name: "文档修改对比" });
+      await rendered
+        .locator("del")
+        .getByText("Exam 40%", { exact: true })
+        .waitFor();
+      await rendered
+        .locator("ins")
+        .getByText("Exam 50% & project", { exact: true })
+        .waitFor();
+      assert.equal(await rendered.locator("table th").innerText(), "Week");
+      assert.notEqual(
+        await rendered
+          .locator("del")
+          .first()
+          .evaluate((node) => getComputedStyle(node).color),
+        await rendered
+          .locator("ins")
+          .first()
+          .evaluate((node) => getComputedStyle(node).color),
+        "deletions and insertions have distinct rendered text colors",
+      );
+      await rendered.focus();
+      assert.equal(
+        await rendered.evaluate((node) => node === document.activeElement),
+        true,
+      );
+      assert.equal(
+        await dialog.evaluate(
+          (node) => node.scrollWidth > node.clientWidth + 1,
+        ),
+        false,
+        `history fits ${width}px`,
+      );
+      await revisionPage.screenshot({
+        path: `${output}/revisions-${width}.png`,
+        fullPage: true,
+      });
+      await dialog
+        .getByRole("button", { name: "逐行差异", exact: true })
+        .click();
+      await dialog.getByRole("region", { name: "逐行修改对比" }).waitFor();
+      await dialog
+        .getByRole("button", { name: "关闭", exact: true })
+        .last()
+        .click();
+      metadataOnly = true;
+      await revisionPage
+        .getByRole("button", { name: "内容修改历史", exact: true })
+        .click();
+      await dialog.getByText("正文无变化", { exact: true }).waitFor();
+      assert.equal(
+        await dialog.getByText("来源信息变化", { exact: true }).isVisible(),
+        true,
+      );
+      assert.equal(
+        await dialog.getByText("+0 行新增", { exact: true }).count(),
+        0,
+      );
+      assert.equal(fixture.errors.length, 0, fixture.errors.join("\n"));
+      await fixture.context.close();
+    }
+    console.log(
+      "Revision history: rendered deletion/insertion, semantic tables, line-mode switch, focus, metadata-only status and responsive widths 1440/390/320 passed",
+    );
+    await browser.close();
+    process.exit(0);
+  }
   const desktop = await setup();
   const { page } = desktop;
   await openCourse(page);
@@ -657,7 +788,7 @@ try {
     await page.getByRole("tab", { name: /大纲/ }).click();
     await page
       .locator('[data-saved-syllabus="example123"]')
-      .getByText("有更新", { exact: true })
+      .getByText("来源版本更新", { exact: true })
       .waitFor();
     assert(syllabusHasUpdate((await savedData(page))[0]));
     const card = page.locator('[data-saved-syllabus="example123"]');
@@ -964,7 +1095,10 @@ try {
     const official = JSON.parse(
       await readFile(process.env.SYLLABUS_DOCUMENT_FILE, "utf8"),
     );
-    live.setDocument({ ...(official.data ?? official), entry: document.entry });
+    live.setDocument({
+      ...(official.data ?? official),
+      entry: document.entry,
+    });
     await live.page.goto(`${base}/saved`, { waitUntil: "networkidle" });
     await live.page.getByRole("tab", { name: /大纲/ }).click();
     await live.page.locator('[data-open-syllabus="example123"]').click();
