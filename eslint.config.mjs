@@ -7,6 +7,7 @@ export default defineConfig([
   ...nextTs,
   globalIgnores([
     ".next/**",
+    ".next-rmp-dev/**",
     "node_modules/**",
     "data/raw/**",
     ".planning-cache/**",

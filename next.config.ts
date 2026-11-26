@@ -4,6 +4,7 @@ import { buildSnapshot } from "./src/lib/layout/build-info.server.ts";
 const build = buildSnapshot(process.env);
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   env: {
     NEXT_PUBLIC_BUILD_SHA: build?.sha ?? "",
     NEXT_PUBLIC_BUILD_HASH: build?.sha.slice(0, 8) ?? "",

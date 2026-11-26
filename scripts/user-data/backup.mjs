@@ -58,6 +58,8 @@ try {
   const authSchema = accountSchema();
   if (!/^[_a-z][_a-z0-9]*$/.test(authSchema))
     throw Error("Unexpected authentication schema");
+  // Include identity routines and role triggers even when AUTH_SCHEMA is overridden.
+  const schemas = [...new Set([...domainSchemas(), authSchema])];
   const tables = (
     await client.query(
       "SELECT tablename FROM pg_tables WHERE schemaname=$1 AND tablename=ANY($2::text[]) ORDER BY tablename",
@@ -69,7 +71,7 @@ try {
   const domain = (
     await client.query(
       "SELECT schemaname,tablename FROM pg_tables WHERE schemaname=ANY($1::text[]) AND NOT (schemaname=$2 AND tablename=ANY($3::text[])) ORDER BY schemaname,tablename",
-      [domainSchemas(), authSchema, authBackupTables(prefix)],
+      [schemas, authSchema, authBackupTables(prefix)],
     )
   ).rows.map((x) => x.schemaname + "." + x.tablename);
   if (domain.some((x) => !/^[_a-z][_a-z0-9]*\.[_a-z][_a-z0-9]*$/.test(x)))
@@ -114,7 +116,7 @@ try {
       [
         "user-data.dump",
         [
-          ...domainSchemas().map((name) => "--schema=" + name),
+          ...schemas.map((name) => "--schema=" + name),
           ...tables.map((name) => "--exclude-table=" + authSchema + "." + name),
         ],
       ],

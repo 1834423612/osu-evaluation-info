@@ -12,6 +12,9 @@ test("backup scopes exact auth models and puts connection secrets only in child 
     "ca_verification",
     "ca_rate_limit",
     "ca_passkey",
+    "ca_account_role",
+    "ca_account_role_audit",
+    "ca_admin_role_guard",
   ]);
   assert.equal(
     authBackupTables("ca_").some((x) => x.startsWith("ca_dev_")),

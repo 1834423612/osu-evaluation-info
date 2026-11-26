@@ -9,6 +9,7 @@ const { userDataSchema, domainSQL } =
 const { authConfigured, authTablePrefix, authSchema } =
   await import("../../src/lib/auth/config.ts");
 const { getAuthPool } = await import("../../src/lib/auth/database.ts");
+const { adminRolesSQL } = await import("../../src/lib/auth/admin-roles.ts");
 if (!authConfigured())
   throw new Error(
     "Configure DATABASE_URL, BETTER_AUTH_SECRET (32+ characters) and the authentication origin first",
@@ -19,6 +20,9 @@ const db = getAuthPool(),
   apply = process.argv.includes("--apply");
 const base = readFileSync("db/migrations/20261114_user_data_base.sql", "utf8");
 const baseSQL = domainSQL(base);
+const rolesSQL = adminRolesSQL(
+  readFileSync("db/migrations/20261126_admin_roles.sql", "utf8"),
+);
 const unique =
   'CREATE UNIQUE INDEX IF NOT EXISTS "' +
   prefix +
@@ -81,6 +85,8 @@ try {
         "\n" +
         unique +
         "\n" +
+        rolesSQL +
+        "\n" +
         marker +
         "\nCOMMIT;\n",
     );
@@ -125,6 +131,7 @@ try {
     await client.query(baseSQL);
     await client.query(sql || "SELECT 1");
     await client.query(unique);
+    await client.query(rolesSQL);
     await client.query(
       'CREATE TABLE IF NOT EXISTS "' +
         schema +

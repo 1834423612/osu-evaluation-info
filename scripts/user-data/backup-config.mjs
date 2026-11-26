@@ -2,13 +2,18 @@ export function authBackupTables(prefix) {
   if (prefix && !/^[a-z][a-z0-9_]{0,35}_$/.test(prefix))
     throw Error("Invalid auth prefix");
   return [
-    "user",
-    "session",
-    "account",
-    "verification",
-    "rate_limit",
-    "passkey",
-  ].map((name) => prefix + name);
+    ...[
+      "user",
+      "session",
+      "account",
+      "verification",
+      "rate_limit",
+      "passkey",
+      "account_role",
+      "account_role_audit",
+      "admin_role_guard",
+    ].map((name) => prefix + name),
+  ];
 }
 /** Credentials go into child environment variables, never process arguments or output. */
 export function backupConnectionEnv(raw) {

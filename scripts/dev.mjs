@@ -2,6 +2,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { networkInterfaces, release } from "node:os";
 import { stripVTControlCharacters } from "node:util";
+import { randomBytes } from "node:crypto";
 
 const require = createRequire(import.meta.url);
 const isWsl = /microsoft/i.test(release());
@@ -127,6 +128,8 @@ if (!tailscale) {
 const next = spawn(
   process.execPath,
   [
+    "--import",
+    new URL("./rmp/dev-ingress.mjs", import.meta.url).href,
     require.resolve("next/dist/bin/next"),
     "dev",
     "--hostname",
@@ -135,7 +138,11 @@ const next = spawn(
   ],
   {
     stdio: ["inherit", "pipe", "inherit"],
-    env: { ...process.env, DEV_TAILSCALE_IP: tailscale?.ip ?? "" },
+    env: {
+      ...process.env,
+      DEV_TAILSCALE_IP: tailscale?.ip ?? "",
+      RMP_DEV_INGRESS_SECRET: randomBytes(32).toString("hex"),
+    },
   },
 );
 
